@@ -7,6 +7,9 @@ import { Building2, ArrowLeft, MapPin } from 'lucide-react';
 import { businessAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 
+const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
+
 export default function BusinessRegister() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -88,31 +91,31 @@ export default function BusinessRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4">
+            <Link href="/" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">Register Your Business</h1>
+              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Register Your Business</h1>
             </div>
-            <p className="text-gray-600">Join ThanksDoc to connect with verified healthcare professionals</p>
+            <p className="text-gray-600 dark:text-gray-300">Join ThanksDoc to connect with verified healthcare professionals</p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Business Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Business Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Business Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Business Name *
                   </label>
                   <input
@@ -121,13 +124,13 @@ export default function BusinessRegister() {
                     value={formData.businessName}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                     placeholder="Enter business name"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Business Type *
                   </label>
                   <select
@@ -145,7 +148,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Business License Number *
                   </label>
                   <input
@@ -179,7 +182,7 @@ export default function BusinessRegister() {
                 <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Contact Person Name *
                   </label>
                   <input
@@ -194,7 +197,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Email Address *
                   </label>
                   <input
@@ -209,7 +212,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Phone Number *
                   </label>
                   <input
@@ -229,7 +232,7 @@ export default function BusinessRegister() {
                 <h2 className="text-xl font-semibold text-gray-900">Location Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Address *
                   </label>
                   <textarea
@@ -245,7 +248,7 @@ export default function BusinessRegister() {
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       City *
                     </label>
                     <input
@@ -259,7 +262,7 @@ export default function BusinessRegister() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       State *
                     </label>
                     <input
@@ -273,7 +276,7 @@ export default function BusinessRegister() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       ZIP Code *
                     </label>
                     <input
@@ -290,7 +293,7 @@ export default function BusinessRegister() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Latitude *
                     </label>
                     <input
@@ -305,7 +308,7 @@ export default function BusinessRegister() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Longitude *
                     </label>
                     <input

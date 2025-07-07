@@ -7,6 +7,9 @@ import { Stethoscope, ArrowLeft, MapPin } from 'lucide-react';
 import { doctorAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 
+const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
+
 export default function DoctorRegister() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -95,32 +98,32 @@ export default function DoctorRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4">
+            <Link href="/" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Stethoscope className="h-8 w-8 text-blue-600" />
-              <h1 className="text-3xl font-bold text-gray-900">Join as Doctor</h1>
+              <Stethoscope className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Join as Doctor</h1>
             </div>
-            <p className="text-gray-600">Create your profile to start receiving service requests</p>
+            <p className="text-gray-600 dark:text-gray-300">Create your profile to start receiving service requests</p>
           </div>
 
           {/* Form */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Personal Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Personal Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Personal Information</h2>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       First Name *
                     </label>
                     <input
@@ -129,12 +132,12 @@ export default function DoctorRegister() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Enter first name"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Last Name *
                     </label>
                     <input
@@ -143,14 +146,14 @@ export default function DoctorRegister() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Enter last name"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Email Address *
                   </label>
                   <input
@@ -159,13 +162,13 @@ export default function DoctorRegister() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                     placeholder="Enter email address"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Phone Number *
                   </label>
                   <input
@@ -174,13 +177,13 @@ export default function DoctorRegister() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                     placeholder="Enter phone number"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Emergency Contact
                   </label>
                   <input
@@ -188,7 +191,7 @@ export default function DoctorRegister() {
                     name="emergencyContact"
                     value={formData.emergencyContact}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                     placeholder="Emergency contact number"
                   />
                 </div>
@@ -199,7 +202,7 @@ export default function DoctorRegister() {
                 <h2 className="text-xl font-semibold text-gray-900">Professional Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Specialization *
                   </label>
                   <select
@@ -207,7 +210,7 @@ export default function DoctorRegister() {
                     value={formData.specialization}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                   >
                     <option value="">Select specialization</option>
                     <option value="General Medicine">General Medicine</option>
@@ -223,7 +226,7 @@ export default function DoctorRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Medical License Number *
                   </label>
                   <input
@@ -232,14 +235,14 @@ export default function DoctorRegister() {
                     value={formData.licenseNumber}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={inputClasses}
                     placeholder="Enter license number"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Years of Experience *
                     </label>
                     <input
@@ -249,12 +252,12 @@ export default function DoctorRegister() {
                       onChange={handleInputChange}
                       required
                       min="0"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Years"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Hourly Rate (USD) *
                     </label>
                     <input
@@ -265,7 +268,7 @@ export default function DoctorRegister() {
                       required
                       min="0"
                       step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Rate per hour"
                     />
                   </div>
@@ -291,7 +294,7 @@ export default function DoctorRegister() {
                 <h2 className="text-xl font-semibold text-gray-900">Location Information</h2>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={labelClasses}>
                     Address *
                   </label>
                   <textarea
@@ -307,7 +310,7 @@ export default function DoctorRegister() {
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       City *
                     </label>
                     <input
@@ -316,12 +319,12 @@ export default function DoctorRegister() {
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="City"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       State *
                     </label>
                     <input
@@ -330,12 +333,12 @@ export default function DoctorRegister() {
                       value={formData.state}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="State"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       ZIP Code *
                     </label>
                     <input
@@ -344,7 +347,7 @@ export default function DoctorRegister() {
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="ZIP"
                     />
                   </div>
@@ -352,7 +355,7 @@ export default function DoctorRegister() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Latitude *
                     </label>
                     <input
@@ -362,12 +365,12 @@ export default function DoctorRegister() {
                       value={formData.latitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Latitude"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={labelClasses}>
                       Longitude *
                     </label>
                     <input
@@ -377,7 +380,7 @@ export default function DoctorRegister() {
                       value={formData.longitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={inputClasses}
                       placeholder="Longitude"
                     />
                   </div>
