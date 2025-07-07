@@ -14,6 +14,7 @@ export default function DoctorDashboard() {
   const [serviceRequests, setServiceRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null); // Track which request is being processed
   const [isAvailable, setIsAvailable] = useState(true);
   const [stats, setStats] = useState({
     pendingRequests: 0,
@@ -116,7 +117,7 @@ export default function DoctorDashboard() {
   };
 
   const handleAcceptRequest = async (requestId) => {
-    setLoading(true);
+    setActionLoading(requestId);
     try {
       const response = await serviceRequestAPI.acceptRequest(requestId, user.id);
       if (response.data) {
@@ -128,7 +129,7 @@ export default function DoctorDashboard() {
       console.error('Error accepting request:', error);
       alert('Failed to accept request. It may have already been taken by another doctor.');
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   };
 
@@ -136,7 +137,7 @@ export default function DoctorDashboard() {
     const reason = prompt('Please provide a reason for rejecting this request (optional):');
     if (reason === null) return; // User cancelled
 
-    setLoading(true);
+    setActionLoading(requestId);
     try {
       const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
       if (response.data) {
@@ -148,7 +149,7 @@ export default function DoctorDashboard() {
       console.error('Error rejecting request:', error);
       alert('Failed to reject request. Please try again.');
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   };
 
@@ -156,7 +157,7 @@ export default function DoctorDashboard() {
     const notes = prompt('Please add any notes about the service provided:');
     if (notes === null) return; // User cancelled
 
-    setLoading(true);
+    setActionLoading(requestId);
     try {
       const response = await serviceRequestAPI.completeRequest(requestId, notes);
       if (response.data) {
@@ -167,7 +168,7 @@ export default function DoctorDashboard() {
       console.error('Error completing request:', error);
       alert('Failed to complete request. Please try again.');
     } finally {
-      setLoading(false);
+      setActionLoading(null);
     }
   };
 
@@ -304,9 +305,11 @@ export default function DoctorDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgencyLevel)}`}>
-                              {request.urgencyLevel.toUpperCase()}
-                            </span>
+                            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgencyLevel)}`}>
+                                {request.urgencyLevel.toUpperCase()}
+                              </span>
+                            )}
                             <span className="text-xs text-gray-500 dark:text-gray-400">
                               {formatDate(request.requestedAt)}
                             </span>
@@ -331,19 +334,37 @@ export default function DoctorDashboard() {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleAcceptRequest(request.id)}
-                            disabled={loading || !isAvailable}
+                            disabled={actionLoading === request.id || !isAvailable}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
                           >
-                            <Check className="h-4 w-4" />
-                            <span>Accept</span>
+                            {actionLoading === request.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4" />
+                                <span>Accept</span>
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => handleRejectRequest(request.id)}
-                            disabled={loading}
+                            disabled={actionLoading === request.id}
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
                           >
-                            <X className="h-4 w-4" />
-                            <span>Reject</span>
+                            {actionLoading === request.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-4 w-4" />
+                                <span>Reject</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -415,19 +436,37 @@ export default function DoctorDashboard() {
                           <div className="flex space-x-2 pt-2">
                             <button
                               onClick={() => handleAcceptRequest(request.id)}
-                              disabled={loading}
+                              disabled={actionLoading === request.id}
                               className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
                             >
-                              <Check className="h-4 w-4" />
-                              <span>Accept</span>
+                              {actionLoading === request.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span>Processing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4" />
+                                  <span>Accept</span>
+                                </>
+                              )}
                             </button>
                             <button
                               onClick={() => handleRejectRequest(request.id)}
-                              disabled={loading}
+                              disabled={actionLoading === request.id}
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
                             >
-                              <X className="h-4 w-4" />
-                              <span>Reject</span>
+                              {actionLoading === request.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span>Processing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <X className="h-4 w-4" />
+                                  <span>Reject</span>
+                                </>
+                              )}
                             </button>
                           </div>
                         )}
@@ -435,10 +474,17 @@ export default function DoctorDashboard() {
                         {request.status === 'accepted' && (
                           <button
                             onClick={() => handleCompleteRequest(request.id)}
-                            disabled={loading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50 transition-colors"
+                            disabled={actionLoading === request.id}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
                           >
-                            Mark Complete
+                            {actionLoading === request.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Processing...</span>
+                              </>
+                            ) : (
+                              <span>Mark Complete</span>
+                            )}
                           </button>
                         )}
                       </div>

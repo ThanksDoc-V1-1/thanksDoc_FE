@@ -344,9 +344,11 @@ export default function BusinessDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgencyLevel)}`}>
-                              {request.urgencyLevel.toUpperCase()}
-                            </span>
+                            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgencyLevel)}`}>
+                                {request.urgencyLevel.toUpperCase()}
+                              </span>
+                            )}
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                               {request.status.replace('_', ' ').toUpperCase()}
                             </span>
