@@ -26,6 +26,7 @@ export default function BusinessDashboard() {
     serviceType: '',
     description: '',
     estimatedDuration: 1,
+    preferredDoctorId: null,
   });
 
   useEffect(() => {
@@ -98,15 +99,17 @@ export default function BusinessDashboard() {
 
   const fetchNearbyDoctors = async () => {
     try {
-      const business = businessData || user;
+      // Get all available doctors instead of limiting by location radius
       const response = await doctorAPI.getAvailable({
-        latitude: business.latitude,
-        longitude: business.longitude,
-        radius: 10
+        // Remove location filtering to show all available doctors
+        // latitude: business.latitude,
+        // longitude: business.longitude,
+        // radius: 10
       });
+      console.log('📍 Available doctors response:', response.data);
       setNearbyDoctors(response.data || []);
     } catch (error) {
-      console.error('Error fetching nearby doctors:', error);
+      console.error('Error fetching available doctors:', error);
     }
   };
 
@@ -248,6 +251,48 @@ export default function BusinessDashboard() {
               </div>
             </div>
 
+            {/* Quick Actions */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Available Doctors ({nearbyDoctors.length})</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Choose from our network of qualified healthcare professionals</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nearbyDoctors.slice(0, 6).map((doctor) => (
+                  <div key={doctor.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 dark:text-white text-sm">
+                          Dr. {doctor.firstName} {doctor.lastName}
+                        </h4>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{doctor.specialization}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          💰 {formatCurrency(doctor.hourlyRate)}/hr • 🎓 {doctor.yearsOfExperience}y exp
+                        </p>
+                        <button
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, preferredDoctorId: doctor.id }));
+                            setShowRequestForm(true);
+                          }}
+                          className="mt-2 w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors"
+                        >
+                          Request Service
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {nearbyDoctors.length > 6 && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {nearbyDoctors.length - 6} more doctors available in the sidebar →
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Service Requests */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -313,36 +358,69 @@ export default function BusinessDashboard() {
               </div>
             </div>
 
-            {/* Nearby Doctors */}
+            {/* Available Doctors */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Available Doctors Nearby</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{nearbyDoctors.length} doctors available</p>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Available Doctors</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{nearbyDoctors.length} doctors available for consultation</p>
               </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">
-                {nearbyDoctors.slice(0, 5).map((doctor) => (
-                  <div key={doctor.id} className="p-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 dark:text-white">
-                          Dr. {doctor.firstName} {doctor.lastName}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{doctor.specialization}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {doctor.yearsOfExperience} years exp. • {formatCurrency(doctor.hourlyRate)}/hr
-                        </p>
-                        {doctor.distance && (
-                          <p className="text-xs text-blue-600 dark:text-blue-400">
-                            {doctor.distance.toFixed(1)} km away
-                          </p>
-                        )}
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
+                {nearbyDoctors.length > 0 ? (
+                  nearbyDoctors.map((doctor) => (
+                    <div key={doctor.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3 flex-1">
+                          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                            <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 dark:text-white">
+                              Dr. {doctor.firstName} {doctor.lastName}
+                            </h4>
+                            <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{doctor.specialization}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                              📧 {doctor.email} • 📞 {doctor.phone}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              🎓 {doctor.yearsOfExperience} years experience • 💰 {formatCurrency(doctor.hourlyRate)}/hour
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              📍 {doctor.address}, {doctor.city}, {doctor.state}
+                            </p>
+                            {doctor.bio && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 italic">"{doctor.bio}"</p>
+                            )}
+                            {doctor.languages && doctor.languages.length > 0 && (
+                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                🗣️ Languages: {doctor.languages.join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col space-y-2 ml-4">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                            ✅ Available
+                          </span>
+                          <button
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, preferredDoctorId: doctor.id }));
+                              setShowRequestForm(true);
+                            }}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors"
+                          >
+                            Request Service
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <User className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                    <p className="text-lg font-medium mb-2">No doctors available</p>
+                    <p className="text-sm">Please check back later or try expanding your search area.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -370,6 +448,30 @@ export default function BusinessDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Emergency consultation, Health checkup"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Preferred Doctor
+                </label>
+                <select
+                  name="preferredDoctorId"
+                  value={formData.preferredDoctorId || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Any available doctor</option>
+                  {nearbyDoctors.map((doctor) => (
+                    <option key={doctor.id} value={doctor.id}>
+                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} (${doctor.hourlyRate}/hr)
+                    </option>
+                  ))}
+                </select>
+                {formData.preferredDoctorId && (
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -424,7 +526,16 @@ export default function BusinessDashboard() {
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowRequestForm(false)}
+                  onClick={() => {
+                    setShowRequestForm(false);
+                    setFormData({
+                      urgencyLevel: 'medium',
+                      serviceType: '',
+                      description: '',
+                      estimatedDuration: 1,
+                      preferredDoctorId: null,
+                    });
+                  }}
                   className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
