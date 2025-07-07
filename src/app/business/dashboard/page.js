@@ -28,6 +28,9 @@ export default function BusinessDashboard() {
     estimatedDuration: 1,
     preferredDoctorId: null,
   });
+  const [showHoursPopup, setShowHoursPopup] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [requestHours, setRequestHours] = useState(1);
 
   useEffect(() => {
     console.log('🏢 Business Dashboard useEffect - User:', user);
@@ -116,6 +119,45 @@ export default function BusinessDashboard() {
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  const handleQuickServiceRequest = (doctor) => {
+    setSelectedDoctor(doctor);
+    setShowHoursPopup(true);
+  };
+
+  const handleSubmitQuickRequest = async () => {
+    if (!selectedDoctor || !requestHours) {
+      alert('Please specify the number of hours required.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const requestData = {
+        businessId: user.id,
+        doctorId: selectedDoctor.id,
+        urgencyLevel: 'medium',
+        serviceType: 'Medical Consultation',
+        description: `Quick service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
+        estimatedDuration: parseFloat(requestHours),
+      };
+
+      const response = await serviceRequestAPI.createDirectRequest(requestData);
+      
+      if (response.data) {
+        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!`);
+        setShowHoursPopup(false);
+        setSelectedDoctor(null);
+        setRequestHours(1);
+        fetchServiceRequests(); // Refresh the requests list
+      }
+    } catch (error) {
+      console.error('Error creating service request:', error);
+      alert('Failed to send service request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -271,10 +313,7 @@ export default function BusinessDashboard() {
                           💰 {formatCurrency(doctor.hourlyRate)}/hr • 🎓 {doctor.yearsOfExperience}y exp
                         </p>
                         <button
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, preferredDoctorId: doctor.id }));
-                            setShowRequestForm(true);
-                          }}
+                          onClick={() => handleQuickServiceRequest(doctor)}
                           className="mt-2 w-full px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors"
                         >
                           Request Service
@@ -404,10 +443,7 @@ export default function BusinessDashboard() {
                             </span>
                           </div>
                           <button
-                            onClick={() => {
-                              setFormData(prev => ({ ...prev, preferredDoctorId: doctor.id }));
-                              setShowRequestForm(true);
-                            }}
+                            onClick={() => handleQuickServiceRequest(doctor)}
                             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-colors"
                           >
                             Request Service
@@ -551,6 +587,66 @@ export default function BusinessDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hours Input Popup */}
+      {showHoursPopup && selectedDoctor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full border border-gray-200 dark:border-gray-700">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Request Service</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} - {selectedDoctor.specialization}
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  How many hours of service do you need? *
+                </label>
+                <input
+                  type="number"
+                  value={requestHours}
+                  onChange={(e) => setRequestHours(e.target.value)}
+                  min="0.5"
+                  max="24"
+                  step="0.5"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter hours (e.g., 2, 3.5, 8)"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0))}
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">Service Details:</h4>
+                <p className="text-xs text-gray-600 dark:text-gray-400">• Medical consultation with verified doctor</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">• Professional healthcare service</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
+              </div>
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHoursPopup(false);
+                    setSelectedDoctor(null);
+                    setRequestHours(1);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitQuickRequest}
+                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                >
+                  {loading ? 'Sending...' : 'Send Request'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

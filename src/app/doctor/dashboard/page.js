@@ -131,6 +131,26 @@ export default function DoctorDashboard() {
     }
   };
 
+  const handleRejectRequest = async (requestId) => {
+    const reason = prompt('Please provide a reason for rejecting this request (optional):');
+    if (reason === null) return; // User cancelled
+
+    setLoading(true);
+    try {
+      const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
+      if (response.data) {
+        alert('Service request rejected successfully!');
+        fetchNearbyRequests();
+        fetchMyRequests();
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      alert('Failed to reject request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCompleteRequest = async (requestId) => {
     const notes = prompt('Please add any notes about the service provided:');
     if (notes === null) return; // User cancelled
@@ -316,6 +336,14 @@ export default function DoctorDashboard() {
                             <Check className="h-4 w-4" />
                             <span>Accept</span>
                           </button>
+                          <button
+                            onClick={() => handleRejectRequest(request.id)}
+                            disabled={loading}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                          >
+                            <X className="h-4 w-4" />
+                            <span>Reject</span>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -348,31 +376,61 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            {/* My Active Requests */}
+            {/* My Service Requests */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">My Service Requests</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Service Requests</h3>
+                  {myRequests.filter(req => req.status === 'pending').length > 0 && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 animate-pulse">
+                      🔔 {myRequests.filter(req => req.status === 'pending').length} New Request{myRequests.filter(req => req.status === 'pending').length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 {myRequests.length > 0 ? (
                   myRequests.map((request) => (
-                    <div key={request.id} className="p-4">
+                    <div key={request.id} className={`p-4 ${request.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/10 border-l-4 border-yellow-400' : ''}`}>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                             {request.status.replace('_', ' ').toUpperCase()}
                           </span>
-                          {request.totalAmount && (
-                            <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                              {formatCurrency(request.totalAmount)}
+                          {request.estimatedDuration && (
+                            <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
+                              {request.estimatedDuration}h • {formatCurrency((request.estimatedDuration || 0) * (doctorData?.hourlyRate || 0))}
                             </span>
                           )}
                         </div>
                         <h4 className="font-medium text-gray-900 dark:text-white">{request.serviceType}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{request.business?.businessName}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{request.description}</p>
+                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{request.business?.businessName}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDate(request.acceptedAt || request.requestedAt)}
+                          Requested: {formatDate(request.requestedAt)}
                         </p>
+                        
+                        {request.status === 'pending' && (
+                          <div className="flex space-x-2 pt-2">
+                            <button
+                              onClick={() => handleAcceptRequest(request.id)}
+                              disabled={loading}
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
+                            >
+                              <Check className="h-4 w-4" />
+                              <span>Accept</span>
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(request.id)}
+                              disabled={loading}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
+                            >
+                              <X className="h-4 w-4" />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        )}
+                        
                         {request.status === 'accepted' && (
                           <button
                             onClick={() => handleCompleteRequest(request.id)}
@@ -387,7 +445,7 @@ export default function DoctorDashboard() {
                   ))
                 ) : (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                    No requests yet
+                    No service requests yet
                   </div>
                 )}
               </div>
