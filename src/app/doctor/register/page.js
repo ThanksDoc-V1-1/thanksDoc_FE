@@ -4,20 +4,24 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Stethoscope, ArrowLeft, MapPin } from 'lucide-react';
-import { doctorAPI } from '../../../lib/api';
+import { authAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
 
 export default function DoctorRegister() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     specialization: '',
     licenseNumber: '',
@@ -71,23 +75,40 @@ export default function DoctorRegister() {
       if (!validatePhone(formData.phone)) {
         throw new Error('Please enter a valid phone number');
       }
+      if (formData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
       if (!formData.latitude || !formData.longitude) {
         throw new Error('Please provide your location coordinates');
       }
 
-      const dataToSend = {
+      const { confirmPassword, ...dataToSend } = {
         ...formData,
+        name: `${formData.firstName} ${formData.lastName}`, // Add combined name field
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         yearsOfExperience: parseInt(formData.yearsOfExperience),
         hourlyRate: parseFloat(formData.hourlyRate),
       };
 
-      const response = await doctorAPI.create(dataToSend);
+      // Use the new authentication API
+      const response = await authAPI.register('doctor', dataToSend);
       
-      if (response.data) {
+      if (response.user) {
+        // Use the auth context to store user data and JWT
+        const userData = {
+          ...response.user,
+          userType: 'doctor',
+          role: 3 // Doctor role
+        };
+        
+        login(userData, response.jwt);
+        
         alert('Doctor profile registered successfully! Please wait for admin verification.');
-        router.push('/doctor/login');
+        router.push('/doctor/dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -164,6 +185,38 @@ export default function DoctorRegister() {
                     required
                     className={inputClasses}
                     placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClasses}>
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    className={inputClasses}
+                    placeholder="Enter password (min 6 characters)"
+                    minLength={6}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClasses}>
+                    Confirm Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    className={inputClasses}
+                    placeholder="Confirm your password"
+                    minLength={6}
                   />
                 </div>
 

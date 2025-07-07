@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, ArrowLeft, MapPin } from 'lucide-react';
-import { businessAPI } from '../../../lib/api';
+import { authAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
 
 // Add this CSS class definition at the top of the component
 const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
@@ -13,6 +14,7 @@ const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300
 
 export default function BusinessRegister() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +22,8 @@ export default function BusinessRegister() {
     businessType: 'pharmacy',
     contactPersonName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     address: '',
     city: '',
@@ -67,25 +71,42 @@ export default function BusinessRegister() {
       if (!validatePhone(formData.phone)) {
         throw new Error('Please enter a valid phone number');
       }
+      if (formData.password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
       if (!formData.latitude || !formData.longitude) {
         throw new Error('Please provide your location coordinates');
       }
 
-      const dataToSend = {
+      const { confirmPassword, ...dataToSend } = {
         ...formData,
+        name: formData.businessName, // Add name field for consistency
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
       };
 
-      const response = await businessAPI.create(dataToSend);
+      // Use the new authentication API
+      const response = await authAPI.register('business', dataToSend);
       
-      if (response.data) {
+      if (response.user) {
+        // Use the auth context to store user data and JWT
+        const userData = {
+          ...response.user,
+          userType: 'business',
+          role: 4 // Business role
+        };
+        
+        login(userData, response.jwt);
+        
         alert('Business registered successfully! Please wait for admin verification.');
-        router.push('/business/login');
+        router.push('/business/dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      alert(error.response?.data?.error?.message || error.message || 'Registration failed. Please try again.');
+      alert(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -207,8 +228,40 @@ export default function BusinessRegister() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClasses}>
+                    Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter password (min 6 characters)"
+                    minLength={6}
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClasses}>
+                    Confirm Password *
+                  </label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Confirm your password"
+                    minLength={6}
                   />
                 </div>
 

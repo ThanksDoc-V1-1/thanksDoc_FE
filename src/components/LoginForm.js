@@ -34,26 +34,26 @@ export default function LoginForm() {
       console.log('✅ Login API result:', result);
       
       if (result) {
-        const { user, role } = result;
+        const { user, jwt } = result;
         
         console.log('👤 User data:', user);
-        console.log('🎭 User role:', role);
+        console.log('🔑 JWT token:', jwt ? 'RECEIVED' : 'NOT RECEIVED');
         
         // Create user object with role information
         const userData = {
           ...user,
-          userType: role,
-          role: role === 'admin' ? 5 : role === 'doctor' ? 3 : 4
+          userType: user.role,
+          role: user.role === 'admin' ? 5 : user.role === 'doctor' ? 3 : 4
         };
 
         console.log('📦 Final user data:', userData);
 
-        login(userData);
+        login(userData, jwt);
 
-        console.log('🧭 Navigating based on role:', role);
+        console.log('🧭 Navigating based on role:', user.role);
 
         // Navigate based on role
-        switch (role) {
+        switch (user.role) {
           case 'admin':
             console.log('➡️ Redirecting to admin dashboard');
             router.push('/admin/dashboard');

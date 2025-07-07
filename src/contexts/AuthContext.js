@@ -19,20 +19,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on app start
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    const savedToken = localStorage.getItem('jwt');
+    if (savedUser && savedToken) {
       setUser(JSON.parse(savedUser));
     }
     setLoading(false);
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, jwt = null) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
+    if (jwt) {
+      localStorage.setItem('jwt', jwt);
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('jwt');
   };
 
   const value = {
