@@ -1,12 +1,28 @@
 'use client';
 
 import Link from "next/link";
-import { ArrowRight, Stethoscope, Building2, Clock, Shield, LogOut } from "lucide-react";
+import { ArrowRight, Stethoscope, Building2, Clock, Shield, LogOut, CheckCircle } from "lucide-react";
 import LoginForm from "../components/LoginForm";
 import { useAuth } from "../contexts/AuthContext";
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const { user, logout, isAuthenticated, loading } = useAuth();
+  const searchParams = useSearchParams();
+  const [showMessage, setShowMessage] = useState(false);
+  const [messageType, setMessageType] = useState('');
+
+  useEffect(() => {
+    const registered = searchParams.get('registered');
+    if (registered === 'doctor' || registered === 'business') {
+      setMessageType(registered);
+      setShowMessage(true);
+      // Hide message after 10 seconds
+      const timer = setTimeout(() => setShowMessage(false), 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   if (loading) {
     return (
@@ -38,6 +54,7 @@ export default function Home() {
       default: return '';
     }
   };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -83,6 +100,34 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
+        {/* Registration Success Message */}
+        {showMessage && (
+          <div className="max-w-md mx-auto mb-8">
+            <div className="bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+                    Registration Successful!
+                  </h3>
+                  <p className="text-sm text-green-700 dark:text-green-300 mt-1">
+                    {messageType === 'doctor' 
+                      ? 'Your doctor profile has been submitted for review. You will receive a confirmation email once verified.'
+                      : 'Your business profile has been submitted for review. You will receive a confirmation email once verified.'
+                    }
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowMessage(false)}
+                className="mt-3 text-xs text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {isAuthenticated ? (
           /* Authenticated User Content */
           <div className="text-center max-w-4xl mx-auto">
@@ -104,48 +149,45 @@ export default function Home() {
           </div>
         ) : (
           /* Non-authenticated User Content */
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Side - Marketing Content */}
-            <div className="text-center lg:text-left">
-              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-                On-Demand <span className="text-blue-600 dark:text-blue-400">Healthcare</span>
-                <br />
-                for Your Business
-              </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-                Connect pharmacies and businesses with verified doctors instantly. 
-                Request medical consultations within 10km radius with just a few clicks.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
-                <Link 
-                  href="/business/register" 
-                  className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Building2 className="h-5 w-5" />
-                  <span>Register Your Business</span>
-                </Link>
-                <Link 
-                  href="/doctor/register" 
-                  className="border border-blue-600 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Stethoscope className="h-5 w-5" />
-                  <span>Join as Doctor</span>
-                </Link>
+          <div>
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Side - Marketing Content */}
+              <div className="text-center lg:text-left">
+                <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+                  On-Demand <span className="text-blue-600 dark:text-blue-400">Healthcare</span>
+                  <br />
+                  for Your Business
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+                  Connect pharmacies and businesses with verified doctors instantly. 
+                  Request medical consultations within 10km radius with just a few clicks.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
+                  <Link 
+                    href="/business/register" 
+                    className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Building2 className="h-5 w-5" />
+                    <span>Register Your Business</span>
+                  </Link>
+                  <Link 
+                    href="/doctor/register" 
+                    className="border border-blue-600 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Stethoscope className="h-5 w-5" />
+                    <span>Join as Doctor</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right Side - Login Form */}
+              <div className="flex justify-center">
+                <LoginForm />
               </div>
             </div>
 
-            {/* Right Side - Login Form */}
-            <div className="flex justify-center">
-              <LoginForm />
-            </div>
-          </div>
-        )}
-
-        {/* Features Section - Only show for non-authenticated users */}
-        {!isAuthenticated && (
-          <>
-            {/* Features */}
+            {/* Features Section */}
             <div className="grid md:grid-cols-3 gap-8 mt-16">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
                 <div className="bg-blue-100 dark:bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -193,7 +235,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </main>
 

@@ -92,17 +92,8 @@ export default function BusinessRegister() {
       const response = await authAPI.register('business', dataToSend);
       
       if (response.user) {
-        // Use the auth context to store user data and JWT
-        const userData = {
-          ...response.user,
-          userType: 'business',
-          role: 4 // Business role
-        };
-        
-        login(userData, response.jwt);
-        
-        alert('Business registered successfully! Please wait for admin verification.');
-        router.push('/business/dashboard');
+        alert('Business registered successfully! Your information will be reviewed and you will receive a confirmation email once verified.');
+        router.push('/?registered=business');
       }
     } catch (error) {
       console.error('Registration error:', error);

@@ -98,17 +98,8 @@ export default function DoctorRegister() {
       const response = await authAPI.register('doctor', dataToSend);
       
       if (response.user) {
-        // Use the auth context to store user data and JWT
-        const userData = {
-          ...response.user,
-          userType: 'doctor',
-          role: 3 // Doctor role
-        };
-        
-        login(userData, response.jwt);
-        
-        alert('Doctor profile registered successfully! Please wait for admin verification.');
-        router.push('/doctor/dashboard');
+        alert('Doctor profile registered successfully! Your information will be reviewed and you will receive a confirmation email once verified.');
+        router.push('/?registered=doctor');
       }
     } catch (error) {
       console.error('Registration error:', error);
