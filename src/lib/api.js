@@ -134,6 +134,7 @@ export const doctorAPI = {
   delete: (id) => api.delete(`/doctors/${id}`),
   getAvailable: (params) => api.get('/doctors/available', { params }),
   updateAvailability: (id, isAvailable) => api.put(`/doctors/${id}/availability`, { isAvailable }),
+  getStats: (id) => api.get(`/doctors/${id}/stats`),
 };
 
 // Business API calls
