@@ -67,17 +67,18 @@ export default function DoctorDashboard() {
 
   const fetchNearbyRequests = async () => {
     try {
-      const response = await serviceRequestAPI.getAll();
-      const pendingRequests = response.data?.data?.filter(req => req.status === 'pending') || [];
-      setServiceRequests(pendingRequests);
+      // Get available requests for this specific doctor (unassigned or assigned to them)
+      const response = await serviceRequestAPI.getAvailableRequests(user.id);
+      const availableRequests = response.data || [];
+      setServiceRequests(availableRequests);
       
       // Update stats
       setStats(prev => ({
         ...prev,
-        pendingRequests: pendingRequests.length
+        pendingRequests: availableRequests.length
       }));
     } catch (error) {
-      console.error('Error fetching nearby requests:', error);
+      console.error('Error fetching available requests:', error);
     }
   };
 

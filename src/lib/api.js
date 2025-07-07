@@ -161,6 +161,7 @@ export const serviceRequestAPI = {
   rejectRequest: (id, doctorId, reason) => api.put(`/service-requests/${id}/reject`, { doctorId, reason }),
   completeRequest: (id, notes) => api.put(`/service-requests/${id}/complete`, { notes }),
   getDoctorRequests: (doctorId) => api.get(`/service-requests/doctor/${doctorId}`),
+  getAvailableRequests: (doctorId) => api.get(`/service-requests/available/${doctorId}`),
   getBusinessRequests: (businessId) => api.get(`/service-requests/business/${businessId}`),
 };
 
