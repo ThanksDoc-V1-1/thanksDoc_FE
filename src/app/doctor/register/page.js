@@ -199,7 +199,7 @@ export default function DoctorRegister() {
 
               {/* Professional Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Professional Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Professional Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -275,7 +275,7 @@ export default function DoctorRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Bio
                   </label>
                   <textarea
@@ -291,7 +291,7 @@ export default function DoctorRegister() {
 
               {/* Location Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Location Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Location Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -408,9 +408,9 @@ export default function DoctorRegister() {
                 </button>
               </div>
 
-              <div className="text-center text-sm text-gray-600">
+              <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                 Already have an account?{' '}
-                <Link href="/doctor/login" className="text-blue-600 hover:text-blue-700">
+                <Link href="/doctor/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                   Login here
                 </Link>
               </div>

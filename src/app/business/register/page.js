@@ -7,6 +7,7 @@ import { Building2, ArrowLeft, MapPin } from 'lucide-react';
 import { businessAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 
+// Add this CSS class definition at the top of the component
 const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
 
@@ -138,7 +139,7 @@ export default function BusinessRegister() {
                     value={formData.businessType}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="pharmacy">Pharmacy</option>
                     <option value="clinic">Clinic</option>
@@ -163,7 +164,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Description
                   </label>
                   <textarea
@@ -179,7 +180,7 @@ export default function BusinessRegister() {
 
               {/* Contact Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Contact Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -229,7 +230,7 @@ export default function BusinessRegister() {
 
               {/* Location Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900">Location Information</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Location Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
