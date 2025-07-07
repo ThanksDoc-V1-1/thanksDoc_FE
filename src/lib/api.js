@@ -144,6 +144,7 @@ export const businessAPI = {
   create: (data) => api.post('/businesses', { data }),
   update: (id, data) => api.put(`/businesses/${id}`, { data }),
   delete: (id) => api.delete(`/businesses/${id}`),
+  getStats: (id) => api.get(`/businesses/${id}/stats`),
 };
 
 // Service Request API calls
