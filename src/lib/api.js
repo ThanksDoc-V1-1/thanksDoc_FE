@@ -16,24 +16,8 @@ export const authAPI = {
     try {
       console.log('� Starting login process for:', email);
       
-      // Check admin first (still using environment variables)
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@thanksdoc.com';
-      const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
-      
-      if (email === adminEmail && password === adminPassword) {
-        const result = { 
-          user: { 
-            id: 'admin', 
-            email: adminEmail, 
-            name: 'Admin User',
-            role: 'admin'
-          }, 
-          role: 'admin',
-          jwt: 'admin-token' // Mock token for admin
-        };
-        console.log('✅ Admin login successful:', result);
-        return result;
-      }
+      // No longer need to handle admin login separately - the backend handles it now
+      // Let all login attempts go through the API
       
       // Use the new auth endpoint for doctors and businesses
       const response = await api.post('/auth/login', {
