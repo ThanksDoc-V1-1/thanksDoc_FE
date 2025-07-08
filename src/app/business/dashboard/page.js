@@ -31,6 +31,8 @@ export default function BusinessDashboard() {
   const [showHoursPopup, setShowHoursPopup] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [requestHours, setRequestHours] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 5;
 
   useEffect(() => {
     console.log('🏢 Business Dashboard useEffect - User:', user);
@@ -227,6 +229,16 @@ export default function BusinessDashboard() {
   const businessName = business?.businessName || business?.name || business?.email || 'Business';
   const contactName = business?.contactPersonName || `${business?.firstName || ''} ${business?.lastName || ''}`.trim() || 'Contact Person';
 
+  // Pagination logic for service requests
+  const totalPages = Math.ceil(serviceRequests.length / requestsPerPage);
+  const startIndex = (currentPage - 1) * requestsPerPage;
+  const endIndex = startIndex + requestsPerPage;
+  const currentRequests = serviceRequests.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -373,16 +385,23 @@ export default function BusinessDashboard() {
             {/* Service Requests */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-600">
               <div className="p-6 border-b border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                      <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Service Requests</h2>
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Service Requests</h2>
+                  {serviceRequests.length > 0 && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Showing {startIndex + 1}-{Math.min(endIndex, serviceRequests.length)} of {serviceRequests.length} requests
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {serviceRequests.length > 0 ? (
-                  serviceRequests.slice(0, 5).map((request) => (
+                  currentRequests.map((request) => (
                     <div key={request.id} className="p-6 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -440,6 +459,48 @@ export default function BusinessDashboard() {
                   </div>
                 )}
               </div>
+              
+              {/* Pagination Controls */}
+              {serviceRequests.length > requestsPerPage && (
+                <div className="p-4 border-t border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Previous
+                      </button>
+                      <div className="flex space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
