@@ -721,16 +721,16 @@ export default function BusinessDashboard() {
                   Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0))}
                 </p>
               </div>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:bg-gray-700 p-4 rounded-xl border border-blue-100 dark:border-gray-600">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-700/50">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 p-1 rounded mr-2">
-                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="bg-blue-100 dark:bg-blue-900/50 p-1 rounded mr-2">
+                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-300" />
                   </div>
                   Service Details:
                 </h4>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">• Medical consultation with verified doctor</p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mb-1">• Professional healthcare service</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
+                <p className="text-xs text-gray-600 dark:text-gray-200 mb-1">• Medical consultation with verified doctor</p>
+                <p className="text-xs text-gray-600 dark:text-gray-200 mb-1">• Professional healthcare service</p>
+                <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
