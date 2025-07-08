@@ -18,12 +18,37 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on app start
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('jwt');
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
+    console.log('🔍 AuthContext: Checking localStorage for user data...');
+    
+    try {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('jwt');
+      
+      console.log('📦 Saved user:', savedUser ? 'EXISTS' : 'NONE');
+      console.log('🔑 Saved token:', savedToken ? 'EXISTS' : 'NONE');
+      
+      if (savedUser && savedToken) {
+        const userData = JSON.parse(savedUser);
+        console.log('👤 Parsed user data:', userData);
+        
+        // Validate user data structure
+        if (userData && (userData.id || userData.email) && userData.role) {
+          console.log('✅ Valid user data found, setting user');
+          setUser(userData);
+        } else {
+          console.log('❌ Invalid user data structure, clearing localStorage');
+          localStorage.clear();
+        }
+      } else {
+        console.log('ℹ️ No complete auth data found');
+      }
+    } catch (error) {
+      console.error('❌ Error parsing saved user data:', error);
+      localStorage.clear();
     }
+    
     setLoading(false);
+    console.log('🏁 AuthContext initialization complete');
   }, []);
 
   const login = (userData, jwt = null) => {
@@ -35,9 +60,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('🚪 Logout initiated');
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('jwt');
+    
+    // Clear all possible storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    console.log('🧹 Storage cleared, redirecting to home');
+    
+    // Force page reload to ensure clean state
+    window.location.href = '/';
   };
 
   const value = {
