@@ -231,18 +231,6 @@ export default function BusinessDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => {
-                  if (document.documentElement.classList.contains('dark')) {
-                    document.documentElement.classList.remove('dark');
-                  } else {
-                    document.documentElement.classList.add('dark');
-                  }
-                }}
-                className="px-3 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-              >
-                🌙 Toggle Dark Mode
-              </button>
-              <button
                 onClick={() => setShowRequestForm(true)}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2 rounded-xl transition-all duration-200 flex items-center space-x-2 font-medium shadow-lg hover:shadow-xl"
               >

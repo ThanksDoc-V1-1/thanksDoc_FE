@@ -204,7 +204,7 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-blue-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md dark:bg-gray-800/90 shadow-lg border-b border-green-100 dark:border-gray-700">
         <div className="container mx-auto px-4 py-4">
@@ -255,8 +255,8 @@ export default function DoctorDashboard() {
               <div className="bg-gradient-to-br from-white to-yellow-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-yellow-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-yellow-600 dark:text-gray-400 font-medium">Pending Requests</p>
-                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.pendingRequests}</p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-300 font-medium">Pending Requests</p>
+                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pendingRequests}</p>
                   </div>
                   <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
                     <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
@@ -266,8 +266,8 @@ export default function DoctorDashboard() {
               <div className="bg-gradient-to-br from-white to-blue-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-600 dark:text-gray-400 font-medium">My Requests</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.myRequests}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">My Requests</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.myRequests}</p>
                   </div>
                   <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
                     <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -277,8 +277,8 @@ export default function DoctorDashboard() {
               <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-green-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-600 dark:text-gray-400 font-medium">Completed</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.completedRequests}</p>
+                    <p className="text-sm text-green-600 dark:text-green-300 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.completedRequests}</p>
                   </div>
                   <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
                     <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -288,8 +288,8 @@ export default function DoctorDashboard() {
               <div className="bg-gradient-to-br from-white to-purple-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-purple-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-gray-400 font-medium">Hourly Rate</p>
-                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+                    <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">Hourly Rate</p>
+                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
                       ${doctor.hourlyRate || 0}
                     </p>
                   </div>
@@ -309,7 +309,7 @@ export default function DoctorDashboard() {
                   </div>
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Available Service Requests</h2>
-                    <p className="text-sm text-blue-600 dark:text-gray-400 font-medium">Nearby businesses needing medical assistance</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">Nearby businesses needing medical assistance</p>
                   </div>
                 </div>
               </div>
