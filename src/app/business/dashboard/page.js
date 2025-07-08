@@ -464,7 +464,7 @@ export default function BusinessDashboard() {
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verified Available Doctors</h3>
               </div>
-              <div className="space-y-3 text-sm max-h-96 overflow-y-auto">
+              <div className="space-y-3 text-sm max-h-96 overflow-y-auto pr-2">
                 {nearbyDoctors.length > 0 ? (
                   nearbyDoctors.map((doctor) => (
                     <div key={doctor.id} className="py-3 border-b border-blue-100 dark:border-gray-600 last:border-b-0">
