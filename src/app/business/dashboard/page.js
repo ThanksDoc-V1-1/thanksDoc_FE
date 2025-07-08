@@ -457,69 +457,66 @@ export default function BusinessDashboard() {
             </div>
 
             {/* Available Doctors */}
-            <div className="bg-gradient-to-br from-white to-blue-50 dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-700">
-              <div className="p-6 border-b border-blue-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 rounded-t-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verified Available Doctors</h3>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{nearbyDoctors.length} verified doctors available for consultation</p>
-                  </div>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-600 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verified Available Doctors</h3>
               </div>
-              <div className="divide-y divide-blue-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
+              <div className="space-y-3 text-sm max-h-96 overflow-y-auto">
                 {nearbyDoctors.length > 0 ? (
                   nearbyDoctors.map((doctor) => (
-                    <div key={doctor.id} className="p-4 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-3 flex-1">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                            <User className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-gray-900 dark:text-white">
-                              Dr. {doctor.firstName} {doctor.lastName}
-                            </h4>
-                            <p className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md inline-block mt-1">{doctor.specialization}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">
-                              🎓 {doctor.yearsOfExperience} years experience • 💰 {formatCurrency(doctor.hourlyRate)}/hour
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              📍 {doctor.address}, {doctor.city}, {doctor.state}
-                            </p>
-                            {doctor.bio && (
-                              <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 italic bg-gray-50 dark:bg-gray-700/50 p-2 rounded">"{doctor.bio}"</p>
-                            )}
-                            {doctor.languages && doctor.languages.length > 0 && (
-                              <p className="text-xs text-green-600 dark:text-green-400 mt-2 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
-                                🗣️ Languages: {doctor.languages.join(', ')}
-                              </p>
-                            )}
-                          </div>
+                    <div key={doctor.id} className="py-3 border-b border-blue-100 dark:border-gray-600 last:border-b-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                            Dr. {doctor.firstName} {doctor.lastName}
+                          </h4>
+                          <p className="text-blue-600 dark:text-blue-300 font-medium text-xs">{doctor.specialization}</p>
                         </div>
-                        <div className="flex flex-col space-y-2 ml-4">
-                          <div className="flex flex-col space-y-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-700">
-                              ✅ Available
-                            </span>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-700">
-                              🔒 Verified
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleQuickServiceRequest(doctor)}
-                            className="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs rounded-lg transition-all duration-200 font-medium shadow-sm"
-                          >
-                            Request Service
-                          </button>
+                        <div className="flex flex-col space-y-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                            ✅ Available
+                          </span>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                            🔒 Verified
+                          </span>
                         </div>
                       </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Experience:</span>
+                        <span className="text-gray-900 dark:text-white font-semibold text-xs">{doctor.yearsOfExperience} years</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Rate:</span>
+                        <span className="text-gray-900 dark:text-white font-semibold text-xs">{formatCurrency(doctor.hourlyRate)}/hour</span>
+                      </div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Location:</span>
+                        <span className="text-gray-900 dark:text-white font-semibold text-xs text-right">{doctor.city}, {doctor.state}</span>
+                      </div>
+                      {doctor.bio && (
+                        <div className="bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg mt-2">
+                          <p className="text-xs text-gray-600 dark:text-gray-300 italic">"{doctor.bio}"</p>
+                        </div>
+                      )}
+                      {doctor.languages && doctor.languages.length > 0 && (
+                        <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg mt-2">
+                          <span className="font-medium text-green-700 dark:text-green-300 text-xs">Languages:</span>
+                          <span className="text-green-700 dark:text-green-300 font-semibold text-xs ml-2">{doctor.languages.join(', ')}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => handleQuickServiceRequest(doctor)}
+                        className="w-full mt-3 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs rounded-lg transition-all duration-200 font-medium shadow-sm"
+                      >
+                        Request Service
+                      </button>
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center">
+                  <div className="text-center py-8">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
                       <User className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                       <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">No verified doctors available</p>
