@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X } from 'lucide-react';
+import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -424,9 +424,24 @@ export default function BusinessDashboard() {
                             Requested: {formatDate(request.requestedAt)}
                           </p>
                           {request.doctor && (
-                            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                              Doctor: Dr. {request.doctor.firstName} {request.doctor.lastName}
-                            </p>
+                            <div>
+                              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                Doctor: Dr. {request.doctor.firstName} {request.doctor.lastName}
+                              </p>
+                              
+                              {/* Show doctor contact info when request is accepted */}
+                              {request.status === 'accepted' && request.doctor.phone && (
+                                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                  <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-xs mb-2">Doctor Contact Information:</h4>
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                    <a href={`tel:${request.doctor.phone}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
+                                      {request.doctor.phone}
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center space-x-3">
