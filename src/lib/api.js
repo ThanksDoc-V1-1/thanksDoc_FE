@@ -154,6 +154,7 @@ export const serviceRequestAPI = {
   create: (data) => api.post('/service-requests', { data }),
   update: (id, data) => api.put(`/service-requests/${id}`, { data }),
   delete: (id) => api.delete(`/service-requests/${id}`),
+  cancel: (id, reason) => api.put(`/service-requests/${id}/cancel`, { reason }),
   findNearbyDoctors: (data) => api.post('/service-requests/find-nearby-doctors', data),
   createServiceRequest: (data) => api.post('/service-requests/create', data),
   createDirectRequest: (data) => api.post('/service-requests/direct', data),

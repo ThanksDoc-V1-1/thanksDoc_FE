@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut } from 'lucide-react';
+import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
-import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
+import { formatCurrency, formatDate, getUrgencyColor, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export default function BusinessDashboard() {
@@ -155,6 +155,28 @@ export default function BusinessDashboard() {
     } catch (error) {
       console.error('Error creating service request:', error);
       alert('Failed to send service request. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async (requestId) => {
+    const confirmCancel = window.confirm('Are you sure you want to cancel this service request?');
+    if (!confirmCancel) return;
+
+    const reason = window.prompt('Please provide a reason for cancellation (optional):') || 'Cancelled by business';
+
+    try {
+      setLoading(true);
+      const response = await serviceRequestAPI.cancel(requestId, reason);
+      
+      if (response.data) {
+        alert('Service request cancelled successfully!');
+        fetchServiceRequests(); // Refresh the requests list
+      }
+    } catch (error) {
+      console.error('Error cancelling service request:', error);
+      alert('Failed to cancel service request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -371,6 +393,11 @@ export default function BusinessDashboard() {
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
                               {request.status.replace('_', ' ').toUpperCase()}
                             </span>
+                            {request.status === 'pending' && (
+                              <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">
+                                ⏱️ {getTimeElapsed(request.requestedAt)}
+                              </span>
+                            )}
                           </div>
                           <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{request.serviceType}</h3>
                           <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{request.description}</p>
@@ -383,13 +410,23 @@ export default function BusinessDashboard() {
                             </p>
                           )}
                         </div>
-                        {request.totalAmount && (
-                          <div className="text-right">
+                        <div className="flex items-center space-x-3">
+                          {request.status === 'pending' && (
+                            <button
+                              onClick={() => handleCancelRequest(request.id)}
+                              disabled={loading}
+                              className="px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-xs font-medium flex items-center space-x-1 border border-red-200 dark:border-red-700"
+                            >
+                              <X className="h-3 w-3" />
+                              <span>Cancel</span>
+                            </button>
+                          )}
+                          {request.totalAmount && (
                             <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
                               <span className="font-semibold text-green-700 dark:text-green-400">{formatCurrency(request.totalAmount)}</span>
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
