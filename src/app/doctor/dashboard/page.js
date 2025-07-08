@@ -204,9 +204,9 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-blue-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="bg-white/80 backdrop-blur-md dark:bg-gray-800/90 shadow-lg border-b border-green-100 dark:border-gray-700">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -236,7 +236,7 @@ export default function DoctorDashboard() {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100/80 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all duration-200 font-medium border border-gray-200 dark:border-gray-600"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
@@ -252,82 +252,97 @@ export default function DoctorDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-gradient-to-br from-white to-yellow-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-yellow-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Pending Requests</p>
-                    <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pendingRequests}</p>
+                    <p className="text-sm text-yellow-600 dark:text-gray-400 font-medium">Pending Requests</p>
+                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.pendingRequests}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
+                  <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
+                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-gradient-to-br from-white to-blue-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-blue-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">My Requests</p>
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.myRequests}</p>
+                    <p className="text-sm text-blue-600 dark:text-gray-400 font-medium">My Requests</p>
+                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.myRequests}</p>
                   </div>
-                  <Stethoscope className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
+                    <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-green-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completedRequests}</p>
+                    <p className="text-sm text-green-600 dark:text-gray-400 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.completedRequests}</p>
                   </div>
-                  <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+                    <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+              <div className="bg-gradient-to-br from-white to-purple-50 dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-purple-100 dark:border-gray-700 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Hourly Rate</p>
-                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    <p className="text-sm text-purple-600 dark:text-gray-400 font-medium">Hourly Rate</p>
+                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
                       ${doctor.hourlyRate || 0}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+                  <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Available Requests */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Available Service Requests</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Nearby businesses needing medical assistance</p>
+            <div className="bg-gradient-to-br from-white to-blue-50 dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-700">
+              <div className="p-6 border-b border-blue-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-green-50 dark:from-gray-800 dark:to-gray-800 rounded-t-xl">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                    <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Available Service Requests</h2>
+                    <p className="text-sm text-blue-600 dark:text-gray-400 font-medium">Nearby businesses needing medical assistance</p>
+                  </div>
+                </div>
               </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="divide-y divide-blue-100 dark:divide-gray-700">
                 {serviceRequests.length > 0 ? (
                   serviceRequests.map((request) => (
-                    <div key={request.id} className="p-6">
+                    <div key={request.id} className="p-6 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(request.urgencyLevel)}`}>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel)}`}>
                                 {request.urgencyLevel.toUpperCase()}
                               </span>
                             )}
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
                               {formatDate(request.requestedAt)}
                             </span>
                           </div>
                           <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{request.serviceType}</h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{request.description}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                            <div className="flex items-center space-x-1">
+                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{request.description}</p>
+                          <div className="flex items-center space-x-4 text-sm">
+                            <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
                               <Building2 className="h-4 w-4" />
-                              <span>{request.business?.businessName || 'Business'}</span>
+                              <span className="font-medium">{request.business?.businessName || 'Business'}</span>
                             </div>
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
                               <Clock className="h-4 w-4" />
-                              <span>{request.estimatedDuration}h</span>
+                              <span className="font-medium">{request.estimatedDuration}h</span>
                             </div>
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
                               <DollarSign className="h-4 w-4" />
-                              <span>{formatCurrency((doctor.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
+                              <span className="font-semibold">{formatCurrency((doctor.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
                             </div>
                           </div>
                         </div>
@@ -335,7 +350,7 @@ export default function DoctorDashboard() {
                           <button
                             onClick={() => handleAcceptRequest(request.id)}
                             disabled={actionLoading === request.id || !isAvailable}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                            className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-md"
                           >
                             {actionLoading === request.id ? (
                               <>
@@ -352,7 +367,7 @@ export default function DoctorDashboard() {
                           <button
                             onClick={() => handleRejectRequest(request.id)}
                             disabled={actionLoading === request.id}
-                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-1"
+                            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-md"
                           >
                             {actionLoading === request.id ? (
                               <>
@@ -371,8 +386,12 @@ export default function DoctorDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-                    No service requests available at the moment.
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <Clock className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                      <p className="text-lg font-medium mb-2">No service requests available</p>
+                      <p className="text-sm">Check back later for new requests from businesses in your area.</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -382,53 +401,81 @@ export default function DoctorDashboard() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Doctor Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Profile Summary</h3>
-              <div className="space-y-2 text-sm">
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Name:</span> <span className="text-gray-600 dark:text-gray-400">Dr. {doctorName}</span></p>
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Specialization:</span> <span className="text-gray-600 dark:text-gray-400">{doctor.specialization || 'Medical Professional'}</span></p>
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span> <span className="text-gray-600 dark:text-gray-400">{doctor.yearsOfExperience || 0} years</span></p>
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Rate:</span> <span className="text-gray-600 dark:text-gray-400">{formatCurrency(doctor.hourlyRate || 0)}/hour</span></p>
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Total Earnings:</span> <span className="text-gray-600 dark:text-gray-400">{formatCurrency(stats.totalEarnings)}</span></p>
-                <p><span className="font-medium text-gray-700 dark:text-gray-300">Status:</span> 
-                  <span className={`ml-1 px-2 py-1 rounded-full text-xs ${isAvailable ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400'}`}>
-                    {isAvailable ? 'Available' : 'Unavailable'}
+            <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-800 rounded-xl shadow-md border border-green-100 dark:border-gray-700 p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
+                  <Stethoscope className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Summary</h3>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">Dr. {doctorName}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Specialization:</span>
+                  <span className="text-green-600 dark:text-green-400 font-semibold">{doctor.specialization || 'Medical Professional'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">{doctor.yearsOfExperience || 0} years</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Rate:</span>
+                  <span className="text-purple-600 dark:text-purple-400 font-semibold">{formatCurrency(doctor.hourlyRate || 0)}/hour</span>
+                </div>
+                <div className="flex justify-between items-center py-2 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-3 rounded-lg mt-4">
+                  <span className="font-medium text-green-700 dark:text-green-300">Total Earnings:</span>
+                  <span className="text-green-700 dark:text-green-400 font-bold text-lg">{formatCurrency(stats.totalEarnings)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${isAvailable ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-green-200 dark:border-green-700' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-600'}`}>
+                    {isAvailable ? '✅ Available' : '❌ Unavailable'}
                   </span>
-                </p>
+                </div>
               </div>
             </div>
 
             {/* My Service Requests */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="bg-gradient-to-br from-white to-blue-50 dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-700">
+              <div className="p-6 border-b border-blue-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-green-50 dark:from-gray-800 dark:to-gray-800 rounded-t-xl">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Service Requests</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
+                      <Stethoscope className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Service Requests</h3>
+                  </div>
                   {myRequests.filter(req => req.status === 'pending').length > 0 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 animate-pulse">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 animate-pulse border border-red-200 dark:border-red-700">
                       🔔 {myRequests.filter(req => req.status === 'pending').length} New Request{myRequests.filter(req => req.status === 'pending').length > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
+              <div className="divide-y divide-blue-100 dark:divide-gray-700 max-h-96 overflow-y-auto">
                 {myRequests.length > 0 ? (
                   myRequests.map((request) => (
-                    <div key={request.id} className={`p-4 ${request.status === 'pending' ? 'bg-yellow-50 dark:bg-yellow-900/10 border-l-4 border-yellow-400' : ''}`}>
-                      <div className="space-y-2">
+                    <div key={request.id} className={`p-4 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors ${request.status === 'pending' ? 'bg-yellow-50/80 dark:bg-yellow-900/10 border-l-4 border-yellow-400' : ''}`}>
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
                             {request.status.replace('_', ' ').toUpperCase()}
                           </span>
                           {request.estimatedDuration && (
-                            <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
-                              {request.estimatedDuration}h • {formatCurrency((request.estimatedDuration || 0) * (doctorData?.hourlyRate || 0))}
-                            </span>
+                            <div className="bg-purple-50 dark:bg-purple-900/20 px-2 py-1 rounded-lg">
+                              <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">
+                                {request.estimatedDuration}h • {formatCurrency((request.estimatedDuration || 0) * (doctorData?.hourlyRate || 0))}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">{request.serviceType}</h4>
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{request.serviceType}</h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{request.description}</p>
-                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">{request.business?.businessName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded inline-block">{request.business?.businessName}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
                           Requested: {formatDate(request.requestedAt)}
                         </p>
                         
@@ -437,7 +484,7 @@ export default function DoctorDashboard() {
                             <button
                               onClick={() => handleAcceptRequest(request.id)}
                               disabled={actionLoading === request.id}
-                              className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
+                              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
                             >
                               {actionLoading === request.id ? (
                                 <>
@@ -454,7 +501,7 @@ export default function DoctorDashboard() {
                             <button
                               onClick={() => handleRejectRequest(request.id)}
                               disabled={actionLoading === request.id}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
+                              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
                             >
                               {actionLoading === request.id ? (
                                 <>
@@ -475,7 +522,7 @@ export default function DoctorDashboard() {
                           <button
                             onClick={() => handleCompleteRequest(request.id)}
                             disabled={actionLoading === request.id}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50 transition-colors flex items-center justify-center space-x-1"
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
                           >
                             {actionLoading === request.id ? (
                               <>
@@ -491,8 +538,12 @@ export default function DoctorDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                    No service requests yet
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                      <Stethoscope className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                      <p className="text-lg font-medium mb-2">No service requests yet</p>
+                      <p className="text-sm">New requests will appear here when businesses contact you.</p>
+                    </div>
                   </div>
                 )}
               </div>
