@@ -39,12 +39,16 @@ export default function AdminDashboard() {
   });
   const [businessFormData, setBusinessFormData] = useState({
     name: '',
+    contactPersonName: '',
     email: '',
     password: '',
     businessType: '',
     registrationNumber: '',
     phone: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
     description: ''
   });
 
@@ -238,8 +242,25 @@ export default function AdminDashboard() {
     
     try {
       const response = await businessAPI.create({
-        ...businessFormData,
-        isVerified: true // Admin registered businesses are automatically verified
+        businessName: businessFormData.name,
+        name: businessFormData.name, // Same as business name
+        contactPersonName: businessFormData.contactPersonName || businessFormData.name, // Use contact person name or fallback to business name
+        email: businessFormData.email,
+        password: businessFormData.password,
+        businessType: businessFormData.businessType,
+        businessLicense: businessFormData.registrationNumber,
+        phone: businessFormData.phone,
+        address: businessFormData.address,
+        city: businessFormData.city || 'Not specified',
+        state: businessFormData.state || 'Not specified',
+        zipCode: businessFormData.zipCode || '00000',
+        description: businessFormData.description || '',
+        latitude: 0.0, // Default coordinate
+        longitude: 0.0, // Default coordinate
+        isVerified: true, // Admin registered businesses are automatically verified
+        operatingHours: {},
+        emergencyContact: '',
+        paymentMethods: []
       });
       
       if (response.data) {
@@ -247,12 +268,16 @@ export default function AdminDashboard() {
         setShowBusinessForm(false);
         setBusinessFormData({
           name: '',
+          contactPersonName: '',
           email: '',
           password: '',
           businessType: '',
           registrationNumber: '',
           phone: '',
           address: '',
+          city: '',
+          state: '',
+          zipCode: '',
           description: ''
         });
         fetchAllData(); // Refresh the data
@@ -1927,6 +1952,22 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
+                  <label htmlFor="businessContactPerson" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Contact Person Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessContactPerson"
+                    name="contactPersonName"
+                    value={businessFormData.contactPersonName}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter contact person name"
+                  />
+                </div>
+                
+                <div>
                   <label htmlFor="businessEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Email Address *
                   </label>
@@ -2040,6 +2081,56 @@ export default function AdminDashboard() {
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
                   placeholder="Enter complete address"
                 />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="businessCity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessCity"
+                    name="city"
+                    value={businessFormData.city}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter city"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="businessState" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessState"
+                    name="state"
+                    value={businessFormData.state}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter state"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="businessZipCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Zip Code *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessZipCode"
+                    name="zipCode"
+                    value={businessFormData.zipCode}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter zip code"
+                  />
+                </div>
               </div>
               
               <div>
