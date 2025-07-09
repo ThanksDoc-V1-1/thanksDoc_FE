@@ -14,31 +14,21 @@ export default function Home() {
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState('');
 
-  // Redirect authenticated users to their dashboard
+  // No automatic redirect - let users access the home page freely
+  
+  // But if user is authenticated and lands on home page, redirect them
   useEffect(() => {
-    console.log('🏠 Homepage: Auth state check');
-    console.log('📊 Loading:', loading);
-    console.log('🔐 IsAuthenticated:', isAuthenticated);
-    console.log('👤 User:', user);
-    
     if (!loading && isAuthenticated && user) {
-      const getDashboardLink = () => {
-        switch (user.role) {
-          case 5: return '/admin/dashboard';
-          case 3: return '/doctor/dashboard';
-          case 4: return '/business/dashboard';
-          default: return '/';
-        }
-      };
+      const dashboardUrl = user.role === 'admin' ? '/admin/dashboard' : 
+                          user.role === 'doctor' ? '/doctor/dashboard' : 
+                          user.role === 'business' ? '/business/dashboard' : '/';
       
-      const dashboardLink = getDashboardLink();
-      console.log('➡️ Redirecting to:', dashboardLink);
-      router.push(dashboardLink);
-    } else {
-      console.log('ℹ️ No redirect needed - user not authenticated or still loading');
+      if (dashboardUrl !== '/') {
+        window.location.href = dashboardUrl;
+      }
     }
-  }, [loading, isAuthenticated, user, router]);
-
+  }, [loading, isAuthenticated, user]);
+  
   useEffect(() => {
     const registered = searchParams.get('registered');
     if (registered === 'doctor' || registered === 'business') {
@@ -61,27 +51,7 @@ export default function Home() {
     );
   }
 
-  // If user is authenticated, they will be redirected, so show loading
-  if (!loading && isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <Stethoscope className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-300">Redirecting to dashboard...</p>
-          <button 
-            onClick={() => {
-              console.log('🧹 Manual logout triggered');
-              localStorage.clear();
-              window.location.reload();
-            }}
-            className="mt-4 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Not redirecting? Click here to reset
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // No redirect logic - allow access to home page regardless of authentication status
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
@@ -93,22 +63,61 @@ export default function Home() {
             <span className="text-2xl font-bold text-gray-900 dark:text-white">ThanksDoc</span>
           </div>
           <div className="hidden md:flex items-center space-x-6">
-            <Link href="/business/register" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Register Business
-            </Link>
-            <Link href="/doctor/register" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Register Doctor
-            </Link>
-            <button 
-              onClick={() => {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.reload();
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              Reset App
-            </button>
+            {isAuthenticated && user ? (
+              <>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Welcome, {user.name || user.email}
+                </span>
+                <Link 
+                  href={
+                    user.role === 'admin' ? '/admin/dashboard' : 
+                    user.role === 'doctor' ? '/doctor/dashboard' : 
+                    user.role === 'business' ? '/business/dashboard' : '/'
+                  }
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+                >
+                  Go to Dashboard
+                </Link>
+                <button 
+                  onClick={logout}
+                  className="flex items-center space-x-1 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/business/register" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Register Business
+                </Link>
+                <Link href="/doctor/register" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Register Doctor
+                </Link>
+                <button 
+                  onClick={() => {
+                    console.log('🔄 Emergency reset triggered');
+                    // Complete data clearing
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    document.cookie.split(";").forEach(function(c) { 
+                      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                    });
+                    if ('caches' in window) {
+                      caches.keys().then(function(names) {
+                        names.forEach(function(name) {
+                          caches.delete(name);
+                        });
+                      });
+                    }
+                    window.location.href = '/';
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                >
+                  Reset App
+                </button>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -177,7 +186,17 @@ export default function Home() {
 
           {/* Right Side - Login Form */}
           <div className="flex justify-center">
-            <LoginForm />
+            {!isAuthenticated ? (
+              <LoginForm />
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
+                <div className="text-center">
+                  <Stethoscope className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Redirecting...</h2>
+                  <p className="text-gray-600 dark:text-gray-300 mb-6">Taking you to your dashboard...</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

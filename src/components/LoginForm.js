@@ -24,7 +24,6 @@ export default function LoginForm() {
 
     console.log('🔐 Login attempt started');
     console.log('📧 Email:', formData.email);
-    console.log('🔑 Password:', formData.password ? '[PROVIDED]' : '[EMPTY]');
 
     try {
       // Use the backend API to authenticate user
@@ -39,36 +38,19 @@ export default function LoginForm() {
         console.log('👤 User data:', user);
         console.log('🔑 JWT token:', jwt ? 'RECEIVED' : 'NOT RECEIVED');
         
-        // Create user object with role information
-        const userData = {
-          ...user,
-          userType: user.role,
-          role: user.role === 'admin' ? 5 : user.role === 'doctor' ? 3 : 4
-        };
-
-        console.log('📦 Final user data:', userData);
-
-        login(userData, jwt);
-
-        console.log('🧭 Navigating based on role:', user.role);
-
-        // Navigate based on role
-        switch (user.role) {
-          case 'admin':
-            console.log('➡️ Redirecting to admin dashboard');
-            router.push('/admin/dashboard');
-            break;
-          case 'doctor':
-            console.log('➡️ Redirecting to doctor dashboard');
-            router.push('/doctor/dashboard');
-            break;
-          case 'business':
-            console.log('➡️ Redirecting to business dashboard');
-            router.push('/business/dashboard');
-            break;
-          default:
-            console.log('❓ Unknown role, redirecting to home');
-            router.push('/');
+        // Login returns the redirect URL
+        console.log('🔄 Calling login function...');
+        const redirectUrl = await login(user, jwt);
+        
+        console.log('🎯 Received redirect URL:', redirectUrl);
+        
+        // Ensure redirect happens immediately
+        if (redirectUrl && redirectUrl !== '/') {
+          console.log('🚀 Navigating to dashboard:', redirectUrl);
+          // Immediate redirect without timeout
+          window.location.href = redirectUrl;
+        } else {
+          console.log('⚠️ No valid redirect URL, staying on home page');
         }
       } else {
         console.log('❌ No result from login API');

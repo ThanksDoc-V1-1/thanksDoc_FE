@@ -1,27 +1,80 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, Search, Filter, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, Search, Filter, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function AdminDashboard() {
+  const { logout, user, isAuthenticated, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [doctors, setDoctors] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [doctorEarnings, setDoctorEarnings] = useState([]);
+  const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  // Calculate doctor earnings function - defined before fetchAllData to avoid ReferenceError
+  const calculateDoctorEarnings = (doctorsData, requestsData, businessesData) => {
+    const earningsMap = new Map();
+    
+    // Initialize earnings for all doctors
+    doctorsData.forEach(doctor => {
+      earningsMap.set(doctor.id, {
+        doctor: doctor,
+        totalEarnings: 0,
+        completedRequests: 0,
+        businesses: new Map() // Track earnings per business
+      });
+    });
+    
+    // Calculate earnings from completed service requests
+    requestsData
+      .filter(request => request.status === 'completed' && request.doctor && request.totalAmount)
+      .forEach(request => {
+        const doctorId = request.doctor.id;
+        const businessId = request.business?.id;
+        const earnings = parseFloat(request.totalAmount) || 0;
+        
+        if (earningsMap.has(doctorId)) {
+          const doctorEarning = earningsMap.get(doctorId);
+          doctorEarning.totalEarnings += earnings;
+          doctorEarning.completedRequests += 1;
+          
+          // Track earnings per business
+          if (businessId && request.business) {
+            if (!doctorEarning.businesses.has(businessId)) {
+              doctorEarning.businesses.set(businessId, {
+                business: request.business,
+                earnings: 0,
+                requestCount: 0
+              });
+            }
+            const businessEarning = doctorEarning.businesses.get(businessId);
+            businessEarning.earnings += earnings;
+            businessEarning.requestCount += 1;
+          }
+        }
+      });
+    
+    // Convert to array and sort by total earnings
+    const earningsArray = Array.from(earningsMap.values())
+      .map(earning => ({
+        ...earning,
+        businesses: Array.from(earning.businesses.values())
+      }))
+      .sort((a, b) => b.totalEarnings - a.totalEarnings);
+    
+    setDoctorEarnings(earningsArray);
+  };
 
   const fetchAllData = async () => {
-    setLoading(true);
+    setDataLoading(true);
     try {
       const [doctorsRes, businessesRes, requestsRes] = await Promise.all([
         doctorAPI.getAll(),
@@ -36,12 +89,61 @@ export default function AdminDashboard() {
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
       setServiceRequests(requestsRes.data?.data || []);
+      
+      // Calculate doctor earnings
+      calculateDoctorEarnings(doctorsRes.data?.data || [], requestsRes.data?.data || [], businessesRes.data?.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // Authentication check - redirect if not authenticated or not admin
+  useEffect(() => {
+    if (!loading) {
+      if (!isAuthenticated || !user) {
+        console.log('🚫 No authentication, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (user.role !== 'admin') {
+        console.log('🚫 Not admin role, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      console.log('✅ Admin authenticated, loading dashboard');
+    }
+  }, [loading, isAuthenticated, user]);
+
+  // Don't render anything if not authenticated
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Access Denied</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleVerifyDoctor = async (doctorId, isVerified) => {
     try {
@@ -132,7 +234,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-10">
+      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -140,7 +242,9 @@ export default function AdminDashboard() {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">ThanksDoc Admin</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  {user?.name || user?.email || 'Admin Dashboard'}
+                </h1>
                 <p className="text-gray-600 dark:text-gray-400">Manage doctors, businesses, and service requests</p>
               </div>
             </div>
@@ -151,6 +255,13 @@ export default function AdminDashboard() {
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 <span>Refresh Data</span>
+              </button>
+              <button 
+                onClick={logout}
+                className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span>Logout</span>
               </button>
             </div>
           </div>
@@ -197,6 +308,7 @@ export default function AdminDashboard() {
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
               { id: 'businesses', name: 'Businesses', icon: Building2 },
               { id: 'requests', name: 'Service Requests', icon: Users },
+              { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -217,7 +329,7 @@ export default function AdminDashboard() {
           </nav>
         </div>
         
-        {loading && (
+        {dataLoading && (
           <div className="flex justify-center items-center p-8">
             <div className="animate-spin rounded-full h-14 w-14 border-2 border-gray-300 dark:border-gray-700 border-t-blue-600 dark:border-t-blue-400"></div>
           </div>
@@ -1209,6 +1321,109 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Doctor Earnings Tab */}
+        {activeTab === 'earnings' && (
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Doctor Earnings</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Track earnings and revenue per doctor from completed service requests</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {doctorEarnings.length > 0 ? (
+                <div className="space-y-6">
+                  {doctorEarnings.map((earning) => {
+                    const doctor = earning.doctor;
+                    const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
+                    
+                    return (
+                      <div key={doctor.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-full flex items-center justify-center">
+                              <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{doctorName}</h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{doctor.specialization}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-500">Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                              {formatCurrency(earning.totalEarnings)}
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {earning.completedRequests} completed requests
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {earning.businesses.length > 0 && (
+                          <div>
+                            <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Earnings by Business:</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {earning.businesses.map((businessEarning) => {
+                                const business = businessEarning.business;
+                                return (
+                                  <div key={business.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                    <div className="flex items-center space-x-3 mb-2">
+                                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-lg flex items-center justify-center">
+                                        <Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                          {business.businessName}
+                                        </h5>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{business.businessType}</p>
+                                      </div>
+                                    </div>
+                                    <div className="mt-2">
+                                      <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                                        {formatCurrency(businessEarning.earnings)}
+                                      </div>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                                        {businessEarning.requestCount} requests
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {earning.businesses.length === 0 && earning.totalEarnings === 0 && (
+                          <div className="text-center py-4">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">No completed service requests yet</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8">
+                    <DollarSign className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                    <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">No earnings data available</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Doctor earnings will appear here once service requests are completed with payment information.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

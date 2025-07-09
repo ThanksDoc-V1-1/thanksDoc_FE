@@ -9,7 +9,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 
 export default function DoctorDashboard() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const [doctorData, setDoctorData] = useState(null);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
@@ -22,6 +22,25 @@ export default function DoctorDashboard() {
     completedRequests: 0,
     totalEarnings: 0
   });
+
+  // Authentication check - redirect if not authenticated or not doctor
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated || !user) {
+        console.log('🚫 No authentication, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (user.role !== 'doctor') {
+        console.log('🚫 Not doctor role, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      console.log('✅ Doctor authenticated, loading dashboard');
+    }
+  }, [authLoading, isAuthenticated, user]);
 
   useEffect(() => {
     console.log('🏠 Dashboard useEffect - User:', user);
@@ -202,12 +221,23 @@ export default function DoctorDashboard() {
   const doctor = doctorData || user;
   const doctorName = doctor?.name || `${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim() || doctor?.email || 'Doctor';
 
-  if (!user) {
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Stethoscope className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-300">Loading dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user || user.role !== 'doctor') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <Stethoscope className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Access Denied</p>
         </div>
       </div>
     );

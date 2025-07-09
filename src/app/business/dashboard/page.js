@@ -9,7 +9,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 
 export default function BusinessDashboard() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const [businessData, setBusinessData] = useState(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [serviceRequests, setServiceRequests] = useState([]);
@@ -239,12 +239,43 @@ export default function BusinessDashboard() {
     setCurrentPage(page);
   };
 
-  if (!user) {
+  // Authentication check - redirect if not authenticated or not business
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated || !user) {
+        console.log('🚫 No authentication, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (user.role !== 'business') {
+        console.log('🚫 Not business role, redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      console.log('✅ Business authenticated, loading dashboard');
+    }
+  }, [authLoading, isAuthenticated, user]);
+
+  // Don't render anything if not authenticated
+  if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Building2 className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-300">Loading dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user || user.role !== 'business') {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">Access Denied</p>
         </div>
       </div>
     );
