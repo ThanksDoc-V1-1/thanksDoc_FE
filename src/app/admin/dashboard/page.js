@@ -27,6 +27,10 @@ export default function AdminDashboard() {
         serviceRequestAPI.getAll()
       ]);
 
+      console.log('🏥 Raw doctors response:', doctorsRes.data);
+      console.log('🏢 Raw businesses response:', businessesRes.data);
+      console.log('📋 Raw requests response:', requestsRes.data);
+
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
       setServiceRequests(requestsRes.data?.data || []);
@@ -106,11 +110,11 @@ export default function AdminDashboard() {
 
   const stats = {
     totalDoctors: doctors.length,
-    verifiedDoctors: doctors.filter(d => d.attributes?.isVerified || d.isVerified).length,
+    verifiedDoctors: doctors.filter(d => d.isVerified).length,
     totalBusinesses: businesses.length,
-    verifiedBusinesses: businesses.filter(b => b.attributes?.isVerified || b.isVerified).length,
+    verifiedBusinesses: businesses.filter(b => b.isVerified).length,
     totalRequests: serviceRequests.length,
-    completedRequests: serviceRequests.filter(r => r.attributes?.status === 'completed' || r.status === 'completed').length,
+    completedRequests: serviceRequests.filter(r => r.status === 'completed').length,
   };
 
   return (

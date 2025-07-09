@@ -9,6 +9,19 @@ const api = axios.create({
   },
 });
 
+// Doctor API calls
+export const doctorAPI = {
+  getAll: () => api.get('/doctors'),
+  getById: (id) => api.get(`/doctors/${id}`),
+  create: (data) => api.post('/doctors', { data }),
+  update: (id, data) => api.put(`/doctors/${id}`, { data }),
+  delete: (id) => api.delete(`/doctors/${id}`),
+  getAvailable: (params) => api.get('/doctors/available', { params }),
+  updateAvailability: (id, isAvailable) => api.put(`/doctors/${id}/availability`, { isAvailable }),
+  getStats: (id) => api.get(`/doctors/${id}/stats`),
+  getOverallStats: () => api.get('/doctors/stats'),
+};
+
 // Authentication API calls
 export const authAPI = {
   // New unified login function using the backend auth endpoint
@@ -107,18 +120,6 @@ export const authAPI = {
       return null;
     }
   }
-};
-
-// Doctor API calls
-export const doctorAPI = {
-  getAll: () => api.get('/doctors'),
-  getById: (id) => api.get(`/doctors/${id}`),
-  create: (data) => api.post('/doctors', { data }),
-  update: (id, data) => api.put(`/doctors/${id}`, { data }),
-  delete: (id) => api.delete(`/doctors/${id}`),
-  getAvailable: (params) => api.get('/doctors/available', { params }),
-  updateAvailability: (id, isAvailable) => api.put(`/doctors/${id}/availability`, { isAvailable }),
-  getStats: (id) => api.get(`/doctors/${id}/stats`),
 };
 
 // Business API calls
