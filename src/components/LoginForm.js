@@ -47,7 +47,7 @@ export default function LoginForm() {
         // Ensure redirect happens immediately
         if (redirectUrl && redirectUrl !== '/') {
           console.log('🚀 Navigating to dashboard:', redirectUrl);
-          // Immediate redirect without timeout
+          // Navigate directly to the dashboard
           window.location.href = redirectUrl;
         } else {
           console.log('⚠️ No valid redirect URL, staying on home page');

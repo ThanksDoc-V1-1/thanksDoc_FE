@@ -75,55 +75,56 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userData, jwt) => {
     console.log('🔐 Login called with:', userData);
-    
+
     // Normalize role to string format
     const normalizedRole = normalizeRole(userData.role);
     const normalizedUser = {
       ...userData,
       role: normalizedRole
     };
-    
-    console.log('� Normalized user for login:', normalizedUser);
-    
+
+    console.log('✅ Normalized user for login:', normalizedUser);
+
     // Set user state
     setUser(normalizedUser);
-    
+
     // Save to localStorage
     localStorage.setItem('user', JSON.stringify(normalizedUser));
     localStorage.setItem('jwt', jwt);
-    
+
     console.log('✅ User logged in successfully');
-    
-    // Return the dashboard URL for the user's role
+
+    // Redirect the user to their dashboard
     const dashboardUrls = {
       admin: '/admin/dashboard',
       doctor: '/doctor/dashboard',
       business: '/business/dashboard'
     };
-    
+
     const redirectUrl = dashboardUrls[normalizedRole] || '/';
-    console.log('🎯 Redirect URL for role', normalizedRole, ':', redirectUrl);
-    
-    return redirectUrl;
+    console.log('🎯 Redirecting to URL:', redirectUrl);
+
+    // Navigate to the dashboard
+    window.location.href = redirectUrl;
   };
 
   const logout = () => {
     console.log('🚪 Logging out user - clearing all data');
-    
+
     // Clear user state
     setUser(null);
-    
+
     // Clear localStorage completely
     localStorage.clear();
-    
+
     // Clear sessionStorage
     sessionStorage.clear();
-    
+
     // Clear any cookies if they exist
-    document.cookie.split(";").forEach(function(c) { 
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+    document.cookie.split(';').forEach(function(c) {
+      document.cookie = c.replace(/^ +/, '').replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
     });
-    
+
     // Clear any caches
     if ('caches' in window) {
       caches.keys().then(function(names) {
@@ -132,10 +133,10 @@ export const AuthProvider = ({ children }) => {
         });
       });
     }
-    
-    console.log('🧹 All data cleared, forcing page reload');
-    
-    // Force a complete page reload to ensure clean state
+
+    console.log('🧹 All data cleared, redirecting to home page');
+
+    // Redirect directly to the home page
     window.location.href = '/';
   };
 

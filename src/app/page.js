@@ -18,15 +18,7 @@ export default function Home() {
   
   // But if user is authenticated and lands on home page, redirect them
   useEffect(() => {
-    if (!loading && isAuthenticated && user) {
-      const dashboardUrl = user.role === 'admin' ? '/admin/dashboard' : 
-                          user.role === 'doctor' ? '/doctor/dashboard' : 
-                          user.role === 'business' ? '/business/dashboard' : '/';
-      
-      if (dashboardUrl !== '/') {
-        window.location.href = dashboardUrl;
-      }
-    }
+    // Removed automatic redirection logic to prevent intermediate page
   }, [loading, isAuthenticated, user]);
   
   useEffect(() => {
@@ -189,13 +181,7 @@ export default function Home() {
             {!isAuthenticated ? (
               <LoginForm />
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
-                <div className="text-center">
-                  <Stethoscope className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Redirecting...</h2>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6">Taking you to your dashboard...</p>
-                </div>
-              </div>
+              null
             )}
           </div>
         </div>
