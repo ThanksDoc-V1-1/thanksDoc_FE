@@ -1239,8 +1239,8 @@ export default function AdminDashboard() {
                       </tr>
                     );
                   }) : (
-                    <tr className="bg-white dark:bg-gray-900">
-                      <td colSpan="6" className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                    <tr className="bg-gray-900">
+                      <td colSpan="6" className="px-6 py-10 text-center text-gray-400">
                         {searchTerm || filterStatus !== 'all' ? (
                           <>
                             <p className="font-medium">No matching businesses found</p>
@@ -1269,20 +1269,20 @@ export default function AdminDashboard() {
 
         {/* Service Requests Tab */}
         {activeTab === 'requests' && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow border border-gray-200 dark:border-gray-800">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="bg-gray-900 rounded-2xl shadow border border-gray-800">
+            <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                  <Users className="h-5 w-5 text-green-600 dark:text-green-500 mr-2" />
+                <h2 className="text-xl font-semibold text-white flex items-center">
+                  <Users className="h-5 w-5 text-green-500 mr-2" />
                   Service Requests
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Monitor all service requests in the system</p>
+                <p className="text-sm text-gray-400 mt-1">Monitor all service requests in the system</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
-                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-full">
+                <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full">
                   <span className="font-medium">{serviceRequests.filter(r => r.status === 'pending' || r.attributes?.status === 'pending').length}</span> Pending
                 </span>
-                <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full">
+                <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full">
                   <span className="font-medium">{serviceRequests.filter(r => r.status === 'completed' || r.attributes?.status === 'completed').length}</span> Completed
                 </span>
               </div>
@@ -1296,7 +1296,7 @@ export default function AdminDashboard() {
                 <input 
                   type="text" 
                   placeholder="Search service requests by type, business, or doctor..." 
-                  className="w-full pl-10 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500 shadow-sm"
+                  className="w-full pl-10 px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -1307,8 +1307,8 @@ export default function AdminDashboard() {
                   onClick={() => setFilterStatus('all')}
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'all' ? 
-                    'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium' :
-                    'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    'bg-gray-100 text-gray-900 font-medium' :
+                    'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   }`}
                 >
                   All Requests
@@ -1318,7 +1318,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'pending' ? 
                     'bg-yellow-600 text-white font-medium' :
-                    'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'
+                    'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
                   }`}
                 >
                   Pending
@@ -1328,7 +1328,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'accepted' ? 
                     'bg-blue-600 text-white font-medium' :
-                    'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                    'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
                   }`}
                 >
                   Accepted
@@ -1338,7 +1338,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'completed' ? 
                     'bg-green-600 text-white font-medium' :
-                    'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                    'bg-green-900/30 text-green-400 hover:bg-green-900/50'
                   }`}
                 >
                   Completed
@@ -1346,7 +1346,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div className="divide-y divide-gray-200 dark:divide-gray-800">
+            <div className="divide-y divide-gray-800">
               {currentRequests.length > 0 ? currentRequests.map((request) => {
                 // Handle both direct properties and nested attributes
                 const id = request.id || request.attributes?.id;
@@ -1381,24 +1381,24 @@ export default function AdminDashboard() {
                   'Not assigned';
                   
                 return (
-                  <div key={id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <div key={id} className="p-6 hover:bg-gray-800/50 transition-colors">
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-3">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            urgencyLevel === 'emergency' ? 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-400' :
-                            urgencyLevel === 'high' ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' :
-                            urgencyLevel === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400' :
-                            'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
+                            urgencyLevel === 'emergency' ? 'bg-red-900/40 text-red-400' :
+                            urgencyLevel === 'high' ? 'bg-orange-900/40 text-orange-400' :
+                            urgencyLevel === 'medium' ? 'bg-yellow-900/40 text-yellow-400' :
+                            'bg-green-900/40 text-green-400'
                           }`}>
                             {urgencyLevel || 'normal'}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            status === 'completed' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900' :
-                            status === 'accepted' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900' :
-                            status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900' :
-                            status === 'rejected' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900' :
-                            'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                            status === 'completed' ? 'bg-green-900/40 text-green-400 border border-green-900' :
+                            status === 'accepted' ? 'bg-blue-900/40 text-blue-400 border border-blue-900' :
+                            status === 'pending' ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' :
+                            status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-900' :
+                            'bg-gray-800 text-gray-400 border border-gray-700'
                           }`}>
                             {(status || 'pending').replace('_', ' ')}
                           </span>
@@ -1410,29 +1410,29 @@ export default function AdminDashboard() {
                           )}
                         </div>
                         
-                        <h3 className="font-semibold text-lg text-gray-900 dark:text-white mb-2">{serviceType}</h3>
-                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{description}</p>
+                        <h3 className="font-semibold text-lg text-white mb-2">{serviceType}</h3>
+                        <p className="text-gray-300 text-sm mb-4 line-clamp-2">{description}</p>
                         
                         <div className="grid md:grid-cols-2 gap-4 text-sm">
-                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
+                          <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-500 dark:text-gray-400">Business</span>
-                              <span className="font-medium text-gray-900 dark:text-white">{businessName}</span>
+                              <span className="text-gray-400">Business</span>
+                              <span className="font-medium text-white">{businessName}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-500 dark:text-gray-400">Contact</span>
-                              <span className="font-medium text-gray-900 dark:text-white">{contactPersonName}</span>
+                              <span className="text-gray-400">Contact</span>
+                              <span className="font-medium text-white">{contactPersonName}</span>
                             </div>
                           </div>
                           
-                          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
+                          <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-500 dark:text-gray-400">Doctor</span>
-                              <span className="font-medium text-gray-900 dark:text-white">{doctorName}</span>
+                              <span className="text-gray-400">Doctor</span>
+                              <span className="font-medium text-white">{doctorName}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-500 dark:text-gray-400">Duration</span>
-                              <span className="font-medium text-gray-900 dark:text-white">{estimatedDuration}h</span>
+                              <span className="text-gray-400">Duration</span>
+                              <span className="font-medium text-white">{estimatedDuration}h</span>
                             </div>
                           </div>
                         </div>
@@ -1489,9 +1489,9 @@ export default function AdminDashboard() {
             </div>
             
             {filteredRequests.length > 0 && (
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800">
+              <div className="px-6 py-4 bg-gray-800/50 border-t border-gray-800">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-sm text-gray-400">
                     Showing {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length} filtered requests ({serviceRequests.length} total)
                   </div>
                   
@@ -1500,7 +1500,7 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Previous
                       </button>
@@ -1513,7 +1513,7 @@ export default function AdminDashboard() {
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                               currentPage === page
                                 ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                : 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
                             }`}
                           >
                             {page}
@@ -1524,7 +1524,7 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-1 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Next
                       </button>
@@ -1538,15 +1538,15 @@ export default function AdminDashboard() {
 
         {/* Doctor Earnings Tab */}
         {activeTab === 'earnings' && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800">
+          <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
+            <div className="p-6 border-b border-gray-800">
               <div className="flex items-center space-x-3">
-                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="bg-green-900/30 p-2 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Doctor Earnings</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Track earnings and revenue per doctor from completed service requests</p>
+                  <h2 className="text-xl font-semibold text-white">Doctor Earnings</h2>
+                  <p className="text-gray-400">Track earnings and revenue per doctor from completed service requests</p>
                 </div>
               </div>
             </div>
@@ -1559,23 +1559,23 @@ export default function AdminDashboard() {
                     const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
                     
                     return (
-                      <div key={doctor.id} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+                      <div key={doctor.id} className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 rounded-full flex items-center justify-center">
-                              <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-full flex items-center justify-center">
+                              <Stethoscope className="h-6 w-6 text-blue-400" />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{doctorName}</h3>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{doctor.specialization}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-500">Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
+                              <h3 className="text-lg font-semibold text-white">{doctorName}</h3>
+                              <p className="text-sm text-gray-400">{doctor.specialization}</p>
+                              <p className="text-xs text-gray-500">Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                            <div className="text-2xl font-bold text-green-400">
                               {formatCurrency(earning.totalEarnings)}
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-gray-400">
                               {earning.completedRequests} completed requests
                             </p>
                           </div>
@@ -1583,28 +1583,28 @@ export default function AdminDashboard() {
                         
                         {earning.businesses.length > 0 && (
                           <div>
-                            <h4 className="text-md font-medium text-gray-900 dark:text-white mb-3">Earnings by Business:</h4>
+                            <h4 className="text-md font-medium text-white mb-3">Earnings by Business:</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {earning.businesses.map((businessEarning) => {
                                 const business = businessEarning.business;
                                 return (
-                                  <div key={business.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                  <div key={business.id} className="bg-gray-800 rounded-lg p-4 border border-gray-600">
                                     <div className="flex items-center space-x-3 mb-2">
-                                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-indigo-200 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-lg flex items-center justify-center">
-                                        <Building2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg flex items-center justify-center">
+                                        <Building2 className="h-4 w-4 text-indigo-400" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <h5 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        <h5 className="text-sm font-medium text-white truncate">
                                           {business.businessName}
                                         </h5>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">{business.businessType}</p>
+                                        <p className="text-xs text-gray-400">{business.businessType}</p>
                                       </div>
                                     </div>
                                     <div className="mt-2">
-                                      <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                                      <div className="text-lg font-semibold text-green-400">
                                         {formatCurrency(businessEarning.earnings)}
                                       </div>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      <p className="text-xs text-gray-400">
                                         {businessEarning.requestCount} requests
                                       </p>
                                     </div>
@@ -1617,7 +1617,7 @@ export default function AdminDashboard() {
                         
                         {earning.businesses.length === 0 && earning.totalEarnings === 0 && (
                           <div className="text-center py-4">
-                            <p className="text-gray-500 dark:text-gray-400 text-sm">No completed service requests yet</p>
+                            <p className="text-gray-400 text-sm">No completed service requests yet</p>
                           </div>
                         )}
                       </div>
