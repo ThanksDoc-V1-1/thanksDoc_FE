@@ -75,10 +75,12 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg shadow-blue-900/20 p-8 w-full max-w-md">
       <div className="text-center mb-6">
-        <LogIn className="h-8 w-8 text-blue-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white">Sign In</h2>
+        <div className="bg-blue-900/30 rounded-full p-3 inline-block">
+          <LogIn className="h-8 w-8 text-blue-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white mt-4">Sign In</h2>
         <p className="text-gray-300 mt-2">Access your ThanksDoc dashboard</p>
       </div>
 
@@ -99,7 +101,7 @@ export default function LoginForm() {
             required
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-3 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
             placeholder="Enter your email"
           />
         </div>
@@ -115,7 +117,7 @@ export default function LoginForm() {
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 pr-10 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
               placeholder="Enter your password"
             />
             <button
@@ -135,7 +137,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
+          className="w-full bg-blue-800 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-md transition-colors shadow-md"
         >
           {loading ? 'Signing in...' : 'Sign In'}
         </button>
@@ -144,7 +146,7 @@ export default function LoginForm() {
       <div className="mt-6 text-center text-sm text-gray-400">
         <p>Don't have an account?</p>
         <div className="mt-2 space-x-4">
-          <a href="/doctor/register" className="text-blue-400 hover:underline">
+          <a href="/doctor/register" className="text-blue-400 hover:text-blue-300 hover:underline">
             Join as Doctor
           </a>
           <span>•</span>

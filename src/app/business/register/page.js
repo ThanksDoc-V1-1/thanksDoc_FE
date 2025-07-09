@@ -9,8 +9,8 @@ import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/u
 import { useAuth } from '../../../contexts/AuthContext';
 
 // Add this CSS class definition at the top of the component
-const inputClasses = "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const labelClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2";
+const inputClasses = "w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+const labelClasses = "block text-sm font-medium text-gray-300 mb-2";
 
 export default function BusinessRegister() {
   const router = useRouter();
@@ -106,28 +106,28 @@ export default function BusinessRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+    <div className="min-h-screen bg-gray-900 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4">
+            <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Register Your Business</h1>
+              <Building2 className="h-8 w-8 text-blue-400" />
+              <h1 className="text-3xl font-bold text-white">Register Your Business</h1>
             </div>
-            <p className="text-gray-600 dark:text-gray-300">Join ThanksDoc to connect with verified healthcare professionals</p>
+            <p className="text-gray-300">Join ThanksDoc to connect with verified healthcare professionals</p>
           </div>
 
           {/* Form */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+          <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Business Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Business Information</h2>
+                <h2 className="text-xl font-semibold text-white">Business Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -153,7 +153,7 @@ export default function BusinessRegister() {
                     value={formData.businessType}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="pharmacy">Pharmacy</option>
                     <option value="clinic">Clinic</option>
@@ -172,13 +172,13 @@ export default function BusinessRegister() {
                     value={formData.businessLicense}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter business license number"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Description
                   </label>
                   <textarea
@@ -186,7 +186,7 @@ export default function BusinessRegister() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Brief description of your business"
                   />
                 </div>
@@ -194,7 +194,7 @@ export default function BusinessRegister() {
 
               {/* Contact Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Contact Information</h2>
+                <h2 className="text-xl font-semibold text-white">Contact Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -206,7 +206,7 @@ export default function BusinessRegister() {
                     value={formData.contactPersonName}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter contact person name"
                   />
                 </div>
@@ -221,7 +221,7 @@ export default function BusinessRegister() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter email address"
                   />
                 </div>
@@ -237,14 +237,14 @@ export default function BusinessRegister() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Enter password (min 6 characters)"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
                     >
                       {showPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -266,14 +266,14 @@ export default function BusinessRegister() {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Confirm your password"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -294,7 +294,7 @@ export default function BusinessRegister() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -302,7 +302,7 @@ export default function BusinessRegister() {
 
               {/* Location Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Location Information</h2>
+                <h2 className="text-xl font-semibold text-white">Location Information</h2>
                 
                 <div>
                   <label className={labelClasses}>
@@ -314,7 +314,7 @@ export default function BusinessRegister() {
                     onChange={handleInputChange}
                     required
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Enter complete address"
                   />
                 </div>
@@ -330,7 +330,7 @@ export default function BusinessRegister() {
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="City"
                     />
                   </div>
@@ -344,7 +344,7 @@ export default function BusinessRegister() {
                       value={formData.state}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="State"
                     />
                   </div>
@@ -358,7 +358,7 @@ export default function BusinessRegister() {
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="ZIP"
                     />
                   </div>
@@ -376,7 +376,7 @@ export default function BusinessRegister() {
                       value={formData.latitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Latitude"
                     />
                   </div>
@@ -391,7 +391,7 @@ export default function BusinessRegister() {
                       value={formData.longitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Longitude"
                     />
                   </div>
@@ -432,3 +432,4 @@ export default function BusinessRegister() {
     </div>
   );
 }
+

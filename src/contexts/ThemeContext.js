@@ -13,30 +13,23 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // State to track if dark mode is enabled
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  // State to track current path
+  // Always use dark mode by default
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  // State to track current path (keep for future reference)
   const [currentPath, setCurrentPath] = useState('');
 
   useEffect(() => {
-    // Only apply dark mode to the homepage
+    // Apply dark mode to all pages
     const path = window.location.pathname;
     setCurrentPath(path);
     
-    if (path === '/' || path === '') {
-      // Apply dark mode only on the homepage
-      document.documentElement.classList.add('dark');
-      setIsDarkMode(true);
-      console.log('🌙 Dark mode applied to homepage');
-    } else {
-      // Remove dark mode on other pages
-      document.documentElement.classList.remove('dark');
-      setIsDarkMode(false);
-      console.log('☀️ Light mode applied to non-homepage');
-    }
+    // Apply dark mode to all pages consistently
+    document.documentElement.classList.add('dark');
+    setIsDarkMode(true);
+    console.log('🌙 Dark mode applied to all pages');
     
-    // Update localStorage to remember the current theme state
-    localStorage.setItem('theme', path === '/' ? 'dark' : 'light');
+    // Force dark mode in local storage
+    localStorage.setItem('theme', 'dark');
   }, []);
 
   // This function exists but will always maintain dark mode

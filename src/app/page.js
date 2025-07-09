@@ -80,10 +80,10 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Link href="/business/register" className="text-gray-300 hover:text-blue-400 transition-colors">
+                <Link href="/business/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Register Business
                 </Link>
-                <Link href="/doctor/register" className="text-gray-300 hover:text-blue-400 transition-colors">
+                <Link href="/doctor/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Register Doctor
                 </Link>
                 <button 
@@ -161,14 +161,14 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
               <Link 
                 href="/business/register" 
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+                className="bg-blue-800 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/50"
               >
                 <Building2 className="h-5 w-5" />
                 <span>Register Your Business</span>
               </Link>
               <Link 
                 href="/doctor/register" 
-                className="border border-blue-600 text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-900/20 transition-colors flex items-center justify-center space-x-2"
+                className="bg-gray-800 border border-blue-500 text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2 shadow-lg"
               >
                 <Stethoscope className="h-5 w-5" />
                 <span>Join as Doctor</span>
