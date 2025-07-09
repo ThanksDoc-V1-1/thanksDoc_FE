@@ -244,15 +244,17 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md dark:bg-gray-800/90 shadow-lg border-b border-green-100 dark:border-gray-700">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Stethoscope className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center space-x-4">
+              <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-500 dark:to-indigo-800 rounded-lg shadow-lg">
+                <Stethoscope className="h-6 w-6 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
                   Dr. {doctorName}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">{doctor.specialization || 'Medical Professional'}</p>
@@ -285,9 +287,9 @@ export default function DoctorDashboard() {
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white bg-gray-100/80 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-all duration-200 font-medium border border-gray-200 dark:border-gray-600"
+                className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
               </button>
             </div>
@@ -295,50 +297,50 @@ export default function DoctorDashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-yellow-100 dark:border-gray-600 hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-yellow-600 dark:text-yellow-300 font-medium">Pending Requests</p>
-                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{stats.pendingRequests}</p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Pending Requests</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pendingRequests}</p>
                   </div>
                   <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
                     <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-blue-100 dark:border-gray-600 hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">My Requests</p>
-                    <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.myRequests}</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">My Requests</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.myRequests}</p>
                   </div>
                   <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
                     <Stethoscope className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-green-100 dark:border-gray-600 hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-600 dark:text-green-300 font-medium">Completed</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.completedRequests}</p>
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completedRequests}</p>
                   </div>
                   <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
                     <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-purple-100 dark:border-gray-600 hover:shadow-md transition-shadow">
+              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-purple-300 font-medium">Hourly Rate</p>
-                    <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Hourly Rate</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       ${doctor.hourlyRate || 0}
                     </p>
                   </div>
@@ -350,8 +352,8 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Available Requests */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-600">
-              <div className="p-6 border-b border-blue-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-t-xl">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
@@ -476,7 +478,7 @@ export default function DoctorDashboard() {
                               <button
                                 onClick={() => handleAcceptRequest(request.id)}
                                 disabled={actionLoading === request.id || !isAvailable}
-                                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-md"
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
                               >
                                 {actionLoading === request.id ? (
                                   <>
@@ -493,7 +495,7 @@ export default function DoctorDashboard() {
                               <button
                                 onClick={() => handleRejectRequest(request.id)}
                                 disabled={actionLoading === request.id}
-                                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-md"
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
                               >
                                 {actionLoading === request.id ? (
                                   <>
@@ -512,7 +514,7 @@ export default function DoctorDashboard() {
                             <button
                               onClick={() => handleCompleteRequest(request.id)}
                               disabled={actionLoading === request.id}
-                              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-md"
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
                             >
                               {actionLoading === request.id ? (
                                 <>
@@ -533,7 +535,7 @@ export default function DoctorDashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
                       <Clock className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                       <p className="text-lg font-medium mb-2">No service requests available</p>
                       <p className="text-sm">Check back later for new requests from businesses in your area.</p>
@@ -547,7 +549,7 @@ export default function DoctorDashboard() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Doctor Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-green-100 dark:border-gray-600 p-6">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 p-6">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
                   <Stethoscope className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -555,19 +557,19 @@ export default function DoctorDashboard() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Summary</h3>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
                   <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
                   <span className="text-gray-900 dark:text-white font-semibold">Dr. {doctorName}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
                   <span className="font-medium text-gray-700 dark:text-gray-300">Specialization:</span>
                   <span className="text-green-600 dark:text-green-400 font-semibold">{doctor.specialization || 'Medical Professional'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
                   <span className="font-medium text-gray-700 dark:text-gray-300">Experience:</span>
                   <span className="text-gray-900 dark:text-white font-semibold">{doctor.yearsOfExperience || 0} years</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-green-100 dark:border-gray-600">
+                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
                   <span className="font-medium text-gray-700 dark:text-gray-300">Rate:</span>
                   <span className="text-purple-600 dark:text-purple-400 font-semibold">{formatCurrency(doctor.hourlyRate || 0)}/hour</span>
                 </div>
@@ -585,8 +587,8 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Completed Service Requests */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-blue-100 dark:border-gray-600">
-              <div className="p-6 border-b border-blue-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 rounded-t-xl">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
@@ -680,7 +682,7 @@ export default function DoctorDashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
                       <Stethoscope className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
                       <p className="text-lg font-medium mb-2">No completed service requests yet</p>
                       <p className="text-sm">Completed service requests will appear here after you mark them as done.</p>
