@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../hooks/useTheme';
 import { authAPI } from '../lib/api';
 
 export default function LoginForm() {
@@ -74,22 +75,22 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
+    <div className="bg-gray-800 rounded-lg shadow-lg p-8 w-full max-w-md">
       <div className="text-center mb-6">
-        <LogIn className="h-8 w-8 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign In</h2>
-        <p className="text-gray-600 dark:text-gray-300 mt-2">Access your ThanksDoc dashboard</p>
+        <LogIn className="h-8 w-8 text-blue-400 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white">Sign In</h2>
+        <p className="text-gray-300 mt-2">Access your ThanksDoc dashboard</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
+        <div className="bg-red-900/50 border border-red-800 text-red-300 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Email *
           </label>
           <input
@@ -98,13 +99,13 @@ export default function LoginForm() {
             required
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             placeholder="Enter your email"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Password *
           </label>
           <div className="relative">
@@ -114,13 +115,13 @@ export default function LoginForm() {
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -140,14 +141,14 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+      <div className="mt-6 text-center text-sm text-gray-400">
         <p>Don't have an account?</p>
         <div className="mt-2 space-x-4">
-          <a href="/doctor/register" className="text-blue-600 dark:text-blue-400 hover:underline">
+          <a href="/doctor/register" className="text-blue-400 hover:underline">
             Join as Doctor
           </a>
           <span>•</span>
-          <a href="/business/register" className="text-blue-600 dark:text-blue-400 hover:underline">
+          <a href="/business/register" className="text-blue-400 hover:underline">
             Register Business
           </a>
         </div>
