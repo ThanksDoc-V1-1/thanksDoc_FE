@@ -150,6 +150,7 @@ export const serviceRequestAPI = {
   getDoctorRequests: (doctorId) => api.get(`/service-requests/doctor/${doctorId}`),
   getAvailableRequests: (doctorId) => api.get(`/service-requests/available/${doctorId}`),
   getBusinessRequests: (businessId) => api.get(`/service-requests/business/${businessId}`),
+  getOverallStats: () => api.get('/service-requests/stats'),
 };
 
 export default api;
