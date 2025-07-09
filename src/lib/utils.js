@@ -32,34 +32,34 @@ export function formatDate(date, options = {}) {
 export function getUrgencyColor(urgency) {
   switch (urgency) {
     case 'low':
-      return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      return 'bg-green-900/30 text-green-400';
     case 'medium':
-      return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      return 'bg-yellow-900/30 text-yellow-400';
     case 'high':
-      return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400';
+      return 'bg-orange-900/30 text-orange-400';
     case 'emergency':
-      return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      return 'bg-red-900/30 text-red-400';
     default:
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+      return 'bg-gray-700 text-gray-300';
   }
 }
 
 export function getStatusColor(status) {
   switch (status) {
     case 'pending':
-      return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400';
+      return 'bg-yellow-900/30 text-yellow-400';
     case 'accepted':
-      return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      return 'bg-green-900/30 text-green-400';
     case 'rejected':
-      return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      return 'bg-red-900/30 text-red-400';
     case 'in_progress':
-      return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400';
+      return 'bg-purple-900/30 text-purple-400';
     case 'completed':
-      return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400';
+      return 'bg-blue-900/30 text-blue-400';
     case 'cancelled':
-      return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      return 'bg-red-900/30 text-red-400';
     default:
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
+      return 'bg-gray-700 text-gray-300';
   }
 }
 
