@@ -13,6 +13,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 5;
 
   useEffect(() => {
     fetchAllData();
@@ -107,6 +109,16 @@ export default function AdminDashboard() {
     
     return matchesSearch && matchesFilter;
   });
+
+  // Pagination for service requests
+  const totalPages = Math.ceil(filteredRequests.length / requestsPerPage);
+  const startIndex = (currentPage - 1) * requestsPerPage;
+  const endIndex = startIndex + requestsPerPage;
+  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const stats = {
     totalDoctors: doctors.length,
@@ -447,8 +459,7 @@ export default function AdminDashboard() {
                         
                         {totalAmount && (
                           <div className="flex flex-col items-end ml-4">
-                            <div className="text-sm font-semibold text-green-600 dark:text-green-500 flex items-center">
-                              <DollarSign className="h-3.5 w-3.5 mr-0.5" />
+                            <div className="text-sm font-semibold text-green-600 dark:text-green-500">
                               {formatCurrency(totalAmount)}
                             </div>
                             <div className={`mt-1 text-xs px-2 py-1 rounded-full ${
@@ -1012,7 +1023,7 @@ export default function AdminDashboard() {
             </div>
             
             <div className="divide-y divide-gray-200 dark:divide-gray-800">
-              {filteredRequests.length > 0 ? filteredRequests.map((request) => {
+              {currentRequests.length > 0 ? currentRequests.map((request) => {
                 // Handle both direct properties and nested attributes
                 const id = request.id || request.attributes?.id;
                 const serviceType = request.serviceType || request.attributes?.serviceType;
@@ -1120,8 +1131,7 @@ export default function AdminDashboard() {
                       
                       {totalAmount && (
                         <div className="flex flex-col items-end space-y-2 min-w-[120px]">
-                          <div className="text-lg font-semibold text-green-600 dark:text-green-500 flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1" />
+                          <div className="text-lg font-semibold text-green-600 dark:text-green-500">
                             {formatCurrency(totalAmount)}
                           </div>
                           <div className={`text-xs px-2.5 py-1.5 rounded-full flex items-center ${
@@ -1155,8 +1165,48 @@ export default function AdminDashboard() {
             </div>
             
             {filteredRequests.length > 0 && (
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 text-sm text-gray-500 dark:text-gray-400">
-                Showing {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} of {serviceRequests.length} total
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length} filtered requests ({serviceRequests.length} total)
+                  </div>
+                  
+                  {totalPages > 1 && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                              currentPage === page
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
