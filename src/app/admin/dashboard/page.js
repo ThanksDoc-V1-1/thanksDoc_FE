@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, Search, Filter, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, Filter, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -18,6 +18,35 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
+  const [showDoctorForm, setShowDoctorForm] = useState(false);
+  const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const [showDoctorPassword, setShowDoctorPassword] = useState(false);
+  const [showBusinessPassword, setShowBusinessPassword] = useState(false);
+  const [doctorFormData, setDoctorFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    specialization: '',
+    licenseNumber: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    bio: '',
+    experience: '',
+    consultationFee: ''
+  });
+  const [businessFormData, setBusinessFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    businessType: '',
+    registrationNumber: '',
+    phone: '',
+    address: '',
+    description: ''
+  });
 
   // Calculate doctor earnings function - defined before fetchAllData to avoid ReferenceError
   const calculateDoctorEarnings = (doctorsData, requestsData, businessesData) => {
@@ -165,6 +194,150 @@ export default function AdminDashboard() {
       console.error('Error updating business verification:', error);
       alert('Failed to update business verification.');
     }
+  };
+
+  // Registration functions for doctors and businesses
+  const handleDoctorRegistration = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+    
+    try {
+      const response = await doctorAPI.create({
+        ...doctorFormData,
+        isVerified: true // Admin registered doctors are automatically verified
+      });
+      
+      if (response.data) {
+        alert('Doctor registered successfully!');
+        setShowDoctorForm(false);
+        setDoctorFormData({
+          name: '',
+          email: '',
+          password: '',
+          specialization: '',
+          licenseNumber: '',
+          phone: '',
+          address: '',
+          bio: '',
+          experience: '',
+          consultationFee: ''
+        });
+        fetchAllData(); // Refresh the data
+      }
+    } catch (error) {
+      console.error('Error registering doctor:', error);
+      alert('Failed to register doctor. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleBusinessRegistration = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+    
+    try {
+      const response = await businessAPI.create({
+        ...businessFormData,
+        isVerified: true // Admin registered businesses are automatically verified
+      });
+      
+      if (response.data) {
+        alert('Business registered successfully!');
+        setShowBusinessForm(false);
+        setBusinessFormData({
+          name: '',
+          email: '',
+          password: '',
+          businessType: '',
+          registrationNumber: '',
+          phone: '',
+          address: '',
+          description: ''
+        });
+        fetchAllData(); // Refresh the data
+      }
+    } catch (error) {
+      console.error('Error registering business:', error);
+      alert('Failed to register business. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleDoctorFormChange = (e) => {
+    const { name, value } = e.target;
+    setDoctorFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleDoctorRegister = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+    
+    try {
+      const firstName = doctorFormData.name.split(' ')[0];
+      const lastName = doctorFormData.name.split(' ').slice(1).join(' ') || firstName;
+      const fullName = `${firstName} ${lastName}`;
+      
+      const response = await doctorAPI.create({
+        firstName: firstName,
+        lastName: lastName,
+        name: fullName,
+        email: doctorFormData.email,
+        password: doctorFormData.password,
+        specialization: doctorFormData.specialization,
+        licenseNumber: doctorFormData.licenseNumber,
+        phone: doctorFormData.phone,
+        address: doctorFormData.address,
+        city: doctorFormData.city || 'Not specified', // Use form data or default
+        state: doctorFormData.state || 'Not specified', // Use form data or default  
+        zipCode: doctorFormData.zipCode || '00000', // Use form data or default
+        bio: doctorFormData.bio || '',
+        yearsOfExperience: parseInt(doctorFormData.experience) || 0,
+        hourlyRate: parseFloat(doctorFormData.consultationFee) || 0,
+        latitude: 0.0, // Default coordinate
+        longitude: 0.0, // Default coordinate
+        isVerified: true, // Admin-registered doctors are auto-verified
+        isAvailable: true,
+        emergencyContact: '',
+        languages: ['English'],
+        certifications: []
+      });
+      
+      if (response.data) {
+        alert('Doctor registered successfully!');
+        setShowDoctorForm(false);
+        setDoctorFormData({
+          name: '',
+          email: '',
+          password: '',
+          specialization: '',
+          licenseNumber: '',
+          phone: '',
+          address: '',
+          bio: '',
+          experience: '',
+          consultationFee: ''
+        });
+        fetchAllData(); // Refresh the data
+      }
+    } catch (error) {
+      console.error('Error registering doctor:', error);
+      alert('Failed to register doctor. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleBusinessFormChange = (e) => {
+    const { name, value } = e.target;
+    setBusinessFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   // Filter functions for search and status filters
@@ -612,6 +785,13 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Verify and manage doctor profiles</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
+                <button
+                  onClick={() => setShowDoctorForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Register New Doctor
+                </button>
                 <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full flex items-center">
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedDoctors}</span> Verified
@@ -838,6 +1018,13 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Verify and manage business profiles</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
+                <button
+                  onClick={() => setShowBusinessForm(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Register New Business
+                </button>
                 <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full flex items-center">
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedBusinesses}</span> Verified
@@ -1427,6 +1614,479 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Doctor Registration Form Modal */}
+      {showDoctorForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <Stethoscope className="h-5 w-5 text-blue-600 dark:text-blue-500 mr-2" />
+                Register New Doctor
+              </h2>
+              <button
+                onClick={() => setShowDoctorForm(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleDoctorRegister} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="doctorName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorName"
+                    name="name"
+                    value={doctorFormData.name}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter doctor's full name"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="doctorEmail"
+                    name="email"
+                    value={doctorFormData.email}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showDoctorPassword ? "text" : "password"}
+                      id="doctorPassword"
+                      name="password"
+                      value={doctorFormData.password}
+                      onChange={handleDoctorFormChange}
+                      required
+                      className="w-full px-4 py-2.5 pr-12 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                      placeholder="Enter password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDoctorPassword(!showDoctorPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                    >
+                      {showDoctorPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="doctorPhone"
+                    name="phone"
+                    value={doctorFormData.phone}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorSpecialization" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Specialization *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorSpecialization"
+                    name="specialization"
+                    value={doctorFormData.specialization}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="e.g., Cardiology, General Practice"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorLicenseNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    License Number *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorLicenseNumber"
+                    name="licenseNumber"
+                    value={doctorFormData.licenseNumber}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter medical license number"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorExperience" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Years of Experience *
+                  </label>
+                  <input
+                    type="number"
+                    id="doctorExperience"
+                    name="experience"
+                    value={doctorFormData.experience}
+                    onChange={handleDoctorFormChange}
+                    required
+                    min="0"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter years of experience"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorConsultationFee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Consultation Fee ($) *
+                  </label>
+                  <input
+                    type="number"
+                    id="doctorConsultationFee"
+                    name="consultationFee"
+                    value={doctorFormData.consultationFee}
+                    onChange={handleDoctorFormChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter consultation fee"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="doctorAddress" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Address *
+                </label>
+                <input
+                  type="text"
+                  id="doctorAddress"
+                  name="address"
+                  value={doctorFormData.address}
+                  onChange={handleDoctorFormChange}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                  placeholder="Enter complete address"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label htmlFor="doctorCity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorCity"
+                    name="city"
+                    value={doctorFormData.city}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter city"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorState" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorState"
+                    name="state"
+                    value={doctorFormData.state}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter state"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doctorZipCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Zip Code *
+                  </label>
+                  <input
+                    type="text"
+                    id="doctorZipCode"
+                    name="zipCode"
+                    value={doctorFormData.zipCode}
+                    onChange={handleDoctorFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter zip code"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="doctorBio" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bio
+                </label>
+                <textarea
+                  id="doctorBio"
+                  name="bio"
+                  value={doctorFormData.bio}
+                  onChange={handleDoctorFormChange}
+                  rows="3"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                  placeholder="Enter doctor's bio (optional)"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDoctorForm(false)}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center"
+                >
+                  {dataLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Registering...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Register Doctor
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Business Registration Form Modal */}
+      {showBusinessForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-500 mr-2" />
+                Register New Business
+              </h2>
+              <button
+                onClick={() => setShowBusinessForm(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleBusinessRegistration} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Business Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessName"
+                    name="name"
+                    value={businessFormData.name}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter business name"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="businessEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="businessEmail"
+                    name="email"
+                    value={businessFormData.email}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="businessPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showBusinessPassword ? "text" : "password"}
+                      id="businessPassword"
+                      name="password"
+                      value={businessFormData.password}
+                      onChange={handleBusinessFormChange}
+                      required
+                      className="w-full px-4 py-2.5 pr-12 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Enter password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowBusinessPassword(!showBusinessPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                    >
+                      {showBusinessPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="businessPhone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="businessPhone"
+                    name="phone"
+                    value={businessFormData.phone}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="businessType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Business Type *
+                  </label>
+                  <select
+                    id="businessType"
+                    name="businessType"
+                    value={businessFormData.businessType}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                  >
+                    <option value="">Select business type</option>
+                    <option value="clinic">Clinic</option>
+                    <option value="hospital">Hospital</option>
+                    <option value="pharmacy">Pharmacy</option>
+                    <option value="diagnostic">Diagnostic Center</option>
+                    <option value="homecare">Home Care</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="businessRegistrationNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Registration Number *
+                  </label>
+                  <input
+                    type="text"
+                    id="businessRegistrationNumber"
+                    name="registrationNumber"
+                    value={businessFormData.registrationNumber}
+                    onChange={handleBusinessFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter registration number"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Address *
+                </label>
+                <input
+                  type="text"
+                  id="businessAddress"
+                  name="address"
+                  value={businessFormData.address}
+                  onChange={handleBusinessFormChange}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                  placeholder="Enter complete address"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="businessDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="businessDescription"
+                  name="description"
+                  value={businessFormData.description}
+                  onChange={handleBusinessFormChange}
+                  rows="3"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                  placeholder="Enter business description (optional)"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowBusinessForm(false)}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors flex items-center"
+                >
+                  {dataLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Registering...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Register Business
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

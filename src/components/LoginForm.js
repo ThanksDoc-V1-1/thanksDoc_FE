@@ -14,7 +14,7 @@ export default function LoginForm() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
