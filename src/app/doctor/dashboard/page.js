@@ -96,6 +96,8 @@ export default function DoctorDashboard() {
       // Get available requests for this specific doctor (unassigned or assigned to them)
       const response = await serviceRequestAPI.getAvailableRequests(user.id);
       const availableRequests = response.data || [];
+      console.log('🔍 Available requests:', availableRequests);
+      console.log('📊 Request statuses:', availableRequests.map(req => req.status));
       setServiceRequests(availableRequests);
       
       // Update stats - count only pending requests as "pending"
@@ -113,8 +115,10 @@ export default function DoctorDashboard() {
   const fetchMyRequests = async () => {
     try {
       const response = await serviceRequestAPI.getDoctorRequests(user.id);
-      const completedRequests = response.data || [];
-      setMyRequests(completedRequests);
+      const doctorRequests = response.data || [];
+      console.log('👨‍⚕️ Doctor requests:', doctorRequests);
+      console.log('📊 Doctor request statuses:', doctorRequests.map(req => req.status));
+      setMyRequests(doctorRequests);
       
       // Also fetch stats from backend
       try {
@@ -190,6 +194,33 @@ export default function DoctorDashboard() {
       return;
     }
     
+    console.log('🩺 Request to complete:', JSON.stringify(request, null, 2));
+    console.log('🩺 Current request status:', request.status);
+    console.log('🩺 Request ID:', requestId);
+    console.log('🩺 Doctor ID:', request.doctor?.id);
+    
+    // Check if the request is in the correct state to be completed
+    if (request.status !== 'accepted' && request.status !== 'in_progress') {
+      alert(`Cannot complete request with status: ${request.status}. The request must be in 'accepted' or 'in_progress' state.`);
+      return;
+    }
+    
+    // Double check the status by fetching the latest data
+    try {
+      const freshResponse = await serviceRequestAPI.getById(requestId);
+      const freshRequest = freshResponse.data?.data;
+      
+      if (freshRequest && (freshRequest.status !== 'accepted' && freshRequest.status !== 'in_progress')) {
+        alert(`Cannot complete request with current status: ${freshRequest.status}. The request must be in 'accepted' or 'in_progress' state.`);
+        console.log('❌ Request completion failed - incorrect status after refresh:', freshRequest.status);
+        return;
+      }
+      console.log('✅ Fresh request status verified:', freshRequest?.status);
+    } catch (error) {
+      console.error('❌ Error fetching fresh request data:', error);
+      // Continue anyway as we already have the request data
+    }
+    
     // Calculate payment amount based on hourly rate and duration
     const hours = request.estimatedDuration || 1;
     const hourlyRate = doctorData?.hourlyRate || 50;
@@ -205,7 +236,10 @@ export default function DoctorDashboard() {
 
     setActionLoading(requestId);
     try {
+      console.log('🚀 Sending complete request to API for ID:', requestId);
       const response = await serviceRequestAPI.completeRequest(requestId, notes);
+      console.log('✅ Complete request API response:', response);
+      
       if (response.data) {
         // Show success message with payment details
         const successMessage = document.createElement('div');
@@ -222,11 +256,23 @@ export default function DoctorDashboard() {
         `;
         
         alert(`Service request completed successfully!\n\nExpected payment: ${formatCurrency(paymentAmount)}\n\nThe business will now see payment options.`);
-        fetchMyRequests();
+        
+        // Refresh data to update the UI
+        console.log('🔄 Refreshing data after successful completion');
+        await fetchNearbyRequests();
+        await fetchMyRequests();
       }
     } catch (error) {
-      console.error('Error completing request:', error);
-      alert('Failed to complete request. Please try again.');
+      console.error('❌ Error completing request:', error);
+      console.error('❌ Error response:', error.response?.data);
+      
+      // Get detailed error message if available
+      const errorMessage = error.response?.data?.error?.message || 'Failed to complete request. Please try again.';
+      
+      alert(`Failed to complete request: ${errorMessage}\n\nPlease try again or contact support if the issue persists.`);
+      
+      // Log additional details that might help debug
+      console.log('📊 Current request data:', JSON.stringify(request, null, 2));
     } finally {
       setActionLoading(null);
     }
@@ -641,7 +687,7 @@ export default function DoctorDashboard() {
                         </div>
                         <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           request.isPaid 
-                          ? 'bg-green-900/30 text-green-400 border border-green-700' 
+                          ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700' 
                           : 'bg-yellow-900/30 text-yellow-400 border border-yellow-700'
                         }`}>
                           {request.isPaid ? 'PAID' : 'PENDING PAYMENT'}
@@ -655,8 +701,11 @@ export default function DoctorDashboard() {
                         <div className="text-xs text-gray-400">
                           Completed: {formatDate(request.completedAt || request.updatedAt)}
                         </div>
-                        <div className="font-semibold text-green-400">
+                        <div className={`font-semibold ${request.isPaid ? 'text-emerald-400' : 'text-green-400'}`}>
                           {formatCurrency(request.totalAmount || 0)}
+                          {request.isPaid && (
+                            <span className="text-xs font-normal ml-1">({request.paymentMethod === 'cash' ? 'Cash' : 'Card'})</span>
+                          )}
                         </div>
                       </div>
                     </div>

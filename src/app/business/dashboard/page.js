@@ -72,8 +72,11 @@ export default function BusinessDashboard() {
 
   const fetchServiceRequests = async () => {
     try {
+      console.log('🔄 Fetching service requests for business:', user.id);
       const response = await serviceRequestAPI.getBusinessRequests(user.id);
       const requests = response.data || [];
+      console.log('📋 Fetched service requests:', requests);
+      console.log('🔍 Any paid requests?', requests.some(req => req.isPaid));
       setServiceRequests(requests);
       
       // Also fetch stats from backend
@@ -246,9 +249,17 @@ export default function BusinessDashboard() {
     setLoading(true);
     try {
       const response = await serviceRequestAPI.processPayment(request.id, 'cash', {});
+      console.log('💰 Cash Payment Response:', response.data);
       if (response.data) {
-        alert(`Cash payment of ${formatCurrency(request.totalAmount)} processed successfully! Thank you for using our service.`);
-        fetchServiceRequests();
+        alert(`Cash payment of ${formatCurrency(request.totalAmount)} processed successfully! The payment status has been updated.`);
+        // Force update the request in the local state too
+        setServiceRequests(prev => 
+          prev.map(req => 
+            req.id === request.id ? { ...req, isPaid: true, paymentMethod: 'cash' } : req
+          )
+        );
+        // Also fetch fresh data from server
+        fetchServiceRequests(); 
       }
     } catch (error) {
       console.error('Error processing cash payment:', error);
@@ -269,8 +280,19 @@ export default function BusinessDashboard() {
         timestamp: new Date().toISOString(),
       });
       
+      console.log('💳 Card Payment Response:', response.data);
+      
       if (response.data) {
-        alert(`Card payment of ${formatCurrency(paymentRequest.totalAmount)} processed successfully! Thank you for using our service.`);
+        alert(`Card payment of ${formatCurrency(paymentRequest.totalAmount)} processed successfully! The payment status has been updated.`);
+        
+        // Force update the request in the local state too
+        setServiceRequests(prev => 
+          prev.map(req => 
+            req.id === paymentRequest.id ? { ...req, isPaid: true, paymentMethod: 'card' } : req
+          )
+        );
+        
+        // Also fetch fresh data from server
         fetchServiceRequests();
       }
     } catch (error) {
@@ -278,7 +300,7 @@ export default function BusinessDashboard() {
       alert('Payment record failed. Please contact support.');
     } finally {
       setLoading(false);
-      setPaymentRequest(null);
+      setPaymentRequest(null); // Clear payment request
     }
   };
 
@@ -317,6 +339,14 @@ export default function BusinessDashboard() {
       console.log('✅ Business authenticated, loading dashboard');
     }
   }, [authLoading, isAuthenticated, user]);
+
+  // Log whenever service requests change
+  useEffect(() => {
+    if (serviceRequests.length > 0) {
+      console.log('💼 Current service requests state:', serviceRequests);
+      console.log('✅ Requests with isPaid:', serviceRequests.filter(req => req.isPaid).length);
+    }
+  }, [serviceRequests]);
 
   // Don't render anything if not authenticated
   if (authLoading) {
@@ -548,7 +578,7 @@ export default function BusinessDashboard() {
                               <span>Cancel</span>
                             </button>
                           )}
-                          {request.totalAmount && request.status === 'completed' && (
+                          {request.totalAmount && request.status === 'completed' && request.isPaid === false && (
                             <div className="bg-green-900/20 px-3 py-2 rounded-lg flex flex-col items-end">
                               <span className="font-semibold text-green-400 mb-2">{formatCurrency(request.totalAmount)}</span>
                               <div className="flex space-x-2">
@@ -566,6 +596,15 @@ export default function BusinessDashboard() {
                                   <DollarSign className="h-3 w-3 mr-1" />
                                   Pay Card
                                 </button>
+                              </div>
+                            </div>
+                          )}
+                          {request.totalAmount && request.status === 'completed' && request.isPaid === true && (
+                            <div className="bg-emerald-900/20 px-3 py-2 rounded-lg flex flex-col items-end">
+                              <span className="font-semibold text-emerald-400 mb-1">{formatCurrency(request.totalAmount)}</span>
+                              <div className="flex items-center space-x-1 bg-emerald-900/30 px-2 py-1 rounded text-xs text-emerald-400">
+                                <DollarSign className="h-3 w-3 mr-1" />
+                                Paid ({request.paymentMethod === 'cash' ? 'Cash' : 'Card'})
                               </div>
                             </div>
                           )}
