@@ -124,13 +124,21 @@ export default function AdminDashboard() {
       
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
+      
+      // Log detailed status information for debugging
+      console.log('📋 Request status details:');
+      requests.forEach(req => {
+        console.log(`ID: ${req.id}, Status: ${req.status}, isPaid: ${req.isPaid ? 'true' : 'false'}, 
+          Timestamps: [requested: ${req.requestedAt || 'none'}, accepted: ${req.acceptedAt || 'none'}, completed: ${req.completedAt || 'none'}]`);
+      });
+      
       const sortedRequests = requests.sort((a, b) => {
         const dateA = new Date(a.requestedAt || a.createdAt || a.attributes?.requestedAt || a.attributes?.createdAt || 0);
         const dateB = new Date(b.requestedAt || b.createdAt || b.attributes?.requestedAt || b.attributes?.createdAt || 0);
         return dateB - dateA; // Sort descending (newest first)
       });
       
-      console.log('📋 Sorted requests:', sortedRequests);
+      console.log('📋 Sorted requests:', sortedRequests.length);
       setServiceRequests(sortedRequests);
       
       // Calculate doctor earnings
@@ -736,13 +744,30 @@ export default function AdminDashboard() {
               
               <div className="divide-y divide-gray-800">
                 {serviceRequests.slice(0, 5).map((request) => {
+                  // Debug log to verify data
+                  console.log(`Overview rendering request ${request.id}: status=${request.status}, completedAt=${request.completedAt}, isPaid=${request.isPaid}`);
                   // Handle both direct properties and nested attributes
                   const id = request.id || request.attributes?.id;
                   const serviceType = request.serviceType || request.attributes?.serviceType;
                   const requestedAt = request.requestedAt || request.attributes?.requestedAt;
-                  const status = request.status || request.attributes?.status;
+                  const acceptedAt = request.acceptedAt || request.attributes?.acceptedAt;
+                  const completedAt = request.completedAt || request.attributes?.completedAt;
+                  
+                  // Determine the correct status based on timestamps and status field
+                  let status = request.status || request.attributes?.status;
+                  
+                  // If timestamps indicate a different state than what's stored, use the timestamp-based status
+                  if (completedAt) {
+                    status = 'completed';
+                  } else if (acceptedAt && status === 'pending') {
+                    status = 'accepted';
+                  }
+                  
                   const totalAmount = request.totalAmount || request.attributes?.totalAmount;
                   const urgencyLevel = request.urgencyLevel || request.attributes?.urgencyLevel;
+                  
+                  // Check isPaid flag first, then fall back to paymentStatus field
+                  const isPaid = request.isPaid || request.attributes?.isPaid;
                   
                   // Business and doctor might be nested differently depending on API response format
                   const businessName = request.business?.businessName || 
@@ -772,13 +797,20 @@ export default function AdminDashboard() {
                               {urgencyLevel || 'normal'}
                             </span>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                              status === 'completed' ? 'bg-green-900/40 text-green-400' :
-                              status === 'accepted' ? 'bg-blue-900/40 text-blue-400' :
-                              status === 'pending' ? 'bg-yellow-900/40 text-yellow-400' :
-                              'bg-gray-800 text-gray-400'
+                              status === 'completed' ? 'bg-green-900/40 text-green-400 border border-green-900' :
+                              status === 'accepted' ? 'bg-blue-900/40 text-blue-400 border border-blue-900' :
+                              status === 'pending' ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' :
+                              status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-900' :
+                              'bg-gray-800 text-gray-400 border border-gray-700'
                             }`}>
                               {(status || 'pending').replace('_', ' ')}
                             </span>
+                            {isPaid && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-green-900/40 text-green-400 border border-green-900">
+                                <Check className="h-3 w-3 mr-1 stroke-2" />
+                                PAID
+                              </span>
+                            )}
                           </div>
                           <h3 className="font-semibold text-white">{serviceType}</h3>
                           <div className="flex items-center text-sm text-gray-400 mt-1 space-x-2">
@@ -799,13 +831,14 @@ export default function AdminDashboard() {
                             <div className="text-sm font-semibold text-green-500">
                               {formatCurrency(totalAmount)}
                             </div>
-                            <div className={`mt-1 text-xs px-2 py-1 rounded-full ${
-                              (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' ? 'bg-green-900/40 text-green-400' :
+                            <div className={`mt-1 text-xs px-2 py-1 rounded-full flex items-center ${
+                              isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' ? 'bg-green-900/40 text-green-400' :
                               (request.paymentStatus || request.attributes?.paymentStatus) === 'pending' ? 'bg-yellow-900/40 text-yellow-400' :
                               (request.paymentStatus || request.attributes?.paymentStatus) === 'failed' ? 'bg-red-900/40 text-red-400' :
                               'bg-gray-800 text-gray-400'
                             }`}>
-                              {((request.paymentStatus || request.attributes?.paymentStatus) || 'pending').toUpperCase()}
+                              {isPaid && <Check className="h-3 w-3 mr-1 stroke-2" />}
+                              {(isPaid ? 'PAID' : (request.paymentStatus || request.attributes?.paymentStatus) || 'pending').toUpperCase()}
                             </div>
                           </div>
                         )}
