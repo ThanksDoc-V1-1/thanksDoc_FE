@@ -139,6 +139,8 @@ export default function Home() {
             <Stethoscope className="h-8 w-8 text-blue-400" />
             <span className="text-2xl font-bold text-white">ThanksDoc</span>
           </div>
+          
+          {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {isAuthenticated && user ? (
               <>
@@ -174,7 +176,56 @@ export default function Home() {
               </>
             )}
           </div>
+          
+          {/* Mobile navigation button */}
+          {isAuthenticated && user && (
+            <div className="md:hidden">
+              <button 
+                onClick={() => {
+                  const mobileMenu = document.getElementById('mobile-menu');
+                  if (mobileMenu) {
+                    mobileMenu.classList.toggle('hidden');
+                  }
+                }}
+                className="text-gray-300 hover:text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          )}
         </nav>
+        
+        {/* Mobile menu */}
+        {isAuthenticated && user && (
+          <div id="mobile-menu" className="md:hidden mt-4 hidden bg-gray-800 rounded-lg p-3">
+            <div className="space-y-2">
+              <p className="text-gray-300 px-3 py-2 rounded-md text-sm">
+                Welcome, {user.name || user.email}
+              </p>
+              <Link 
+                href={
+                  user.role === 'admin' ? '/admin/dashboard' : 
+                  user.role === 'doctor' ? '/doctor/dashboard' : 
+                  user.role === 'business' ? '/business/dashboard' : '/'
+                }
+                className="block px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Go to Dashboard
+              </Link>
+              <button 
+                onClick={logout}
+                className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium text-white bg-red-900/30 hover:bg-red-800/50"
+              >
+                <div className="flex items-center">
+                  <LogOut className="h-4 w-4 mr-1.5" />
+                  <span>Logout</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}

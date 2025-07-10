@@ -481,7 +481,9 @@ export default function AdminDashboard() {
                 <p className="text-gray-400">Manage doctors, businesses, and service requests</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            
+            {/* Desktop controls */}
+            <div className="hidden md:flex items-center space-x-3">
               <button 
                 onClick={fetchAllData}
                 className="px-4 py-2 bg-blue-900/30 text-blue-300 rounded-md hover:bg-blue-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
@@ -492,6 +494,43 @@ export default function AdminDashboard() {
               <button 
                 onClick={logout}
                 className="px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span>Logout</span>
+              </button>
+            </div>
+            
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button 
+                onClick={() => {
+                  const mobileMenu = document.getElementById('mobile-menu-admin');
+                  if (mobileMenu) {
+                    mobileMenu.classList.toggle('hidden');
+                  }
+                }}
+                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Mobile menu */}
+          <div id="mobile-menu-admin" className="md:hidden mt-4 hidden">
+            <div className="space-y-3 py-3">
+              <button 
+                onClick={fetchAllData}
+                className="w-full px-4 py-2 bg-blue-900/30 text-blue-300 rounded-md hover:bg-blue-800/50 transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                <span>Refresh Data</span>
+              </button>
+              <button 
+                onClick={logout}
+                className="w-full px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>

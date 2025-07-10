@@ -413,7 +413,9 @@ export default function BusinessDashboard() {
                 <p className="text-gray-400">Welcome back, {contactName}</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            
+            {/* Desktop controls */}
+            <div className="hidden md:flex items-center space-x-3">
               {/* Auto-refresh indicator */}
               <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
                 <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
@@ -440,6 +442,62 @@ export default function BusinessDashboard() {
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span>Logout</span>
+              </button>
+            </div>
+            
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button 
+                onClick={() => {
+                  const mobileMenu = document.getElementById('mobile-menu-business');
+                  if (mobileMenu) {
+                    mobileMenu.classList.toggle('hidden');
+                  }
+                }}
+                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Mobile menu */}
+          <div id="mobile-menu-business" className="md:hidden mt-4 hidden">
+            <div className="space-y-2 py-3">
+              <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
+                <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
+                  <svg className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="text-xs">{autoRefresh ? 'Auto-updating' : 'Updates paused'}</span>
+                </div>
+                <button
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`text-xs px-2 py-0.5 rounded ${autoRefresh ? 'bg-blue-700 text-blue-100' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  {autoRefresh ? 'Disable' : 'Enable'}
+                </button>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowRequestForm(true);
+                  const mobileMenu = document.getElementById('mobile-menu-business');
+                  if (mobileMenu) mobileMenu.classList.add('hidden');
+                }}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                <span>Request Doctor</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
