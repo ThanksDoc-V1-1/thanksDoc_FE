@@ -186,6 +186,12 @@ export default function DoctorDashboard() {
     }
   };
 
+  // State for the completion modal
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionNotes, setCompletionNotes] = useState('');
+  const [completionRequest, setCompletionRequest] = useState(null);
+  const [completionAmount, setCompletionAmount] = useState(0);
+
   const handleCompleteRequest = async (requestId) => {
     // Get the request details first
     const request = serviceRequests.find(r => r.id === requestId) || myRequests.find(r => r.id === requestId);
@@ -226,36 +232,28 @@ export default function DoctorDashboard() {
     const hourlyRate = doctorData?.hourlyRate || 50;
     const paymentAmount = hours * hourlyRate;
     
-    // Confirm with a more detailed message showing payment info
-    if (!confirm(`You are marking this service request as completed.\n\nYou will receive: ${formatCurrency(paymentAmount)}\n\nAfter completion, the business will be prompted to make payment.\n\nContinue?`)) {
-      return;
-    }
+    // Show the completion modal instead of multiple popups
+    setCompletionRequest(request);
+    setCompletionAmount(paymentAmount);
+    setCompletionNotes('');
+    setShowCompletionModal(true);
+  };
+  
+  // Function to handle the actual completion after modal confirmation
+  const handleConfirmCompletion = async () => {
+    if (!completionRequest) return;
     
-    const notes = prompt('Please add any notes about the service provided:');
-    if (notes === null) return; // User cancelled
-
-    setActionLoading(requestId);
+    setShowCompletionModal(false);
+    setActionLoading(completionRequest.id);
+    
     try {
-      console.log('🚀 Sending complete request to API for ID:', requestId);
-      const response = await serviceRequestAPI.completeRequest(requestId, notes);
+      console.log('🚀 Sending complete request to API for ID:', completionRequest.id);
+      const response = await serviceRequestAPI.completeRequest(completionRequest.id, completionNotes);
       console.log('✅ Complete request API response:', response);
       
       if (response.data) {
-        // Show success message with payment details
-        const successMessage = document.createElement('div');
-        successMessage.innerHTML = `
-          <div style="text-align: center; padding: 20px;">
-            <h3 style="color: #10b981; margin-bottom: 15px; font-size: 18px;">Service Completed Successfully!</h3>
-            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
-              <p style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Expected Payment</p>
-              <p style="font-size: 24px; color: #10b981; font-weight: bold;">${formatCurrency(paymentAmount)}</p>
-            </div>
-            <p style="color: #94a3b8; margin-bottom: 10px;">The business will now see payment options in their dashboard.</p>
-            <p style="color: #94a3b8;">You'll receive notification when payment is processed.</p>
-          </div>
-        `;
-        
-        alert(`Service request completed successfully!\n\nExpected payment: ${formatCurrency(paymentAmount)}\n\nThe business will now see payment options.`);
+        // Show a single success notification
+        alert(`Service completed successfully! Expected payment: ${formatCurrency(completionAmount)}`);
         
         // Refresh data to update the UI
         console.log('🔄 Refreshing data after successful completion');
@@ -272,7 +270,7 @@ export default function DoctorDashboard() {
       alert(`Failed to complete request: ${errorMessage}\n\nPlease try again or contact support if the issue persists.`);
       
       // Log additional details that might help debug
-      console.log('📊 Current request data:', JSON.stringify(request, null, 2));
+      console.log('📊 Current request data:', JSON.stringify(completionRequest, null, 2));
     } finally {
       setActionLoading(null);
     }
@@ -322,6 +320,51 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
+      {/* Completion Modal */}
+      {showCompletionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md modal-scrollable">
+            <h3 className="text-xl font-bold text-white mb-4">Complete Service Request</h3>
+            
+            <div className="bg-gray-800 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-300 mb-2">Expected Payment</p>
+              <p className="text-2xl font-bold text-green-500">{formatCurrency(completionAmount)}</p>
+              <p className="text-sm text-gray-400 mt-1">
+                After completion, the business will be prompted to make payment.
+              </p>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Notes (optional)
+              </label>
+              <textarea
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white"
+                rows="3"
+                placeholder="Add any notes about the service provided..."
+                value={completionNotes}
+                onChange={(e) => setCompletionNotes(e.target.value)}
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCompletionModal(false)}
+                className="px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmCompletion}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg"
+              >
+                Complete Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
       {/* Header */}
       <header className="bg-gray-900 shadow-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
