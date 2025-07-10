@@ -36,6 +36,11 @@ export default function BusinessDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
 
+  // Auto-refresh functionality
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
+  const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds refresh rate
+
   useEffect(() => {
     console.log('🏢 Business Dashboard useEffect - User:', user);
     console.log('🆔 User ID:', user?.id);
@@ -47,6 +52,24 @@ export default function BusinessDashboard() {
       fetchNearbyDoctors();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!autoRefresh || !user?.id) return;
+    
+    console.log('🔄 Setting up auto-refresh for business dashboard');
+    
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refreshing business dashboard data');
+      fetchServiceRequests();
+      fetchNearbyDoctors();
+      setLastRefreshTime(new Date());
+    }, AUTO_REFRESH_INTERVAL);
+    
+    return () => {
+      console.log('🛑 Clearing auto-refresh interval');
+      clearInterval(refreshInterval);
+    };
+  }, [autoRefresh, user?.id]);
 
   const fetchBusinessData = async () => {
     try {

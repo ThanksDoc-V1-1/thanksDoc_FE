@@ -23,6 +23,11 @@ export default function DoctorDashboard() {
     totalEarnings: 0
   });
 
+  // State for controlling auto-refresh
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
+  const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
+
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
     if (!authLoading) {
@@ -60,6 +65,25 @@ export default function DoctorDashboard() {
       fetchMyRequests();
     }
   }, [user, serviceRequests]);
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefresh || !user?.id) return;
+    
+    console.log('🔄 Setting up auto-refresh for doctor dashboard');
+    
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refreshing doctor dashboard data');
+      fetchNearbyRequests();
+      fetchMyRequests();
+      setLastRefreshTime(new Date());
+    }, AUTO_REFRESH_INTERVAL);
+    
+    return () => {
+      console.log('🛑 Clearing auto-refresh interval');
+      clearInterval(refreshInterval);
+    };
+  }, [autoRefresh, user?.id]);
 
   const fetchDoctorData = async () => {
     try {
@@ -381,6 +405,24 @@ export default function DoctorDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Auto-refresh indicator */}
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
+                  <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
+                    <svg className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-xs">{autoRefresh ? 'Auto-updating' : 'Updates paused'}</span>
+                  </div>
+                  <button
+                    onClick={() => setAutoRefresh(!autoRefresh)}
+                    className={`text-xs px-2 py-0.5 rounded ${autoRefresh ? 'bg-blue-700 text-blue-100' : 'bg-gray-700 text-gray-300'}`}
+                  >
+                    {autoRefresh ? 'Disable' : 'Enable'}
+                  </button>
+                </div>
+              </div>
+              
               {/* Notification counter */}
               {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
                 <div className="relative">
