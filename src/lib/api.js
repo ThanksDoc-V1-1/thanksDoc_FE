@@ -147,6 +147,7 @@ export const serviceRequestAPI = {
   acceptRequest: (id, doctorId) => api.put(`/service-requests/${id}/accept`, { doctorId }),
   rejectRequest: (id, doctorId, reason) => api.put(`/service-requests/${id}/reject`, { doctorId, reason }),
   completeRequest: (id, notes) => api.put(`/service-requests/${id}/complete`, { notes }),
+  processPayment: (id, paymentMethod, paymentDetails) => api.put(`/service-requests/${id}/payment`, { paymentMethod, paymentDetails }),
   getDoctorRequests: (doctorId) => api.get(`/service-requests/doctor/${doctorId}`),
   getAvailableRequests: (doctorId) => api.get(`/service-requests/available/${doctorId}`),
   getBusinessRequests: (businessId) => api.get(`/service-requests/business/${businessId}`),

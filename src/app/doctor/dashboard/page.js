@@ -183,6 +183,23 @@ export default function DoctorDashboard() {
   };
 
   const handleCompleteRequest = async (requestId) => {
+    // Get the request details first
+    const request = serviceRequests.find(r => r.id === requestId) || myRequests.find(r => r.id === requestId);
+    if (!request) {
+      alert('Service request not found.');
+      return;
+    }
+    
+    // Calculate payment amount based on hourly rate and duration
+    const hours = request.estimatedDuration || 1;
+    const hourlyRate = doctorData?.hourlyRate || 50;
+    const paymentAmount = hours * hourlyRate;
+    
+    // Confirm with a more detailed message showing payment info
+    if (!confirm(`You are marking this service request as completed.\n\nYou will receive: ${formatCurrency(paymentAmount)}\n\nAfter completion, the business will be prompted to make payment.\n\nContinue?`)) {
+      return;
+    }
+    
     const notes = prompt('Please add any notes about the service provided:');
     if (notes === null) return; // User cancelled
 
@@ -190,7 +207,21 @@ export default function DoctorDashboard() {
     try {
       const response = await serviceRequestAPI.completeRequest(requestId, notes);
       if (response.data) {
-        alert('Service request completed successfully!');
+        // Show success message with payment details
+        const successMessage = document.createElement('div');
+        successMessage.innerHTML = `
+          <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #10b981; margin-bottom: 15px; font-size: 18px;">Service Completed Successfully!</h3>
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <p style="font-weight: bold; font-size: 16px; margin-bottom: 5px;">Expected Payment</p>
+              <p style="font-size: 24px; color: #10b981; font-weight: bold;">${formatCurrency(paymentAmount)}</p>
+            </div>
+            <p style="color: #94a3b8; margin-bottom: 10px;">The business will now see payment options in their dashboard.</p>
+            <p style="color: #94a3b8;">You'll receive notification when payment is processed.</p>
+          </div>
+        `;
+        
+        alert(`Service request completed successfully!\n\nExpected payment: ${formatCurrency(paymentAmount)}\n\nThe business will now see payment options.`);
         fetchMyRequests();
       }
     } catch (error) {
@@ -373,7 +404,7 @@ export default function DoctorDashboard() {
                       <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-900/30 text-yellow-400 border border-yellow-700">
                         🔔 {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length} New Request{serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 1 ? 's' : ''}
                       </span>
-                    </div>
+                      </div>
                   )}
                 </div>
               </div>
@@ -601,82 +632,32 @@ export default function DoctorDashboard() {
               <div className="divide-y divide-gray-700 max-h-96 overflow-y-auto">
                 {myRequests.length > 0 ? (
                   myRequests.map((request) => (
-                    <div key={request.id} className={`p-4 hover:bg-gray-700/50 transition-colors ${request.status === 'pending' ? 'bg-yellow-900/10 border-l-4 border-yellow-400' : ''}`}>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status)}`}>
-                            {request.status.replace('_', ' ').toUpperCase()}
-                          </span>
-                          {request.estimatedDuration && (
-                            <div className="bg-purple-900/20 px-2 py-1 rounded-lg">
-                              <span className="text-sm font-semibold text-purple-400">
-                                {request.estimatedDuration}h • {formatCurrency((request.estimatedDuration || 0) * (doctorData?.hourlyRate || 0))}
-                              </span>
-                            </div>
-                          )}
+                    // Render completed request with payment status
+                    <div key={request.id} className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-semibold text-white">{request.serviceType}</h4>
+                          <p className="text-sm text-gray-400">{request.description}</p>
                         </div>
-                        <h4 className="font-semibold text-white">{request.serviceType}</h4>
-                        <p className="text-sm text-gray-400">{request.description}</p>
-                        <p className="text-sm text-blue-400 font-medium bg-blue-900/20 px-2 py-1 rounded inline-block">{request.business?.businessName}</p>
-                        <p className="text-xs text-gray-400 bg-gray-700/50 px-2 py-1 rounded">
-                          Requested: {formatDate(request.requestedAt)}
-                        </p>
-                        
-                        {request.status === 'pending' && (
-                          <div className="flex space-x-2 pt-2">
-                            <button
-                              onClick={() => handleAcceptRequest(request.id)}
-                              disabled={actionLoading === request.id}
-                              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
-                            >
-                              {actionLoading === request.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span>Processing...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="h-4 w-4" />
-                                  <span>Accept</span>
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleRejectRequest(request.id)}
-                              disabled={actionLoading === request.id}
-                              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
-                            >
-                              {actionLoading === request.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span>Processing...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <X className="h-4 w-4" />
-                                  <span>Reject</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        )}
-                        
-                        {request.status === 'accepted' && (
-                          <button
-                            onClick={() => handleCompleteRequest(request.id)}
-                            disabled={actionLoading === request.id}
-                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-3 py-2 rounded-lg text-sm disabled:opacity-50 transition-all duration-200 flex items-center justify-center space-x-1 font-medium shadow-sm"
-                          >
-                            {actionLoading === request.id ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span>Processing...</span>
-                              </>
-                            ) : (
-                              <span>Mark Complete</span>
-                            )}
-                          </button>
-                        )}
+                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          request.isPaid 
+                          ? 'bg-green-900/30 text-green-400 border border-green-700' 
+                          : 'bg-yellow-900/30 text-yellow-400 border border-yellow-700'
+                        }`}>
+                          {request.isPaid ? 'PAID' : 'PENDING PAYMENT'}
+                        </div>
+                      </div>
+                      <p className="text-sm text-blue-400 font-medium bg-blue-900/20 px-2 py-1 rounded inline-block mb-2">
+                        {request.business?.businessName}
+                      </p>
+                      
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-700">
+                        <div className="text-xs text-gray-400">
+                          Completed: {formatDate(request.completedAt || request.updatedAt)}
+                        </div>
+                        <div className="font-semibold text-green-400">
+                          {formatCurrency(request.totalAmount || 0)}
+                        </div>
                       </div>
                     </div>
                   ))

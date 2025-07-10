@@ -68,6 +68,29 @@ body {
   color: #9ca3af;
 }
 
+/* Modal and scrollable container utilities */
+.modal-scrollable {
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+.modal-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollable::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 10px;
+}
+
+.modal-scrollable::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 10px;
+  border: 2px solid #1f2937;
+}
+
 .form-link {
   color: #60a5fa;
 }

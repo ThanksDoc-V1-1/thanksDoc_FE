@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone } from 'lucide-react';
+import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -28,6 +28,8 @@ export default function BusinessDashboard() {
     estimatedDuration: 1,
     preferredDoctorId: null,
   });
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState(null);
   const [showHoursPopup, setShowHoursPopup] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [requestHours, setRequestHours] = useState(1);
@@ -221,6 +223,62 @@ export default function BusinessDashboard() {
       alert('Failed to create service request. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayment = (requestId, paymentMethod) => {
+    const request = serviceRequests.find(r => r.id === requestId);
+    if (!request) {
+      alert('Service request not found.');
+      return;
+    }
+    
+    if (paymentMethod === 'cash') {
+      handleCashPayment(request);
+    } else {
+      // Show card payment modal
+      setPaymentRequest(request);
+      setShowPaymentModal(true);
+    }
+  };
+  
+  const handleCashPayment = async (request) => {
+    setLoading(true);
+    try {
+      const response = await serviceRequestAPI.processPayment(request.id, 'cash', {});
+      if (response.data) {
+        alert(`Cash payment of ${formatCurrency(request.totalAmount)} processed successfully! Thank you for using our service.`);
+        fetchServiceRequests();
+      }
+    } catch (error) {
+      console.error('Error processing cash payment:', error);
+      alert('Failed to process payment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handlePaymentSuccess = async () => {
+    if (!paymentRequest) return;
+    
+    setShowPaymentModal(false);
+    setLoading(true);
+    
+    try {
+      const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
+        timestamp: new Date().toISOString(),
+      });
+      
+      if (response.data) {
+        alert(`Card payment of ${formatCurrency(paymentRequest.totalAmount)} processed successfully! Thank you for using our service.`);
+        fetchServiceRequests();
+      }
+    } catch (error) {
+      console.error('Error processing card payment:', error);
+      alert('Payment record failed. Please contact support.');
+    } finally {
+      setLoading(false);
+      setPaymentRequest(null);
     }
   };
 
@@ -490,7 +548,28 @@ export default function BusinessDashboard() {
                               <span>Cancel</span>
                             </button>
                           )}
-                          {request.totalAmount && (
+                          {request.totalAmount && request.status === 'completed' && (
+                            <div className="bg-green-900/20 px-3 py-2 rounded-lg flex flex-col items-end">
+                              <span className="font-semibold text-green-400 mb-2">{formatCurrency(request.totalAmount)}</span>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handlePayment(request.id, 'cash')}
+                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium flex items-center"
+                                >
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  Pay Cash
+                                </button>
+                                <button
+                                  onClick={() => handlePayment(request.id, 'card')}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium flex items-center"
+                                >
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  Pay Card
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {request.totalAmount && request.status !== 'completed' && (
                             <div className="bg-green-900/20 px-3 py-2 rounded-lg">
                               <span className="font-semibold text-green-400">{formatCurrency(request.totalAmount)}</span>
                             </div>
@@ -859,6 +938,115 @@ export default function BusinessDashboard() {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
                   {loading ? 'Sending...' : 'Send Request'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}              {showPaymentModal && paymentRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 rounded-lg shadow max-w-md w-full border border-gray-800 max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-900/30 p-2 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-blue-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-white">Payment for Service</h2>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto modal-scrollable">
+              <div className="mb-6 bg-gray-800 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-white mb-2">Service Details</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Service:</span>
+                    <span className="text-white font-medium">{paymentRequest.serviceType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Doctor:</span>
+                    <span className="text-white font-medium">
+                      {paymentRequest.doctor ? `Dr. ${paymentRequest.doctor.firstName} ${paymentRequest.doctor.lastName}` : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Duration:</span>
+                    <span className="text-white font-medium">{paymentRequest.estimatedDuration} hour(s)</span>
+                  </div>
+                  <div className="flex justify-between mt-4">
+                    <span className="text-blue-400 font-semibold">Amount Due:</span>
+                    <span className="text-blue-400 font-bold text-xl">{formatCurrency(paymentRequest.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="border border-gray-800 rounded-lg p-4 bg-gray-800/50">
+                  <h4 className="text-gray-200 font-medium mb-3">Card Information</h4>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Card Number</label>
+                      <input
+                        type="text"
+                        placeholder="1234 5678 9012 3456"
+                        className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-1">Expiry Date</label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-1">CVV</label>
+                        <input
+                          type="text"
+                          placeholder="123"
+                          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm text-gray-300 mb-1">Name on Card</label>
+                      <input
+                        type="text"
+                        placeholder="John Smith"
+                        className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800/50 p-3 rounded-lg border border-gray-700 flex items-center space-x-2">
+                  <Lock className="h-4 w-4 text-green-400" />
+                  <span className="text-xs text-gray-300">Your payment information is encrypted and secure</span>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3 pt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setPaymentRequest(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePaymentSuccess}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow flex items-center justify-center"
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  Pay {formatCurrency(paymentRequest.totalAmount)}
                 </button>
               </div>
             </div>
