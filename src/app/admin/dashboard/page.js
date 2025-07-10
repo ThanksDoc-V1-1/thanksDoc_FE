@@ -121,7 +121,17 @@ export default function AdminDashboard() {
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
-      setServiceRequests(requestsRes.data?.data || []);
+      
+      // Sort service requests by date, with newest first
+      const requests = requestsRes.data?.data || [];
+      const sortedRequests = requests.sort((a, b) => {
+        const dateA = new Date(a.requestedAt || a.createdAt || a.attributes?.requestedAt || a.attributes?.createdAt || 0);
+        const dateB = new Date(b.requestedAt || b.createdAt || b.attributes?.requestedAt || b.attributes?.createdAt || 0);
+        return dateB - dateA; // Sort descending (newest first)
+      });
+      
+      console.log('📋 Sorted requests:', sortedRequests);
+      setServiceRequests(sortedRequests);
       
       // Calculate doctor earnings
       calculateDoctorEarnings(doctorsRes.data?.data || [], requestsRes.data?.data || [], businessesRes.data?.data || []);
@@ -134,6 +144,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAllData();
+    
+    // Set up automatic refresh every 30 seconds
+    const refreshInterval = setInterval(() => {
+      console.log('🔄 Auto-refreshing data...');
+      fetchAllData();
+    }, 30000);
+    
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(refreshInterval);
   }, []);
 
   // Authentication check - redirect if not authenticated or not admin
@@ -402,10 +421,18 @@ export default function AdminDashboard() {
       request.doctor?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.doctor?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    // Determine the effective status considering timestamps
+    let effectiveStatus = request.status || request.attributes?.status;
+    if (request.completedAt || request.attributes?.completedAt) {
+      effectiveStatus = 'completed';
+    } else if ((request.acceptedAt || request.attributes?.acceptedAt) && effectiveStatus === 'pending') {
+      effectiveStatus = 'accepted';
+    }
+    
     const matchesFilter = filterStatus === 'all' || 
-      (filterStatus === 'pending' && request.status === 'pending') || 
-      (filterStatus === 'accepted' && request.status === 'accepted') ||
-      (filterStatus === 'completed' && request.status === 'completed');
+      (filterStatus === 'pending' && effectiveStatus === 'pending') || 
+      (filterStatus === 'accepted' && effectiveStatus === 'accepted') ||
+      (filterStatus === 'completed' && effectiveStatus === 'completed');
     
     return matchesSearch && matchesFilter;
   });
@@ -1275,15 +1302,44 @@ export default function AdminDashboard() {
                 <h2 className="text-xl font-semibold text-white flex items-center">
                   <Users className="h-5 w-5 text-green-500 mr-2" />
                   Service Requests
+                  <button 
+                    onClick={fetchAllData}
+                    className="ml-3 p-1.5 bg-gray-800 rounded-md hover:bg-gray-700 transition-colors" 
+                    title="Refresh data"
+                  >
+                    <RefreshCw className="h-4 w-4 text-green-400" />
+                  </button>
                 </h2>
                 <p className="text-sm text-gray-400 mt-1">Monitor all service requests in the system</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
                 <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full">
-                  <span className="font-medium">{serviceRequests.filter(r => r.status === 'pending' || r.attributes?.status === 'pending').length}</span> Pending
+                  <span className="font-medium">
+                    {serviceRequests.filter(r => {
+                      const status = r.status || r.attributes?.status;
+                      const completedAt = r.completedAt || r.attributes?.completedAt;
+                      const acceptedAt = r.acceptedAt || r.attributes?.acceptedAt;
+                      return status === 'pending' && !completedAt && !acceptedAt;
+                    }).length}
+                  </span> Pending
+                </span>
+                <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full">
+                  <span className="font-medium">
+                    {serviceRequests.filter(r => {
+                      const status = r.status || r.attributes?.status;
+                      const completedAt = r.completedAt || r.attributes?.completedAt;
+                      const acceptedAt = r.acceptedAt || r.attributes?.acceptedAt;
+                      return (status === 'accepted' || (status === 'pending' && acceptedAt)) && !completedAt;
+                    }).length}
+                  </span> Accepted
                 </span>
                 <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full">
-                  <span className="font-medium">{serviceRequests.filter(r => r.status === 'completed' || r.attributes?.status === 'completed').length}</span> Completed
+                  <span className="font-medium">
+                    {serviceRequests.filter(r => {
+                      const completedAt = r.completedAt || r.attributes?.completedAt;
+                      return completedAt !== null && completedAt !== undefined;
+                    }).length}
+                  </span> Completed
                 </span>
               </div>
             </div>
@@ -1355,11 +1411,29 @@ export default function AdminDashboard() {
                 const requestedAt = request.requestedAt || request.attributes?.requestedAt;
                 const acceptedAt = request.acceptedAt || request.attributes?.acceptedAt;
                 const completedAt = request.completedAt || request.attributes?.completedAt;
-                const status = request.status || request.attributes?.status;
+                
+                // Determine the correct status based on timestamps and status field
+                let status = request.status || request.attributes?.status;
+                
+                // If timestamps indicate a different state than what's stored, use the timestamp-based status
+                if (completedAt) {
+                  status = 'completed';
+                } else if (acceptedAt && status === 'pending') {
+                  status = 'accepted';
+                }
+                
                 const totalAmount = request.totalAmount || request.attributes?.totalAmount;
                 const urgencyLevel = request.urgencyLevel || request.attributes?.urgencyLevel;
                 const estimatedDuration = request.estimatedDuration || request.attributes?.estimatedDuration;
-                const paymentStatus = request.paymentStatus || request.attributes?.paymentStatus;
+                
+                // Check isPaid flag first, then fall back to paymentStatus field
+                const isPaid = request.isPaid || request.attributes?.isPaid;
+                let paymentStatus = request.paymentStatus || request.attributes?.paymentStatus;
+                
+                // If isPaid is true, ensure the payment status is shown as 'paid'
+                if (isPaid === true) {
+                  paymentStatus = 'paid';
+                }
                 
                 // Business and doctor might be nested differently depending on API response format
                 const businessName = request.business?.businessName || 
@@ -1459,13 +1533,13 @@ export default function AdminDashboard() {
                             {formatCurrency(totalAmount)}
                           </div>
                           <div className={`text-xs px-2.5 py-1.5 rounded-full flex items-center ${
-                            paymentStatus === 'paid' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' :
+                            isPaid || paymentStatus === 'paid' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' :
                             paymentStatus === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400' :
                             paymentStatus === 'failed' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400' :
                             'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
                           }`}>
-                            {paymentStatus === 'paid' && <Check className="h-3 w-3 mr-1 stroke-2" />}
-                            {(paymentStatus || 'pending').toUpperCase()}
+                            {(isPaid || paymentStatus === 'paid') && <Check className="h-3 w-3 mr-1 stroke-2" />}
+                            {(isPaid ? 'PAID' : paymentStatus || 'pending').toUpperCase()}
                           </div>
                         </div>
                       )}
