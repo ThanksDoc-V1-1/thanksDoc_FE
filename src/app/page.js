@@ -5,16 +5,15 @@ import { ArrowRight, Stethoscope, Building2, Clock, Shield, LogOut, CheckCircle 
 import LoginForm from "../components/LoginForm";
 import { useAuth } from "../contexts/AuthContext";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function Home() {
+// Create a client component that uses useSearchParams
+function HomeContent() {
   const { user, logout, isAuthenticated, loading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState('');
-
-  // No automatic redirect - let users access the home page freely
   
   // But if user is authenticated and lands on home page, redirect them
   useEffect(() => {
@@ -32,6 +31,94 @@ export default function Home() {
     }
   }, [searchParams]);
 
+  return (
+    <>
+      {/* Registration Success Message */}
+      {showMessage && (
+        <div className="max-w-md mx-auto mb-8">
+          <div className="bg-green-900/50 border border-green-800 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-green-200">
+                  Registration Successful!
+                </h3>
+                <p className="text-sm text-green-300 mt-1">
+                  {messageType === 'doctor' 
+                    ? 'Your doctor profile has been submitted for review. You will receive a confirmation email once verified.'
+                    : 'Your business profile has been submitted for review. You will receive a confirmation email once verified.'
+                  }
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowMessage(false)}
+              className="mt-3 text-xs text-green-400 hover:text-green-200 underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Homepage Content */}
+      <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* Left Side - Marketing Content */}
+        <div className="text-center lg:text-left">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            On-Demand <span className="text-blue-400">Healthcare</span>
+            <br />
+            for Your Business
+          </h1>
+          <p className="text-xl text-gray-300 mb-8">
+            Connecting businesses with verified doctors instantly. 
+            Request medical consultations within 10km radius with just a few clicks.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
+            <Link 
+              href="/business/register" 
+              className="bg-blue-800 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/50"
+            >
+              <Building2 className="h-5 w-5" />
+              <span>Register Your Business</span>
+            </Link>
+            <Link 
+              href="/doctor/register" 
+              className="bg-gray-800 border border-blue-500 text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2 shadow-lg"
+            >
+              <Stethoscope className="h-5 w-5" />
+              <span>Join as Doctor</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Right Side - Login Form */}
+        <div className="flex justify-center">
+          {!isAuthenticated ? (
+            <LoginForm />
+          ) : (
+            null
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Create a loading fallback component
+function HomeLoadingFallback() {
+  return (
+    <div className="text-center py-12">
+      <Stethoscope className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-pulse" />
+      <p className="text-gray-300">Loading content...</p>
+    </div>
+  );
+}
+
+export default function Home() {
+  const { loading, user, logout, isAuthenticated } = useAuth();
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -42,8 +129,6 @@ export default function Home() {
       </div>
     );
   }
-
-  // No redirect logic - allow access to home page regardless of authentication status
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -86,7 +171,6 @@ export default function Home() {
                 <Link href="/doctor/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Register Doctor
                 </Link>
-                
               </>
             )}
           </div>
@@ -95,75 +179,9 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
-        {/* Registration Success Message */}
-        {showMessage && (
-          <div className="max-w-md mx-auto mb-8">
-            <div className="bg-green-900/50 border border-green-800 rounded-lg p-4">
-              <div className="flex items-center space-x-3">
-                <CheckCircle className="h-6 w-6 text-green-400 flex-shrink-0" />
-                <div>
-                  <h3 className="text-sm font-medium text-green-200">
-                    Registration Successful!
-                  </h3>
-                  <p className="text-sm text-green-300 mt-1">
-                    {messageType === 'doctor' 
-                      ? 'Your doctor profile has been submitted for review. You will receive a confirmation email once verified.'
-                      : 'Your business profile has been submitted for review. You will receive a confirmation email once verified.'
-                    }
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowMessage(false)}
-                className="mt-3 text-xs text-green-400 hover:text-green-200 underline"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Homepage Content */}
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Side - Marketing Content */}
-          <div className="text-center lg:text-left">
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              On-Demand <span className="text-blue-400">Healthcare</span>
-              <br />
-              for Your Business
-            </h1>
-            <p className="text-xl text-gray-300 mb-8">
-              Connecting businesses with verified doctors instantly. 
-              Request medical consultations within 10km radius with just a few clicks.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
-              <Link 
-                href="/business/register" 
-                className="bg-blue-800 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/50"
-              >
-                <Building2 className="h-5 w-5" />
-                <span>Register Your Business</span>
-              </Link>
-              <Link 
-                href="/doctor/register" 
-                className="bg-gray-800 border border-blue-500 text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2 shadow-lg"
-              >
-                <Stethoscope className="h-5 w-5" />
-                <span>Join as Doctor</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Side - Login Form */}
-          <div className="flex justify-center">
-            {!isAuthenticated ? (
-              <LoginForm />
-            ) : (
-              null
-            )}
-          </div>
-        </div>
+        <Suspense fallback={<HomeLoadingFallback />}>
+          <HomeContent />
+        </Suspense>
 
         {/* Features Section */}
         <div className="grid md:grid-cols-3 gap-8 mt-16">
