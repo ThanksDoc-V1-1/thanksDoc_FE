@@ -133,7 +133,7 @@ export default function Home() {
               for Your Business
             </h1>
             <p className="text-xl text-gray-300 mb-8">
-              Connect pharmacies and businesses with verified doctors instantly. 
+              Connecting businesses with verified doctors instantly. 
               Request medical consultations within 10km radius with just a few clicks.
             </p>
             
