@@ -179,8 +179,9 @@ export default function DoctorDashboard() {
       const response = await serviceRequestAPI.acceptRequest(requestId, user.id);
       if (response.data) {
         alert('Service request accepted successfully!');
-        fetchNearbyRequests();
-        fetchMyRequests();
+        console.log('🔄 Manually refreshing after accepting request');
+        await fetchNearbyRequests();
+        await fetchMyRequests();
       }
     } catch (error) {
       console.error('Error accepting request:', error);
@@ -199,8 +200,9 @@ export default function DoctorDashboard() {
       const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
       if (response.data) {
         alert('Service request rejected successfully!');
-        fetchNearbyRequests();
-        fetchMyRequests();
+        console.log('🔄 Manually refreshing after rejecting request');
+        await fetchNearbyRequests();
+        await fetchMyRequests();
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
@@ -279,8 +281,8 @@ export default function DoctorDashboard() {
         // Show a single success notification
         alert(`Service completed successfully! Expected payment: ${formatCurrency(completionAmount)}`);
         
-        // Refresh data to update the UI
-        console.log('🔄 Refreshing data after successful completion');
+        // Refresh data immediately to update the UI, regardless of auto-refresh setting
+        console.log('🔄 Manually refreshing data after successful completion');
         await fetchNearbyRequests();
         await fetchMyRequests();
       }

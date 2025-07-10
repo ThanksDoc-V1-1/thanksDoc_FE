@@ -242,7 +242,9 @@ export default function BusinessDashboard() {
           description: '',
           estimatedDuration: 1,
         });
-        fetchServiceRequests();
+        console.log('🔄 Manually refreshing after creating service request');
+        await fetchServiceRequests();
+        await fetchNearbyDoctors(); // Also refresh doctors in case availability changed
       }
     } catch (error) {
       console.error('Error creating service request:', error);
@@ -281,8 +283,9 @@ export default function BusinessDashboard() {
             req.id === request.id ? { ...req, isPaid: true, paymentMethod: 'cash' } : req
           )
         );
-        // Also fetch fresh data from server
-        fetchServiceRequests(); 
+        // Also fetch fresh data from server immediately regardless of auto-refresh
+        console.log('🔄 Manually refreshing after cash payment');
+        await fetchServiceRequests(); 
       }
     } catch (error) {
       console.error('Error processing cash payment:', error);
@@ -315,8 +318,9 @@ export default function BusinessDashboard() {
           )
         );
         
-        // Also fetch fresh data from server
-        fetchServiceRequests();
+        // Also fetch fresh data from server immediately regardless of auto-refresh
+        console.log('🔄 Manually refreshing after card payment');
+        await fetchServiceRequests();
       }
     } catch (error) {
       console.error('Error processing card payment:', error);
@@ -410,6 +414,22 @@ export default function BusinessDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
+              {/* Auto-refresh indicator */}
+              <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
+                <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
+                  <svg className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="text-xs">{autoRefresh ? 'Auto-updating' : 'Updates paused'}</span>
+                </div>
+                <button
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`text-xs px-2 py-0.5 rounded ${autoRefresh ? 'bg-blue-700 text-blue-100' : 'bg-gray-700 text-gray-300'}`}
+                >
+                  {autoRefresh ? 'Disable' : 'Enable'}
+                </button>
+              </div>
+              
               <button
                 onClick={() => setShowRequestForm(true)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
