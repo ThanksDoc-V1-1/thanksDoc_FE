@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+/* Always use dark mode colors */
+html {
+  color-scheme: dark;
+}
+
+/* Define fonts and colors */
+:root {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Form input utilities - always using dark mode variants */
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.5rem;
+  background-color: #374151;
+  color: #fff;
+}
+.form-input::placeholder {
+  color: #9ca3af;
+}
+.form-input:focus {
+  outline: 2px solid #3b82f6;
+  border-color: transparent;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+  margin-bottom: 0.5rem;
+}
+
+.form-section-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.form-container {
+  background-color: #1f2937;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+}
+
+.form-footer-text {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.form-link {
+  color: #60a5fa;
+}
+.form-link:hover {
+  color: #93c5fd;
+}
