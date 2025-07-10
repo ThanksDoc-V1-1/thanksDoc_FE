@@ -40,7 +40,13 @@ export default function BusinessLogin() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert(error.message || 'Login failed. Please try again.');
+      
+      // Display a specific message if the account is not verified
+      if (error.message && error.message.includes('not verified')) {
+        alert('Your business account is pending verification. Please wait for admin approval before logging in.');
+      } else {
+        alert(error.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

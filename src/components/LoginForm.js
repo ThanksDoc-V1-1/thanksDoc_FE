@@ -60,7 +60,13 @@ export default function LoginForm() {
     } catch (err) {
       console.error('🚨 Login error:', err);
       console.error('📄 Error details:', err.response?.data || err.message);
-      setError(err.message || 'Login failed. Please try again.');
+      
+      // Display a specific message if the account is not verified
+      if (err.message && err.message.includes('not verified')) {
+        setError('Your account is pending verification. Please wait for admin approval before logging in.');
+      } else {
+        setError(err.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
       console.log('🏁 Login attempt finished');

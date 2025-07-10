@@ -53,6 +53,12 @@ export const authAPI = {
       
     } catch (error) {
       console.error('🚨 Login error:', error);
+      
+      // Check if it's a verification error (HTTP 403)
+      if (error.response?.status === 403) {
+        throw new Error(error.response?.data?.message || 'Account not verified. Please wait for admin approval.');
+      }
+      
       throw new Error(error.response?.data?.message || 'Invalid credentials');
     }
   },
