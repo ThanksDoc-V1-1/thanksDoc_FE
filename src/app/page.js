@@ -86,28 +86,7 @@ export default function Home() {
                 <Link href="/doctor/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                   Register Doctor
                 </Link>
-                <button 
-                  onClick={() => {
-                    console.log('🔄 Emergency reset triggered');
-                    // Complete data clearing
-                    localStorage.clear();
-                    sessionStorage.clear();
-                    document.cookie.split(";").forEach(function(c) { 
-                      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-                    });
-                    if ('caches' in window) {
-                      caches.keys().then(function(names) {
-                        names.forEach(function(name) {
-                          caches.delete(name);
-                        });
-                      });
-                    }
-                    window.location.href = '/';
-                  }}
-                  className="text-xs text-red-500 hover:text-red-300 transition-colors"
-                >
-                  Reset App
-                </button>
+                
               </>
             )}
           </div>
