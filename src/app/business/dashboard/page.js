@@ -229,14 +229,16 @@ export default function BusinessDashboard() {
   const businessName = business?.businessName || business?.name || business?.email || 'Business';
   const contactName = business?.contactPersonName || `${business?.firstName || ''} ${business?.lastName || ''}`.trim() || 'Contact Person';
 
-  // Pagination logic for service requests
-  const totalPages = Math.ceil(serviceRequests.length / requestsPerPage);
+  // Calculate pagination indices and total pages
   const startIndex = (currentPage - 1) * requestsPerPage;
   const endIndex = startIndex + requestsPerPage;
+  const totalPages = Math.ceil(serviceRequests.length / requestsPerPage);
   const currentRequests = serviceRequests.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+    // Scroll back to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Authentication check - redirect if not authenticated or not business
@@ -261,10 +263,10 @@ export default function BusinessDashboard() {
   // Don't render anything if not authenticated
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Building2 className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
+          <Building2 className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -272,28 +274,28 @@ export default function BusinessDashboard() {
 
   if (!isAuthenticated || !user || user.role !== 'business') {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Building2 className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Access Denied</p>
+          <Building2 className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <p className="text-gray-300">Access Denied</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+    <div className="min-h-screen bg-gray-950 text-gray-100">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
+      <header className="bg-gray-900 shadow-md border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-500 dark:to-indigo-800 rounded-lg shadow-lg">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-800 rounded-lg shadow-lg">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{businessName}</h1>
-                <p className="text-gray-600 dark:text-gray-400">Welcome back, {contactName}</p>
+                <h1 className="text-2xl font-bold text-white tracking-tight">{businessName}</h1>
+                <p className="text-gray-400">Welcome back, {contactName}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -306,7 +308,7 @@ export default function BusinessDashboard() {
               </button>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                className="px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
@@ -322,77 +324,77 @@ export default function BusinessDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Requests</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalRequests}</p>
+                    <p className="text-sm text-blue-400 font-medium">Total Requests</p>
+                    <p className="text-2xl font-bold text-white">{stats.totalRequests}</p>
                   </div>
-                  <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
-                    <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="bg-blue-900/30 p-3 rounded-lg">
+                    <Clock className="h-6 w-6 text-blue-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Active Requests</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeRequests}</p>
+                    <p className="text-sm text-yellow-400 font-medium">Active Requests</p>
+                    <p className="text-2xl font-bold text-white">{stats.activeRequests}</p>
                   </div>
-                  <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg">
-                    <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                  <div className="bg-yellow-900/30 p-3 rounded-lg">
+                    <Clock className="h-6 w-6 text-yellow-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">Completed</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.completedRequests}</p>
+                    <p className="text-sm text-green-400 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-white">{stats.completedRequests}</p>
                   </div>
-                  <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-                    <User className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="bg-green-900/30 p-3 rounded-lg">
+                    <User className="h-6 w-6 text-green-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">Total Spent</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(stats.totalSpent)}</p>
+                    <p className="text-sm text-purple-400 font-medium">Total Spent</p>
+                    <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalSpent)}</p>
                   </div>
-                  <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
-                    <DollarSign className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <div className="bg-purple-900/30 p-3 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-purple-400" />
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 p-6">
+            <div className="bg-gray-900 rounded-lg shadow border border-gray-800 p-6">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-900/30 p-2 rounded-lg">
+                  <User className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Verified Available Doctors</h2>
-                  <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">({nearbyDoctors.length}) verified professionals</p>
+                  <h2 className="text-xl font-semibold text-white">Verified Available Doctors</h2>
+                  <p className="text-sm text-blue-400 font-medium">({nearbyDoctors.length}) verified professionals</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Choose from our network of verified healthcare professionals</p>
+              <p className="text-sm text-gray-400 mb-4">Choose from our network of verified healthcare professionals</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {nearbyDoctors.slice(0, 6).map((doctor) => (
-                  <div key={doctor.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200">
+                  <div key={doctor.id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:shadow-lg hover:border-gray-700 transition-all duration-200">
                     <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div className="w-10 h-10 bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="h-5 w-5 text-blue-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                        <h4 className="font-semibold text-white text-sm">
                           Dr. {doctor.firstName} {doctor.lastName}
                         </h4>
-                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md inline-block mt-1">{doctor.specialization}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">
+                        <p className="text-xs text-blue-400 font-medium bg-blue-900/20 px-2 py-1 rounded-md inline-block mt-1">{doctor.specialization}</p>
+                        <p className="text-xs text-gray-300 mt-2">
                           💰 {formatCurrency(doctor.hourlyRate)}/hr • 🎓 {doctor.yearsOfExperience}y exp
                         </p>
                         <button
@@ -408,7 +410,7 @@ export default function BusinessDashboard() {
               </div>
               {nearbyDoctors.length > 6 && (
                 <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-300">
                     {nearbyDoctors.length - 6} more doctors available in the sidebar →
                   </p>
                 </div>
@@ -416,26 +418,26 @@ export default function BusinessDashboard() {
             </div>
 
             {/* Service Requests */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-lg">
+            <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
+              <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                      <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="bg-blue-900/30 p-2 rounded-lg">
+                      <Clock className="h-5 w-5 text-blue-400" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Service Requests</h2>
+                    <h2 className="text-xl font-semibold text-white">Recent Service Requests</h2>
                   </div>
                   {serviceRequests.length > 0 && (
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-400">
                       Showing {startIndex + 1}-{Math.min(endIndex, serviceRequests.length)} of {serviceRequests.length} requests
                     </div>
                   )}
                 </div>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-700">
+              <div className="divide-y divide-gray-700">
                 {serviceRequests.length > 0 ? (
                   currentRequests.map((request) => (
-                    <div key={request.id} className="p-6 hover:bg-blue-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                    <div key={request.id} className="p-6 hover:bg-gray-700/50 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
@@ -446,29 +448,29 @@ export default function BusinessDashboard() {
                               {request.status.replace('_', ' ').toUpperCase()}
                             </span>
                             {request.status === 'pending' && (
-                              <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">
+                              <span className="px-2 py-1 bg-orange-900/30 text-orange-300 rounded-full text-xs font-medium">
                                 ⏱️ {getTimeElapsed(request.requestedAt)}
                               </span>
                             )}
                           </div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{request.serviceType}</h3>
-                          <p className="text-gray-600 dark:text-gray-300 text-sm mb-2">{request.description}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <h3 className="font-semibold text-white mb-1">{request.serviceType}</h3>
+                          <p className="text-gray-300 text-sm mb-2">{request.description}</p>
+                          <p className="text-xs text-gray-400">
                             Requested: {formatDate(request.requestedAt)}
                           </p>
                           {request.doctor && (
                             <div>
-                              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                              <p className="text-xs text-blue-400 font-medium">
                                 Doctor: Dr. {request.doctor.firstName} {request.doctor.lastName}
                               </p>
                               
                               {/* Show doctor contact info when request is accepted */}
                               {request.status === 'accepted' && request.doctor.phone && (
-                                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                  <h4 className="font-semibold text-blue-800 dark:text-blue-300 text-xs mb-2">Doctor Contact Information:</h4>
+                                <div className="mt-2 p-3 bg-blue-900/10 border border-blue-800 rounded-lg">
+                                  <h4 className="font-semibold text-blue-300 text-xs mb-2">Doctor Contact Information:</h4>
                                   <div className="flex items-center space-x-2 text-sm">
-                                    <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                    <a href={`tel:${request.doctor.phone}`} className="text-blue-600 dark:text-blue-400 hover:underline text-xs">
+                                    <Phone className="h-3 w-3 text-blue-400" />
+                                    <a href={`tel:${request.doctor.phone}`} className="text-blue-400 hover:underline text-xs">
                                       {request.doctor.phone}
                                     </a>
                                   </div>
@@ -482,15 +484,15 @@ export default function BusinessDashboard() {
                             <button
                               onClick={() => handleCancelRequest(request.id)}
                               disabled={loading}
-                              className="px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-xs font-medium flex items-center space-x-1 border border-red-200 dark:border-red-700"
+                              className="px-3 py-2 bg-red-900/30 text-red-300 rounded-lg hover:bg-red-900/50 transition-colors text-xs font-medium flex items-center space-x-1 border border-red-700"
                             >
                               <X className="h-3 w-3" />
                               <span>Cancel</span>
                             </button>
                           )}
                           {request.totalAmount && (
-                            <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
-                              <span className="font-semibold text-green-700 dark:text-green-400">{formatCurrency(request.totalAmount)}</span>
+                            <div className="bg-green-900/20 px-3 py-2 rounded-lg">
+                              <span className="font-semibold text-green-400">{formatCurrency(request.totalAmount)}</span>
                             </div>
                           )}
                         </div>
@@ -499,10 +501,10 @@ export default function BusinessDashboard() {
                   ))
                 ) : (
                   <div className="p-8 text-center">
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-                      <Clock className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                      <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">No service requests yet</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Click "Request Doctor" to get started with your first consultation.</p>
+                    <div className="bg-gray-800/50 rounded-lg p-6">
+                      <Clock className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                      <p className="text-lg font-medium mb-2 text-gray-300">No service requests yet</p>
+                      <p className="text-sm text-gray-400">Click "Request Doctor" to get started with your first consultation.</p>
                     </div>
                   </div>
                 )}
@@ -510,16 +512,16 @@ export default function BusinessDashboard() {
               
               {/* Pagination Controls */}
               {serviceRequests.length > requestsPerPage && (
-                <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-lg">
+                <div className="p-4 border-t border-gray-800 bg-gray-800/50 rounded-b-lg">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="text-sm text-gray-400">
                       Page {currentPage} of {totalPages}
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Previous
                       </button>
@@ -531,7 +533,7 @@ export default function BusinessDashboard() {
                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                               currentPage === page
                                 ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                : 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
                             }`}
                           >
                             {page}
@@ -541,7 +543,7 @@ export default function BusinessDashboard() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Next
                       </button>
@@ -555,90 +557,90 @@ export default function BusinessDashboard() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Business Info */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 p-6">
+            <div className="bg-gray-900 rounded-lg shadow border border-gray-800 p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg">
-                  <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <div className="bg-indigo-900/30 p-2 rounded-lg">
+                  <Building2 className="h-5 w-5 text-indigo-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Business Information</h3>
+                <h3 className="text-lg font-semibold text-white">Business Information</h3>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
-                  <span className="font-medium text-gray-700 dark:text-gray-200">Name:</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">{businessName}</span>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="font-medium text-gray-200">Name:</span>
+                  <span className="text-white font-semibold">{businessName}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
-                  <span className="font-medium text-gray-700 dark:text-gray-200">Contact:</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">{contactName}</span>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="font-medium text-gray-200">Contact:</span>
+                  <span className="text-white font-semibold">{contactName}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
-                  <span className="font-medium text-gray-700 dark:text-gray-200">Email:</span>
-                  <span className="text-gray-900 dark:text-white font-semibold">{business?.email || 'N/A'}</span>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="font-medium text-gray-200">Email:</span>
+                  <span className="text-white font-semibold">{business?.email || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
-                  <span className="font-medium text-gray-700 dark:text-gray-200">Type:</span>
-                  <span className="text-indigo-600 dark:text-indigo-400 font-semibold">{business?.businessType || 'N/A'}</span>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="font-medium text-gray-200">Type:</span>
+                  <span className="text-indigo-400 font-semibold">{business?.businessType || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
-                  <span className="font-medium text-gray-700 dark:text-gray-200">Address:</span>
-                  <span className="text-gray-900 dark:text-white font-semibold text-right">{business?.address || 'N/A'}</span>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800">
+                  <span className="font-medium text-gray-200">Address:</span>
+                  <span className="text-white font-semibold text-right">{business?.address || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 bg-green-50 dark:bg-green-900/20 px-3 rounded-lg mt-4">
-                  <span className="font-medium text-green-700 dark:text-green-300">Total Spent:</span>
-                  <span className="text-green-700 dark:text-green-300 font-bold text-lg">{formatCurrency(stats.totalSpent)}</span>
+                <div className="flex justify-between items-center py-2 bg-green-900/20 px-3 rounded-lg mt-4">
+                  <span className="font-medium text-green-300">Total Spent:</span>
+                  <span className="text-green-300 font-bold text-lg">{formatCurrency(stats.totalSpent)}</span>
                 </div>
               </div>
             </div>
 
             {/* Available Doctors */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 p-6">
+            <div className="bg-gray-900 rounded-lg shadow border border-gray-800 p-6">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-900/30 p-2 rounded-lg">
+                  <User className="h-5 w-5 text-blue-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verified Available Doctors</h3>
+                <h3 className="text-lg font-semibold text-white">Verified Available Doctors</h3>
               </div>
               <div className="space-y-3 text-sm max-h-96 overflow-y-auto pr-2">
                 {nearbyDoctors.length > 0 ? (
                   nearbyDoctors.map((doctor) => (
-                    <div key={doctor.id} className="py-3 border-b border-gray-200 dark:border-gray-800 last:border-b-0">
+                    <div key={doctor.id} className="py-3 border-b border-gray-800 last:border-b-0">
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                          <h4 className="font-semibold text-white text-sm">
                             Dr. {doctor.firstName} {doctor.lastName}
                           </h4>
-                          <p className="text-blue-600 dark:text-blue-300 font-medium text-xs">{doctor.specialization}</p>
+                          <p className="text-blue-300 font-medium text-xs">{doctor.specialization}</p>
                         </div>
                         <div className="flex flex-col space-y-1">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-900/30 text-green-400">
                             ✅ Available
                           </span>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400">
                             🔒 Verified
                           </span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Experience:</span>
-                        <span className="text-gray-900 dark:text-white font-semibold text-xs">{doctor.yearsOfExperience} years</span>
+                        <span className="font-medium text-gray-200 text-xs">Experience:</span>
+                        <span className="text-white font-semibold text-xs">{doctor.yearsOfExperience} years</span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Rate:</span>
-                        <span className="text-gray-900 dark:text-white font-semibold text-xs">{formatCurrency(doctor.hourlyRate)}/hour</span>
+                        <span className="font-medium text-gray-200 text-xs">Rate:</span>
+                        <span className="text-white font-semibold text-xs">{formatCurrency(doctor.hourlyRate)}/hour</span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-gray-700 dark:text-gray-200 text-xs">Location:</span>
-                        <span className="text-gray-900 dark:text-white font-semibold text-xs text-right">{doctor.city}, {doctor.state}</span>
+                        <span className="font-medium text-gray-200 text-xs">Location:</span>
+                        <span className="text-white font-semibold text-xs text-right">{doctor.city}, {doctor.state}</span>
                       </div>
                       {doctor.bio && (
-                        <div className="bg-gray-50 dark:bg-gray-700/50 px-3 py-2 rounded-lg mt-2">
-                          <p className="text-xs text-gray-600 dark:text-gray-300 italic">"{doctor.bio}"</p>
+                        <div className="bg-gray-700/50 px-3 py-2 rounded-lg mt-2">
+                          <p className="text-xs text-gray-300 italic">"{doctor.bio}"</p>
                         </div>
                       )}
                       {doctor.languages && doctor.languages.length > 0 && (
-                        <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg mt-2">
-                          <span className="font-medium text-green-700 dark:text-green-300 text-xs">Languages:</span>
-                          <span className="text-green-700 dark:text-green-300 font-semibold text-xs ml-2">{doctor.languages.join(', ')}</span>
+                        <div className="bg-green-900/20 px-3 py-2 rounded-lg mt-2">
+                          <span className="font-medium text-green-300 text-xs">Languages:</span>
+                          <span className="text-green-300 font-semibold text-xs ml-2">{doctor.languages.join(', ')}</span>
                         </div>
                       )}
                       <button
@@ -651,10 +653,10 @@ export default function BusinessDashboard() {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-                      <User className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                      <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">No verified doctors available</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Our doctors are currently busy or under verification. Please check back later.</p>
+                    <div className="bg-gray-800/50 rounded-lg p-6">
+                      <User className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+                      <p className="text-lg font-medium mb-2 text-gray-300">No verified doctors available</p>
+                      <p className="text-sm text-gray-400">Our doctors are currently busy or under verification. Please check back later.</p>
                     </div>
                   </div>
                 )}
@@ -667,18 +669,18 @@ export default function BusinessDashboard() {
       {/* Request Form Modal */}
       {showRequestForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow max-w-md w-full border border-gray-200 dark:border-gray-800">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-lg">
+          <div className="bg-gray-900 rounded-lg shadow max-w-md w-full border border-gray-800">
+            <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                  <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-900/30 p-2 rounded-lg">
+                  <Plus className="h-5 w-5 text-blue-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Request a Doctor</h2>
+                <h2 className="text-xl font-semibold text-white">Request a Doctor</h2>
               </div>
             </div>
             <form onSubmit={handleSubmitRequest} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Service Type *
                 </label>
                 <input
@@ -687,20 +689,20 @@ export default function BusinessDashboard() {
                   value={formData.serviceType}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Emergency consultation, Health checkup"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Preferred Doctor
                 </label>
                 <select
                   name="preferredDoctorId"
                   value={formData.preferredDoctorId || ''}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Any available doctor</option>
                   {nearbyDoctors.map((doctor) => (
@@ -710,14 +712,14 @@ export default function BusinessDashboard() {
                   ))}
                 </select>
                 {formData.preferredDoctorId && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Urgency Level *
                 </label>
                 <select
@@ -725,7 +727,7 @@ export default function BusinessDashboard() {
                   value={formData.urgencyLevel}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -735,7 +737,7 @@ export default function BusinessDashboard() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Estimated Duration (hours) *
                 </label>
                 <input
@@ -746,12 +748,12 @@ export default function BusinessDashboard() {
                   required
                   min="0.5"
                   step="0.5"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Description
                 </label>
                 <textarea
@@ -759,7 +761,7 @@ export default function BusinessDashboard() {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Describe what kind of medical assistance you need (optional)"
                 />
               </div>                <div className="flex space-x-3 pt-4">
@@ -775,7 +777,7 @@ export default function BusinessDashboard() {
                       preferredDoctorId: null,
                     });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-800 transition-colors font-medium"
                 >
                   Cancel
                 </button>
@@ -795,15 +797,15 @@ export default function BusinessDashboard() {
       {/* Hours Input Popup */}
       {showHoursPopup && selectedDoctor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow max-w-md w-full border border-gray-200 dark:border-gray-800">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-lg">
+          <div className="bg-gray-900 rounded-lg shadow max-w-md w-full border border-gray-800">
+            <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
               <div className="flex items-center space-x-3">
-                <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-900/30 p-2 rounded-lg">
+                  <User className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Request Service</h2>
-                  <p className="text-sm text-blue-600 dark:text-gray-400 font-medium">
+                  <h2 className="text-xl font-semibold text-white">Request Service</h2>
+                  <p className="text-sm text-blue-400 font-medium">
                     Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} - {selectedDoctor.specialization}
                   </p>
                 </div>
@@ -811,7 +813,7 @@ export default function BusinessDashboard() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   How many hours of service do you need? *
                 </label>
                 <input
@@ -821,23 +823,23 @@ export default function BusinessDashboard() {
                   min="0.5"
                   max="24"
                   step="0.5"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter hours (e.g., 2, 3.5, 8)"
                 />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0))}
                 </p>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-800">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
-                  <div className="bg-blue-100 dark:bg-blue-900/50 p-1 rounded mr-2">
-                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+              <div className="bg-gray-900 p-4 rounded-lg border border-gray-800">
+                <h4 className="text-sm font-semibold text-white mb-2 flex items-center">
+                  <div className="bg-blue-900/50 p-1 rounded mr-2">
+                    <Clock className="h-4 w-4 text-blue-300" />
                   </div>
                   Service Details:
                 </h4>
-                <p className="text-xs text-gray-600 dark:text-gray-200 mb-1">• Medical consultation with verified doctor</p>
-                <p className="text-xs text-gray-600 dark:text-gray-200 mb-1">• Professional healthcare service</p>
-                <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
+                <p className="text-xs text-gray-200 mb-1">• Medical consultation with verified doctor</p>
+                <p className="text-xs text-gray-200 mb-1">• Professional healthcare service</p>
+                <p className="text-xs text-blue-300 font-medium">• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
@@ -847,7 +849,7 @@ export default function BusinessDashboard() {
                     setSelectedDoctor(null);
                     setRequestHours(1);
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-700 rounded-md text-gray-300 hover:bg-gray-800 transition-colors font-medium"
                 >
                   Cancel
                 </button>
