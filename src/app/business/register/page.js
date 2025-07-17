@@ -7,14 +7,12 @@ import { Building2, ArrowLeft, MapPin, Eye, EyeOff } from 'lucide-react';
 import { authAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
-
-// Add this CSS class definition at the top of the component
-const inputClasses = "w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent";
-const labelClasses = "block text-sm font-medium text-gray-300 mb-2";
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function BusinessRegister() {
   const router = useRouter();
   const { login } = useAuth();
+  const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -106,31 +104,41 @@ export default function BusinessRegister() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12">
+    <div className={`min-h-screen py-12 transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 mb-4">
+            <Link href="/" className={`inline-flex items-center mb-4 transition-colors ${
+              isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+            }`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Link>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Building2 className="h-8 w-8 text-blue-400" />
-              <h1 className="text-3xl font-bold text-white">Register Your Business</h1>
+              <Building2 className={`h-8 w-8 ${
+                isDarkMode ? 'text-blue-400' : 'text-blue-600'
+              }`} />
+              <h1 className={`text-3xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>Register Your Business</h1>
             </div>
-            <p className="text-gray-300">Join ThanksDoc to connect with verified healthcare professionals</p>
+            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+              Join ThanksDoc to connect with verified healthcare professionals
+            </p>
           </div>
 
           {/* Form */}
-          <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-8">
+          <div className="form-container">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Business Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-white">Business Information</h2>
+                <h2 className="form-section-heading">Business Information</h2>
                 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Business Name *
                   </label>
                   <input
@@ -139,13 +147,13 @@ export default function BusinessRegister() {
                     value={formData.businessName}
                     onChange={handleInputChange}
                     required
-                    className={inputClasses}
+                    className="form-input"
                     placeholder="Enter business name"
                   />
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Business Type *
                   </label>
                   <select
@@ -153,7 +161,7 @@ export default function BusinessRegister() {
                     value={formData.businessType}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                   >
                     <option value="pharmacy">Pharmacy</option>
                     <option value="clinic">Clinic</option>
@@ -163,7 +171,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Business License Number *
                   </label>
                   <input
@@ -172,7 +180,7 @@ export default function BusinessRegister() {
                     value={formData.businessLicense}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Enter business license number"
                   />
                 </div>
@@ -186,7 +194,7 @@ export default function BusinessRegister() {
                     value={formData.description}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Brief description of your business"
                   />
                 </div>
@@ -194,10 +202,10 @@ export default function BusinessRegister() {
 
               {/* Contact Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-white">Contact Information</h2>
+                <h2 className="form-section-heading">Contact Information</h2>
                 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Contact Person Name *
                   </label>
                   <input
@@ -206,13 +214,13 @@ export default function BusinessRegister() {
                     value={formData.contactPersonName}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Enter contact person name"
                   />
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Email Address *
                   </label>
                   <input
@@ -221,13 +229,13 @@ export default function BusinessRegister() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Enter email address"
                   />
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Password *
                   </label>
                   <div className="relative">
@@ -237,14 +245,18 @@ export default function BusinessRegister() {
                       value={formData.password}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input pr-10"
                       placeholder="Enter password (min 6 characters)"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
+                      className={`absolute inset-y-0 right-0 flex items-center pr-3 transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:text-gray-300' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
                     >
                       {showPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -256,7 +268,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Confirm Password *
                   </label>
                   <div className="relative">
@@ -266,14 +278,18 @@ export default function BusinessRegister() {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input pr-10"
                       placeholder="Confirm your password"
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
+                      className={`absolute inset-y-0 right-0 flex items-center pr-3 transition-colors ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:text-gray-300' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-5 w-5" />
@@ -285,7 +301,7 @@ export default function BusinessRegister() {
                 </div>
 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Phone Number *
                   </label>
                   <input
@@ -294,7 +310,7 @@ export default function BusinessRegister() {
                     value={formData.phone}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -302,10 +318,10 @@ export default function BusinessRegister() {
 
               {/* Location Information */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-white">Location Information</h2>
+                <h2 className="form-section-heading">Location Information</h2>
                 
                 <div>
-                  <label className={labelClasses}>
+                  <label className="form-label">
                     Address *
                   </label>
                   <textarea
@@ -314,14 +330,14 @@ export default function BusinessRegister() {
                     onChange={handleInputChange}
                     required
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="form-input"
                     placeholder="Enter complete address"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <label className={labelClasses}>
+                    <label className="form-label">
                       City *
                     </label>
                     <input
@@ -330,12 +346,12 @@ export default function BusinessRegister() {
                       value={formData.city}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input"
                       placeholder="City"
                     />
                   </div>
                   <div>
-                    <label className={labelClasses}>
+                    <label className="form-label">
                       State *
                     </label>
                     <input
@@ -344,12 +360,12 @@ export default function BusinessRegister() {
                       value={formData.state}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input"
                       placeholder="State"
                     />
                   </div>
                   <div>
-                    <label className={labelClasses}>
+                    <label className="form-label">
                       ZIP Code *
                     </label>
                     <input
@@ -358,7 +374,7 @@ export default function BusinessRegister() {
                       value={formData.zipCode}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input"
                       placeholder="ZIP"
                     />
                   </div>
@@ -366,7 +382,7 @@ export default function BusinessRegister() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClasses}>
+                    <label className="form-label">
                       Latitude *
                     </label>
                     <input
@@ -376,12 +392,12 @@ export default function BusinessRegister() {
                       value={formData.latitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input"
                       placeholder="Latitude"
                     />
                   </div>
                   <div>
-                    <label className={labelClasses}>
+                    <label className="form-label">
                       Longitude *
                     </label>
                     <input
@@ -391,7 +407,7 @@ export default function BusinessRegister() {
                       value={formData.longitude}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="form-input"
                       placeholder="Longitude"
                     />
                   </div>
@@ -401,7 +417,11 @@ export default function BusinessRegister() {
                   type="button"
                   onClick={handleGetLocation}
                   disabled={locationLoading}
-                  className="inline-flex items-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50"
+                  className={`inline-flex items-center px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 ${
+                    isDarkMode 
+                      ? 'border-blue-500 text-blue-400 bg-gray-800 hover:bg-gray-700' 
+                      : 'border-blue-500 text-blue-600 bg-white hover:bg-blue-50'
+                  }`}
                 >
                   <MapPin className="h-4 w-4 mr-2" />
                   {locationLoading ? 'Getting Location...' : 'Get My Location'}
@@ -413,15 +433,19 @@ export default function BusinessRegister() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg text-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className={`w-full py-3 px-4 rounded-lg text-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg ${
+                    isDarkMode 
+                      ? 'bg-blue-800 text-white hover:bg-blue-700 shadow-blue-900/50' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-500/30'
+                  }`}
                 >
                   {loading ? 'Registering...' : 'Register Business'}
                 </button>
               </div>
 
-              <div className="text-center text-sm text-gray-600">
+              <div className="form-footer-text">
                 Already have an account?{' '}
-                <Link href="/business/login" className="text-blue-600 hover:text-blue-700">
+                <Link href="/business/login" className="form-link">
                   Login here
                 </Link>
               </div>
