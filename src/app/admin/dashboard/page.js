@@ -5,9 +5,11 @@ import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, F
 import { doctorAPI, businessAPI, serviceRequestAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function AdminDashboard() {
   const { logout, user, isAuthenticated, loading } = useAuth();
+  const { isDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState('overview');
   const [doctors, setDoctors] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -465,9 +467,9 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
-      <header className="bg-gray-900 shadow-md border-b border-gray-800">
+      <header className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} shadow-md border-b`}>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -475,10 +477,10 @@ export default function AdminDashboard() {
                 <Shield className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>
                   {user?.name || user?.email || 'Admin Dashboard'}
                 </h1>
-                <p className="text-gray-400">Manage doctors, businesses, and service requests</p>
+                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Manage doctors, businesses, and service requests</p>
               </div>
             </div>
             
@@ -486,14 +488,14 @@ export default function AdminDashboard() {
             <div className="hidden md:flex items-center space-x-3">
               <button 
                 onClick={fetchAllData}
-                className="px-4 py-2 bg-blue-900/30 text-blue-300 rounded-md hover:bg-blue-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                className={`px-4 py-2 ${isDarkMode ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : 'bg-blue-600 text-white hover:bg-blue-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 <span>Refresh Data</span>
               </button>
               <button 
                 onClick={logout}
-                className="px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                className={`px-4 py-2 ${isDarkMode ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' : 'bg-red-600 text-white hover:bg-red-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
@@ -509,7 +511,7 @@ export default function AdminDashboard() {
                     mobileMenu.classList.toggle('hidden');
                   }
                 }}
-                className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800"
+                className={`p-2 rounded-md ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -523,14 +525,14 @@ export default function AdminDashboard() {
             <div className="space-y-3 py-3">
               <button 
                 onClick={fetchAllData}
-                className="w-full px-4 py-2 bg-blue-900/30 text-blue-300 rounded-md hover:bg-blue-800/50 transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow"
+                className={`w-full px-4 py-2 ${isDarkMode ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : 'bg-blue-600 text-white hover:bg-blue-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow`}
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
                 <span>Refresh Data</span>
               </button>
               <button 
                 onClick={logout}
-                className="w-full px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow"
+                className={`w-full px-4 py-2 ${isDarkMode ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' : 'bg-red-600 text-white hover:bg-red-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow`}
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
@@ -545,11 +547,11 @@ export default function AdminDashboard() {
         <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
           <div className="relative flex-grow">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-700 rounded-lg bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400 focus:outline-none shadow-sm"
+              className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
               placeholder="Search by name, email, license..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -557,9 +559,9 @@ export default function AdminDashboard() {
           </div>
           
           <div className="flex items-center space-x-2 whitespace-nowrap">
-            <Filter className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+            <Filter className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             <select 
-              className="block w-full pl-3 pr-8 py-2.5 text-base border border-gray-700 rounded-lg bg-gray-800 text-gray-100 focus:outline-none focus:ring-blue-400 focus:border-blue-400 shadow-sm cursor-pointer"
+              className={`block w-full pl-3 pr-8 py-2.5 text-base border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm cursor-pointer`}
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -573,7 +575,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mb-8 bg-gray-900 p-1.5 rounded-xl shadow border border-gray-800">
+        <div className={`mb-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-1.5 rounded-xl shadow border`}>
           <nav className="grid grid-cols-2 sm:flex gap-1.5">
             {[
               { id: 'overview', name: 'Overview', icon: Eye },
@@ -590,7 +592,9 @@ export default function AdminDashboard() {
                   className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-blue-400'
+                      : isDarkMode 
+                        ? 'text-gray-300 hover:bg-gray-800 hover:text-blue-400'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -612,35 +616,35 @@ export default function AdminDashboard() {
           <div className="space-y-8">
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Doctors Stats Card */}
-              <div className="bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-900/5 to-blue-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-blue-900/5 to-blue-900/10' : 'bg-gradient-to-r from-blue-50/80 to-blue-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="bg-blue-900/40 p-3.5 rounded-2xl shadow-inner">
-                      <Stethoscope className="h-6 w-6 text-blue-400" />
+                    <div className={`p-3.5 rounded-2xl shadow-inner ${isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100'}`}>
+                      <Stethoscope className={`h-6 w-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                     </div>
-                    <div className={`text-xs font-bold px-2.5 py-1.5 rounded-full ${
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${
                       stats.verifiedDoctors / Math.max(stats.totalDoctors, 1) >= 0.8 
-                      ? 'bg-green-900/40 text-green-400'
-                      : 'bg-yellow-900/40 text-yellow-400'
+                      ? isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
+                      : isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'
                     }`}>
                       {Math.round(stats.verifiedDoctors / Math.max(stats.totalDoctors, 1) * 100)}% Verified
                     </div>
                   </div>
                   
-                  <h3 className="text-sm font-medium text-gray-400">Total Doctors</h3>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.totalDoctors}</p>
+                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Doctors</h3>
+                  <p className={`text-3xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalDoctors}</p>
                   
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                  <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.verifiedDoctors}</span> verified
                       </p>
                     </div>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.totalDoctors - stats.verifiedDoctors}</span> pending
                       </p>
                     </div>
@@ -649,35 +653,35 @@ export default function AdminDashboard() {
               </div>
 
               {/* Businesses Stats Card */}
-              <div className="bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-900/5 to-purple-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-purple-900/5 to-purple-900/10' : 'bg-gradient-to-r from-purple-50/80 to-purple-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="bg-purple-900/40 p-3.5 rounded-2xl shadow-inner">
-                      <Building2 className="h-6 w-6 text-purple-400" />
+                    <div className={`p-3.5 rounded-2xl shadow-inner ${isDarkMode ? 'bg-purple-900/40' : 'bg-purple-100'}`}>
+                      <Building2 className={`h-6 w-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                     </div>
-                    <div className={`text-xs font-bold px-2.5 py-1.5 rounded-full ${
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${
                       stats.verifiedBusinesses / Math.max(stats.totalBusinesses, 1) >= 0.8 
-                      ? 'bg-green-900/40 text-green-400'
-                      : 'bg-yellow-900/40 text-yellow-400'
+                      ? isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
+                      : isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'
                     }`}>
                       {Math.round(stats.verifiedBusinesses / Math.max(stats.totalBusinesses, 1) * 100)}% Verified
                     </div>
                   </div>
                   
-                  <h3 className="text-sm font-medium text-gray-400">Total Businesses</h3>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.totalBusinesses}</p>
+                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Businesses</h3>
+                  <p className={`text-3xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalBusinesses}</p>
                   
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                  <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.verifiedBusinesses}</span> verified
                       </p>
                     </div>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.totalBusinesses - stats.verifiedBusinesses}</span> pending
                       </p>
                     </div>
@@ -686,31 +690,31 @@ export default function AdminDashboard() {
               </div>
 
               {/* Service Requests Stats Card */}
-              <div className="bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-900/5 to-green-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-green-900/5 to-green-900/10' : 'bg-gradient-to-r from-green-50/80 to-green-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="bg-green-900/40 p-3.5 rounded-2xl shadow-inner">
-                      <Users className="h-6 w-6 text-green-400" />
+                    <div className={`p-3.5 rounded-2xl shadow-inner ${isDarkMode ? 'bg-green-900/40' : 'bg-green-100'}`}>
+                      <Users className={`h-6 w-6 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                     </div>
-                    <div className="text-xs font-bold px-2.5 py-1.5 rounded-full bg-blue-900/40 text-blue-400">
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${isDarkMode ? 'bg-blue-600 text-blue-100' : 'bg-blue-600 text-white'}`}>
                       {Math.round(stats.completedRequests / Math.max(stats.totalRequests, 1) * 100)}% Complete
                     </div>
                   </div>
                   
-                  <h3 className="text-sm font-medium text-gray-400">Service Requests</h3>
-                  <p className="text-3xl font-bold text-white mt-1">{stats.totalRequests}</p>
+                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Service Requests</h3>
+                  <p className={`text-3xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalRequests}</p>
                   
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                  <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.completedRequests}</span> completed
                       </p>
                     </div>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">{stats.totalRequests - stats.completedRequests}</span> active
                       </p>
                     </div>
@@ -719,20 +723,20 @@ export default function AdminDashboard() {
               </div>
 
               {/* Recent Activity Card */}
-              <div className="bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-900/5 to-amber-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-amber-900/5 to-amber-900/10' : 'bg-gradient-to-r from-amber-50/80 to-amber-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="bg-amber-900/40 p-3.5 rounded-2xl shadow-inner">
-                      <AlertTriangle className="h-6 w-6 text-amber-400" />
+                    <div className={`p-3.5 rounded-2xl shadow-inner ${isDarkMode ? 'bg-amber-900/40' : 'bg-amber-100'}`}>
+                      <AlertTriangle className={`h-6 w-6 ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`} />
                     </div>
-                    <div className="text-xs font-bold px-2.5 py-1.5 rounded-full bg-amber-900/40 text-amber-400">
+                    <div className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm ${isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'}`}>
                       Last 24 Hours
                     </div>
                   </div>
                   
-                  <h3 className="text-sm font-medium text-gray-400">New Requests</h3>
-                  <p className="text-3xl font-bold text-white mt-1">
+                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>New Requests</h3>
+                  <p className={`text-3xl font-bold mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {serviceRequests.filter(r => {
                       const date = new Date(r.requestedAt || r.attributes?.requestedAt);
                       const now = new Date();
@@ -741,10 +745,10 @@ export default function AdminDashboard() {
                     }).length}
                   </p>
                   
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
+                  <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-amber-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">
                           {serviceRequests.filter(r => r.status === 'pending' || r.attributes?.status === 'pending').length}
                         </span> pending
@@ -752,7 +756,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center">
                       <span className="w-3 h-3 rounded-full bg-indigo-500 mr-2"></span>
-                      <p className="text-sm text-gray-400">
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         <span className="font-medium">
                           {serviceRequests.filter(r => r.status === 'accepted' || r.attributes?.status === 'accepted').length}
                         </span> accepted
@@ -764,24 +768,24 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Service Requests */}
-            <div className="bg-gray-900 rounded-2xl shadow border border-gray-800 overflow-hidden">
-              <div className="p-6 border-b border-gray-800">
+            <div className={`rounded-2xl shadow border overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-xl font-semibold text-white flex items-center">
-                      <Calendar className="h-5 w-5 text-blue-500 mr-2" />
+                    <h2 className={`text-xl font-semibold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <Calendar className={`h-5 w-5 mr-2 ${isDarkMode ? 'text-blue-500' : 'text-blue-600'}`} />
                       Recent Service Requests
                     </h2>
-                    <p className="text-sm text-gray-400 mt-1">Latest service requests from businesses</p>
+                    <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Latest service requests from businesses</p>
                   </div>
                   <button onClick={() => setActiveTab('requests')} 
-                    className="text-sm text-blue-400 font-medium hover:text-blue-300 transition-colors">
+                    className={`text-sm font-medium transition-colors ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}>
                     View all requests →
                   </button>
                 </div>
               </div>
               
-              <div className="divide-y divide-gray-800">
+              <div className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
                 {serviceRequests.slice(0, 5).map((request) => {
                   // Debug log to verify data
                   console.log(`Overview rendering request ${request.id}: status=${request.status}, completedAt=${request.completedAt}, isPaid=${request.isPaid}`);
@@ -823,24 +827,31 @@ export default function AdminDashboard() {
                     'Pending';
                     
                   return (
-                    <div key={id} className="p-6 hover:bg-gray-800/50 transition-colors">
+                    <div key={id} className={`p-6 transition-colors ${isDarkMode ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-grow">
                           <div className="flex items-center space-x-2 mb-1">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                              urgencyLevel === 'emergency' ? 'bg-red-900/40 text-red-400' :
-                              urgencyLevel === 'high' ? 'bg-orange-900/40 text-orange-400' :
-                              urgencyLevel === 'medium' ? 'bg-yellow-900/40 text-yellow-400' :
-                              'bg-green-900/40 text-green-400'
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm ${
+                              urgencyLevel === 'emergency' 
+                                ? isDarkMode ? 'bg-red-600 text-red-100' : 'bg-red-600 text-white'
+                                : urgencyLevel === 'high' 
+                                ? isDarkMode ? 'bg-orange-600 text-orange-100' : 'bg-orange-600 text-white'
+                                : urgencyLevel === 'medium' 
+                                ? isDarkMode ? 'bg-yellow-600 text-yellow-100' : 'bg-yellow-600 text-white'
+                                : isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
                             }`}>
                               {urgencyLevel || 'normal'}
                             </span>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                              status === 'completed' ? 'bg-green-900/40 text-green-400 border border-green-900' :
-                              status === 'accepted' ? 'bg-blue-900/40 text-blue-400 border border-blue-900' :
-                              status === 'pending' ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' :
-                              status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-900' :
-                              'bg-gray-800 text-gray-400 border border-gray-700'
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm border ${
+                              status === 'completed' 
+                                ? isDarkMode ? 'bg-emerald-600 text-emerald-100 border-emerald-500' : 'bg-emerald-600 text-white border-emerald-600'
+                                : status === 'accepted' 
+                                ? isDarkMode ? 'bg-blue-600 text-blue-100 border-blue-500' : 'bg-blue-600 text-white border-blue-600'
+                                : status === 'pending' 
+                                ? isDarkMode ? 'bg-amber-600 text-amber-100 border-amber-500' : 'bg-amber-600 text-white border-amber-600'
+                                : status === 'rejected' 
+                                ? isDarkMode ? 'bg-red-600 text-red-100 border-red-500' : 'bg-red-600 text-white border-red-600'
+                                : isDarkMode ? 'bg-slate-600 text-slate-100 border-slate-500' : 'bg-slate-600 text-white border-slate-600'
                             }`}>
                               {(status || 'pending').replace('_', ' ')}
                             </span>
@@ -851,15 +862,15 @@ export default function AdminDashboard() {
                               </span>
                             )}
                           </div>
-                          <h3 className="font-semibold text-white">{serviceType}</h3>
-                          <div className="flex items-center text-sm text-gray-400 mt-1 space-x-2">
+                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{serviceType}</h3>
+                          <div className={`flex items-center text-sm mt-1 space-x-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             <Building2 className="h-4 w-4 flex-shrink-0" />
                             <span>{businessName}</span>
-                            <span className="text-gray-600">→</span>
+                            <span className={isDarkMode ? 'text-gray-600' : 'text-gray-400'}>→</span>
                             <Stethoscope className="h-4 w-4 flex-shrink-0" />
                             <span>{doctorName}</span>
                           </div>
-                          <div className="flex items-center text-xs text-gray-500 mt-2">
+                          <div className={`flex items-center text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
                             <Clock className="h-3.5 w-3.5 mr-1" />
                             <span>{formatDate(requestedAt)}</span>
                           </div>
@@ -870,11 +881,14 @@ export default function AdminDashboard() {
                             <div className="text-sm font-semibold text-green-500">
                               {formatCurrency(totalAmount)}
                             </div>
-                            <div className={`mt-1 text-xs px-2 py-1 rounded-full flex items-center ${
-                              isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' ? 'bg-green-900/40 text-green-400' :
-                              (request.paymentStatus || request.attributes?.paymentStatus) === 'pending' ? 'bg-yellow-900/40 text-yellow-400' :
-                              (request.paymentStatus || request.attributes?.paymentStatus) === 'failed' ? 'bg-red-900/40 text-red-400' :
-                              'bg-gray-800 text-gray-400'
+                            <div className={`mt-1 text-xs px-3 py-1.5 rounded-full flex items-center font-bold shadow-sm ${
+                              isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' 
+                                ? isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
+                                : (request.paymentStatus || request.attributes?.paymentStatus) === 'pending' 
+                                ? isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'
+                                : (request.paymentStatus || request.attributes?.paymentStatus) === 'failed' 
+                                ? isDarkMode ? 'bg-red-600 text-red-100' : 'bg-red-600 text-white'
+                                : isDarkMode ? 'bg-slate-600 text-slate-100' : 'bg-slate-600 text-white'
                             }`}>
                               {isPaid && <Check className="h-3 w-3 mr-1 stroke-2" />}
                               {(isPaid ? 'PAID' : (request.paymentStatus || request.attributes?.paymentStatus) || 'pending').toUpperCase()}
@@ -887,7 +901,7 @@ export default function AdminDashboard() {
                 })}
                 
                 {serviceRequests.length === 0 && (
-                  <div className="p-8 text-center text-gray-400">
+                  <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     <p className="mb-2">No service requests found</p>
                     <p className="text-sm">Service requests will appear here when businesses create them</p>
                   </div>
@@ -899,14 +913,14 @@ export default function AdminDashboard() {
 
         {/* Doctors Tab */}
         {activeTab === 'doctors' && (
-          <div className="bg-gray-900 rounded-2xl shadow border border-gray-800">
-            <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className={`rounded-2xl shadow border ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+            <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
               <div>
-                <h2 className="text-xl font-semibold text-white flex items-center">
-                  <Stethoscope className="h-5 w-5 text-blue-500 mr-2" />
+                <h2 className={`text-xl font-semibold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <Stethoscope className={`h-5 w-5 mr-2 ${isDarkMode ? 'text-blue-500' : 'text-blue-600'}`} />
                   Doctors Management
                 </h2>
-                <p className="text-sm text-gray-400 mt-1">Verify and manage doctor profiles</p>
+                <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verify and manage doctor profiles</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
                 <button
@@ -916,11 +930,11 @@ export default function AdminDashboard() {
                   <Plus className="h-4 w-4 mr-2" />
                   Register New Doctor
                 </button>
-                <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full flex items-center">
+                <span className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold ${isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'}`}>
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedDoctors}</span> Verified
                 </span>
-                <span className="bg-yellow-900/30 text-yellow-400 px-3 py-1 rounded-full flex items-center">
+                <span className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold ${isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'}`}>
                   <Clock className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.totalDoctors - stats.verifiedDoctors}</span> Pending
                 </span>
