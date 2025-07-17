@@ -29,37 +29,73 @@ export function formatDate(date, options = {}) {
   }).format(new Date(date));
 }
 
-export function getUrgencyColor(urgency) {
-  switch (urgency) {
-    case 'low':
-      return 'bg-green-900/30 text-green-400';
-    case 'medium':
-      return 'bg-yellow-900/30 text-yellow-400';
-    case 'high':
-      return 'bg-orange-900/30 text-orange-400';
-    case 'emergency':
-      return 'bg-red-900/30 text-red-400';
-    default:
-      return 'bg-gray-700 text-gray-300';
+export function getUrgencyColor(urgency, isDarkMode = true) {
+  if (isDarkMode) {
+    switch (urgency) {
+      case 'low':
+        return 'bg-green-900/30 text-green-400';
+      case 'medium':
+        return 'bg-yellow-900/30 text-yellow-400';
+      case 'high':
+        return 'bg-orange-900/30 text-orange-400';
+      case 'emergency':
+        return 'bg-red-900/30 text-red-400';
+      default:
+        return 'bg-gray-700 text-gray-300';
+    }
+  } else {
+    // Light mode - darker backgrounds for better visibility
+    switch (urgency) {
+      case 'low':
+        return 'bg-green-600 text-white';
+      case 'medium':
+        return 'bg-yellow-600 text-white';
+      case 'high':
+        return 'bg-orange-600 text-white';
+      case 'emergency':
+        return 'bg-red-600 text-white';
+      default:
+        return 'bg-gray-600 text-white';
+    }
   }
 }
 
-export function getStatusColor(status) {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-900/30 text-yellow-400';
-    case 'accepted':
-      return 'bg-green-900/30 text-green-400';
-    case 'rejected':
-      return 'bg-red-900/30 text-red-400';
-    case 'in_progress':
-      return 'bg-purple-900/30 text-purple-400';
-    case 'completed':
-      return 'bg-blue-900/30 text-blue-400';
-    case 'cancelled':
-      return 'bg-red-900/30 text-red-400';
-    default:
-      return 'bg-gray-700 text-gray-300';
+export function getStatusColor(status, isDarkMode = true) {
+  if (isDarkMode) {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-900/30 text-yellow-400';
+      case 'accepted':
+        return 'bg-green-900/30 text-green-400';
+      case 'rejected':
+        return 'bg-red-900/30 text-red-400';
+      case 'in_progress':
+        return 'bg-purple-900/30 text-purple-400';
+      case 'completed':
+        return 'bg-blue-900/30 text-blue-400';
+      case 'cancelled':
+        return 'bg-red-900/30 text-red-400';
+      default:
+        return 'bg-gray-700 text-gray-300';
+    }
+  } else {
+    // Light mode - darker backgrounds for better visibility
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-600 text-white';
+      case 'accepted':
+        return 'bg-green-600 text-white';
+      case 'rejected':
+        return 'bg-red-600 text-white';
+      case 'in_progress':
+        return 'bg-purple-600 text-white';
+      case 'completed':
+        return 'bg-blue-600 text-white';
+      case 'cancelled':
+        return 'bg-red-600 text-white';
+      default:
+        return 'bg-gray-600 text-white';
+    }
   }
 }
 

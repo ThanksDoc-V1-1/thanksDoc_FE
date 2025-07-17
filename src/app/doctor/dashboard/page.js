@@ -497,7 +497,11 @@ export default function DoctorDashboard() {
               
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                className={`px-4 py-2 rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow ${
+                  isDarkMode 
+                    ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
@@ -547,7 +551,11 @@ export default function DoctorDashboard() {
               {/* Logout button */}
               <button
                 onClick={handleLogout}
-                className="w-full px-4 py-2 bg-red-900/30 text-red-300 rounded-md hover:bg-red-800/50 transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow"
+                className={`w-full px-4 py-2 rounded-md transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow ${
+                  isDarkMode 
+                    ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' 
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span>Logout</span>
@@ -584,8 +592,14 @@ export default function DoctorDashboard() {
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.pendingRequests}</p>
                   </div>
-                  <div className="bg-yellow-900/30 p-3 rounded-lg">
-                    <Clock className="h-6 w-6 text-yellow-400" />
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-yellow-900/30' 
+                      : 'bg-yellow-600'
+                  }`}>
+                    <Clock className={`h-6 w-6 ${
+                      isDarkMode ? 'text-yellow-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </div>
@@ -601,8 +615,14 @@ export default function DoctorDashboard() {
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.myRequests}</p>
                   </div>
-                  <div className="bg-blue-900/30 p-3 rounded-lg">
-                    <Stethoscope className="h-6 w-6 text-blue-400" />
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-blue-900/30' 
+                      : 'bg-blue-600'
+                  }`}>
+                    <Stethoscope className={`h-6 w-6 ${
+                      isDarkMode ? 'text-blue-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </div>
@@ -618,8 +638,14 @@ export default function DoctorDashboard() {
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.completedRequests}</p>
                   </div>
-                  <div className="bg-green-900/30 p-3 rounded-lg">
-                    <Check className="h-6 w-6 text-green-400" />
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-green-900/30' 
+                      : 'bg-green-600'
+                  }`}>
+                    <Check className={`h-6 w-6 ${
+                      isDarkMode ? 'text-green-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </div>
@@ -637,8 +663,14 @@ export default function DoctorDashboard() {
                       ${doctor.hourlyRate || 0}
                     </p>
                   </div>
-                  <div className="bg-purple-900/30 p-3 rounded-lg">
-                    <DollarSign className="h-6 w-6 text-purple-400" />
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-purple-900/30' 
+                      : 'bg-purple-600'
+                  }`}>
+                    <DollarSign className={`h-6 w-6 ${
+                      isDarkMode ? 'text-purple-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </div>
@@ -657,8 +689,14 @@ export default function DoctorDashboard() {
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-blue-900/30 p-2 rounded-lg">
-                      <Clock className="h-5 w-5 text-blue-400" />
+                    <div className={`p-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-blue-900/30' 
+                        : 'bg-blue-600'
+                    }`}>
+                      <Clock className={`h-5 w-5 ${
+                        isDarkMode ? 'text-blue-400' : 'text-white'
+                      }`} />
                     </div>
                     <div>
                       <h2 className={`text-xl font-semibold ${
@@ -675,7 +713,11 @@ export default function DoctorDashboard() {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                       </span>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-900/30 text-yellow-400 border border-yellow-700">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                        isDarkMode 
+                          ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' 
+                          : 'bg-yellow-600 text-white border-yellow-500'
+                      }`}>
                         🔔 {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length} New Request{serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 1 ? 's' : ''}
                       </span>
                       </div>
@@ -700,12 +742,16 @@ export default function DoctorDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
                             {request.status === 'accepted' && (
-                              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-900/30 text-green-400 border border-green-700">
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                                isDarkMode 
+                                  ? 'bg-green-900/30 text-green-400 border-green-700' 
+                                  : 'bg-green-600 text-white border-green-500'
+                              }`}>
                                 ACCEPTED
                               </span>
                             )}
                             {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel)}`}>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
                                 {request.urgencyLevel.toUpperCase()}
                               </span>
                             )}
@@ -912,8 +958,14 @@ export default function DoctorDashboard() {
                 : 'bg-white border-gray-200'
             }`}>
               <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-green-900/30 p-2 rounded-lg">
-                  <Stethoscope className="h-5 w-5 text-green-400" />
+                <div className={`p-2 rounded-lg ${
+                  isDarkMode 
+                    ? 'bg-green-900/30' 
+                    : 'bg-green-600'
+                }`}>
+                  <Stethoscope className={`h-5 w-5 ${
+                    isDarkMode ? 'text-green-400' : 'text-white'
+                  }`} />
                 </div>
                 <h3 className={`text-lg font-semibold ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
@@ -972,7 +1024,15 @@ export default function DoctorDashboard() {
                   <span className={`font-medium ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-600'
                   }`}>Status:</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${isAvailable ? 'bg-green-900/30 text-green-400 border-green-700' : 'bg-gray-700 text-gray-400 border-gray-600'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                    isAvailable 
+                      ? isDarkMode 
+                        ? 'bg-green-900/30 text-green-400 border-green-700' 
+                        : 'bg-green-600 text-white border-green-500'
+                      : isDarkMode 
+                        ? 'bg-gray-700 text-gray-400 border-gray-600' 
+                        : 'bg-gray-400 text-white border-gray-300'
+                  }`}>
                     {isAvailable ? '✅ Available' : '❌ Unavailable'}
                   </span>
                 </div>
@@ -992,8 +1052,14 @@ export default function DoctorDashboard() {
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="bg-green-900/30 p-2 rounded-lg">
-                      <Stethoscope className="h-5 w-5 text-green-400" />
+                    <div className={`p-2 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-green-900/30' 
+                        : 'bg-green-600'
+                    }`}>
+                      <Stethoscope className={`h-5 w-5 ${
+                        isDarkMode ? 'text-green-400' : 'text-white'
+                      }`} />
                     </div>
                     <h3 className={`text-lg font-semibold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1021,10 +1087,14 @@ export default function DoctorDashboard() {
                             isDarkMode ? 'text-gray-400' : 'text-gray-600'
                           }`}>{request.description}</p>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                           request.isPaid 
-                          ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700' 
-                          : 'bg-yellow-900/30 text-yellow-400 border border-yellow-700'
+                            ? isDarkMode 
+                              ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700' 
+                              : 'bg-emerald-600 text-white border-emerald-500'
+                            : isDarkMode 
+                              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' 
+                              : 'bg-yellow-600 text-white border-yellow-500'
                         }`}>
                           {request.isPaid ? 'PAID' : 'PENDING PAYMENT'}
                         </div>
