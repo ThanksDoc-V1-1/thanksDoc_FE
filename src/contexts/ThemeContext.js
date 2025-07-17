@@ -13,23 +13,38 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Initialize theme state - check localStorage first, default to dark
+  // Initialize theme state - always follow system preference
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check if user has a saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // Clean up any old localStorage theme settings
+    localStorage.removeItem('theme');
+    localStorage.removeItem('themeMode');
+
+    // Always follow system preference
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const systemPrefersDark = mediaQuery.matches;
     
-    // Determine initial theme: saved preference > system preference > dark (default)
-    const shouldUseDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-    
-    setIsDarkMode(shouldUseDark);
-    applyTheme(shouldUseDark);
+    setIsDarkMode(systemPrefersDark);
+    applyTheme(systemPrefersDark);
     setIsInitialized(true);
     
-    console.log(`🎨 Theme initialized: ${shouldUseDark ? 'dark' : 'light'} mode`);
+    console.log(`🎨 Theme automatically set to: ${systemPrefersDark ? 'dark' : 'light'} mode (following system)`);
+
+    // Listen for system theme changes
+    const handleSystemThemeChange = (e) => {
+      setIsDarkMode(e.matches);
+      applyTheme(e.matches);
+      console.log(`🎨 System theme changed: ${e.matches ? 'dark' : 'light'} mode`);
+    };
+
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+    // Cleanup listener
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    };
   }, []);
 
   const applyTheme = (isDark) => {
@@ -42,17 +57,8 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
-  const toggleTheme = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    applyTheme(newTheme);
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-    console.log(`🎨 Theme switched to: ${newTheme ? 'dark' : 'light'} mode`);
-  };
-
   const value = {
     isDarkMode,
-    toggleTheme,
     isInitialized,
   };
 

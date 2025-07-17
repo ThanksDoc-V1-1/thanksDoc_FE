@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowRight, Stethoscope, Building2, Clock, Shield, LogOut, CheckCircle } from "lucide-react";
 import LoginForm from "../components/LoginForm";
-import ThemeToggle from "../components/ThemeToggle";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -154,7 +153,6 @@ export default function Home() {
           
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            <ThemeToggle />
             {isAuthenticated && user ? (
               <>
                 <span className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
@@ -194,7 +192,6 @@ export default function Home() {
           
           {/* Mobile navigation button */}
           <div className="md:hidden flex items-center space-x-3">
-            <ThemeToggle />
             {isAuthenticated && user && (
               <button 
                 onClick={() => {

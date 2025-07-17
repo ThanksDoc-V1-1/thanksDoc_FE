@@ -3,18 +3,18 @@
 import { useTheme as useThemeContext } from '../contexts/ThemeContext';
 
 /**
- * Custom hook to access and manage theme state
- * Note: In this application, dark mode is always enforced
+ * Custom hook to access theme state
+ * Note: Theme now automatically follows system preference
  */
 export const useTheme = () => {
-  const { isDarkMode, toggleTheme } = useThemeContext();
+  const { isDarkMode, isInitialized } = useThemeContext();
   
   return {
-    isDarkMode, // Will always be true
-    toggleTheme, // Will maintain dark mode even if called
-    // Provide helper functions for dark mode styles
-    getBgColor: (dark, light) => dark, // Always return dark color
-    getTextColor: (dark, light) => dark, // Always return dark color
+    isDarkMode, // Automatically follows system preference
+    isInitialized, // Whether theme has been initialized
+    // Provide helper functions for theme-aware styles
+    getBgColor: (dark, light) => isDarkMode ? dark : light,
+    getTextColor: (dark, light) => isDarkMode ? dark : light,
   };
 };
 
