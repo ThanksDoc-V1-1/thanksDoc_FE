@@ -609,7 +609,7 @@ export default function BusinessDashboard() {
                   <div className={`p-3 rounded-lg ${
                     isDarkMode ? 'bg-purple-900/30' : 'bg-purple-600'
                   }`}>
-                    <DollarSign className={`h-6 w-6 ${
+                    <User className={`h-6 w-6 ${
                       isDarkMode ? 'text-purple-400' : 'text-white'
                     }`} />
                   </div>
@@ -775,14 +775,12 @@ export default function BusinessDashboard() {
                                   onClick={() => handlePayment(request.id, 'cash')}
                                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium flex items-center"
                                 >
-                                  <DollarSign className="h-3 w-3 mr-1" />
                                   Pay Cash
                                 </button>
                                 <button
                                   onClick={() => handlePayment(request.id, 'card')}
                                   className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium flex items-center"
                                 >
-                                  <DollarSign className="h-3 w-3 mr-1" />
                                   Pay Card
                                 </button>
                               </div>
@@ -792,7 +790,6 @@ export default function BusinessDashboard() {
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
                               <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(request.totalAmount)}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
-                                <DollarSign className="h-3.5 w-3.5 mr-1" />
                                 PAID ({request.paymentMethod === 'cash' ? 'CASH' : 'CARD'})
                               </div>
                             </div>
@@ -1090,7 +1087,7 @@ export default function BusinessDashboard() {
                   <option value="">Any available doctor</option>
                   {nearbyDoctors.map((doctor) => (
                     <option key={doctor.id} value={doctor.id}>
-                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} (${doctor.hourlyRate}/hr)
+                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} ({formatCurrency(doctor.hourlyRate)}/hr)
                     </option>
                   ))}
                 </select>
@@ -1255,7 +1252,7 @@ export default function BusinessDashboard() {
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
-                  <DollarSign className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
                 </div>
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Payment for Service</h2>
               </div>

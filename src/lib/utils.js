@@ -11,8 +11,8 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
   return distance;
 }
 
-export function formatCurrency(amount, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount, currency = 'GBP') {
+  return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency: currency,
   }).format(amount);

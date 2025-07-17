@@ -582,7 +582,7 @@ export default function AdminDashboard() {
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
               { id: 'businesses', name: 'Businesses', icon: Building2 },
               { id: 'requests', name: 'Service Requests', icon: Users },
-              { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
+              { id: 'earnings', name: 'Doctor Earnings', icon: Users },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -1725,7 +1725,7 @@ export default function AdminDashboard() {
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} p-2 rounded-lg`}>
-                  <DollarSign className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                  <Users className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                 </div>
                 <div>
                   <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Earnings</h2>
@@ -1810,7 +1810,7 @@ export default function AdminDashboard() {
               ) : (
                 <div className="text-center py-12">
                   <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
-                    <DollarSign className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <Users className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                     <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No earnings data available</p>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Doctor earnings will appear here once service requests are completed with payment information.

@@ -347,7 +347,7 @@ export default function DoctorRegister() {
                   </div>
                   <div>
                     <label className="form-label">
-                      Hourly Rate (USD) *
+                      Hourly Rate (GBP) *
                     </label>
                     <input
                       type="number"
