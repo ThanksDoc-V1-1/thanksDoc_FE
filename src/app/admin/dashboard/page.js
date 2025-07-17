@@ -949,7 +949,7 @@ export default function AdminDashboard() {
                 <input 
                   type="text" 
                   placeholder="Search doctors by name, specialty, license or email..." 
-                  className="w-full pl-10 px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 shadow-sm ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'}`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -961,7 +961,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'all' ? 
                     'bg-blue-600 text-white font-medium' :
-                    'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   All Doctors
@@ -971,7 +971,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'verified' ? 
                     'bg-green-600 text-white font-medium' :
-                    'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
                   }`}
                 >
                   Verified Only
@@ -981,7 +981,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'unverified' ? 
                     'bg-yellow-600 text-white font-medium' :
-                    'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
+                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                   }`}
                 >
                   Pending Verification
@@ -991,29 +991,29 @@ export default function AdminDashboard() {
             
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-800/50 sticky top-0 z-10">
+                <thead className={`sticky top-0 z-10 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
                   <tr>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Doctor
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Specialization
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Experience & Rate
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Location
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Status
                     </th>
-                    <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
                   {filteredDoctors.length > 0 ? filteredDoctors.map((doctor) => {
                     // Access data considering both direct properties and nested attributes structure
                     const id = doctor.id;
@@ -1030,46 +1030,46 @@ export default function AdminDashboard() {
                     const state = doctor.state || doctor.attributes?.state;
                     
                     return (
-                      <tr key={id} className="bg-gray-900 hover:bg-gray-800/50 transition-colors">
+                      <tr key={id} className={`transition-colors ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-gray-700 rounded-full flex items-center justify-center text-gray-300">
+                            <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>
                               {firstName?.charAt(0)}{lastName?.charAt(0)}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-white">
+                              <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                 Dr. {firstName} {lastName}
                               </div>
-                              <div className="text-sm text-gray-400 flex items-center">
+                              <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 <Mail className="h-3.5 w-3.5 mr-1 stroke-2" /> {email}
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                              <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {licenseNumber}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-white font-medium">{specialization}</div>
+                          <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{specialization}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-white flex flex-col">
+                          <div className={`text-sm flex flex-col ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             <span className="font-medium">{yearsOfExperience} years experience</span>
                             <span className="text-green-500 font-medium">{formatCurrency(hourlyRate)}/hr</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-white flex items-center">
-                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                          <div className={`text-sm flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <MapPin className={`h-3.5 w-3.5 mr-1.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                             <span>{city}, {state}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col space-y-2">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                               isVerified 
-                              ? 'bg-green-900/40 text-green-400 border border-green-900' 
-                              : 'bg-yellow-900/40 text-yellow-400 border border-yellow-900'
+                              ? 'bg-emerald-600 text-white' 
+                              : 'bg-amber-600 text-white'
                             }`}>
                               {isVerified 
                                 ? <Check className="h-3.5 w-3.5 mr-1 stroke-2" /> 
@@ -1077,10 +1077,10 @@ export default function AdminDashboard() {
                               }
                               {isVerified ? 'Verified' : 'Pending'}
                             </span>
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                               isAvailable 
-                              ? 'bg-blue-900/40 text-blue-400 border border-blue-900' 
-                              : 'bg-gray-800 text-gray-400 border border-gray-800'
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-slate-600 text-white'
                             }`}>
                               {isAvailable ? 'Available' : 'Unavailable'}
                             </span>
@@ -1091,7 +1091,7 @@ export default function AdminDashboard() {
                             {!isVerified ? (
                               <button
                                 onClick={() => handleVerifyDoctor(id, true)}
-                                className="bg-green-900/20 text-green-400 px-3 py-1.5 rounded-lg hover:bg-green-900/40 transition-colors flex items-center"
+                                className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
                               >
                                 <Check className="h-4 w-4 mr-1.5 stroke-2" />
                                 <span>Verify</span>
@@ -1099,14 +1099,14 @@ export default function AdminDashboard() {
                             ) : (
                               <button
                                 onClick={() => handleVerifyDoctor(id, false)}
-                                className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center"
+                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
                               >
                                 <X className="h-4 w-4 mr-1.5 stroke-2" />
                                 <span>Unverify</span>
                               </button>
                             )}
                             <button 
-                              className="bg-gray-800 text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors"
+                              className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                               onClick={() => alert(`View details for ${firstName} ${lastName}`)}
                             >
                               <Eye className="h-4 w-4" />
@@ -1117,7 +1117,7 @@ export default function AdminDashboard() {
                     );
                   }) : (
                     <tr className="bg-gray-900">
-                      <td colSpan="6" className="px-6 py-10 text-center text-gray-400">
+                      <td colSpan="6" className={`px-6 py-10 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {searchTerm || filterStatus !== 'all' ? (
                           <>
                             <p className="font-medium">No matching doctors found</p>
@@ -1137,7 +1137,7 @@ export default function AdminDashboard() {
             </div>
             
             {filteredDoctors.length > 0 && (
-              <div className="px-6 py-4 bg-gray-800/50 border-t border-gray-800 text-sm text-gray-400">
+              <div className={`px-6 py-4 border-t text-sm ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
                 Showing {filteredDoctors.length} {filteredDoctors.length === 1 ? 'doctor' : 'doctors'} of {doctors.length} total
               </div>
             )}
@@ -1146,14 +1146,14 @@ export default function AdminDashboard() {
 
         {/* Businesses Tab */}
         {activeTab === 'businesses' && (
-          <div className="bg-gray-900 rounded-2xl shadow border border-gray-800">
-            <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
-                <h2 className="text-xl font-semibold text-white flex items-center">
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
                   <Building2 className="h-5 w-5 text-purple-500 mr-2" />
                   Businesses Management
                 </h2>
-                <p className="text-sm text-gray-400 mt-1">Verify and manage business profiles</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Verify and manage business profiles</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
                 <button
@@ -1163,11 +1163,11 @@ export default function AdminDashboard() {
                   <Plus className="h-4 w-4 mr-2" />
                   Register New Business
                 </button>
-                <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full flex items-center">
+                <span className={`${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full flex items-center`}>
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedBusinesses}</span> Verified
                 </span>
-                <span className="bg-yellow-900/30 text-yellow-400 px-3 py-1 rounded-full flex items-center">
+                <span className={`${isDarkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-700'} px-3 py-1 rounded-full flex items-center`}>
                   <Clock className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.totalBusinesses - stats.verifiedBusinesses}</span> Pending
                 </span>
@@ -1177,12 +1177,12 @@ export default function AdminDashboard() {
             <div className="p-4">
               <div className="mb-4 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </div>
                 <input 
                   type="text" 
                   placeholder="Search businesses by name, type, license or email..." 
-                  className="w-full pl-10 px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm"
+                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -1194,7 +1194,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'all' ? 
                     'bg-purple-600 text-white font-medium' :
-                    'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   All Businesses
@@ -1204,7 +1204,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'verified' ? 
                     'bg-green-600 text-white font-medium' :
-                    'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
                   }`}
                 >
                   Verified Only
@@ -1214,7 +1214,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'unverified' ? 
                     'bg-yellow-600 text-white font-medium' :
-                    'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
+                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                   }`}
                 >
                   Pending Verification
@@ -1224,29 +1224,29 @@ export default function AdminDashboard() {
             
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-800/50 sticky top-0 z-10">
+                <thead className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} sticky top-0 z-10`}>
                   <tr>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Business
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Type
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Contact
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Location
                     </th>
-                    <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Status
                     </th>
-                    <th className="px-6 py-3.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <th className={`px-6 py-3.5 text-right text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
                   {filteredBusinesses.length > 0 ? filteredBusinesses.map((business) => {
                     // Access data considering both direct properties and nested attributes structure
                     const id = business.id;
@@ -1263,57 +1263,62 @@ export default function AdminDashboard() {
                     
                     // Get business type color
                     const getBusinessTypeColor = (type) => {
+                      const baseClasses = 'px-2.5 py-1 rounded-lg text-xs font-medium capitalize';
                       switch(type?.toLowerCase()) {
-                        case 'pharmacy': return 'bg-blue-900/40 text-blue-400';
-                        case 'clinic': return 'bg-green-900/40 text-green-400';
-                        case 'hospital': return 'bg-purple-900/40 text-purple-400';
-                        default: return 'bg-gray-800 text-gray-400';
+                        case 'pharmacy': 
+                          return isDarkMode ? 'bg-blue-900/40 text-blue-400' : 'bg-blue-100 text-blue-700';
+                        case 'clinic': 
+                          return isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700';
+                        case 'hospital': 
+                          return isDarkMode ? 'bg-purple-900/40 text-purple-400' : 'bg-purple-100 text-purple-700';
+                        default: 
+                          return isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-700';
                       }
                     };
 
                     return (
-                      <tr key={id} className="bg-gray-900 hover:bg-gray-800/50 transition-colors">
+                      <tr key={id} className={`transition-colors ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'}`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10 bg-purple-900/30 rounded-full flex items-center justify-center text-purple-400">
+                            <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
                               {businessName?.charAt(0)}
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-white">
+                              <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                 {businessName}
                               </div>
-                              <div className="text-sm text-gray-400 flex items-center">
+                              <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 <Mail className="h-3.5 w-3.5 mr-1 stroke-2" /> {email}
                               </div>
-                              <div className="text-sm text-gray-400 flex items-center">
+                              <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {businessLicense}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${getBusinessTypeColor(businessType)}`}>
+                          <span className={`${getBusinessTypeColor(businessType)}`}>
                             {businessType || 'Unknown'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-white">{contactPersonName}</div>
-                          <div className="text-sm text-gray-400 flex items-center">
+                          <div className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{contactPersonName}</div>
+                          <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                             <Phone className="h-3.5 w-3.5 mr-1 stroke-2" /> {phone}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-white flex items-center">
-                            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                          <div className={`text-sm flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <MapPin className={`h-3.5 w-3.5 mr-1.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                             <span>{city}, {state}</span>
                           </div>
-                          <div className="text-sm text-gray-400">{zipCode}</div>
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{zipCode}</div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
                             isVerified 
-                            ? 'bg-green-900/40 text-green-400 border border-green-900' 
-                            : 'bg-yellow-900/40 text-yellow-400 border border-yellow-900'
+                            ? 'bg-emerald-600 text-white' 
+                            : 'bg-amber-600 text-white'
                           }`}>
                             {isVerified 
                               ? <Check className="h-3.5 w-3.5 mr-1 stroke-2" /> 
@@ -1327,7 +1332,7 @@ export default function AdminDashboard() {
                             {!isVerified ? (
                               <button
                                 onClick={() => handleVerifyBusiness(id, true)}
-                                className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-3 py-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors flex items-center"
+                                className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
                               >
                                 <Check className="h-4 w-4 mr-1.5 stroke-2" />
                                 <span>Verify</span>
@@ -1335,14 +1340,14 @@ export default function AdminDashboard() {
                             ) : (
                               <button
                                 onClick={() => handleVerifyBusiness(id, false)}
-                                className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center"
+                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
                               >
                                 <X className="h-4 w-4 mr-1.5 stroke-2" />
                                 <span>Unverify</span>
                               </button>
                             )}
                             <button 
-                              className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              className={`${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} px-3 py-1.5 rounded-lg transition-colors`}
                               onClick={() => alert(`View details for ${businessName}`)}
                             >
                               <Eye className="h-4 w-4" />
@@ -1352,8 +1357,8 @@ export default function AdminDashboard() {
                       </tr>
                     );
                   }) : (
-                    <tr className="bg-gray-900">
-                      <td colSpan="6" className="px-6 py-10 text-center text-gray-400">
+                    <tr className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>
+                      <td colSpan="6" className={`px-6 py-10 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                         {searchTerm || filterStatus !== 'all' ? (
                           <>
                             <p className="font-medium">No matching businesses found</p>
@@ -1373,7 +1378,7 @@ export default function AdminDashboard() {
             </div>
             
             {filteredBusinesses.length > 0 && (
-              <div className="px-6 py-4 bg-gray-800/50 border-t border-gray-800 text-sm text-gray-400">
+              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
                 Showing {filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'business' : 'businesses'} of {businesses.length} total
               </div>
             )}
@@ -1382,24 +1387,24 @@ export default function AdminDashboard() {
 
         {/* Service Requests Tab */}
         {activeTab === 'requests' && (
-          <div className="bg-gray-900 rounded-2xl shadow border border-gray-800">
-            <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
-                <h2 className="text-xl font-semibold text-white flex items-center">
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
                   <Users className="h-5 w-5 text-green-500 mr-2" />
                   Service Requests
                   <button 
                     onClick={fetchAllData}
-                    className="ml-3 p-1.5 bg-gray-800 rounded-md hover:bg-gray-700 transition-colors" 
+                    className={`ml-3 p-1.5 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} rounded-md transition-colors`} 
                     title="Refresh data"
                   >
                     <RefreshCw className="h-4 w-4 text-green-400" />
                   </button>
                 </h2>
-                <p className="text-sm text-gray-400 mt-1">Monitor all service requests in the system</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Monitor all service requests in the system</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
-                <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full">
+                <span className={`${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-full`}>
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const status = r.status || r.attributes?.status;
@@ -1409,7 +1414,7 @@ export default function AdminDashboard() {
                     }).length}
                   </span> Pending
                 </span>
-                <span className="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full">
+                <span className={`${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-full`}>
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const status = r.status || r.attributes?.status;
@@ -1419,7 +1424,7 @@ export default function AdminDashboard() {
                     }).length}
                   </span> Accepted
                 </span>
-                <span className="bg-green-900/30 text-green-400 px-3 py-1 rounded-full">
+                <span className={`${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full`}>
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const completedAt = r.completedAt || r.attributes?.completedAt;
@@ -1433,12 +1438,12 @@ export default function AdminDashboard() {
             <div className="p-4">
               <div className="mb-4 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                 </div>
                 <input 
                   type="text" 
                   placeholder="Search service requests by type, business, or doctor..." 
-                  className="w-full pl-10 px-4 py-2.5 rounded-lg border border-gray-700 bg-gray-800 text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm"
+                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm`}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -1449,8 +1454,8 @@ export default function AdminDashboard() {
                   onClick={() => setFilterStatus('all')}
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'all' ? 
-                    'bg-gray-100 text-gray-900 font-medium' :
-                    'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    isDarkMode ? 'bg-gray-100 text-gray-900 font-medium' : 'bg-gray-800 text-white font-medium' :
+                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   All Requests
@@ -1460,7 +1465,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'pending' ? 
                     'bg-yellow-600 text-white font-medium' :
-                    'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50'
+                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                   }`}
                 >
                   Pending
@@ -1470,7 +1475,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'accepted' ? 
                     'bg-blue-600 text-white font-medium' :
-                    'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50'
+                    isDarkMode ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                   }`}
                 >
                   Accepted
@@ -1480,7 +1485,7 @@ export default function AdminDashboard() {
                   className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                     filterStatus === 'completed' ? 
                     'bg-green-600 text-white font-medium' :
-                    'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
                   }`}
                 >
                   Completed
@@ -1488,8 +1493,8 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div className="divide-y divide-gray-800">
-              {currentRequests.length > 0 ? currentRequests.map((request) => {
+            <div className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
+              {currentRequests.length > 0 ? currentRequests.map((request, index) => {
                 // Handle both direct properties and nested attributes
                 const id = request.id || request.attributes?.id;
                 const serviceType = request.serviceType || request.attributes?.serviceType;
@@ -1541,63 +1546,74 @@ export default function AdminDashboard() {
                   'Not assigned';
                   
                 return (
-                  <div key={id} className="p-6 hover:bg-gray-800/50 transition-colors">
+                  <div key={id} className={`p-6 transition-colors ${
+                    index % 2 === 0 
+                      ? isDarkMode ? 'bg-gray-900/50 hover:bg-gray-800/70' : 'bg-gray-50 hover:bg-gray-100' 
+                      : isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'
+                  }`}>
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-3">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            urgencyLevel === 'emergency' ? 'bg-red-900/40 text-red-400' :
-                            urgencyLevel === 'high' ? 'bg-orange-900/40 text-orange-400' :
-                            urgencyLevel === 'medium' ? 'bg-yellow-900/40 text-yellow-400' :
-                            'bg-green-900/40 text-green-400'
+                            urgencyLevel === 'emergency' ? 
+                              isDarkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-700' :
+                            urgencyLevel === 'high' ? 
+                              isDarkMode ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-100 text-orange-700' :
+                            urgencyLevel === 'medium' ? 
+                              isDarkMode ? 'bg-yellow-900/40 text-yellow-400' : 'bg-yellow-100 text-yellow-700' :
+                              isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700'
                           }`}>
                             {urgencyLevel || 'normal'}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            status === 'completed' ? 'bg-green-900/40 text-green-400 border border-green-900' :
-                            status === 'accepted' ? 'bg-blue-900/40 text-blue-400 border border-blue-900' :
-                            status === 'pending' ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' :
-                            status === 'rejected' ? 'bg-red-900/40 text-red-400 border border-red-900' :
-                            'bg-gray-800 text-gray-400 border border-gray-700'
+                            status === 'completed' ? 
+                              isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300' :
+                            status === 'accepted' ? 
+                              isDarkMode ? 'bg-blue-900/40 text-blue-400 border border-blue-900' : 'bg-blue-100 text-blue-700 border border-blue-300' :
+                            status === 'pending' ? 
+                              isDarkMode ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' : 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
+                            status === 'rejected' ? 
+                              isDarkMode ? 'bg-red-900/40 text-red-400 border border-red-900' : 'bg-red-100 text-red-700 border border-red-300' :
+                              isDarkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-gray-100 text-gray-700 border border-gray-300'
                           }`}>
                             {(status || 'pending').replace('_', ' ')}
                           </span>
                           {requestedAt && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <span className={`text-xs flex items-center ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
                               <Calendar className="h-3.5 w-3.5 mr-1" />
                               {formatDate(requestedAt)}
                             </span>
                           )}
                         </div>
                         
-                        <h3 className="font-semibold text-lg text-white mb-2">{serviceType}</h3>
-                        <p className="text-gray-300 text-sm mb-4 line-clamp-2">{description}</p>
+                        <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{serviceType}</h3>
+                        <p className={`text-sm mb-4 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{description}</p>
                         
                         <div className="grid md:grid-cols-2 gap-4 text-sm">
-                          <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
+                          <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-3 flex flex-col space-y-2`}>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-400">Business</span>
-                              <span className="font-medium text-white">{businessName}</span>
+                              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Business</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{businessName}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-400">Contact</span>
-                              <span className="font-medium text-white">{contactPersonName}</span>
+                              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Contact</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{contactPersonName}</span>
                             </div>
                           </div>
                           
-                          <div className="bg-gray-800/50 rounded-lg p-3 flex flex-col space-y-2">
+                          <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-3 flex flex-col space-y-2`}>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-400">Doctor</span>
-                              <span className="font-medium text-white">{doctorName}</span>
+                              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Doctor</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doctorName}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-400">Duration</span>
-                              <span className="font-medium text-white">{estimatedDuration}h</span>
+                              <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{estimatedDuration}h</span>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-4 mt-4 text-xs text-gray-500 dark:text-gray-500">
+                        <div className={`flex flex-wrap items-center gap-4 mt-4 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
                           {acceptedAt && (
                             <span className="flex items-center">
                               <Clock className="h-3.5 w-3.5 mr-1 text-blue-500" />
@@ -1615,14 +1631,17 @@ export default function AdminDashboard() {
                       
                       {totalAmount && (
                         <div className="flex flex-col items-end space-y-2 min-w-[120px]">
-                          <div className="text-lg font-semibold text-green-600 dark:text-green-500">
+                          <div className={`text-lg font-semibold ${isDarkMode ? 'text-green-600' : 'text-green-600'}`}>
                             {formatCurrency(totalAmount)}
                           </div>
                           <div className={`text-xs px-2.5 py-1.5 rounded-full flex items-center ${
-                            isPaid || paymentStatus === 'paid' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' :
-                            paymentStatus === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400' :
-                            paymentStatus === 'failed' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400' :
-                            'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
+                            isPaid || paymentStatus === 'paid' ? 
+                              isDarkMode ? 'bg-green-100 text-green-700' : 'bg-green-100 text-green-700' :
+                            paymentStatus === 'pending' ? 
+                              isDarkMode ? 'bg-yellow-100 text-yellow-700' : 'bg-yellow-100 text-yellow-700' :
+                            paymentStatus === 'failed' ? 
+                              isDarkMode ? 'bg-red-100 text-red-700' : 'bg-red-100 text-red-700' :
+                              isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-700'
                           }`}>
                             {(isPaid || paymentStatus === 'paid') && <Check className="h-3 w-3 mr-1 stroke-2" />}
                             {(isPaid ? 'PAID' : paymentStatus || 'pending').toUpperCase()}
@@ -1634,11 +1653,11 @@ export default function AdminDashboard() {
                 );
               }) : (
                 <div className="p-10 text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 mb-4">
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-500'} mb-4`}>
                     <AlertTriangle className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No service requests found</h3>
-                  <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                  <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No service requests found</h3>
+                  <p className={`max-w-md mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     {searchTerm || filterStatus !== 'all' ? 
                       'Try adjusting your search or filter criteria to find what you\'re looking for.' :
                       'Service requests will appear here when businesses submit them.'
@@ -1649,9 +1668,9 @@ export default function AdminDashboard() {
             </div>
             
             {filteredRequests.length > 0 && (
-              <div className="px-6 py-4 bg-gray-800/50 border-t border-gray-800">
+              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t`}>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-400">
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     Showing {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length} filtered requests ({serviceRequests.length} total)
                   </div>
                   
@@ -1660,7 +1679,9 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="px-3 py-1 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
                       >
                         Previous
                       </button>
@@ -1673,7 +1694,7 @@ export default function AdminDashboard() {
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                               currentPage === page
                                 ? 'bg-blue-600 text-white shadow-sm'
-                                : 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                : isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                             }`}
                           >
                             {page}
@@ -1684,7 +1705,9 @@ export default function AdminDashboard() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
-                        className="px-3 py-1 text-sm font-medium text-gray-400 bg-gray-800 border border-gray-600 rounded-md hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
                       >
                         Next
                       </button>
@@ -1698,15 +1721,15 @@ export default function AdminDashboard() {
 
         {/* Doctor Earnings Tab */}
         {activeTab === 'earnings' && (
-          <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
-            <div className="p-6 border-b border-gray-800">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
               <div className="flex items-center space-x-3">
-                <div className="bg-green-900/30 p-2 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-green-400" />
+                <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} p-2 rounded-lg`}>
+                  <DollarSign className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-white">Doctor Earnings</h2>
-                  <p className="text-gray-400">Track earnings and revenue per doctor from completed service requests</p>
+                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Earnings</h2>
+                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Track earnings and revenue per doctor from completed service requests</p>
                 </div>
               </div>
             </div>
@@ -1719,23 +1742,23 @@ export default function AdminDashboard() {
                     const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
                     
                     return (
-                      <div key={doctor.id} className="bg-gray-800/50 rounded-lg p-5 border border-gray-700">
+                      <div key={doctor.id} className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg p-5 border`}>
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-full flex items-center justify-center">
-                              <Stethoscope className="h-6 w-6 text-blue-400" />
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-blue-900/30 to-blue-800/30' : 'bg-gradient-to-br from-blue-100 to-blue-200'}`}>
+                              <Stethoscope className={`h-6 w-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                             </div>
                             <div>
-                              <h3 className="text-lg font-semibold text-white">{doctorName}</h3>
-                              <p className="text-sm text-gray-400">{doctor.specialization}</p>
-                              <p className="text-xs text-gray-500">Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
+                              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doctorName}</h3>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{doctor.specialization}</p>
+                              <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-green-400">
+                            <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                               {formatCurrency(earning.totalEarnings)}
                             </div>
-                            <p className="text-sm text-gray-400">
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                               {earning.completedRequests} completed requests
                             </p>
                           </div>
@@ -1743,28 +1766,28 @@ export default function AdminDashboard() {
                         
                         {earning.businesses.length > 0 && (
                           <div>
-                            <h4 className="text-md font-medium text-white mb-3">Earnings by Business:</h4>
+                            <h4 className={`text-md font-medium mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Earnings by Business:</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {earning.businesses.map((businessEarning) => {
                                 const business = businessEarning.business;
                                 return (
-                                  <div key={business.id} className="bg-gray-800 rounded-lg p-4 border border-gray-600">
+                                  <div key={business.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'} rounded-lg p-4 border`}>
                                     <div className="flex items-center space-x-3 mb-2">
-                                      <div className="w-8 h-8 bg-gradient-to-br from-indigo-900/30 to-indigo-800/30 rounded-lg flex items-center justify-center">
-                                        <Building2 className="h-4 w-4 text-indigo-400" />
+                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-indigo-900/30 to-indigo-800/30' : 'bg-gradient-to-br from-indigo-100 to-indigo-200'}`}>
+                                        <Building2 className={`h-4 w-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <h5 className="text-sm font-medium text-white truncate">
+                                        <h5 className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                                           {business.businessName}
                                         </h5>
-                                        <p className="text-xs text-gray-400">{business.businessType}</p>
+                                        <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{business.businessType}</p>
                                       </div>
                                     </div>
                                     <div className="mt-2">
-                                      <div className="text-lg font-semibold text-green-400">
+                                      <div className={`text-lg font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                                         {formatCurrency(businessEarning.earnings)}
                                       </div>
-                                      <p className="text-xs text-gray-400">
+                                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                         {businessEarning.requestCount} requests
                                       </p>
                                     </div>
@@ -1777,7 +1800,7 @@ export default function AdminDashboard() {
                         
                         {earning.businesses.length === 0 && earning.totalEarnings === 0 && (
                           <div className="text-center py-4">
-                            <p className="text-gray-400 text-sm">No completed service requests yet</p>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>No completed service requests yet</p>
                           </div>
                         )}
                       </div>
@@ -1786,10 +1809,10 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-8">
-                    <DollarSign className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                    <p className="text-lg font-medium mb-2 text-gray-700 dark:text-gray-300">No earnings data available</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <DollarSign className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No earnings data available</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Doctor earnings will appear here once service requests are completed with payment information.
                     </p>
                   </div>
