@@ -6,10 +6,12 @@ import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Ph
 import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function DoctorDashboard() {
   const router = useRouter();
-  const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, logout, isAuthenticated, authLoading } = useAuth();
+  const { isDarkMode } = useTheme();
   const [doctorData, setDoctorData] = useState(null);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
@@ -345,27 +347,47 @@ export default function DoctorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <div className={`min-h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
+    }`}>
       {/* Completion Modal */}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl p-6 w-full max-w-md modal-scrollable">
-            <h3 className="text-xl font-bold text-white mb-4">Complete Service Request</h3>
+          <div className={`rounded-lg shadow-xl p-6 w-full max-w-md modal-scrollable ${
+            isDarkMode 
+              ? 'bg-gray-900 border border-gray-700' 
+              : 'bg-white border border-gray-200'
+          }`}>
+            <h3 className={`text-xl font-bold mb-4 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>Complete Service Request</h3>
             
-            <div className="bg-gray-800 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-300 mb-2">Expected Payment</p>
+            <div className={`rounded-lg p-4 mb-4 ${
+              isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+            }`}>
+              <p className={`text-sm mb-2 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>Expected Payment</p>
               <p className="text-2xl font-bold text-green-500">{formatCurrency(completionAmount)}</p>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className={`text-sm mt-1 ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 After completion, the business will be prompted to make payment.
               </p>
             </div>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className={`block text-sm font-medium mb-1 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
                 Notes (optional)
               </label>
               <textarea
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white"
+                className={`w-full rounded-lg p-2 transition-colors ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                    : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 rows="3"
                 placeholder="Add any notes about the service provided..."
                 value={completionNotes}
@@ -376,13 +398,17 @@ export default function DoctorDashboard() {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowCompletionModal(false)}
-                className="px-4 py-2 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-800"
+                className={`px-4 py-2 border rounded-lg transition-colors ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmCompletion}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
               >
                 Complete Request
               </button>
@@ -392,7 +418,11 @@ export default function DoctorDashboard() {
       )}
     
       {/* Header */}
-      <header className="bg-gray-900 shadow-md border-b border-gray-800">
+      <header className={`shadow-md transition-colors ${
+        isDarkMode 
+          ? 'bg-gray-900 border-b border-gray-800' 
+          : 'bg-white border-b border-gray-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -400,16 +430,26 @@ export default function DoctorDashboard() {
                 <Stethoscope className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
+                <h1 className={`text-2xl font-bold tracking-tight ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                   Dr. {doctorName}
                 </h1>
-                <p className="text-gray-400">{doctor.specialization || 'Medical Professional'}</p>
+                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  {doctor.specialization || 'Medical Professional'}
+                </p>
               </div>
             </div>
 
             {/* Doctor availability toggle - always visible on all screen sizes */}
-            <div className="flex items-center space-x-2 bg-gray-800/80 px-2 py-1 rounded-md">
-              <span className="text-sm text-gray-300">Available</span>
+            <div className={`flex items-center space-x-2 px-2 py-1 rounded-md ${
+              isDarkMode 
+                ? 'bg-gray-800/80' 
+                : 'bg-gray-100/80'
+            }`}>
+              <span className={`text-sm ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>Available</span>
               <button
                 onClick={handleAvailabilityToggle}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -532,44 +572,68 @@ export default function DoctorDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
+                isDarkMode 
+                  ? 'bg-gray-900 border-gray-800' 
+                  : 'bg-white border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-yellow-400 font-medium">Pending Requests</p>
-                    <p className="text-2xl font-bold text-white">{stats.pendingRequests}</p>
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{stats.pendingRequests}</p>
                   </div>
                   <div className="bg-yellow-900/30 p-3 rounded-lg">
                     <Clock className="h-6 w-6 text-yellow-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
+                isDarkMode 
+                  ? 'bg-gray-900 border-gray-800' 
+                  : 'bg-white border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-400 font-medium">My Requests</p>
-                    <p className="text-2xl font-bold text-white">{stats.myRequests}</p>
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{stats.myRequests}</p>
                   </div>
                   <div className="bg-blue-900/30 p-3 rounded-lg">
                     <Stethoscope className="h-6 w-6 text-blue-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
+                isDarkMode 
+                  ? 'bg-gray-900 border-gray-800' 
+                  : 'bg-white border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-green-400 font-medium">Completed</p>
-                    <p className="text-2xl font-bold text-white">{stats.completedRequests}</p>
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{stats.completedRequests}</p>
                   </div>
                   <div className="bg-green-900/30 p-3 rounded-lg">
                     <Check className="h-6 w-6 text-green-400" />
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-800 hover:shadow-md transition-all duration-300">
+              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
+                isDarkMode 
+                  ? 'bg-gray-900 border-gray-800' 
+                  : 'bg-white border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-purple-400 font-medium">Hourly Rate</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
                       ${doctor.hourlyRate || 0}
                     </p>
                   </div>
@@ -581,16 +645,28 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Available Requests */}
-            <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
-              <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
+            <div className={`rounded-lg shadow border ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800' 
+                : 'bg-white border-gray-200'
+            }`}>
+              <div className={`p-6 border-b rounded-t-lg ${
+                isDarkMode 
+                  ? 'border-gray-800 bg-gray-900' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="bg-blue-900/30 p-2 rounded-lg">
                       <Clock className="h-5 w-5 text-blue-400" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-semibold text-white">Available Service Requests</h2>
-                      <p className="text-sm text-blue-300 font-medium">Nearby businesses needing medical assistance</p>
+                      <h2 className={`text-xl font-semibold ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>Available Service Requests</h2>
+                      <p className={`text-sm font-medium ${
+                        isDarkMode ? 'text-blue-300' : 'text-blue-600'
+                      }`}>Nearby businesses needing medical assistance</p>
                     </div>
                   </div>
                   {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
@@ -606,10 +682,20 @@ export default function DoctorDashboard() {
                   )}
                 </div>
               </div>
-              <div className="divide-y divide-gray-700">
+              <div className={`divide-y ${
+                isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+              }`}>
                 {serviceRequests.length > 0 ? (
                   serviceRequests.map((request) => (
-                    <div key={request.id} className={`p-6 hover:bg-gray-700/50 transition-colors ${request.status === 'accepted' ? 'bg-green-900/10 border-l-4 border-green-400' : ''}`}>
+                    <div key={request.id} className={`p-6 transition-colors ${
+                      request.status === 'accepted' 
+                        ? 'bg-green-900/10 border-l-4 border-green-400' 
+                        : ''
+                    } ${
+                      isDarkMode 
+                        ? 'hover:bg-gray-700/50' 
+                        : 'hover:bg-gray-50'
+                    }`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
@@ -623,23 +709,43 @@ export default function DoctorDashboard() {
                                 {request.urgencyLevel.toUpperCase()}
                               </span>
                             )}
-                            <span className="text-xs text-gray-400 bg-gray-700/50 px-2 py-1 rounded">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-gray-400 bg-gray-700/50' 
+                                : 'text-gray-600 bg-gray-100'
+                            }`}>
                               {formatDate(request.requestedAt)}
                             </span>
                           </div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{request.serviceType}</h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{request.description}</p>
+                          <h3 className={`font-semibold mb-1 ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>{request.serviceType}</h3>
+                          <p className={`text-sm mb-3 ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>{request.description}</p>
                           
                           <div className="flex items-center space-x-4 text-sm">
-                            <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-blue-400 bg-blue-900/20' 
+                                : 'text-blue-600 bg-blue-50'
+                            }`}>
                               <Building2 className="h-4 w-4" />
                               <span className="font-medium">{request.business?.businessName || 'Business'}</span>
                             </div>
-                            <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded">
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-gray-400 bg-gray-700/50' 
+                                : 'text-gray-600 bg-gray-100'
+                            }`}>
                               <Clock className="h-4 w-4" />
                               <span className="font-medium">{request.estimatedDuration}h</span>
                             </div>
-                            <div className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-green-400 bg-green-900/20' 
+                                : 'text-green-600 bg-green-50'
+                            }`}>
                               <DollarSign className="h-4 w-4" />
                               <span className="font-semibold">{formatCurrency((doctor.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
                             </div>
@@ -647,21 +753,33 @@ export default function DoctorDashboard() {
                           
                           {/* Display business contact info when request is accepted */}
                           {request.status === 'accepted' && request.business && (
-                            <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-                              <h4 className="font-semibold text-green-800 dark:text-green-300 text-sm mb-2">Business Contact Information:</h4>
+                            <div className={`mt-4 p-3 border rounded-lg ${
+                              isDarkMode 
+                                ? 'bg-green-900/10 border-green-800' 
+                                : 'bg-green-50 border-green-200'
+                            }`}>
+                              <h4 className={`font-semibold text-sm mb-2 ${
+                                isDarkMode ? 'text-green-300' : 'text-green-800'
+                              }`}>Business Contact Information:</h4>
                               <div className="space-y-2">
                                 {request.business.contactPersonName && (
                                   <div className="flex items-center space-x-2 text-sm">
-                                    <span className="text-green-700 dark:text-green-400 font-medium">Contact:</span>
-                                    <span className="text-gray-700 dark:text-gray-300">
+                                    <span className={`font-medium ${
+                                      isDarkMode ? 'text-green-400' : 'text-green-700'
+                                    }`}>Contact:</span>
+                                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
                                       {request.business.contactPersonName}
                                     </span>
                                   </div>
                                 )}
                                 {request.business.phone && (
                                   <div className="flex items-center space-x-2 text-sm">
-                                    <span className="text-green-700 dark:text-green-400 font-medium">Phone:</span>
-                                    <a href={`tel:${request.business.phone}`} className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center">
+                                    <span className={`font-medium ${
+                                      isDarkMode ? 'text-green-400' : 'text-green-700'
+                                    }`}>Phone:</span>
+                                    <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center ${
+                                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                    }`}>
                                       <Phone className="h-3 w-3 mr-1" />
                                       {request.business.phone}
                                     </a>
@@ -690,7 +808,9 @@ export default function DoctorDashboard() {
                                         )}`}
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 dark:text-blue-400 hover:underline text-xs inline-flex items-center mt-1"
+                                        className={`hover:underline text-xs inline-flex items-center mt-1 ${
+                                          isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                        }`}
                                       >
                                         <MapPin className="h-3 w-3 mr-1" />View on Map
                                       </a>
@@ -763,10 +883,18 @@ export default function DoctorDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-gray-400">
-                    <div className="bg-gray-800/50 rounded-lg p-6">
-                      <Clock className="h-12 w-12 mx-auto text-gray-600 mb-4" />
-                      <p className="text-lg font-medium mb-2 text-gray-300">No service requests available</p>
+                  <div className={`p-8 text-center ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    <div className={`rounded-lg p-6 ${
+                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                    }`}>
+                      <Clock className={`h-12 w-12 mx-auto mb-4 ${
+                        isDarkMode ? 'text-gray-600' : 'text-gray-400'
+                      }`} />
+                      <p className={`text-lg font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>No service requests available</p>
                       <p className="text-sm">Check back later for new requests from businesses in your area.</p>
                     </div>
                   </div>
@@ -778,36 +906,72 @@ export default function DoctorDashboard() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Doctor Info */}
-            <div className="bg-gray-900 rounded-lg shadow border border-gray-800 p-6">
+            <div className={`rounded-lg shadow border p-6 ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800' 
+                : 'bg-white border-gray-200'
+            }`}>
               <div className="flex items-center space-x-3 mb-4">
                 <div className="bg-green-900/30 p-2 rounded-lg">
                   <Stethoscope className="h-5 w-5 text-green-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">Profile Summary</h3>
+                <h3 className={`text-lg font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>Profile Summary</h3>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                  <span className="font-medium text-gray-300">Name:</span>
-                  <span className="text-white font-semibold">Dr. {doctorName}</span>
+                <div className={`flex justify-between items-center py-2 border-b ${
+                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
+                }`}>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>Name:</span>
+                  <span className={`font-semibold ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>Dr. {doctorName}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                  <span className="font-medium text-gray-300">Specialization:</span>
+                <div className={`flex justify-between items-center py-2 border-b ${
+                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
+                }`}>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>Specialization:</span>
                   <span className="text-green-400 font-semibold">{doctor.specialization || 'Medical Professional'}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                  <span className="font-medium text-gray-300">Experience:</span>
-                  <span className="text-white font-semibold">{doctor.yearsOfExperience || 0} years</span>
+                <div className={`flex justify-between items-center py-2 border-b ${
+                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
+                }`}>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>Experience:</span>
+                  <span className={`font-semibold ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>{doctor.yearsOfExperience || 0} years</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-gray-800">
-                  <span className="font-medium text-gray-300">Rate:</span>
+                <div className={`flex justify-between items-center py-2 border-b ${
+                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
+                }`}>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>Rate:</span>
                   <span className="text-purple-400 font-semibold">{formatCurrency(doctor.hourlyRate || 0)}/hour</span>
                 </div>
-                <div className="flex justify-between items-center py-2 bg-gradient-to-r from-green-900/20 to-emerald-900/20 px-3 rounded-lg mt-4">
-                  <span className="font-medium text-green-300">Total Earnings:</span>
-                  <span className="text-green-400 font-bold text-lg">{formatCurrency(stats.totalEarnings)}</span>
+                <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4 ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-r from-green-900/20 to-emerald-900/20' 
+                    : 'bg-gradient-to-r from-green-50 to-emerald-50'
+                }`}>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-green-300' : 'text-green-700'
+                  }`}>Total Earnings:</span>
+                  <span className={`font-bold text-lg ${
+                    isDarkMode ? 'text-green-400' : 'text-green-600'
+                  }`}>{formatCurrency(stats.totalEarnings)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="font-medium text-gray-300">Status:</span>
+                  <span className={`font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>Status:</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${isAvailable ? 'bg-green-900/30 text-green-400 border-green-700' : 'bg-gray-700 text-gray-400 border-gray-600'}`}>
                     {isAvailable ? '✅ Available' : '❌ Unavailable'}
                   </span>
@@ -816,26 +980,46 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Completed Service Requests */}
-            <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
-              <div className="p-6 border-b border-gray-800 bg-gray-900 rounded-t-lg">
+            <div className={`rounded-lg shadow border ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800' 
+                : 'bg-white border-gray-200'
+            }`}>
+              <div className={`p-6 border-b rounded-t-lg ${
+                isDarkMode 
+                  ? 'border-gray-800 bg-gray-900' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="bg-green-900/30 p-2 rounded-lg">
                       <Stethoscope className="h-5 w-5 text-green-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-white">Completed Service Requests</h3>
+                    <h3 className={`text-lg font-semibold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>Completed Service Requests</h3>
                   </div>
                 </div>
               </div>
-              <div className="divide-y divide-gray-700 max-h-96 overflow-y-auto">
+              <div className={`divide-y max-h-96 overflow-y-auto ${
+                isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
+              }`}>
                 {myRequests.length > 0 ? (
                   myRequests.map((request) => (
                     // Render completed request with payment status
-                    <div key={request.id} className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4">
+                    <div key={request.id} className={`border rounded-lg p-4 mb-4 ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-700' 
+                        : 'bg-white border-gray-200'
+                    }`}>
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="font-semibold text-white">{request.serviceType}</h4>
-                          <p className="text-sm text-gray-400">{request.description}</p>
+                          <h4 className={`font-semibold ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>{request.serviceType}</h4>
+                          <p className={`text-sm ${
+                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                          }`}>{request.description}</p>
                         </div>
                         <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           request.isPaid 
@@ -845,15 +1029,27 @@ export default function DoctorDashboard() {
                           {request.isPaid ? 'PAID' : 'PENDING PAYMENT'}
                         </div>
                       </div>
-                      <p className="text-sm text-blue-400 font-medium bg-blue-900/20 px-2 py-1 rounded inline-block mb-2">
+                      <p className={`text-sm font-medium px-2 py-1 rounded inline-block mb-2 ${
+                        isDarkMode 
+                          ? 'text-blue-400 bg-blue-900/20' 
+                          : 'text-blue-600 bg-blue-50'
+                      }`}>
                         {request.business?.businessName}
                       </p>
                       
-                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-700">
-                        <div className="text-xs text-gray-400">
+                      <div className={`flex justify-between items-center mt-3 pt-3 border-t ${
+                        isDarkMode ? 'border-gray-700' : 'border-gray-200'
+                      }`}>
+                        <div className={`text-xs ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           Completed: {formatDate(request.completedAt || request.updatedAt)}
                         </div>
-                        <div className={`font-semibold ${request.isPaid ? 'text-emerald-400' : 'text-green-400'}`}>
+                        <div className={`font-semibold ${
+                          request.isPaid 
+                            ? 'text-emerald-400' 
+                            : isDarkMode ? 'text-green-400' : 'text-green-600'
+                        }`}>
                           {formatCurrency(request.totalAmount || 0)}
                           {request.isPaid && (
                             <span className="text-xs font-normal ml-1">({request.paymentMethod === 'cash' ? 'Cash' : 'Card'})</span>
@@ -863,10 +1059,18 @@ export default function DoctorDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-gray-400">
-                    <div className="bg-gray-800/50 rounded-lg p-6">
-                      <Stethoscope className="h-12 w-12 mx-auto text-gray-600 mb-4" />
-                      <p className="text-lg font-medium mb-2 text-gray-300">No completed service requests yet</p>
+                  <div className={`p-8 text-center ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    <div className={`rounded-lg p-6 ${
+                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                    }`}>
+                      <Stethoscope className={`h-12 w-12 mx-auto mb-4 ${
+                        isDarkMode ? 'text-gray-600' : 'text-gray-400'
+                      }`} />
+                      <p className={`text-lg font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>No completed service requests yet</p>
                       <p className="text-sm">Completed service requests will appear here after you mark them as done.</p>
                     </div>
                   </div>
