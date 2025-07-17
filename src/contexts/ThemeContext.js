@@ -13,38 +13,47 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Always use dark mode by default
+  // Initialize theme state - check localStorage first, default to dark
   const [isDarkMode, setIsDarkMode] = useState(true);
-  // State to track current path (keep for future reference)
-  const [currentPath, setCurrentPath] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Apply dark mode to all pages
-    const path = window.location.pathname;
-    setCurrentPath(path);
+    // Check if user has a saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    // Apply dark mode to all pages consistently
-    document.documentElement.classList.add('dark');
-    setIsDarkMode(true);
-    console.log('🌙 Dark mode applied to all pages');
+    // Determine initial theme: saved preference > system preference > dark (default)
+    const shouldUseDark = savedTheme ? savedTheme === 'dark' : prefersDark;
     
-    // Force dark mode in local storage
-    localStorage.setItem('theme', 'dark');
+    setIsDarkMode(shouldUseDark);
+    applyTheme(shouldUseDark);
+    setIsInitialized(true);
+    
+    console.log(`🎨 Theme initialized: ${shouldUseDark ? 'dark' : 'light'} mode`);
   }, []);
 
-  // This function exists but will always maintain dark mode
+  const applyTheme = (isDark) => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   const toggleTheme = () => {
-    console.log('🌙 Toggle attempted, but maintaining dark mode');
-    // We keep dark mode no matter what
-    setIsDarkMode(true);
-    document.documentElement.classList.add('dark');
-    document.documentElement.classList.remove('light');
-    localStorage.setItem('theme', 'dark');
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    applyTheme(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    console.log(`🎨 Theme switched to: ${newTheme ? 'dark' : 'light'} mode`);
   };
 
   const value = {
     isDarkMode,
     toggleTheme,
+    isInitialized,
   };
 
   return (

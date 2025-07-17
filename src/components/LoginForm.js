@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../contexts/ThemeContext';
 import { authAPI } from '../lib/api';
 
 export default function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -81,24 +82,40 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg shadow-blue-900/20 p-8 w-full max-w-md">
+    <div className={`rounded-lg shadow-lg p-8 w-full max-w-md border transition-colors ${
+      isDarkMode 
+        ? 'bg-gray-800 border-gray-700 shadow-blue-900/20' 
+        : 'bg-white border-gray-200 shadow-gray-300/20'
+    }`}>
       <div className="text-center mb-6">
-        <div className="bg-blue-900/30 rounded-full p-3 inline-block">
+        <div className={`rounded-full p-3 inline-block ${
+          isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'
+        }`}>
           <LogIn className="h-8 w-8 text-blue-400" />
         </div>
-        <h2 className="text-2xl font-bold text-white mt-4">Sign In</h2>
-        <p className="text-gray-300 mt-2">Access your ThanksDoc dashboard</p>
+        <h2 className={`text-2xl font-bold mt-4 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>Sign In</h2>
+        <p className={`mt-2 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-600'
+        }`}>Access your ThanksDoc dashboard</p>
       </div>
 
       {error && (
-        <div className="bg-red-900/50 border border-red-800 text-red-300 px-4 py-3 rounded mb-4">
+        <div className={`px-4 py-3 rounded mb-4 border ${
+          isDarkMode 
+            ? 'bg-red-900/50 border-red-800 text-red-300' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
+          <label className={`block text-sm font-medium mb-1 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
             Email *
           </label>
           <input
@@ -107,13 +124,19 @@ export default function LoginForm() {
             required
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+            className={`w-full px-4 py-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors ${
+              isDarkMode 
+                ? 'border-gray-600 bg-gray-800 text-gray-200 placeholder-gray-400' 
+                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+            }`}
             placeholder="Enter your email"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">
+          <label className={`block text-sm font-medium mb-1 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
             Password *
           </label>
           <div className="relative">
@@ -123,13 +146,21 @@ export default function LoginForm() {
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-4 py-3 pr-10 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+              className={`w-full px-4 py-3 pr-10 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-colors ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-800 text-gray-200 placeholder-gray-400' 
+                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+              }`}
               placeholder="Enter your password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors ${
+                isDarkMode 
+                  ? 'text-gray-400 hover:text-gray-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
