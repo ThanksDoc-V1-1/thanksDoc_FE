@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -29,6 +29,22 @@ export default function DoctorDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
+
+  // Doctor profile editing states
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    specialisation: '',
+    yearsOfExperience: '',
+    hourlyRate: '',
+    licenceNumber: '',
+    qualifications: '',
+    bio: ''
+  });
+  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
 
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
@@ -320,6 +336,73 @@ export default function DoctorDashboard() {
     router.push('/');
   };
 
+  const handleEditProfile = () => {
+    const doctorInfo = doctorData || user;
+    setEditProfileData({
+      firstName: doctorInfo?.firstName || '',
+      lastName: doctorInfo?.lastName || '',
+      email: doctorInfo?.email || '',
+      phone: doctorInfo?.phone || '',
+      specialisation: doctorInfo?.specialisation || '',
+      yearsOfExperience: doctorInfo?.yearsOfExperience || '',
+      hourlyRate: doctorInfo?.hourlyRate || '',
+      licenceNumber: doctorInfo?.licenceNumber || '',
+      qualifications: doctorInfo?.qualifications || '',
+      bio: doctorInfo?.bio || ''
+    });
+    setShowEditProfile(true);
+  };
+
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileUpdateLoading(true);
+
+    try {
+      const response = await doctorAPI.updateProfile(user.id, editProfileData);
+      
+      if (response.data) {
+        alert('Profile updated successfully!');
+        setShowEditProfile(false);
+        // Update the local doctor data
+        setDoctorData(prev => ({
+          ...prev,
+          ...editProfileData
+        }));
+        // Refresh doctor data from server
+        await fetchDoctorData();
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setProfileUpdateLoading(false);
+    }
+  };
+
+  const handleCancelEditProfile = () => {
+    setShowEditProfile(false);
+    setEditProfileData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      specialisation: '',
+      yearsOfExperience: '',
+      hourlyRate: '',
+      licenceNumber: '',
+      qualifications: '',
+      bio: ''
+    });
+  };
+
   // Get doctor display data (either from backend or auth context)
   const doctor = doctorData || user;
   const doctorName = doctor?.name || `${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim() || doctor?.email || 'Doctor';
@@ -416,6 +499,271 @@ export default function DoctorDashboard() {
           </div>
         </div>
       )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className={`rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto ${
+            isDarkMode 
+              ? 'bg-gray-900 border border-gray-700' 
+              : 'bg-white border border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className={`text-xl font-bold ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>Edit Doctor Profile</h3>
+              <button
+                onClick={handleCancelEditProfile}
+                className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                  isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                }`}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={editProfileData.firstName}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter first name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={editProfileData.lastName}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter last name"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editProfileData.email}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={editProfileData.phone}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Specialisation
+                  </label>
+                  <input
+                    type="text"
+                    name="specialisation"
+                    value={editProfileData.specialisation}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="e.g., General Practice, Cardiology"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Years of Experience
+                  </label>
+                  <input
+                    type="number"
+                    name="yearsOfExperience"
+                    value={editProfileData.yearsOfExperience}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter years of experience"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Hourly Rate (£)
+                  </label>
+                  <input
+                    type="number"
+                    name="hourlyRate"
+                    value={editProfileData.hourlyRate}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter hourly rate"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Licence Number
+                  </label>
+                  <input
+                    type="text"
+                    name="licenceNumber"
+                    value={editProfileData.licenceNumber}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter medical licence number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Qualifications
+                </label>
+                <input
+                  type="text"
+                  name="qualifications"
+                  value={editProfileData.qualifications}
+                  onChange={handleProfileInputChange}
+                  className={`w-full rounded-lg p-3 transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                      : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="e.g., MBBS, MD, FRCS"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Bio
+                </label>
+                <textarea
+                  name="bio"
+                  value={editProfileData.bio}
+                  onChange={handleProfileInputChange}
+                  rows="4"
+                  className={`w-full rounded-lg p-3 transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                      : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                  } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Tell us about yourself, your approach to medicine, and what makes you unique..."
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCancelEditProfile}
+                  className={`px-4 py-2 border rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'border-gray-600 text-gray-300 hover:bg-gray-800' 
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={profileUpdateLoading}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    profileUpdateLoading
+                      ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  {profileUpdateLoading ? 'Updating...' : 'Update Profile'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     
       {/* Header */}
       <header className={`shadow-md transition-colors ${
@@ -441,28 +789,71 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            {/* Doctor availability toggle - always visible on all screen sizes */}
-            <div className={`flex items-center space-x-2 px-2 py-1 rounded-md ${
-              isDarkMode 
-                ? 'bg-gray-800/80' 
-                : 'bg-gray-100/80'
-            }`}>
-              <span className={`text-sm ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>Available</span>
-              <button
-                onClick={handleAvailabilityToggle}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  isAvailable ? 'bg-green-600' : 'bg-gray-600'
-                }`}
-                aria-label={`Set availability to ${isAvailable ? 'unavailable' : 'available'}`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isAvailable ? 'translate-x-6' : 'translate-x-1'
+            {/* Right side - Profile Summary and Controls */}
+            <div className="flex items-center space-x-4">
+              {/* Compact Profile Summary */}
+              <div className={`hidden lg:flex items-center space-x-3 px-4 py-2 rounded-lg border ${
+                isDarkMode 
+                  ? 'bg-gray-800/50 border-gray-700' 
+                  : 'bg-gray-50 border-gray-200'
+              }`}>
+                <div className="text-right">
+                  <div className={`text-sm font-medium ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    {doctor.yearsOfExperience || 0} years exp. • {formatCurrency(doctor.hourlyRate || 0)}/hour
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-xs ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>Total Earnings:</span>
+                    <span className={`text-sm font-semibold ${
+                      isDarkMode ? 'text-green-400' : 'text-green-600'
+                    }`}>{formatCurrency(stats.totalEarnings)}</span>
+                  </div>
+                </div>
+                <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-xs ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>Status:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                    isAvailable 
+                      ? isDarkMode 
+                        ? 'bg-green-900/30 text-green-400 border-green-700' 
+                        : 'bg-green-600 text-white border-green-500'
+                      : isDarkMode 
+                        ? 'bg-gray-700 text-gray-400 border-gray-600' 
+                        : 'bg-gray-400 text-white border-gray-300'
+                  }`}>
+                    {isAvailable ? '✅ Available' : '❌ Unavailable'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Doctor availability toggle */}
+              <div className={`flex items-center space-x-2 px-3 py-2 rounded-md ${
+                isDarkMode 
+                  ? 'bg-gray-800/80' 
+                  : 'bg-gray-100/80'
+              }`}>
+                <span className={`text-sm ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>Available</span>
+                <button
+                  onClick={handleAvailabilityToggle}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    isAvailable ? 'bg-green-600' : 'bg-gray-600'
                   }`}
-                />
-              </button>
+                  aria-label={`Set availability to ${isAvailable ? 'unavailable' : 'available'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isAvailable ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
             
             {/* Desktop controls */}
@@ -949,81 +1340,78 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Doctor Profile Sidebar */}
           <div className="space-y-6">
-            {/* Doctor Info */}
-            <div className={`rounded-lg shadow border p-6 ${
-              isDarkMode 
-                ? 'bg-gray-900 border-gray-800' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className={`p-2 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-green-900/30' 
-                    : 'bg-green-600'
-                }`}>
-                  <Stethoscope className={`h-5 w-5 ${
-                    isDarkMode ? 'text-green-400' : 'text-white'
-                  }`} />
+            {/* Doctor Profile */}
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
+                    <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  </div>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Profile</h3>
                 </div>
-                <h3 className={`text-lg font-semibold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>Profile Summary</h3>
+                <button
+                  onClick={handleEditProfile}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Edit Doctor Profile"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
               </div>
               <div className="space-y-3 text-sm">
-                <div className={`flex justify-between items-center py-2 border-b ${
-                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
-                }`}>
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>Name:</span>
-                  <span className={`font-semibold ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>Dr. {doctorName}</span>
+                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Name:</span>
+                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>Dr. {doctorName}</span>
                 </div>
-                <div className={`flex justify-between items-center py-2 border-b ${
-                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
-                }`}>
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>Specialization:</span>
-                  <span className="text-green-400 font-semibold">{doctor.specialization || 'Medical Professional'}</span>
+                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Email:</span>
+                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor?.email || 'N/A'}</span>
                 </div>
-                <div className={`flex justify-between items-center py-2 border-b ${
-                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
-                }`}>
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>Experience:</span>
-                  <span className={`font-semibold ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>{doctor.yearsOfExperience || 0} years</span>
+                {doctor?.phone && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Phone:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.phone}</span>
+                  </div>
+                )}
+                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Specialisation:</span>
+                  <span className={`${isDarkMode ? 'text-green-400' : 'text-green-600'} font-semibold`}>{doctor?.specialisation || 'Medical Professional'}</span>
                 </div>
-                <div className={`flex justify-between items-center py-2 border-b ${
-                  isDarkMode ? 'border-gray-800' : 'border-gray-200'
-                }`}>
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>Rate:</span>
-                  <span className="text-purple-400 font-semibold">{formatCurrency(doctor.hourlyRate || 0)}/hour</span>
+                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Experience:</span>
+                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor?.yearsOfExperience || 0} years</span>
                 </div>
-                <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4 ${
-                  isDarkMode 
-                    ? 'bg-gradient-to-r from-green-900/20 to-emerald-900/20' 
-                    : 'bg-gradient-to-r from-green-50 to-emerald-50'
-                }`}>
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-green-300' : 'text-green-700'
-                  }`}>Total Earnings:</span>
-                  <span className={`font-bold text-lg ${
-                    isDarkMode ? 'text-green-400' : 'text-green-600'
-                  }`}>{formatCurrency(stats.totalEarnings)}</span>
+                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Rate:</span>
+                  <span className={`${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-semibold`}>{formatCurrency(doctor?.hourlyRate || 0)}/hour</span>
+                </div>
+                {doctor?.licenceNumber && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Licence:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.licenceNumber}</span>
+                  </div>
+                )}
+                {doctor?.qualifications && (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Qualifications:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{doctor.qualifications}</span>
+                  </div>
+                )}
+                {doctor?.bio && (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Bio:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{doctor.bio}</span>
+                  </div>
+                )}
+                <div className={`flex justify-between items-center py-2 ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 rounded-lg mt-4`}>
+                  <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>Total Earnings:</span>
+                  <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>{formatCurrency(stats.totalEarnings)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className={`font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>Status:</span>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Status:</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                     isAvailable 
                       ? isDarkMode 
@@ -1038,116 +1426,111 @@ export default function DoctorDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Completed Service Requests */}
-            <div className={`rounded-lg shadow border ${
-              isDarkMode 
-                ? 'bg-gray-900 border-gray-800' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <div className={`p-6 border-b rounded-t-lg ${
-                isDarkMode 
-                  ? 'border-gray-800 bg-gray-900' 
-                  : 'border-gray-200 bg-gray-50'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'bg-green-900/30' 
-                        : 'bg-green-600'
-                    }`}>
-                      <Stethoscope className={`h-5 w-5 ${
-                        isDarkMode ? 'text-green-400' : 'text-white'
-                      }`} />
-                    </div>
-                    <h3 className={`text-lg font-semibold ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>Completed Service Requests</h3>
+        {/* Recent Service Requests Section */}
+        <div className="mt-8">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
+                    <Clock className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
                   </div>
+                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Service Requests</h2>
                 </div>
+                {myRequests.length > 0 && (
+                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {myRequests.length} total requests
+                  </div>
+                )}
               </div>
-              <div className={`divide-y max-h-96 overflow-y-auto ${
-                isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-              }`}>
+            </div>
+              <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {myRequests.length > 0 ? (
-                  myRequests.map((request) => (
-                    // Render completed request with payment status
-                    <div key={request.id} className={`border rounded-lg p-4 mb-4 ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border-gray-700' 
-                        : 'bg-white border-gray-200'
-                    }`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h4 className={`font-semibold ${
-                            isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`}>{request.serviceType}</h4>
-                          <p className={`text-sm ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>{request.description}</p>
+                  myRequests.slice(0, 10).map((request) => (
+                    <div key={request.id} className={`p-6 ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status, isDarkMode)}`}>
+                              {request.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
+                                {request.urgencyLevel.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>{request.serviceType}</h3>
+                          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-2`}>{request.description}</p>
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Requested: {formatDate(request.requestedAt)}
+                          </p>
+                          {request.business && (
+                            <div className="mt-2">
+                              <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                                Business: {request.business.businessName || 'Business'}
+                              </p>
+                              
+                              {/* Show business contact info when request is accepted */}
+                              {request.status === 'accepted' && request.business.phone && (
+                                <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
+                                  <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Business Contact Information:</h4>
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <Phone className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                                    <a href={`tel:${request.business.phone}`} className={`${isDarkMode ? 'text-blue-400 hover:underline' : 'text-blue-600 hover:underline'} text-xs`}>
+                                      {request.business.phone}
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                          request.isPaid 
-                            ? isDarkMode 
-                              ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700' 
-                              : 'bg-emerald-600 text-white border-emerald-500'
-                            : isDarkMode 
-                              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' 
-                              : 'bg-yellow-600 text-white border-yellow-500'
-                        }`}>
-                          {request.isPaid ? 'PAID' : 'PENDING PAYMENT'}
-                        </div>
-                      </div>
-                      <p className={`text-sm font-medium px-2 py-1 rounded inline-block mb-2 ${
-                        isDarkMode 
-                          ? 'text-blue-400 bg-blue-900/20' 
-                          : 'text-blue-600 bg-blue-50'
-                      }`}>
-                        {request.business?.businessName}
-                      </p>
-                      
-                      <div className={`flex justify-between items-center mt-3 pt-3 border-t ${
-                        isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                      }`}>
-                        <div className={`text-xs ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          Completed: {formatDate(request.completedAt || request.updatedAt)}
-                        </div>
-                        <div className={`font-semibold ${
-                          request.isPaid 
-                            ? 'text-emerald-400' 
-                            : isDarkMode ? 'text-green-400' : 'text-green-600'
-                        }`}>
-                          {formatCurrency(request.totalAmount || 0)}
-                          {request.isPaid && (
-                            <span className="text-xs font-normal ml-1">({request.paymentMethod === 'cash' ? 'Cash' : 'Card'})</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-4 text-sm">
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-gray-400 bg-gray-700/50' 
+                                : 'text-gray-600 bg-gray-100'
+                            }`}>
+                              <Clock className="h-4 w-4" />
+                              <span className="font-medium">{request.estimatedDuration}h</span>
+                            </div>
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                              isDarkMode 
+                                ? 'text-green-400 bg-green-900/20' 
+                                : 'text-green-600 bg-green-50'
+                            }`}>
+                              <DollarSign className="h-4 w-4" />
+                              <span className="font-semibold">{formatCurrency((doctor?.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
+                            </div>
+                          </div>
+                          {request.status === 'completed' && request.totalAmount && (
+                            <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(request.totalAmount)}</span>
+                              <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
+                                COMPLETED
+                              </div>
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className={`p-8 text-center ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    <div className={`rounded-lg p-6 ${
-                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
-                    }`}>
-                      <Stethoscope className={`h-12 w-12 mx-auto mb-4 ${
-                        isDarkMode ? 'text-gray-600' : 'text-gray-400'
-                      }`} />
-                      <p className={`text-lg font-medium mb-2 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>No completed service requests yet</p>
-                      <p className="text-sm">Completed service requests will appear here after you mark them as done.</p>
+                  <div className="p-8 text-center">
+                    <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
+                      <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
+                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No service requests yet</p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Service requests you accept will appear here.</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
-          </div>
         </div>
       </div>
     </div>
