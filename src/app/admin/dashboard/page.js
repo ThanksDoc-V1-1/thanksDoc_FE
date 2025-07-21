@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, Filter, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -17,7 +17,6 @@ export default function AdminDashboard() {
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
   const [showDoctorForm, setShowDoctorForm] = useState(false);
@@ -394,57 +393,69 @@ export default function AdminDashboard() {
     }));
   };
 
-  // Filter functions for search and status filters
+  // Filter functions for search functionality only
   const filteredDoctors = doctors.filter(doctor => {
-    const matchesSearch = searchTerm === '' || 
-      `${doctor.firstName} ${doctor.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.specialization?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.licenseNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Handle both direct properties and nested attributes structure
+    const firstName = doctor.firstName || doctor.attributes?.firstName || '';
+    const lastName = doctor.lastName || doctor.attributes?.lastName || '';
+    const specialization = doctor.specialization || doctor.attributes?.specialization || '';
+    const email = doctor.email || doctor.attributes?.email || '';
+    const licenseNumber = doctor.licenseNumber || doctor.attributes?.licenseNumber || '';
     
-    const matchesFilter = filterStatus === 'all' || 
-      (filterStatus === 'verified' && doctor.isVerified) || 
-      (filterStatus === 'unverified' && !doctor.isVerified);
+    if (searchTerm === '') return true;
     
-    return matchesSearch && matchesFilter;
+    const searchLower = searchTerm.toLowerCase();
+    return `${firstName} ${lastName}`.toLowerCase().includes(searchLower) ||
+           specialization.toLowerCase().includes(searchLower) ||
+           email.toLowerCase().includes(searchLower) ||
+           licenseNumber.toLowerCase().includes(searchLower);
   });
 
   const filteredBusinesses = businesses.filter(business => {
-    const matchesSearch = searchTerm === '' || 
-      business.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      business.businessType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      business.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      business.businessLicense?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Handle both direct properties and nested attributes structure
+    const businessName = business.businessName || business.name || business.attributes?.businessName || business.attributes?.name || '';
+    const businessType = business.businessType || business.attributes?.businessType || '';
+    const email = business.email || business.attributes?.email || '';
+    const businessLicense = business.businessLicense || business.attributes?.businessLicense || '';
+    const contactPersonName = business.contactPersonName || business.attributes?.contactPersonName || '';
     
-    const matchesFilter = filterStatus === 'all' || 
-      (filterStatus === 'verified' && business.isVerified) || 
-      (filterStatus === 'unverified' && !business.isVerified);
+    if (searchTerm === '') return true;
     
-    return matchesSearch && matchesFilter;
+    const searchLower = searchTerm.toLowerCase();
+    return businessName.toLowerCase().includes(searchLower) ||
+           businessType.toLowerCase().includes(searchLower) ||
+           email.toLowerCase().includes(searchLower) ||
+           businessLicense.toLowerCase().includes(searchLower) ||
+           contactPersonName.toLowerCase().includes(searchLower);
   });
 
   const filteredRequests = serviceRequests.filter(request => {
-    const matchesSearch = searchTerm === '' || 
-      request.serviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.business?.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.doctor?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.doctor?.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Handle both direct properties and nested attributes structure
+    const serviceType = request.serviceType || request.attributes?.serviceType || '';
+    const description = request.description || request.attributes?.description || '';
+    const businessName = request.business?.businessName || request.business?.name || request.attributes?.business?.businessName || request.attributes?.business?.name || '';
+    const doctorFirstName = request.doctor?.firstName || request.attributes?.doctor?.firstName || '';
+    const doctorLastName = request.doctor?.lastName || request.attributes?.doctor?.lastName || '';
     
-    // Determine the effective status considering timestamps
-    let effectiveStatus = request.status || request.attributes?.status;
-    if (request.completedAt || request.attributes?.completedAt) {
-      effectiveStatus = 'completed';
-    } else if ((request.acceptedAt || request.attributes?.acceptedAt) && effectiveStatus === 'pending') {
-      effectiveStatus = 'accepted';
-    }
+    if (searchTerm === '') return true;
     
-    const matchesFilter = filterStatus === 'all' || 
-      (filterStatus === 'pending' && effectiveStatus === 'pending') || 
-      (filterStatus === 'accepted' && effectiveStatus === 'accepted') ||
-      (filterStatus === 'completed' && effectiveStatus === 'completed');
+    const searchLower = searchTerm.toLowerCase();
+    return serviceType.toLowerCase().includes(searchLower) ||
+           description.toLowerCase().includes(searchLower) ||
+           businessName.toLowerCase().includes(searchLower) ||
+           `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower);
+  });
+
+  const filteredDoctorEarnings = doctorEarnings.filter(earning => {
+    const doctorFirstName = earning.doctor?.firstName || earning.doctor?.attributes?.firstName || '';
+    const doctorLastName = earning.doctor?.lastName || earning.doctor?.attributes?.lastName || '';
+    const specialization = earning.doctor?.specialization || earning.doctor?.attributes?.specialization || '';
     
-    return matchesSearch && matchesFilter;
+    if (searchTerm === '') return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower) ||
+           specialization.toLowerCase().includes(searchLower);
   });
 
   // Pagination for service requests
@@ -543,34 +554,25 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Search & Filter Bar */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center">
-          <div className="relative flex-grow">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md mx-auto">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
             <input
               type="text"
               className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
-              placeholder="Search by name, email, license..."
+              placeholder={
+                activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
+                activeTab === 'businesses' ? "Search businesses by name, type, email..." :
+                activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
+                activeTab === 'earnings' ? "Search by doctor name..." :
+                "Search..."
+              }
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
-          
-          <div className="flex items-center space-x-2 whitespace-nowrap">
-            <Filter className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-            <select 
-              className={`block w-full pl-3 pr-8 py-2.5 text-base border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm cursor-pointer`}
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="verified">Verified Only</option>
-              <option value="unverified">Unverified Only</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-            </select>
           </div>
         </div>
 
@@ -588,7 +590,11 @@ export default function AdminDashboard() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setSearchTerm(''); // Reset search when switching tabs
+                    setCurrentPage(1); // Reset pagination when switching tabs
+                  }}
                   className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
@@ -616,7 +622,14 @@ export default function AdminDashboard() {
           <div className="space-y-8">
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Doctors Stats Card */}
-              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <button 
+                onClick={() => {
+                  setActiveTab('doctors');
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-blue-600' : 'bg-white border-gray-200 hover:border-blue-400'}`}
+              >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-blue-900/5 to-blue-900/10' : 'bg-gradient-to-r from-blue-50/80 to-blue-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
@@ -649,11 +662,21 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </div>
+                  <div className={`mt-3 text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                    Click to manage doctors →
+                  </div>
                 </div>
-              </div>
+              </button>
 
               {/* Businesses Stats Card */}
-              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <button 
+                onClick={() => {
+                  setActiveTab('businesses');
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-purple-600' : 'bg-white border-gray-200 hover:border-purple-400'}`}
+              >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-purple-900/5 to-purple-900/10' : 'bg-gradient-to-r from-purple-50/80 to-purple-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
@@ -686,11 +709,21 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </div>
+                  <div className={`mt-3 text-xs ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-medium`}>
+                    Click to manage businesses →
+                  </div>
                 </div>
-              </div>
+              </button>
 
               {/* Service Requests Stats Card */}
-              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <button 
+                onClick={() => {
+                  setActiveTab('requests');
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-green-600' : 'bg-white border-gray-200 hover:border-green-400'}`}
+              >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-green-900/5 to-green-900/10' : 'bg-gradient-to-r from-green-50/80 to-green-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
@@ -719,11 +752,21 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </div>
+                  <div className={`mt-3 text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'} font-medium`}>
+                    Click to view requests →
+                  </div>
                 </div>
-              </div>
+              </button>
 
               {/* Recent Activity Card */}
-              <div className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+              <button 
+                onClick={() => {
+                  setActiveTab('earnings');
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-amber-600' : 'bg-white border-gray-200 hover:border-amber-400'}`}
+              >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-amber-900/5 to-amber-900/10' : 'bg-gradient-to-r from-amber-50/80 to-amber-100/30'}`}></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-4">
@@ -763,8 +806,11 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                   </div>
+                  <div className={`mt-3 text-xs ${isDarkMode ? 'text-amber-400' : 'text-amber-600'} font-medium`}>
+                    Click to view earnings →
+                  </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Recent Service Requests */}
@@ -941,54 +987,6 @@ export default function AdminDashboard() {
               </div>
             </div>
             
-            <div className="p-4">
-              <div className="mb-4 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Search doctors by name, specialty, license or email..." 
-                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border focus:outline-none focus:ring-2 shadow-sm ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-500' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500'}`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <div className="mb-4 flex flex-wrap gap-2">
-                <button 
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'all' ? 
-                    'bg-blue-600 text-white font-medium' :
-                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  All Doctors
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('verified')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'verified' ? 
-                    'bg-green-600 text-white font-medium' :
-                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
-                >
-                  Verified Only
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('unverified')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'unverified' ? 
-                    'bg-yellow-600 text-white font-medium' :
-                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  }`}
-                >
-                  Pending Verification
-                </button>
-              </div>
-            </div>
-            
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className={`sticky top-0 z-10 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
@@ -1118,10 +1116,10 @@ export default function AdminDashboard() {
                   }) : (
                     <tr className="bg-gray-900">
                       <td colSpan="6" className={`px-6 py-10 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {searchTerm || filterStatus !== 'all' ? (
+                        {searchTerm ? (
                           <>
                             <p className="font-medium">No matching doctors found</p>
-                            <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            <p className="text-sm mt-1">Try adjusting your search criteria</p>
                           </>
                         ) : (
                           <>
@@ -1171,54 +1169,6 @@ export default function AdminDashboard() {
                   <Clock className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.totalBusinesses - stats.verifiedBusinesses}</span> Pending
                 </span>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="mb-4 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Search businesses by name, type, license or email..." 
-                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <div className="mb-4 flex flex-wrap gap-2">
-                <button 
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'all' ? 
-                    'bg-purple-600 text-white font-medium' :
-                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  All Businesses
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('verified')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'verified' ? 
-                    'bg-green-600 text-white font-medium' :
-                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
-                >
-                  Verified Only
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('unverified')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'unverified' ? 
-                    'bg-yellow-600 text-white font-medium' :
-                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  }`}
-                >
-                  Pending Verification
-                </button>
               </div>
             </div>
             
@@ -1359,10 +1309,10 @@ export default function AdminDashboard() {
                   }) : (
                     <tr className={isDarkMode ? 'bg-gray-900' : 'bg-white'}>
                       <td colSpan="6" className={`px-6 py-10 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        {searchTerm || filterStatus !== 'all' ? (
+                        {searchTerm ? (
                           <>
                             <p className="font-medium">No matching businesses found</p>
-                            <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+                            <p className="text-sm mt-1">Try adjusting your search criteria</p>
                           </>
                         ) : (
                           <>
@@ -1432,64 +1382,6 @@ export default function AdminDashboard() {
                     }).length}
                   </span> Completed
                 </span>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="mb-4 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Search service requests by type, business, or doctor..." 
-                  className={`w-full pl-10 px-4 py-2.5 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'} focus:outline-none focus:ring-2 focus:ring-green-500 shadow-sm`}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              
-              <div className="mb-4 flex flex-wrap gap-2">
-                <button 
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'all' ? 
-                    isDarkMode ? 'bg-gray-100 text-gray-900 font-medium' : 'bg-gray-800 text-white font-medium' :
-                    isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  All Requests
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('pending')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'pending' ? 
-                    'bg-yellow-600 text-white font-medium' :
-                    isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-900/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  }`}
-                >
-                  Pending
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('accepted')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'accepted' ? 
-                    'bg-blue-600 text-white font-medium' :
-                    isDarkMode ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                  }`}
-                >
-                  Accepted
-                </button>
-                <button 
-                  onClick={() => setFilterStatus('completed')}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                    filterStatus === 'completed' ? 
-                    'bg-green-600 text-white font-medium' :
-                    isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-900/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
-                >
-                  Completed
-                </button>
               </div>
             </div>
             
@@ -1658,8 +1550,8 @@ export default function AdminDashboard() {
                   </div>
                   <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No service requests found</h3>
                   <p className={`max-w-md mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {searchTerm || filterStatus !== 'all' ? 
-                      'Try adjusting your search or filter criteria to find what you\'re looking for.' :
+                    {searchTerm ? 
+                      'Try adjusting your search criteria to find what you\'re looking for.' :
                       'Service requests will appear here when businesses submit them.'
                     }
                   </p>
@@ -1737,7 +1629,7 @@ export default function AdminDashboard() {
             <div className="p-6">
               {doctorEarnings.length > 0 ? (
                 <div className="space-y-6">
-                  {doctorEarnings.map((earning) => {
+                  {filteredDoctorEarnings.map((earning) => {
                     const doctor = earning.doctor;
                     const doctorName = `Dr. ${doctor.firstName} ${doctor.lastName}`;
                     
