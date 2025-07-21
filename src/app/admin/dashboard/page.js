@@ -23,6 +23,12 @@ export default function AdminDashboard() {
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [showDoctorPassword, setShowDoctorPassword] = useState(false);
   const [showBusinessPassword, setShowBusinessPassword] = useState(false);
+  
+  // View modals state
+  const [showDoctorDetails, setShowDoctorDetails] = useState(false);
+  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [doctorFormData, setDoctorFormData] = useState({
     name: '',
     email: '',
@@ -466,6 +472,35 @@ export default function AdminDashboard() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  // View detail handlers
+  const handleViewDoctorDetails = (doctor) => {
+    console.log('👨‍⚕️ Viewing doctor details:', doctor);
+    console.log('🔍 Current showDoctorDetails state:', showDoctorDetails);
+    console.log('🔍 Current selectedDoctor state:', selectedDoctor);
+    setSelectedDoctor(doctor);
+    setShowDoctorDetails(true);
+    console.log('✅ Modal states updated - showDoctorDetails: true, selectedDoctor:', doctor);
+  };
+
+  const handleViewBusinessDetails = (business) => {
+    console.log('🏢 Viewing business details:', business);
+    console.log('🔍 Current showBusinessDetails state:', showBusinessDetails);
+    console.log('🔍 Current selectedBusiness state:', selectedBusiness);
+    setSelectedBusiness(business);
+    setShowBusinessDetails(true);
+    console.log('✅ Modal states updated - showBusinessDetails: true, selectedBusiness:', business);
+  };
+
+  const handleCloseDoctorDetails = () => {
+    setShowDoctorDetails(false);
+    setSelectedDoctor(null);
+  };
+
+  const handleCloseBusinessDetails = () => {
+    setShowBusinessDetails(false);
+    setSelectedBusiness(null);
   };
 
   const stats = {
@@ -1107,7 +1142,12 @@ export default function AdminDashboard() {
                             )}
                             <button 
                               className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                              onClick={() => alert(`View details for ${firstName} ${lastName}`)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleViewDoctorDetails(doctor);
+                              }}
+                              title="View doctor details"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
@@ -1300,7 +1340,12 @@ export default function AdminDashboard() {
                             )}
                             <button 
                               className={`${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} px-3 py-1.5 rounded-lg transition-colors`}
-                              onClick={() => alert(`View details for ${businessName}`)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleViewBusinessDetails(business);
+                              }}
+                              title="View business details"
                             >
                               <Eye className="h-4 w-4" />
                             </button>
@@ -2252,6 +2297,266 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Doctor Details Modal */}
+      {showDoctorDetails && selectedDoctor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
+                    <Stethoscope className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
+                    </h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                      {selectedDoctor.specialization}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseDoctorDetails}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto modal-scrollable flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Personal Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Personal Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>First Name:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.firstName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Last Name:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.lastName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Phone:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.phone || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verification Status:</span>
+                      <span className={`font-medium ${selectedDoctor.isVerified ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedDoctor.isVerified ? 'Verified' : 'Not Verified'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Professional Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Professional Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Specialization:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.specialization}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>License Number:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.licenseNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Years of Experience:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.yearsOfExperience || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Hourly Rate:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatCurrency(selectedDoctor.hourlyRate || 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Availability:</span>
+                      <span className={`font-medium ${selectedDoctor.isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedDoctor.isAvailable ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Address Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Address:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right`}>{selectedDoctor.address || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>City:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.city || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>State:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.state || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Zip Code:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.zipCode || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bio */}
+                {selectedDoctor.bio && (
+                  <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Biography</h3>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedDoctor.bio}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCloseDoctorDetails}
+                  className={`px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Business Details Modal */}
+      {showBusinessDetails && selectedBusiness && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-600'} p-2 rounded-lg`}>
+                    <Building2 className={`h-5 w-5 ${isDarkMode ? 'text-indigo-400' : 'text-white'}`} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedBusiness.businessName || selectedBusiness.name}
+                    </h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'} font-medium`}>
+                      {selectedBusiness.businessType || 'Business'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseBusinessDetails}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto modal-scrollable flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Business Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Business Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Business Name:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.businessName || selectedBusiness.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Business Type:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.businessType || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Registration Number:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.registrationNumber || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verification Status:</span>
+                      <span className={`font-medium ${selectedBusiness.isVerified ? 'text-green-600' : 'text-red-600'}`}>
+                        {selectedBusiness.isVerified ? 'Verified' : 'Not Verified'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Contact Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Contact Person:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.contactPersonName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Phone:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.phone || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Website:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.website || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Address Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Address:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right`}>{selectedBusiness.address || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>City:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.city || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>State:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.state || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Zip Code:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.zipCode || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedBusiness.description && (
+                  <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Description</h3>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedBusiness.description}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleCloseBusinessDetails}
+                  className={`px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

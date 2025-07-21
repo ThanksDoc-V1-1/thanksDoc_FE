@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock } from 'lucide-react';
+import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -12,6 +12,29 @@ export default function BusinessDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme();
+  
+  // Service charge constant
+  const SERVICE_CHARGE = 3.00; // £3 service charge for all requests
+  
+  // Helper function to calculate total amount including service charge
+  const calculateTotalAmount = (request) => {
+    // If totalAmount already includes service charge (backend calculated), use it
+    // Otherwise, add service charge to ensure correct total
+    const baseAmount = request.totalAmount || 0;
+    const serviceCharge = request.serviceCharge || SERVICE_CHARGE;
+    
+    // Check if service charge is already included by seeing if totalAmount is significantly larger than expected doctor fee
+    const estimatedDoctorFee = (request.doctor?.hourlyRate || 0) * (request.estimatedDuration || 0);
+    const expectedTotal = estimatedDoctorFee + serviceCharge;
+    
+    // If totalAmount is close to expected total, use it; otherwise add service charge
+    if (baseAmount >= expectedTotal - 1 && baseAmount <= expectedTotal + 1) {
+      return baseAmount; // Service charge likely already included
+    } else {
+      return baseAmount + serviceCharge; // Add service charge
+    }
+  };
+  
   const [businessData, setBusinessData] = useState(null);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [serviceRequests, setServiceRequests] = useState([]);
@@ -37,6 +60,18 @@ export default function BusinessDashboard() {
   const [quickRequestServiceType, setQuickRequestServiceType] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
+
+  // Business profile editing states
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    businessName: '',
+    contactPersonName: '',
+    email: '',
+    phone: '',
+    address: '',
+    description: ''
+  });
+  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
 
   // Auto-refresh functionality
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -117,7 +152,19 @@ export default function BusinessDashboard() {
         console.error('Error fetching stats from backend:', statsError);
         // Fallback to calculating stats from requests
         const completedRequests = requests.filter(req => req.status === 'completed');
-        const totalSpent = completedRequests.reduce((sum, req) => sum + (req.totalAmount || 0), 0);
+        const totalSpent = completedRequests.reduce((sum, req) => {
+          const baseAmount = req.totalAmount || 0;
+          const serviceCharge = req.serviceCharge || SERVICE_CHARGE;
+          const estimatedDoctorFee = (req.doctor?.hourlyRate || 0) * (req.estimatedDuration || 0);
+          const expectedTotal = estimatedDoctorFee + serviceCharge;
+          
+          // Use same logic as calculateTotalAmount function
+          if (baseAmount >= expectedTotal - 1 && baseAmount <= expectedTotal + 1) {
+            return sum + baseAmount;
+          } else {
+            return sum + baseAmount + serviceCharge;
+          }
+        }, 0);
         
         setStats(prev => ({
           ...prev,
@@ -158,6 +205,65 @@ export default function BusinessDashboard() {
     setShowHoursPopup(true);
   };
 
+  const handleEditProfile = () => {
+    const business = businessData || user;
+    setEditProfileData({
+      businessName: business?.businessName || business?.name || '',
+      contactPersonName: business?.contactPersonName || `${business?.firstName || ''} ${business?.lastName || ''}`.trim() || '',
+      email: business?.email || '',
+      phone: business?.phone || '',
+      address: business?.address || '',
+      description: business?.description || ''
+    });
+    setShowEditProfile(true);
+  };
+
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileUpdateLoading(true);
+
+    try {
+      const response = await businessAPI.updateProfile(user.id, editProfileData);
+      
+      if (response.data) {
+        alert('Profile updated successfully!');
+        setShowEditProfile(false);
+        // Update the local business data
+        setBusinessData(prev => ({
+          ...prev,
+          ...editProfileData
+        }));
+        // Refresh business data from server
+        await fetchBusinessData();
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
+    } finally {
+      setProfileUpdateLoading(false);
+    }
+  };
+
+  const handleCancelEditProfile = () => {
+    setShowEditProfile(false);
+    setEditProfileData({
+      businessName: '',
+      contactPersonName: '',
+      email: '',
+      phone: '',
+      address: '',
+      description: ''
+    });
+  };
+
   const handleSubmitQuickRequest = async () => {
     if (!selectedDoctor || !requestHours || !quickRequestServiceType) {
       alert('Please specify the service type and number of hours required.');
@@ -166,6 +272,9 @@ export default function BusinessDashboard() {
 
     setLoading(true);
     try {
+      const serviceAmount = (selectedDoctor.hourlyRate || 0) * parseFloat(requestHours);
+      const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
+      
       const requestData = {
         businessId: user.id,
         doctorId: selectedDoctor.id,
@@ -173,12 +282,14 @@ export default function BusinessDashboard() {
         serviceType: quickRequestServiceType,
         description: `${quickRequestServiceType} service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
+        serviceCharge: SERVICE_CHARGE,
+        estimatedCost: totalWithServiceCharge
       };
 
       const response = await serviceRequestAPI.createDirectRequest(requestData);
       
       if (response.data) {
-        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!`);
+        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} service charge)`);
         setShowHoursPopup(false);
         setSelectedDoctor(null);
         setRequestHours(1);
@@ -233,12 +344,13 @@ export default function BusinessDashboard() {
         ...formData,
         urgencyLevel: 'medium', // Default urgency level since we removed it from UI
         estimatedDuration: parseInt(formData.estimatedDuration),
+        serviceCharge: SERVICE_CHARGE
       };
 
       const response = await serviceRequestAPI.createServiceRequest(requestData);
       
       if (response.data) {
-        alert(`Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified.`);
+        alert(`Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`);
         setShowRequestForm(false);
         setFormData({
           serviceType: '',
@@ -280,7 +392,7 @@ export default function BusinessDashboard() {
       const response = await serviceRequestAPI.processPayment(request.id, 'cash', {});
       console.log('💰 Cash Payment Response:', response.data);
       if (response.data) {
-        alert(`Cash payment of ${formatCurrency(request.totalAmount)} processed successfully! The payment status has been updated.`);
+        alert(`Cash payment of ${formatCurrency(calculateTotalAmount(request))} processed successfully! (includes £${SERVICE_CHARGE} service charge) The payment status has been updated.`);
         // Force update the request in the local state too
         setServiceRequests(prev => 
           prev.map(req => 
@@ -313,7 +425,7 @@ export default function BusinessDashboard() {
       console.log('💳 Card Payment Response:', response.data);
       
       if (response.data) {
-        alert(`Card payment of ${formatCurrency(paymentRequest.totalAmount)} processed successfully! The payment status has been updated.`);
+        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} service charge) The payment status has been updated.`);
         
         // Force update the request in the local state too
         setServiceRequests(prev => 
@@ -418,10 +530,21 @@ export default function BusinessDashboard() {
               <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-800 rounded-lg shadow-lg">
                 <Building2 className="h-6 w-6 text-white" />
               </div>
-              <div>
-                <h1 className={`text-2xl font-bold tracking-tight ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>{businessName}</h1>
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <h1 className={`text-2xl font-bold tracking-tight ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>{businessName}</h1>
+                  <button
+                    onClick={handleEditProfile}
+                    className={`p-1.5 rounded-md hover:bg-opacity-80 transition-colors ${
+                      isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                    }`}
+                    title="Edit Business Profile"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                </div>
                 <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
                   Welcome back, {contactName}
                 </p>
@@ -768,7 +891,7 @@ export default function BusinessDashboard() {
                           )}
                           {request.totalAmount && request.status === 'completed' && request.isPaid === false && (
                             <div className={`${isDarkMode ? 'bg-green-900/20' : 'bg-green-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'} mb-2`}>{formatCurrency(request.totalAmount)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'} mb-2`}>{formatCurrency(calculateTotalAmount(request))}</span>
                               <div className="flex space-x-2">
                                 <button
                                   onClick={() => handlePayment(request.id, 'cash')}
@@ -787,7 +910,7 @@ export default function BusinessDashboard() {
                           )}
                           {request.totalAmount && request.status === 'completed' && request.isPaid === true && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(request.totalAmount)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateTotalAmount(request))}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
                                 PAID ({request.paymentMethod === 'cash' ? 'CASH' : 'CARD'})
                               </div>
@@ -795,7 +918,7 @@ export default function BusinessDashboard() {
                           )}
                           {request.totalAmount && request.status !== 'completed' && (
                             <div className={`${isDarkMode ? 'bg-green-900/20' : 'bg-green-100'} px-3 py-2 rounded-lg`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>{formatCurrency(request.totalAmount)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>{formatCurrency(calculateTotalAmount(request))}</span>
                             </div>
                           )}
                         </div>
@@ -937,11 +1060,22 @@ export default function BusinessDashboard() {
           <div className="space-y-6">
             {/* Business Info */}
             <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className={`${isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-600'} p-2 rounded-lg`}>
-                  <Building2 className={`h-5 w-5 ${isDarkMode ? 'text-indigo-400' : 'text-white'}`} />
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-600'} p-2 rounded-lg`}>
+                    <Building2 className={`h-5 w-5 ${isDarkMode ? 'text-indigo-400' : 'text-white'}`} />
+                  </div>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Business Information</h3>
                 </div>
-                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Business Information</h3>
+                <button
+                  onClick={handleEditProfile}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Edit Business Profile"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
               </div>
               <div className="space-y-3 text-sm">
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
@@ -956,14 +1090,22 @@ export default function BusinessDashboard() {
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Email:</span>
                   <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{business?.email || 'N/A'}</span>
                 </div>
-                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Type:</span>
-                  <span className={`${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'} font-semibold`}>{business?.businessType || 'N/A'}</span>
-                </div>
+                {business?.phone && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Phone:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{business.phone}</span>
+                  </div>
+                )}
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Address:</span>
-                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business?.address || 'N/A'}</span>
+                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business?.address || 'Not provided'}</span>
                 </div>
+                {business?.description && (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Description:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{business.description}</span>
+                  </div>
+                )}
                 <div className={`flex justify-between items-center py-2 ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 rounded-lg mt-4`}>
                   <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>Total Spent:</span>
                   <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>{formatCurrency(stats.totalSpent)}</span>
@@ -1128,6 +1270,13 @@ export default function BusinessDashboard() {
                   className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   placeholder="Describe what kind of medical assistance you need (optional)"
                 />
+              </div>
+
+              {/* Service Charge Notice */}
+              <div className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} p-3 rounded-lg border`}>
+                <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} font-medium`}>
+                  ℹ️ Service Charge: A {formatCurrency(SERVICE_CHARGE)} service charge will be added to your final payment.
+                </p>
               </div>                <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
@@ -1207,7 +1356,8 @@ export default function BusinessDashboard() {
                   placeholder="Enter hours (e.g., 2, 3.5, 8)"
                 />
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                  Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0))}
+                  Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0) + SERVICE_CHARGE)}
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} service charge)</span>
                 </p>
               </div>
               <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'} p-4 rounded-lg border`}>
@@ -1220,6 +1370,7 @@ export default function BusinessDashboard() {
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Medical consultation with verified doctor</p>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Professional healthcare service</p>
                 <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium`}>• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
+                <p className={`text-xs ${isDarkMode ? 'text-orange-300' : 'text-orange-600'} font-medium`}>• Service charge: {formatCurrency(SERVICE_CHARGE)}</p>
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
@@ -1276,9 +1427,25 @@ export default function BusinessDashboard() {
                     <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Duration:</span>
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>{paymentRequest.estimatedDuration} hour(s)</span>
                   </div>
-                  <div className="flex justify-between mt-4">
-                    <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-semibold`}>Amount Due:</span>
-                    <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold text-xl`}>{formatCurrency(paymentRequest.totalAmount)}</span>
+                  
+                  {/* Payment Breakdown */}
+                  <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} mt-3 pt-3 space-y-2`}>
+                    <div className="flex justify-between">
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Service Amount:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
+                        {formatCurrency(calculateTotalAmount(paymentRequest) - SERVICE_CHARGE)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Service Charge:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
+                        {formatCurrency(SERVICE_CHARGE)}
+                      </span>
+                    </div>
+                    <div className={`flex justify-between pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                      <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-semibold`}>Total Amount:</span>
+                      <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold text-xl`}>{formatCurrency(calculateTotalAmount(paymentRequest))}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1348,10 +1515,154 @@ export default function BusinessDashboard() {
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow flex items-center justify-center"
                 >
                   <Lock className="h-4 w-4 mr-2" />
-                  Pay {formatCurrency(paymentRequest.totalAmount)}
+                  Pay {formatCurrency(calculateTotalAmount(paymentRequest))}
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
+                    <Building2 className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  </div>
+                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Edit Business Profile</h2>
+                </div>
+                <button
+                  onClick={handleCancelEditProfile}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleUpdateProfile} className="p-6 overflow-y-auto modal-scrollable flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Business Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={editProfileData.businessName}
+                    onChange={handleProfileInputChange}
+                    required
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter business name"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Contact Person Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="contactPersonName"
+                    value={editProfileData.contactPersonName}
+                    onChange={handleProfileInputChange}
+                    required
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter contact person name"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editProfileData.email}
+                    onChange={handleProfileInputChange}
+                    required
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={editProfileData.phone}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter phone number"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Business Address
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={editProfileData.address}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter business address"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Business Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editProfileData.description}
+                    onChange={handleProfileInputChange}
+                    rows={3}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Describe your business (optional)"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={handleCancelEditProfile}
+                  className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={profileUpdateLoading}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow flex items-center justify-center"
+                >
+                  {profileUpdateLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Updating...
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Save className="h-4 w-4 mr-2" />
+                      Update Profile
+                    </div>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

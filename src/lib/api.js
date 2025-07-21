@@ -134,6 +134,7 @@ export const businessAPI = {
   getById: (id) => api.get(`/businesses/${id}`),
   create: (data) => api.post('/businesses', { data }),
   update: (id, data) => api.put(`/businesses/${id}`, { data }),
+  updateProfile: (id, data) => api.put(`/businesses/${id}`, { data }), // Convenience method for profile updates
   delete: (id) => api.delete(`/businesses/${id}`),
   getStats: (id) => api.get(`/businesses/${id}/stats`),
   getOverallStats: () => api.get('/businesses/stats'),
