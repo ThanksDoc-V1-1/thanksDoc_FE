@@ -554,27 +554,29 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative max-w-md mx-auto">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+        {/* Search Bar - Only show on non-overview tabs */}
+        {activeTab !== 'overview' && (
+          <div className="mb-6">
+            <div className="relative max-w-md mx-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+              </div>
+              <input
+                type="text"
+                className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
+                placeholder={
+                  activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
+                  activeTab === 'businesses' ? "Search businesses by name, type, email..." :
+                  activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
+                  activeTab === 'earnings' ? "Search by doctor name..." :
+                  "Search..."
+                }
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <input
-              type="text"
-              className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
-              placeholder={
-                activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
-                activeTab === 'businesses' ? "Search businesses by name, type, email..." :
-                activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
-                activeTab === 'earnings' ? "Search by doctor name..." :
-                "Search..."
-              }
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
           </div>
-        </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className={`mb-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-1.5 rounded-xl shadow border`}>
