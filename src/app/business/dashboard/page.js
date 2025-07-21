@@ -34,6 +34,7 @@ export default function BusinessDashboard() {
   const [showHoursPopup, setShowHoursPopup] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [requestHours, setRequestHours] = useState(1);
+  const [quickRequestServiceType, setQuickRequestServiceType] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
 
@@ -158,8 +159,8 @@ export default function BusinessDashboard() {
   };
 
   const handleSubmitQuickRequest = async () => {
-    if (!selectedDoctor || !requestHours) {
-      alert('Please specify the number of hours required.');
+    if (!selectedDoctor || !requestHours || !quickRequestServiceType) {
+      alert('Please specify the service type and number of hours required.');
       return;
     }
 
@@ -169,8 +170,8 @@ export default function BusinessDashboard() {
         businessId: user.id,
         doctorId: selectedDoctor.id,
         urgencyLevel: 'medium',
-        serviceType: 'Medical Consultation',
-        description: `Quick service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
+        serviceType: quickRequestServiceType,
+        description: `${quickRequestServiceType} service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
       };
 
@@ -181,6 +182,7 @@ export default function BusinessDashboard() {
         setShowHoursPopup(false);
         setSelectedDoctor(null);
         setRequestHours(1);
+        setQuickRequestServiceType('');
         fetchServiceRequests(); // Refresh the requests list
       }
     } catch (error) {
@@ -1176,6 +1178,22 @@ export default function BusinessDashboard() {
             <div className="p-6 space-y-4">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  Service Type *
+                </label>
+                <select
+                  value={quickRequestServiceType}
+                  onChange={(e) => setQuickRequestServiceType(e.target.value)}
+                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  required
+                >
+                  <option value="">Select service type</option>
+                  <option value="In Person">In Person</option>
+                  <option value="Online">Online</option>
+                  <option value="NHS">NHS</option>
+                </select>
+              </div>
+              <div>
+                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   How many hours of service do you need? *
                 </label>
                 <input
@@ -1210,6 +1228,7 @@ export default function BusinessDashboard() {
                     setShowHoursPopup(false);
                     setSelectedDoctor(null);
                     setRequestHours(1);
+                    setQuickRequestServiceType('');
                   }}
                   className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
                 >
@@ -1217,7 +1236,7 @@ export default function BusinessDashboard() {
                 </button>
                 <button
                   onClick={handleSubmitQuickRequest}
-                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0}
+                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceType}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
                   {loading ? 'Sending...' : 'Send Request'}
