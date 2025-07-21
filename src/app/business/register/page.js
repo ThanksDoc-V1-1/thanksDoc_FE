@@ -28,8 +28,8 @@ export default function BusinessRegister() {
     address: '',
     city: '',
     state: '',
-    zipCode: '',
-    businessLicense: '',
+    PostcodeCode: '',
+    businessLicence: '',
     description: '',
     latitude: '',
     longitude: '',
@@ -172,16 +172,16 @@ export default function BusinessRegister() {
 
                 <div>
                   <label className="form-label">
-                    Business License Number *
+                    Business Licence Number *
                   </label>
                   <input
                     type="text"
-                    name="businessLicense"
-                    value={formData.businessLicense}
+                    name="businessLicence"
+                    value={formData.businessLicence}
                     onChange={handleInputChange}
                     required
                     className="form-input"
-                    placeholder="Enter business license number"
+                    placeholder="Enter Business Licence Number"
                   />
                 </div>
 
@@ -366,16 +366,16 @@ export default function BusinessRegister() {
                   </div>
                   <div>
                     <label className="form-label">
-                      ZIP Code *
+                      Postcode Code *
                     </label>
                     <input
                       type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
+                      name="PostcodeCode"
+                      value={formData.PostcodeCode}
                       onChange={handleInputChange}
                       required
                       className="form-input"
-                      placeholder="ZIP"
+                      placeholder="Postcode"
                     />
                   </div>
                 </div>

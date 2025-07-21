@@ -33,13 +33,13 @@ export default function AdminDashboard() {
     name: '',
     email: '',
     password: '',
-    specialization: '',
-    licenseNumber: '',
+    specialisation: '',
+    licenceNumber: '',
     phone: '',
     address: '',
     city: '',
     state: '',
-    zipCode: '',
+    postcode: '',
     bio: '',
     experience: '',
     consultationFee: ''
@@ -55,7 +55,7 @@ export default function AdminDashboard() {
     address: '',
     city: '',
     state: '',
-    zipCode: '',
+    postcode: '',
     description: ''
   });
 
@@ -252,8 +252,8 @@ export default function AdminDashboard() {
           name: '',
           email: '',
           password: '',
-          specialization: '',
-          licenseNumber: '',
+          specialisation: '',
+          licenceNumber: '',
           phone: '',
           address: '',
           bio: '',
@@ -282,12 +282,12 @@ export default function AdminDashboard() {
         email: businessFormData.email,
         password: businessFormData.password,
         businessType: businessFormData.businessType,
-        businessLicense: businessFormData.registrationNumber,
+        businessLicence: businessFormData.registrationNumber,
         phone: businessFormData.phone,
         address: businessFormData.address,
         city: businessFormData.city || 'Not specified',
         state: businessFormData.state || 'Not specified',
-        zipCode: businessFormData.zipCode || '00000',
+        postcode: businessFormData.postcode || '00000',
         description: businessFormData.description || '',
         latitude: 0.0, // Default coordinate
         longitude: 0.0, // Default coordinate
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
           address: '',
           city: '',
           state: '',
-          zipCode: '',
+          postcode: '',
           description: ''
         });
         fetchAllData(); // Refresh the data
@@ -347,13 +347,13 @@ export default function AdminDashboard() {
         name: fullName,
         email: doctorFormData.email,
         password: doctorFormData.password,
-        specialization: doctorFormData.specialization,
-        licenseNumber: doctorFormData.licenseNumber,
+        specialisation: doctorFormData.specialisation,
+        licenceNumber: doctorFormData.licenceNumber,
         phone: doctorFormData.phone,
         address: doctorFormData.address,
         city: doctorFormData.city || 'Not specified', // Use form data or default
         state: doctorFormData.state || 'Not specified', // Use form data or default  
-        zipCode: doctorFormData.zipCode || '00000', // Use form data or default
+        postcode: doctorFormData.postcode || '00000', // Use form data or default
         bio: doctorFormData.bio || '',
         yearsOfExperience: parseInt(doctorFormData.experience) || 0,
         hourlyRate: parseFloat(doctorFormData.consultationFee) || 0,
@@ -373,8 +373,8 @@ export default function AdminDashboard() {
           name: '',
           email: '',
           password: '',
-          specialization: '',
-          licenseNumber: '',
+          specialisation: '',
+          licenceNumber: '',
           phone: '',
           address: '',
           bio: '',
@@ -404,17 +404,17 @@ export default function AdminDashboard() {
     // Handle both direct properties and nested attributes structure
     const firstName = doctor.firstName || doctor.attributes?.firstName || '';
     const lastName = doctor.lastName || doctor.attributes?.lastName || '';
-    const specialization = doctor.specialization || doctor.attributes?.specialization || '';
+    const specialisation = doctor.specialisation || doctor.attributes?.specialisation || '';
     const email = doctor.email || doctor.attributes?.email || '';
-    const licenseNumber = doctor.licenseNumber || doctor.attributes?.licenseNumber || '';
+    const licenceNumber = doctor.licenceNumber || doctor.attributes?.licenceNumber || '';
     
     if (searchTerm === '') return true;
     
     const searchLower = searchTerm.toLowerCase();
     return `${firstName} ${lastName}`.toLowerCase().includes(searchLower) ||
-           specialization.toLowerCase().includes(searchLower) ||
+           specialisation.toLowerCase().includes(searchLower) ||
            email.toLowerCase().includes(searchLower) ||
-           licenseNumber.toLowerCase().includes(searchLower);
+           licenceNumber.toLowerCase().includes(searchLower);
   });
 
   const filteredBusinesses = businesses.filter(business => {
@@ -422,7 +422,7 @@ export default function AdminDashboard() {
     const businessName = business.businessName || business.name || business.attributes?.businessName || business.attributes?.name || '';
     const businessType = business.businessType || business.attributes?.businessType || '';
     const email = business.email || business.attributes?.email || '';
-    const businessLicense = business.businessLicense || business.attributes?.businessLicense || '';
+    const businessLicence = business.businessLicence || business.attributes?.businessLicence || '';
     const contactPersonName = business.contactPersonName || business.attributes?.contactPersonName || '';
     
     if (searchTerm === '') return true;
@@ -431,7 +431,7 @@ export default function AdminDashboard() {
     return businessName.toLowerCase().includes(searchLower) ||
            businessType.toLowerCase().includes(searchLower) ||
            email.toLowerCase().includes(searchLower) ||
-           businessLicense.toLowerCase().includes(searchLower) ||
+           businessLicence.toLowerCase().includes(searchLower) ||
            contactPersonName.toLowerCase().includes(searchLower);
   });
 
@@ -455,13 +455,13 @@ export default function AdminDashboard() {
   const filteredDoctorEarnings = doctorEarnings.filter(earning => {
     const doctorFirstName = earning.doctor?.firstName || earning.doctor?.attributes?.firstName || '';
     const doctorLastName = earning.doctor?.lastName || earning.doctor?.attributes?.lastName || '';
-    const specialization = earning.doctor?.specialization || earning.doctor?.attributes?.specialization || '';
+    const specialisation = earning.doctor?.specialisation || earning.doctor?.attributes?.specialisation || '';
     
     if (searchTerm === '') return true;
     
     const searchLower = searchTerm.toLowerCase();
     return `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower) ||
-           specialization.toLowerCase().includes(searchLower);
+           specialisation.toLowerCase().includes(searchLower);
   });
 
   // Pagination for service requests
@@ -1032,7 +1032,7 @@ export default function AdminDashboard() {
                       Doctor
                     </th>
                     <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Specialization
+                      specialisation
                     </th>
                     <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Experience & Rate
@@ -1055,8 +1055,8 @@ export default function AdminDashboard() {
                     const firstName = doctor.firstName || doctor.attributes?.firstName;
                     const lastName = doctor.lastName || doctor.attributes?.lastName;
                     const email = doctor.email || doctor.attributes?.email;
-                    const licenseNumber = doctor.licenseNumber || doctor.attributes?.licenseNumber;
-                    const specialization = doctor.specialization || doctor.attributes?.specialization;
+                    const licenceNumber = doctor.licenceNumber || doctor.attributes?.licenceNumber;
+                    const specialisation = doctor.specialisation || doctor.attributes?.specialisation;
                     const yearsOfExperience = doctor.yearsOfExperience || doctor.attributes?.yearsOfExperience;
                     const hourlyRate = doctor.hourlyRate || doctor.attributes?.hourlyRate;
                     const isVerified = doctor.isVerified || doctor.attributes?.isVerified;
@@ -1079,13 +1079,13 @@ export default function AdminDashboard() {
                                 <Mail className="h-3.5 w-3.5 mr-1 stroke-2" /> {email}
                               </div>
                               <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {licenseNumber}
+                                <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {licenceNumber}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{specialization}</div>
+                          <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{specialisation}</div>
                         </td>
                         <td className="px-6 py-4">
                           <div className={`text-sm flex flex-col ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1244,16 +1244,16 @@ export default function AdminDashboard() {
                     const id = business.id;
                     const businessName = business.businessName || business.attributes?.businessName;
                     const email = business.email || business.attributes?.email;
-                    const businessLicense = business.businessLicense || business.attributes?.businessLicense;
+                    const businessLicence = business.businessLicence || business.attributes?.businessLicence;
                     const businessType = business.businessType || business.attributes?.businessType;
                     const contactPersonName = business.contactPersonName || business.attributes?.contactPersonName;
                     const phone = business.phone || business.attributes?.phone;
                     const city = business.city || business.attributes?.city;
                     const state = business.state || business.attributes?.state;
-                    const zipCode = business.zipCode || business.attributes?.zipCode;
+                    const postcode = business.postcode || business.attributes?.postcode;
                     const isVerified = business.isVerified || business.attributes?.isVerified;
                     
-                    // Get business type color
+                    // Get business type colour
                     const getBusinessTypeColor = (type) => {
                       const baseClasses = 'px-2.5 py-1 rounded-lg text-xs font-medium capitalize';
                       switch(type?.toLowerCase()) {
@@ -1283,7 +1283,7 @@ export default function AdminDashboard() {
                                 <Mail className="h-3.5 w-3.5 mr-1 stroke-2" /> {email}
                               </div>
                               <div className={`text-sm flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {businessLicense}
+                                <FileCheck className="h-3.5 w-3.5 mr-1 stroke-2" /> {businessLicence}
                               </div>
                             </div>
                           </div>
@@ -1304,7 +1304,7 @@ export default function AdminDashboard() {
                             <MapPin className={`h-3.5 w-3.5 mr-1.5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                             <span>{city}, {state}</span>
                           </div>
-                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{zipCode}</div>
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{postcode}</div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
@@ -1689,7 +1689,7 @@ export default function AdminDashboard() {
                             </div>
                             <div>
                               <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doctorName}</h3>
-                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{doctor.specialization}</p>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{doctor.specialisation}</p>
                               <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
                             </div>
                           </div>
@@ -1859,14 +1859,14 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
-                  <label htmlFor="doctorSpecialization" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Specialization *
+                  <label htmlFor="doctorspecialisation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    specialisation *
                   </label>
                   <input
                     type="text"
-                    id="doctorSpecialization"
-                    name="specialization"
-                    value={doctorFormData.specialization}
+                    id="doctorspecialisation"
+                    name="specialisation"
+                    value={doctorFormData.specialisation}
                     onChange={handleDoctorFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
@@ -1875,18 +1875,18 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
-                  <label htmlFor="doctorLicenseNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="doctorlicenceNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     License Number *
                   </label>
                   <input
                     type="text"
-                    id="doctorLicenseNumber"
-                    name="licenseNumber"
-                    value={doctorFormData.licenseNumber}
+                    id="doctorlicenceNumber"
+                    name="licenceNumber"
+                    value={doctorFormData.licenceNumber}
                     onChange={handleDoctorFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="Enter medical license number"
+                    placeholder="Enter Medical Licence Number"
                   />
                 </div>
                 
@@ -1976,18 +1976,18 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
-                  <label htmlFor="doctorZipCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Zip Code *
+                  <label htmlFor="doctorpostcode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Postcode *
                   </label>
                   <input
                     type="text"
-                    id="doctorZipCode"
-                    name="zipCode"
-                    value={doctorFormData.zipCode}
+                    id="doctorpostcode"
+                    name="postcode"
+                    value={doctorFormData.postcode}
                     onChange={handleDoctorFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="Enter zip code"
+                    placeholder="Enter postcode"
                   />
                 </div>
               </div>
@@ -2239,18 +2239,18 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
-                  <label htmlFor="businessZipCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Zip Code *
+                  <label htmlFor="businesspostcode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Postcode *
                   </label>
                   <input
                     type="text"
-                    id="businessZipCode"
-                    name="zipCode"
-                    value={businessFormData.zipCode}
+                    id="businesspostcode"
+                    name="postcode"
+                    value={businessFormData.postcode}
                     onChange={handleBusinessFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                    placeholder="Enter zip code"
+                    placeholder="Enter postcode"
                   />
                 </div>
               </div>
@@ -2316,7 +2316,7 @@ export default function AdminDashboard() {
                       Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
                     </h2>
                     <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                      {selectedDoctor.specialization}
+                      {selectedDoctor.specialisation}
                     </p>
                   </div>
                 </div>
@@ -2367,12 +2367,12 @@ export default function AdminDashboard() {
                   <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Professional Information</h3>
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Specialization:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.specialization}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>specialisation:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.specialisation}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>License Number:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.licenseNumber || 'N/A'}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.licenceNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Years of Experience:</span>
@@ -2408,8 +2408,8 @@ export default function AdminDashboard() {
                       <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.state || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Zip Code:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.zipCode || 'N/A'}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Postcode:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.postcode || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -2533,8 +2533,8 @@ export default function AdminDashboard() {
                       <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.state || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Zip Code:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.zipCode || 'N/A'}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Postcode:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedBusiness.postcode || 'N/A'}</span>
                     </div>
                   </div>
                 </div>

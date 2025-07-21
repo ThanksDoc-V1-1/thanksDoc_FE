@@ -24,13 +24,13 @@ export default function DoctorRegister() {
     password: '',
     confirmPassword: '',
     phone: '',
-    specialization: '',
-    licenseNumber: '',
+    specialisation: '',
+    licenceNumber: '',
     yearsOfExperience: '',
     address: '',
     city: '',
     state: '',
-    zipCode: '',
+    postcode: '',
     hourlyRate: '',
     bio: '',
     emergencyContact: '',
@@ -292,16 +292,16 @@ export default function DoctorRegister() {
                 
                 <div>
                   <label className="form-label">
-                    Specialization *
+                    specialisation *
                   </label>
                   <select
-                    name="specialization"
-                    value={formData.specialization}
+                    name="specialisation"
+                    value={formData.specialisation}
                     onChange={handleInputChange}
                     required
                     className="form-input"
                   >
-                    <option value="">Select specialization</option>
+                    <option value="">Select specialisation</option>
                     <option value="General Medicine">General Medicine</option>
                     <option value="Emergency Medicine">Emergency Medicine</option>
                     <option value="Family Medicine">Family Medicine</option>
@@ -316,16 +316,16 @@ export default function DoctorRegister() {
 
                 <div>
                   <label className="form-label">
-                    Medical License Number *
+                    Medical Licence Number *
                   </label>
                   <input
                     type="text"
-                    name="licenseNumber"
-                    value={formData.licenseNumber}
+                    name="licenceNumber"
+                    value={formData.licenceNumber}
                     onChange={handleInputChange}
                     required
                     className="form-input"
-                    placeholder="Enter license number"
+                    placeholder="Enter licence number"
                   />
                 </div>
 
@@ -428,12 +428,12 @@ export default function DoctorRegister() {
                   </div>
                   <div>
                     <label className="form-label">
-                      ZIP Code *
+                      Postcode *
                     </label>
                     <input
                       type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
+                      name="postcode"
+                      value={formData.postcode}
                       onChange={handleInputChange}
                       required
                       className="form-input"

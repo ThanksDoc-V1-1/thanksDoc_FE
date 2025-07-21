@@ -252,7 +252,7 @@ export default function BusinessDashboard() {
     }
   };
 
-  const handleCancelEditProfile = () => {
+  const handlecancelleditProfile = () => {
     setShowEditProfile(false);
     setEditProfileData({
       businessName: '',
@@ -793,7 +793,7 @@ export default function BusinessDashboard() {
                           isDarkMode 
                             ? 'text-blue-400 bg-blue-900/20' 
                             : 'text-blue-600 bg-blue-50'
-                        }`}>{doctor.specialization}</p>
+                        }`}>{doctor.specialisation}</p>
                         <p className={`text-xs mt-2 ${
                           isDarkMode ? 'text-gray-300' : 'text-gray-600'
                         }`}>
@@ -1130,7 +1130,7 @@ export default function BusinessDashboard() {
                           <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>
                             Dr. {doctor.firstName} {doctor.lastName}
                           </h4>
-                          <p className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium text-xs`}>{doctor.specialization}</p>
+                          <p className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium text-xs`}>{doctor.specialisation}</p>
                         </div>
                         <div className="flex flex-col space-y-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>
@@ -1231,7 +1231,7 @@ export default function BusinessDashboard() {
                   <option value="">Any available doctor</option>
                   {nearbyDoctors.map((doctor) => (
                     <option key={doctor.id} value={doctor.id}>
-                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} ({formatCurrency(doctor.hourlyRate)}/hr)
+                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
                     </option>
                   ))}
                 </select>
@@ -1319,7 +1319,7 @@ export default function BusinessDashboard() {
                 <div>
                   <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Request Service</h2>
                   <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                    Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} - {selectedDoctor.specialization}
+                    Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} - {selectedDoctor.specialisation}
                   </p>
                 </div>
               </div>
@@ -1536,7 +1536,7 @@ export default function BusinessDashboard() {
                   <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Edit Business Profile</h2>
                 </div>
                 <button
-                  onClick={handleCancelEditProfile}
+                  onClick={handlecancelleditProfile}
                   className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
                     isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
                   }`}
@@ -1639,7 +1639,7 @@ export default function BusinessDashboard() {
               <div className="flex space-x-3 pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
-                  onClick={handleCancelEditProfile}
+                  onClick={handlecancelleditProfile}
                   className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
                 >
                   Cancel
