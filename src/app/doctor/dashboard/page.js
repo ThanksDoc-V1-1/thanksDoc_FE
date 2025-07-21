@@ -343,9 +343,9 @@ export default function DoctorDashboard() {
       lastName: doctorInfo?.lastName || '',
       email: doctorInfo?.email || '',
       phone: doctorInfo?.phone || '',
-      specialisation: doctorInfo?.specialisation || '',
-      yearsOfExperience: doctorInfo?.yearsOfExperience || '',
-      hourlyRate: doctorInfo?.hourlyRate || '',
+      specialisation: doctorInfo?.specialization || '',
+      yearsOfExperience: String(doctorInfo?.yearsOfExperience || ''),
+      hourlyRate: String(doctorInfo?.hourlyRate || ''),
       licenceNumber: doctorInfo?.licenceNumber || '',
       qualifications: doctorInfo?.qualifications || '',
       bio: doctorInfo?.bio || ''
@@ -366,22 +366,62 @@ export default function DoctorDashboard() {
     setProfileUpdateLoading(true);
 
     try {
-      const response = await doctorAPI.updateProfile(user.id, editProfileData);
+      console.log('🔄 Updating doctor profile for user ID:', user.id);
+      console.log('📝 Raw profile data:', editProfileData);
+      
+      // Transform data to ensure proper types and field name mapping
+      const transformedData = {
+        firstName: editProfileData.firstName,
+        lastName: editProfileData.lastName,
+        email: editProfileData.email,
+        phone: editProfileData.phone,
+        specialization: editProfileData.specialisation, // Map UK spelling to US spelling for backend
+        yearsOfExperience: parseInt(editProfileData.yearsOfExperience) || 0,
+        hourlyRate: parseFloat(editProfileData.hourlyRate) || 0,
+        licenceNumber: editProfileData.licenceNumber,
+        qualifications: editProfileData.qualifications,
+        bio: editProfileData.bio
+      };
+      
+      console.log('📝 Transformed profile data being sent:', transformedData);
+      
+      // Try to update the doctor profile
+      const response = await doctorAPI.updateProfile(user.id, transformedData);
+      
+      console.log('✅ Profile update response:', response);
       
       if (response.data) {
         alert('Profile updated successfully!');
         setShowEditProfile(false);
-        // Update the local doctor data
+        // Update the local doctor data with transformed data
         setDoctorData(prev => ({
           ...prev,
-          ...editProfileData
+          ...transformedData
         }));
         // Refresh doctor data from server
         await fetchDoctorData();
+      } else {
+        console.log('⚠️ No data in response:', response);
+        alert('Update completed but no confirmation received. Please refresh the page.');
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      console.error('❌ Error updating profile:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to update profile. Please try again.';
+      if (error.response?.status === 400) {
+        errorMessage = 'Invalid profile data. Please check all fields and try again.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Doctor record not found. Please try logging out and back in.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.response?.data?.error?.message) {
+        errorMessage = `Error: ${error.response.data.error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setProfileUpdateLoading(false);
     }
@@ -405,7 +445,15 @@ export default function DoctorDashboard() {
 
   // Get doctor display data (either from backend or auth context)
   const doctor = doctorData || user;
-  const doctorName = doctor?.name || `${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim() || doctor?.email || 'Doctor';
+  const doctorName = doctor?.name || 
+    `${(doctor?.firstName || '').trim()} ${(doctor?.lastName || '').trim()}`.trim() || 
+    doctor?.email?.split('@')[0] || 'Doctor';
+  
+  // For debugging - let's log what we're getting
+  console.log('👨‍⚕️ Doctor data:', doctor);
+  console.log('👤 Doctor firstName:', doctor?.firstName);
+  console.log('👤 Doctor lastName:', doctor?.lastName);
+  console.log('📝 Doctor name result:', doctorName);
 
   if (authLoading) {
     return (
@@ -451,7 +499,7 @@ export default function DoctorDashboard() {
               <p className={`text-sm mb-2 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-600'
               }`}>Expected Payment</p>
-              <p className="text-2xl font-bold text-green-500">{formatCurrency(completionAmount)}</p>
+              <p className="text-2xl font-bold text-green-500">£{(completionAmount || 0).toFixed(2)}</p>
               <p className={`text-sm mt-1 ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
@@ -801,7 +849,7 @@ export default function DoctorDashboard() {
                   <div className={`text-sm font-medium ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-600'
                   }`}>
-                    {doctor.yearsOfExperience || 0} years exp. • {formatCurrency(doctor.hourlyRate || 0)}/hour
+                    {doctor.yearsOfExperience || 0} years exp. • £{(doctor.hourlyRate || 0).toFixed(2)}/hour
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className={`text-xs ${
@@ -809,7 +857,7 @@ export default function DoctorDashboard() {
                     }`}>Total Earnings:</span>
                     <span className={`text-sm font-semibold ${
                       isDarkMode ? 'text-green-400' : 'text-green-600'
-                    }`}>{formatCurrency(stats.totalEarnings)}</span>
+                    }`}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
@@ -1184,7 +1232,7 @@ export default function DoctorDashboard() {
                                 : 'text-green-600 bg-green-50'
                             }`}>
                               <DollarSign className="h-4 w-4" />
-                              <span className="font-semibold">{formatCurrency((doctor.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
+                              <span className="font-semibold">£{((doctor.hourlyRate || 0) * (request.estimatedDuration || 1)).toFixed(2)}</span>
                             </div>
                           </div>
                           
@@ -1363,8 +1411,10 @@ export default function DoctorDashboard() {
               </div>
               <div className="space-y-3 text-sm">
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Name:</span>
-                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>Dr. {doctorName}</span>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Full Name:</span>
+                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>
+                    {`${doctor?.firstName || ''} ${doctor?.lastName || ''}`.trim() || 'N/A'}
+                  </span>
                 </div>
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Email:</span>
@@ -1378,7 +1428,7 @@ export default function DoctorDashboard() {
                 )}
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Specialisation:</span>
-                  <span className={`${isDarkMode ? 'text-green-400' : 'text-green-600'} font-semibold`}>{doctor?.specialisation || 'Medical Professional'}</span>
+                  <span className={`${isDarkMode ? 'text-green-400' : 'text-green-600'} font-semibold`}>{doctor?.specialization || 'Medical Professional'}</span>
                 </div>
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Experience:</span>
@@ -1386,7 +1436,7 @@ export default function DoctorDashboard() {
                 </div>
                 <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Rate:</span>
-                  <span className={`${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-semibold`}>{formatCurrency(doctor?.hourlyRate || 0)}/hour</span>
+                  <span className={`${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-semibold`}>£{(doctor?.hourlyRate || 0).toFixed(2)}/hour</span>
                 </div>
                 {doctor?.licenceNumber && (
                   <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
@@ -1408,7 +1458,7 @@ export default function DoctorDashboard() {
                 )}
                 <div className={`flex justify-between items-center py-2 ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 rounded-lg mt-4`}>
                   <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>Total Earnings:</span>
-                  <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>{formatCurrency(stats.totalEarnings)}</span>
+                  <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Status:</span>
@@ -1505,12 +1555,12 @@ export default function DoctorDashboard() {
                                 : 'text-green-600 bg-green-50'
                             }`}>
                               <DollarSign className="h-4 w-4" />
-                              <span className="font-semibold">{formatCurrency((doctor?.hourlyRate || 0) * (request.estimatedDuration || 1))}</span>
+                              <span className="font-semibold">£{((doctor?.hourlyRate || 0) * (request.estimatedDuration || 1)).toFixed(2)}</span>
                             </div>
                           </div>
                           {request.status === 'completed' && request.totalAmount && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(request.totalAmount)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{(request.totalAmount || 0).toFixed(2)}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
                                 COMPLETED
                               </div>

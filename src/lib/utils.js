@@ -12,10 +12,9 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 export function formatCurrency(amount, currency = 'GBP') {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: currency,
-  }).format(amount);
+  // Always use pound sign for UK currency
+  const numAmount = Number(amount) || 0;
+  return `£${numAmount.toFixed(2)}`;
 }
 
 export function formatDate(date, options = {}) {

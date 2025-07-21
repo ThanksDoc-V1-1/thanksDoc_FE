@@ -15,6 +15,11 @@ export const doctorAPI = {
   getById: (id) => api.get(`/doctors/${id}`),
   create: (data) => api.post('/doctors', { data }),
   update: (id, data) => api.put(`/doctors/${id}`, { data }),
+  updateProfile: (id, data) => {
+    console.log('🔄 Doctor API updateProfile called with:', { id, data });
+    console.log('🌐 Making request to:', `${API_URL}/doctors/${id}`);
+    return api.put(`/doctors/${id}`, { data });
+  }, // Convenience method for profile updates
   delete: (id) => api.delete(`/doctors/${id}`),
   getAvailable: (params) => api.get('/doctors/available', { params }),
   updateAvailability: (id, isAvailable) => api.put(`/doctors/${id}/availability`, { isAvailable }),

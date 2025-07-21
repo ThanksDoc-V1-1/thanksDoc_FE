@@ -846,6 +846,20 @@ export default function BusinessDashboard() {
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status, isDarkMode)}`}>
                               {request.status.replace('_', ' ').toUpperCase()}
                             </span>
+                            {/* Payment Status Flag */}
+                            {request.status === 'completed' && (
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                request.isPaid 
+                                  ? isDarkMode 
+                                    ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700' 
+                                    : 'bg-emerald-600 text-white'
+                                  : isDarkMode 
+                                    ? 'bg-orange-900/30 text-orange-400 border border-orange-700' 
+                                    : 'bg-orange-600 text-white'
+                              }`}>
+                                {request.isPaid ? '💰 PAID' : '⏳ PENDING PAYMENT'}
+                              </span>
+                            )}
                             {request.status === 'pending' && (
                               <span className="px-3 py-1.5 bg-orange-600 text-white rounded-full text-xs font-bold shadow-sm">
                                 ⏱️ {getTimeElapsed(request.requestedAt)}
