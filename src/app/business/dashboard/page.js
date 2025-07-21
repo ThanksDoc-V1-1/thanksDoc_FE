@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
-import { formatCurrency, formatDate, getUrgencyColor, getStatusColor, getTimeElapsed } from '../../../lib/utils';
+import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 
@@ -24,7 +24,6 @@ export default function BusinessDashboard() {
     totalSpent: 0
   });
   const [formData, setFormData] = useState({
-    urgencyLevel: 'medium',
     serviceType: '',
     description: '',
     estimatedDuration: 1,
@@ -230,6 +229,7 @@ export default function BusinessDashboard() {
       const requestData = {
         businessId: user.id,
         ...formData,
+        urgencyLevel: 'medium', // Default urgency level since we removed it from UI
         estimatedDuration: parseInt(formData.estimatedDuration),
       };
 
@@ -239,10 +239,10 @@ export default function BusinessDashboard() {
         alert(`Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified.`);
         setShowRequestForm(false);
         setFormData({
-          urgencyLevel: 'medium',
           serviceType: '',
           description: '',
           estimatedDuration: 1,
+          preferredDoctorId: null,
         });
         console.log('🔄 Manually refreshing after creating service request');
         await fetchServiceRequests();
@@ -718,9 +718,6 @@ export default function BusinessDashboard() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
-                              {request.urgencyLevel.toUpperCase()}
-                            </span>
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status, isDarkMode)}`}>
                               {request.status.replace('_', ' ').toUpperCase()}
                             </span>
@@ -1063,15 +1060,18 @@ export default function BusinessDashboard() {
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Service Type *
                 </label>
-                <input
-                  type="text"
+                <select
                   name="serviceType"
                   value={formData.serviceType}
                   onChange={handleInputChange}
                   required
-                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  placeholder="e.g., Emergency consultation, Health checkup"
-                />
+                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                >
+                  <option value="">Select service type</option>
+                  <option value="In Person">In Person</option>
+                  <option value="Online">Online</option>
+                  <option value="NHS">NHS</option>
+                </select>
               </div>
 
               <div>
@@ -1096,24 +1096,6 @@ export default function BusinessDashboard() {
                     Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
                   </p>
                 )}
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Urgency Level *
-                </label>
-                <select
-                  name="urgencyLevel"
-                  value={formData.urgencyLevel}
-                  onChange={handleInputChange}
-                  required
-                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="emergency">Emergency</option>
-                </select>
               </div>
 
               <div>
