@@ -565,7 +565,10 @@ export default function DoctorDashboard() {
               </button>
               <button
                 onClick={handleConfirmCompletion}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                className="px-4 py-2 text-white font-medium rounded-lg transition-colors"
+                style={{backgroundColor: '#0F9297'}}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#0d7e82'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#0F9297'}
               >
                 Complete Request
               </button>
@@ -828,8 +831,11 @@ export default function DoctorDashboard() {
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     profileUpdateLoading
                       ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'text-white'
                   }`}
+                  style={{
+                    backgroundColor: profileUpdateLoading ? '#9CA3AF' : '#0F9297'
+                  }}
                 >
                   {profileUpdateLoading ? 'Updating...' : 'Update Profile'}
                 </button>
@@ -881,9 +887,7 @@ export default function DoctorDashboard() {
                     <span className={`text-xs ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>Total Earnings:</span>
-                    <span className={`text-sm font-semibold ${
-                      isDarkMode ? 'text-green-400' : 'text-green-600'
-                    }`}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
+                    <span className={`text-sm font-semibold`} style={{color: '#0F9297'}}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
@@ -916,9 +920,8 @@ export default function DoctorDashboard() {
                 }`}>Available</span>
                 <button
                   onClick={handleAvailabilityToggle}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isAvailable ? 'bg-green-600' : 'bg-gray-600'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+                  style={{backgroundColor: isAvailable ? '#0F9297' : '#6B7280'}}
                   aria-label={`Set availability to ${isAvailable ? 'unavailable' : 'available'}`}
                 >
                   <span
@@ -935,7 +938,7 @@ export default function DoctorDashboard() {
               {/* Auto-refresh indicator */}
               <div className="flex items-center space-x-2">
                 <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
-                  <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
+                  <div className={`flex items-center mr-2`} style={{color: autoRefresh ? '#0F9297' : '#6B7280'}}>
                     <svg className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -943,7 +946,11 @@ export default function DoctorDashboard() {
                   </div>
                   <button
                     onClick={() => setAutoRefresh(!autoRefresh)}
-                    className={`text-xs px-2 py-0.5 rounded ${autoRefresh ? 'bg-blue-700 text-blue-100' : 'bg-gray-700 text-gray-300'}`}
+                    className={`text-xs px-2 py-0.5 rounded`}
+                    style={{
+                      backgroundColor: autoRefresh ? '#0F9297' : '#374151',
+                      color: autoRefresh ? 'white' : '#D1D5DB'
+                    }}
                   >
                     {autoRefresh ? 'Disable' : 'Enable'}
                   </button>
@@ -997,7 +1004,7 @@ export default function DoctorDashboard() {
             <div className="space-y-3 py-3">
               {/* Auto-refresh control */}
               <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
-                <div className={`flex items-center mr-2 ${autoRefresh ? 'text-blue-400' : 'text-gray-500'}`}>
+                <div className={`flex items-center mr-2`} style={{color: autoRefresh ? '#0F9297' : '#6B7280'}}>
                   <svg className={`h-4 w-4 mr-1 ${autoRefresh ? 'animate-spin' : ''}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
@@ -1005,7 +1012,11 @@ export default function DoctorDashboard() {
                 </div>
                 <button
                   onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={`text-xs px-2 py-0.5 rounded ${autoRefresh ? 'bg-blue-700 text-blue-100' : 'bg-gray-700 text-gray-300'}`}
+                  className={`text-xs px-2 py-0.5 rounded`}
+                  style={{
+                    backgroundColor: autoRefresh ? '#0F9297' : '#374151',
+                    color: autoRefresh ? 'white' : '#D1D5DB'
+                  }}
                 >
                   {autoRefresh ? 'Disable' : 'Enable'}
                 </button>
@@ -1131,19 +1142,15 @@ export default function DoctorDashboard() {
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-400 font-medium">My Earnings</p>
+                    <p className="text-sm font-medium" style={{color: '#0F9297'}}>My Earnings</p>
                     <p className={`text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>£{(stats.totalEarnings || 0).toFixed(2)}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-blue-900/30' 
-                      : 'bg-blue-600'
-                  }`}>
+                  <div className={`p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                     <TrendingUp className={`h-6 w-6 ${
-                      isDarkMode ? 'text-blue-400' : 'text-white'
-                    }`} />
+                      isDarkMode ? 'text-white' : 'text-white'
+                    }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
                 </div>
               </button>
@@ -1162,14 +1169,8 @@ export default function DoctorDashboard() {
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'bg-blue-900/30' 
-                        : 'bg-blue-600'
-                    }`}>
-                      <Clock className={`h-5 w-5 ${
-                        isDarkMode ? 'text-blue-400' : 'text-white'
-                      }`} />
+                    <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                      <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                     </div>
                     <div>
                       <h2 className={`text-xl font-semibold ${
@@ -1177,9 +1178,7 @@ export default function DoctorDashboard() {
                       }`}>
                         {requestFilter === 'pending' ? 'Pending Service Requests' : 'Available Service Requests'}
                       </h2>
-                      <p className={`text-sm font-medium ${
-                        isDarkMode ? 'text-blue-300' : 'text-blue-600'
-                      }`}>
+                      <p className={`text-sm font-medium`} style={{color: '#0F9297'}}>
                         {requestFilter === 'pending' 
                           ? 'Service requests waiting for response' 
                           : 'Nearby businesses needing medical assistance'
@@ -1276,11 +1275,11 @@ export default function DoctorDashboard() {
                           <div className="flex items-center space-x-4 text-sm">
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
                               isDarkMode 
-                                ? 'text-blue-400 bg-blue-900/20' 
-                                : 'text-blue-600 bg-blue-50'
-                            }`}>
-                              <Building2 className="h-4 w-4" />
-                              <span className="font-medium">{request.business?.businessName || 'Business'}</span>
+                                ? 'bg-gray-800/50' 
+                                : 'bg-gray-100'
+                            }`} style={{color: '#0F9297', backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
+                              <Building2 className="h-4 w-4" style={{color: '#0F9297'}} />
+                              <span className="font-medium" style={{color: '#0F9297'}}>{request.business?.businessName || 'Business'}</span>
                             </div>
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
                               isDarkMode 
@@ -1326,10 +1325,8 @@ export default function DoctorDashboard() {
                                     <span className={`font-medium ${
                                       isDarkMode ? 'text-green-400' : 'text-green-700'
                                     }`}>Phone:</span>
-                                    <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center ${
-                                      isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                                    }`}>
-                                      <Phone className="h-3 w-3 mr-1" />
+                                    <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
+                                      <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
                                       {request.business.phone}
                                     </a>
                                   </div>
@@ -1357,11 +1354,10 @@ export default function DoctorDashboard() {
                                         )}`}
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className={`hover:underline text-xs inline-flex items-center mt-1 ${
-                                          isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                                        }`}
+                                        className={`hover:underline text-xs inline-flex items-center mt-1`}
+                                        style={{color: '#0F9297'}}
                                       >
-                                        <MapPin className="h-3 w-3 mr-1" />View on Map
+                                        <MapPin className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />View on Map
                                       </a>
                                     </div>
                                   </div>
@@ -1473,8 +1469,8 @@ export default function DoctorDashboard() {
             <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
-                    <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <User className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
                   <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Profile</h3>
                 </div>
@@ -1535,9 +1531,9 @@ export default function DoctorDashboard() {
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{doctor.bio}</span>
                   </div>
                 )}
-                <div className={`flex justify-between items-center py-2 ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 rounded-lg mt-4`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>Total Earnings:</span>
-                  <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
+                <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
+                  <span className={`font-medium`} style={{color: '#0F9297'}}>Total Earnings:</span>
+                  <span className={`font-bold text-lg`} style={{color: '#0F9297'}}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Status:</span>
@@ -1564,8 +1560,8 @@ export default function DoctorDashboard() {
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
-                    <Clock className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
+                  <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
                   <div>
                     <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1629,7 +1625,7 @@ export default function DoctorDashboard() {
                           </p>
                           {request.business && (
                             <div className="mt-2">
-                              <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
+                              <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
                                 Business: {request.business.businessName || 'Business'}
                               </p>
                               
@@ -1638,8 +1634,8 @@ export default function DoctorDashboard() {
                                 <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
                                   <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Business Contact Information:</h4>
                                   <div className="flex items-center space-x-2 text-sm">
-                                    <Phone className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                                    <a href={`tel:${request.business.phone}`} className={`${isDarkMode ? 'text-blue-400 hover:underline' : 'text-blue-600 hover:underline'} text-xs`}>
+                                    <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
+                                    <a href={`tel:${request.business.phone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
                                       {request.business.phone}
                                     </a>
                                   </div>
