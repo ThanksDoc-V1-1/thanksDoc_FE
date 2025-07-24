@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User, Banknote } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -1107,7 +1107,7 @@ export default function DoctorDashboard() {
                       ? 'bg-purple-900/30' 
                       : 'bg-purple-600'
                   }`}>
-                    <DollarSign className={`h-6 w-6 ${
+                    <Banknote className={`h-6 w-6 ${
                       isDarkMode ? 'text-purple-400' : 'text-white'
                     }`} />
                   </div>
