@@ -869,7 +869,7 @@ export default function AdminDashboard() {
               </div>
               
               <div className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                {serviceRequests.slice(0, 5).map((request) => {
+                {serviceRequests.slice(0, 5).map((request, index) => {
                   // Debug log to verify data
                   console.log(`Overview rendering request ${request.id}: status=${request.status}, completedAt=${request.completedAt}, isPaid=${request.isPaid}`);
                   // Handle both direct properties and nested attributes
@@ -910,70 +910,113 @@ export default function AdminDashboard() {
                     'Pending';
                     
                   return (
-                    <div key={id} className={`p-6 transition-colors ${isDarkMode ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-grow">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm ${
-                              urgencyLevel === 'emergency' 
-                                ? isDarkMode ? 'bg-red-600 text-red-100' : 'bg-red-600 text-white'
-                                : urgencyLevel === 'high' 
-                                ? isDarkMode ? 'bg-orange-600 text-orange-100' : 'bg-orange-600 text-white'
-                                : urgencyLevel === 'medium' 
-                                ? isDarkMode ? 'bg-yellow-600 text-yellow-100' : 'bg-yellow-600 text-white'
-                                : isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
-                            }`}>
-                              {urgencyLevel || 'normal'}
-                            </span>
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm border ${
-                              status === 'completed' 
-                                ? isDarkMode ? 'bg-emerald-600 text-emerald-100 border-emerald-500' : 'bg-emerald-600 text-white border-emerald-600'
-                                : status === 'accepted' 
-                                ? isDarkMode ? 'bg-blue-600 text-blue-100 border-blue-500' : 'bg-blue-600 text-white border-blue-600'
-                                : status === 'pending' 
-                                ? isDarkMode ? 'bg-amber-600 text-amber-100 border-amber-500' : 'bg-amber-600 text-white border-amber-600'
-                                : status === 'rejected' 
-                                ? isDarkMode ? 'bg-red-600 text-red-100 border-red-500' : 'bg-red-600 text-white border-red-600'
-                                : isDarkMode ? 'bg-slate-600 text-slate-100 border-slate-500' : 'bg-slate-600 text-white border-slate-600'
+                    <div key={id} className={`p-6 transition-colors ${
+                      index % 2 === 0 
+                        ? isDarkMode ? 'bg-gray-900/50 hover:bg-gray-800/70' : 'bg-gray-50 hover:bg-gray-100' 
+                        : isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'
+                    }`}>
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center flex-wrap gap-2 mb-3">
+                            {urgencyLevel && urgencyLevel !== 'medium' && (
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                                urgencyLevel === 'emergency' ? 
+                                  isDarkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-700' :
+                                urgencyLevel === 'high' ? 
+                                  isDarkMode ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-100 text-orange-700' :
+                                  isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {urgencyLevel}
+                              </span>
+                            )}
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                              status === 'completed' ? 
+                                isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300' :
+                              status === 'accepted' ? 
+                                isDarkMode ? 'bg-blue-900/40 text-blue-400 border border-blue-900' : 'bg-blue-100 text-blue-700 border border-blue-300' :
+                              status === 'pending' ? 
+                                isDarkMode ? 'bg-yellow-900/40 text-yellow-400 border border-yellow-900' : 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
+                              status === 'rejected' ? 
+                                isDarkMode ? 'bg-red-900/40 text-red-400 border border-red-900' : 'bg-red-100 text-red-700 border border-red-300' :
+                                isDarkMode ? 'bg-gray-800 text-gray-400 border border-gray-700' : 'bg-gray-100 text-gray-700 border border-gray-300'
                             }`}>
                               {(status || 'pending').replace('_', ' ')}
                             </span>
-                            {isPaid && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-green-900/40 text-green-400 border border-green-900">
-                                <Check className="h-3 w-3 mr-1 stroke-2" />
-                                PAID
+                            {requestedAt && (
+                              <span className={`text-xs flex items-center ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                                <Calendar className="h-3.5 w-3.5 mr-1" />
+                                {formatDate(requestedAt)}
                               </span>
                             )}
                           </div>
-                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{serviceType}</h3>
-                          <div className={`flex items-center text-sm mt-1 space-x-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            <Building2 className="h-4 w-4 flex-shrink-0" />
-                            <span>{businessName}</span>
-                            <span className={isDarkMode ? 'text-gray-600' : 'text-gray-400'}>→</span>
-                            <Stethoscope className="h-4 w-4 flex-shrink-0" />
-                            <span>{doctorName}</span>
+                          
+                          <h3 className={`font-semibold text-lg mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{serviceType}</h3>
+                          <p className={`text-sm mb-4 line-clamp-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} ${request.description || request.attributes?.description ? '' : 'text-gray-400 italic'}`}>
+                            {request.description || request.attributes?.description || 'No description provided'}
+                          </p>
+                          
+                          <div className="grid md:grid-cols-2 gap-4 text-sm">
+                            <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-3 flex flex-col space-y-2`}>
+                              <div className="flex justify-between items-center">
+                                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Business</span>
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{businessName}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Contact</span>
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {request.business?.contactPersonName || 
+                                    request.attributes?.business?.data?.attributes?.contactPersonName || 
+                                    request.attributes?.business?.contactPersonName || 
+                                    'Unknown Contact'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-3 flex flex-col space-y-2`}>
+                              <div className="flex justify-between items-center">
+                                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Doctor</span>
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doctorName}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {(request.estimatedDuration || request.attributes?.estimatedDuration) || 'TBD'}h
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className={`flex items-center text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                            <Clock className="h-3.5 w-3.5 mr-1" />
-                            <span>{formatDate(requestedAt)}</span>
+                          
+                          <div className={`flex flex-wrap items-center gap-4 mt-4 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+                            {acceptedAt && (
+                              <span className="flex items-center">
+                                <Clock className="h-3.5 w-3.5 mr-1 text-blue-500" />
+                                Accepted: {formatDate(acceptedAt)}
+                              </span>
+                            )}
+                            {completedAt && (
+                              <span className="flex items-center">
+                                <Check className="h-3.5 w-3.5 mr-1 text-green-500" />
+                                Completed: {formatDate(completedAt)}
+                              </span>
+                            )}
                           </div>
                         </div>
                         
                         {totalAmount && (
-                          <div className="flex flex-col items-end ml-4">
-                            <div className="text-sm font-semibold text-green-500">
-                              {formatCurrency(totalAmount)}
+                          <div className="flex flex-col items-end space-y-2 min-w-[120px]">
+                            <div className={`text-lg font-semibold ${isDarkMode ? 'text-green-600' : 'text-green-600'}`}>
+                              £{totalAmount.toFixed(2)}
                             </div>
-                            <div className={`mt-1 text-xs px-3 py-1.5 rounded-full flex items-center font-bold shadow-sm ${
-                              isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' 
-                                ? isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'
-                                : (request.paymentStatus || request.attributes?.paymentStatus) === 'pending' 
-                                ? isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'
-                                : (request.paymentStatus || request.attributes?.paymentStatus) === 'failed' 
-                                ? isDarkMode ? 'bg-red-600 text-red-100' : 'bg-red-600 text-white'
-                                : isDarkMode ? 'bg-slate-600 text-slate-100' : 'bg-slate-600 text-white'
+                            <div className={`text-xs px-2.5 py-1.5 rounded-full flex items-center ${
+                              isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid' ? 
+                                isDarkMode ? 'bg-green-100 text-green-700' : 'bg-green-100 text-green-700' :
+                              (request.paymentStatus || request.attributes?.paymentStatus) === 'pending' ? 
+                                isDarkMode ? 'bg-yellow-100 text-yellow-700' : 'bg-yellow-100 text-yellow-700' :
+                              (request.paymentStatus || request.attributes?.paymentStatus) === 'failed' ? 
+                                isDarkMode ? 'bg-red-100 text-red-700' : 'bg-red-100 text-red-700' :
+                                isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-700'
                             }`}>
-                              {isPaid && <Check className="h-3 w-3 mr-1 stroke-2" />}
+                              {(isPaid || (request.paymentStatus || request.attributes?.paymentStatus) === 'paid') && <Check className="h-3 w-3 mr-1 stroke-2" />}
                               {(isPaid ? 'PAID' : (request.paymentStatus || request.attributes?.paymentStatus) || 'pending').toUpperCase()}
                             </div>
                           </div>
@@ -1493,17 +1536,17 @@ export default function AdminDashboard() {
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-3">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            urgencyLevel === 'emergency' ? 
-                              isDarkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-700' :
-                            urgencyLevel === 'high' ? 
-                              isDarkMode ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-100 text-orange-700' :
-                            urgencyLevel === 'medium' ? 
-                              isDarkMode ? 'bg-yellow-900/40 text-yellow-400' : 'bg-yellow-100 text-yellow-700' :
-                              isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700'
-                          }`}>
-                            {urgencyLevel || 'normal'}
-                          </span>
+                          {urgencyLevel && urgencyLevel !== 'medium' && (
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                              urgencyLevel === 'emergency' ? 
+                                isDarkMode ? 'bg-red-900/40 text-red-400' : 'bg-red-100 text-red-700' :
+                              urgencyLevel === 'high' ? 
+                                isDarkMode ? 'bg-orange-900/40 text-orange-400' : 'bg-orange-100 text-orange-700' :
+                                isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700'
+                            }`}>
+                              {urgencyLevel}
+                            </span>
+                          )}
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
                             status === 'completed' ? 
                               isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300' :
