@@ -87,6 +87,12 @@ export default function BusinessExpenditure() {
       console.log('🔍 Fetching business profile...');
       const response = await businessAPI.getProfile();
       console.log('✅ Business profile response:', response.data);
+      console.log('📍 Business address fields:', {
+        address: response.data?.address,
+        city: response.data?.city,
+        state: response.data?.state,
+        zipCode: response.data?.zipCode
+      });
       setBusinessData(response.data);
     } catch (error) {
       console.error('❌ Error fetching business data:', error);
@@ -331,12 +337,30 @@ export default function BusinessExpenditure() {
                    requestFilter === 'completed' ? 'Completed Expenditures' : 
                    'Business Expenditure'}
                 </h1>
-                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  {businessData?.businessName || user?.businessName || 'Business Account'}
+                <div className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                  <p className="font-medium">
+                    {businessData?.businessName || user?.businessName || 'Business Account'}
+                  </p>
+                  {/* Debug: Show what data we have */}
+                  {console.log('🏢 Business data in render:', businessData)}
+                  {businessData?.address && (
+                    <p className="text-sm">
+                      📍 {businessData.address}
+                    </p>
+                  )}
+                  {businessData && (businessData.city || businessData.state || businessData.zipCode) && (
+                    <p className="text-sm">
+                      🌍 {[
+                        businessData.city,
+                        businessData.state,
+                        businessData.zipCode
+                      ].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                   {requestFilter !== 'all' && (
                     <button
                       onClick={() => setRequestFilter('all')}
-                      className={`ml-2 text-xs px-2 py-1 rounded border transition-colors ${
+                      className={`mt-1 text-xs px-2 py-1 rounded border transition-colors ${
                         isDarkMode 
                           ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
                           : 'border-gray-300 text-gray-600 hover:bg-gray-100'
@@ -345,7 +369,7 @@ export default function BusinessExpenditure() {
                       Show All
                     </button>
                   )}
-                </p>
+                </div>
               </div>
             </div>
 

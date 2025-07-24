@@ -1118,6 +1118,24 @@ export default function BusinessDashboard() {
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Address:</span>
                   <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business?.address || 'Not provided'}</span>
                 </div>
+                {business?.city && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>City:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business.city}</span>
+                  </div>
+                )}
+                {business?.state && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>State:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business.state}</span>
+                  </div>
+                )}
+                {business?.zipCode && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Postal Code:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business.zipCode}</span>
+                  </div>
+                )}
                 {business?.description && (
                   <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Description:</span>

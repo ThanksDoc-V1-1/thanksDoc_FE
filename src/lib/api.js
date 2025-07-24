@@ -175,6 +175,7 @@ export const authAPI = {
 export const businessAPI = {
   getAll: () => api.get('/businesses'),
   getById: (id) => api.get(`/businesses/${id}`),
+  getProfile: () => api.get('/businesses/profile'), // Get current business's profile
   create: (data) => api.post('/businesses', { data }),
   update: (id, data) => api.put(`/businesses/${id}`, { data }),
   updateProfile: (id, data) => api.put(`/businesses/${id}`, { data }), // Convenience method for profile updates
