@@ -69,9 +69,7 @@ export default function DoctorLogin() {
               Back to Home
             </Link>
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Stethoscope className={`h-8 w-8 ${
-                isDarkMode ? 'text-blue-400' : 'text-blue-600'
-              }`} />
+              <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
               <h1 className={`text-3xl font-bold ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>Doctor Login</h1>

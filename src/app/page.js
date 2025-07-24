@@ -145,7 +145,7 @@ export default function Home() {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Stethoscope className="h-8 w-8 text-blue-400" />
+            <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
             <span className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               ThanksDoc
             </span>

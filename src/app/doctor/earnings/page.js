@@ -344,8 +344,8 @@ export default function DoctorEarnings() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <div className="flex items-center space-x-3">
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-800 rounded-lg shadow-lg">
-                  <TrendingUp className="h-6 w-6 text-white" />
+                <div className="p-2.5 rounded-lg shadow-lg">
+                  <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
                 </div>
                 <div>
                   <h1 className={`text-2xl font-bold tracking-tight ${
@@ -378,41 +378,27 @@ export default function DoctorEarnings() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Summary Cards */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-            isDarkMode 
-              ? 'bg-gray-900 border-gray-800' 
-              : 'bg-white border-gray-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-400 font-medium">Total Earnings</p>
-                <p className={`text-2xl font-bold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>£{stats.totalEarnings.toFixed(2)}</p>
-              </div>
-              <div className={`p-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-green-900/30' 
-                  : 'bg-green-600'
-              }`}>
-                <Banknote className={`h-6 w-6 ${
-                  isDarkMode ? 'text-green-400' : 'text-white'
-                }`} />
-              </div>
-            </div>
-          </div>
-
-          <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-            isDarkMode 
-              ? 'bg-gray-900 border-gray-800' 
-              : 'bg-white border-gray-200'
-          }`}>
+          {/* Completed Requests Card - Clickable to show all */}
+          <button
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+              setSortBy('date');
+              setSortOrder('desc');
+            }}
+            className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800 hover:border-blue-600' 
+                : 'bg-white border-gray-200 hover:border-blue-400'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-blue-400 font-medium">Completed Requests</p>
                 <p className={`text-2xl font-bold ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>{stats.totalRequests}</p>
+                <p className="text-xs text-blue-400 mt-1">Click to view all</p>
               </div>
               <div className={`p-3 rounded-lg ${
                 isDarkMode 
@@ -424,37 +410,25 @@ export default function DoctorEarnings() {
                 }`} />
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-            isDarkMode 
-              ? 'bg-gray-900 border-gray-800' 
-              : 'bg-white border-gray-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-400 font-medium">Average per Request</p>
-                <p className={`text-2xl font-bold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>£{stats.averageEarning.toFixed(2)}</p>
-              </div>
-              <div className={`p-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-purple-900/30' 
-                  : 'bg-purple-600'
-              }`}>
-                <TrendingUp className={`h-6 w-6 ${
-                  isDarkMode ? 'text-purple-400' : 'text-white'
-                }`} />
-              </div>
-            </div>
-          </div>
-
-          <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-            isDarkMode 
-              ? 'bg-gray-900 border-gray-800' 
-              : 'bg-white border-gray-200'
-          }`}>
+          {/* This Month Card - Clickable to filter current month */}
+          <button
+            onClick={() => {
+              const now = new Date();
+              const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+              const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+              setDateFrom(firstDay.toISOString().split('T')[0]);
+              setDateTo(lastDay.toISOString().split('T')[0]);
+              setSortBy('date');
+              setSortOrder('desc');
+            }}
+            className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800 hover:border-amber-600' 
+                : 'bg-white border-gray-200 hover:border-amber-400'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-amber-400 font-medium">This Month</p>
@@ -470,6 +444,7 @@ export default function DoctorEarnings() {
                     {stats.thisMonth >= stats.lastMonth ? '↗' : '↘'} vs last month
                   </p>
                 )}
+                <p className="text-xs text-amber-400 mt-1">Click to filter month</p>
               </div>
               <div className={`p-3 rounded-lg ${
                 isDarkMode 
@@ -478,6 +453,64 @@ export default function DoctorEarnings() {
               }`}>
                 <Calendar className={`h-6 w-6 ${
                   isDarkMode ? 'text-amber-400' : 'text-white'
+                }`} />
+              </div>
+            </div>
+          </button>
+
+          {/* Average per Request Card - Clickable to sort by amount */}
+          <button
+            onClick={() => {
+              setSortBy('amount');
+              setSortOrder('desc');
+            }}
+            className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800 hover:border-purple-600' 
+                : 'bg-white border-gray-200 hover:border-purple-400'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-400 font-medium">Average per Request</p>
+                <p className={`text-2xl font-bold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>£{stats.averageEarning.toFixed(2)}</p>
+                <p className="text-xs text-purple-400 mt-1">Click to sort by amount</p>
+              </div>
+              <div className={`p-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-purple-900/30' 
+                  : 'bg-purple-600'
+              }`}>
+                <TrendingUp className={`h-6 w-6 ${
+                  isDarkMode ? 'text-purple-400' : 'text-white'
+                }`} />
+              </div>
+            </div>
+          </button>
+
+          {/* Total Earnings Card - Moved to last position */}
+          <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
+            isDarkMode 
+              ? 'bg-gray-900 border-gray-800' 
+              : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-400 font-medium">Total Earnings</p>
+                <p className={`text-2xl font-bold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>£{stats.totalEarnings.toFixed(2)}</p>
+                <p className="text-xs text-green-400 mt-1">All time earnings</p>
+              </div>
+              <div className={`p-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-green-900/30' 
+                  : 'bg-green-600'
+              }`}>
+                <Banknote className={`h-6 w-6 ${
+                  isDarkMode ? 'text-green-400' : 'text-white'
                 }`} />
               </div>
             </div>

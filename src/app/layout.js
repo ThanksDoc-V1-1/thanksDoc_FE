@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "ThanksDoc - On-Demand Healthcare for Businesses",
   description: "Connect pharmacies and businesses with verified doctors instantly. Request medical consultations within 10km radius.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {
