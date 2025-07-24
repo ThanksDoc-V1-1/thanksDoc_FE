@@ -7,7 +7,6 @@ import {
   Calendar, 
   Download, 
   Filter, 
-  Search, 
   TrendingUp, 
   Clock,
   Building2,
@@ -36,7 +35,6 @@ export default function DoctorEarnings() {
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date'); // 'date', 'amount', 'business'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc', 'desc'
   
@@ -218,15 +216,6 @@ export default function DoctorEarnings() {
       filtered = filtered.filter(earning => new Date(earning.date) <= new Date(dateTo));
     }
     
-    // Search filtering
-    if (searchTerm) {
-      filtered = filtered.filter(earning => 
-        earning.serviceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        earning.business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        earning.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
     // Sorting
     filtered.sort((a, b) => {
       let aValue, bValue;
@@ -256,7 +245,7 @@ export default function DoctorEarnings() {
     
     setFilteredEarnings(filtered);
     calculateStats(filtered);
-  }, [earnings, dateFrom, dateTo, searchTerm, sortBy, sortOrder]);
+  }, [earnings, dateFrom, dateTo, sortBy, sortOrder]);
 
   const exportToCsv = () => {
     const csvContent = [
@@ -283,7 +272,6 @@ export default function DoctorEarnings() {
   const resetFilters = () => {
     setDateFrom('');
     setDateTo('');
-    setSearchTerm('');
     setSortBy('date');
     setSortOrder('desc');
   };
@@ -559,30 +547,6 @@ export default function DoctorEarnings() {
               <label className={`block text-sm font-medium mb-1 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
-                Search
-              </label>
-              <div className="relative">
-                <Search className={`absolute left-3 top-2.5 h-4 w-4 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`} />
-                <input
-                  type="text"
-                  placeholder="Search services, businesses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className={`w-full rounded-lg pl-10 pr-3 py-2 transition-colors ${
-                    isDarkMode 
-                      ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
-                      : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                  } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className={`block text-sm font-medium mb-1 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
                 Sort By
               </label>
               <select
@@ -618,6 +582,20 @@ export default function DoctorEarnings() {
                 <option value="desc">Newest First</option>
                 <option value="asc">Oldest First</option>
               </select>
+            </div>
+            
+            {/* Reset Filters Button */}
+            <div className="flex items-end">
+              <button
+                onClick={resetFilters}
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                }`}
+              >
+                Reset
+              </button>
             </div>
           </div>
         </div>
@@ -735,7 +713,7 @@ export default function DoctorEarnings() {
                 <p className={`text-sm ${
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
-                  {dateFrom || dateTo || searchTerm 
+                  {dateFrom || dateTo 
                     ? 'Try adjusting your filters to see more results.'
                     : 'Complete service requests to start earning and see your earnings here.'
                   }
