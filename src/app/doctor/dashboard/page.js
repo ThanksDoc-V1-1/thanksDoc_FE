@@ -1549,14 +1549,6 @@ export default function DoctorDashboard() {
                               <Clock className="h-4 w-4" />
                               <span className="font-medium">{request.estimatedDuration}h</span>
                             </div>
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'text-green-400 bg-green-900/20' 
-                                : 'text-green-600 bg-green-50'
-                            }`}>
-                              <DollarSign className="h-4 w-4" />
-                              <span className="font-semibold">£{((doctor?.hourlyRate || 0) * (request.estimatedDuration || 1)).toFixed(2)}</span>
-                            </div>
                           </div>
                           {request.status === 'completed' && request.totalAmount && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
