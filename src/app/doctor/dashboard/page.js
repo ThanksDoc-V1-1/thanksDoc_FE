@@ -46,6 +46,9 @@ export default function DoctorDashboard() {
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
 
+  // Request filtering states
+  const [requestFilter, setRequestFilter] = useState('all'); // 'all', 'pending', 'completed'
+
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
     if (!authLoading) {
@@ -441,6 +444,29 @@ export default function DoctorDashboard() {
       qualifications: '',
       bio: ''
     });
+  };
+
+  // Handler functions for card clicks
+  const handlePendingRequestsClick = () => {
+    setRequestFilter('pending');
+    // Scroll to the requests section
+    const requestsSection = document.getElementById('requests-section');
+    if (requestsSection) {
+      requestsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleCompletedRequestsClick = () => {
+    setRequestFilter('completed');
+    // Scroll to the recent requests section
+    const recentRequestsSection = document.getElementById('recent-requests-section');
+    if (recentRequestsSection) {
+      recentRequestsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleHourlyRateClick = () => {
+    router.push('/doctor/earnings');
   };
 
   // Get doctor display data (either from backend or auth context)
@@ -1019,11 +1045,13 @@ export default function DoctorDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              <button 
+                onClick={handlePendingRequestsClick}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-yellow-400 font-medium">Pending Requests</p>
@@ -1041,10 +1069,62 @@ export default function DoctorDashboard() {
                     }`} />
                   </div>
                 </div>
-              </div>
+              </button>
+              <button 
+                onClick={handleCompletedRequestsClick}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-400 font-medium">Completed</p>
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{stats.completedRequests}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-green-900/30' 
+                      : 'bg-green-600'
+                  }`}>
+                    <Check className={`h-6 w-6 ${
+                      isDarkMode ? 'text-green-400' : 'text-white'
+                    }`} />
+                  </div>
+                </div>
+              </button>
+              <button 
+                onClick={handleHourlyRateClick}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-purple-400 font-medium">Hourly Rate</p>
+                    <p className={`text-2xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      £{doctor.hourlyRate || 0}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-purple-900/30' 
+                      : 'bg-purple-600'
+                  }`}>
+                    <Banknote className={`h-6 w-6 ${
+                      isDarkMode ? 'text-purple-400' : 'text-white'
+                    }`} />
+                  </div>
+                </div>
+              </button>
               <button 
                 onClick={() => router.push('/doctor/earnings')}
-                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer ${
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -1067,58 +1147,10 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </button>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-green-400 font-medium">Completed</p>
-                    <p className={`text-2xl font-bold ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>{stats.completedRequests}</p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-green-900/30' 
-                      : 'bg-green-600'
-                  }`}>
-                    <Check className={`h-6 w-6 ${
-                      isDarkMode ? 'text-green-400' : 'text-white'
-                    }`} />
-                  </div>
-                </div>
-              </div>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-purple-400 font-medium">Hourly Rate</p>
-                    <p className={`text-2xl font-bold ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      £{doctor.hourlyRate || 0}
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-purple-900/30' 
-                      : 'bg-purple-600'
-                  }`}>
-                    <Banknote className={`h-6 w-6 ${
-                      isDarkMode ? 'text-purple-400' : 'text-white'
-                    }`} />
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Available Requests */}
-            <div className={`rounded-lg shadow border ${
+            <div id="requests-section" className={`rounded-lg shadow border ${
               isDarkMode 
                 ? 'bg-gray-900 border-gray-800' 
                 : 'bg-white border-gray-200'
@@ -1142,10 +1174,29 @@ export default function DoctorDashboard() {
                     <div>
                       <h2 className={`text-xl font-semibold ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
-                      }`}>Available Service Requests</h2>
+                      }`}>
+                        {requestFilter === 'pending' ? 'Pending Service Requests' : 'Available Service Requests'}
+                      </h2>
                       <p className={`text-sm font-medium ${
                         isDarkMode ? 'text-blue-300' : 'text-blue-600'
-                      }`}>Nearby businesses needing medical assistance</p>
+                      }`}>
+                        {requestFilter === 'pending' 
+                          ? 'Service requests waiting for response' 
+                          : 'Nearby businesses needing medical assistance'
+                        }
+                      </p>
+                      {requestFilter !== 'all' && (
+                        <button
+                          onClick={() => setRequestFilter('all')}
+                          className={`mt-2 text-xs px-3 py-1 rounded-full border transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          Show All Requests
+                        </button>
+                      )}
                     </div>
                   </div>
                   {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
@@ -1168,8 +1219,19 @@ export default function DoctorDashboard() {
               <div className={`divide-y ${
                 isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
               }`}>
-                {serviceRequests.length > 0 ? (
-                  serviceRequests.map((request) => (
+                {(() => {
+                  let filteredRequests = serviceRequests;
+                  
+                  // Apply filter based on requestFilter state
+                  if (requestFilter === 'pending') {
+                    filteredRequests = serviceRequests.filter(req => req.status === 'pending');
+                  } else if (requestFilter === 'completed') {
+                    // For completed requests, we should show from myRequests instead
+                    filteredRequests = myRequests.filter(req => req.status === 'completed');
+                  }
+                  
+                  return filteredRequests.length > 0 ? (
+                    filteredRequests.map((request) => (
                     <div key={request.id} className={`p-6 transition-colors ${
                       request.status === 'accepted' 
                         ? 'bg-green-900/10 border-l-4 border-green-400' 
@@ -1369,23 +1431,38 @@ export default function DoctorDashboard() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className={`p-8 text-center ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    <div className={`rounded-lg p-6 ${
-                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                  ) : (
+                    <div className={`p-8 text-center ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
                     }`}>
-                      <Clock className={`h-12 w-12 mx-auto mb-4 ${
-                        isDarkMode ? 'text-gray-600' : 'text-gray-400'
-                      }`} />
-                      <p className={`text-lg font-medium mb-2 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>No service requests available</p>
-                      <p className="text-sm">Check back later for new requests from businesses in your area.</p>
+                      <div className={`rounded-lg p-6 ${
+                        isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                      }`}>
+                        <Clock className={`h-12 w-12 mx-auto mb-4 ${
+                          isDarkMode ? 'text-gray-600' : 'text-gray-400'
+                        }`} />
+                        <p className={`text-lg font-medium mb-2 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          {requestFilter === 'pending' 
+                            ? 'No pending requests' 
+                            : requestFilter === 'completed' 
+                              ? 'No completed requests' 
+                              : 'No service requests available'
+                          }
+                        </p>
+                        <p className="text-sm">
+                          {requestFilter === 'pending' 
+                            ? 'No pending requests at the moment.' 
+                            : requestFilter === 'completed' 
+                              ? 'No completed requests to show.' 
+                              : 'Check back later for new requests from businesses in your area.'
+                          }
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -1482,7 +1559,7 @@ export default function DoctorDashboard() {
         </div>
 
         {/* Recent Service Requests Section */}
-        <div className="mt-8">
+        <div id="recent-requests-section" className="mt-8">
           <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
@@ -1490,18 +1567,48 @@ export default function DoctorDashboard() {
                   <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                     <Clock className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
                   </div>
-                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recent Service Requests</h2>
-                </div>
-                {myRequests.length > 0 && (
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {myRequests.length} total requests
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {requestFilter === 'completed' ? 'Completed Service Requests' : 'Recent Service Requests'}
+                    </h2>
+                    {requestFilter !== 'all' && (
+                      <button
+                        onClick={() => setRequestFilter('all')}
+                        className={`mt-1 text-xs px-3 py-1 rounded-full border transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        Show All Requests
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
+                {(() => {
+                  let displayRequests = myRequests;
+                  if (requestFilter === 'completed') {
+                    displayRequests = myRequests.filter(req => req.status === 'completed');
+                  }
+                  return displayRequests.length > 0 && (
+                    <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {displayRequests.length} {requestFilter === 'completed' ? 'completed' : 'total'} requests
+                    </div>
+                  );
+                })()}
               </div>
             </div>
               <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                {myRequests.length > 0 ? (
-                  myRequests.slice(0, 10).map((request) => (
+                {(() => {
+                  let displayRequests = myRequests;
+                  
+                  // Apply filter based on requestFilter state
+                  if (requestFilter === 'completed') {
+                    displayRequests = myRequests.filter(req => req.status === 'completed');
+                  }
+                  
+                  return displayRequests.length > 0 ? (
+                    displayRequests.slice(0, 10).map((request) => (
                     <div key={request.id} className={`p-6 ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -1564,15 +1671,23 @@ export default function DoctorDashboard() {
                       </div>
                     </div>
                   ))
-                ) : (
-                  <div className="p-8 text-center">
-                    <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
-                      <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
-                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No service requests yet</p>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Service requests you accept will appear here.</p>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
+                        <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
+                        <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {requestFilter === 'completed' ? 'No completed requests yet' : 'No service requests yet'}
+                        </p>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          {requestFilter === 'completed' 
+                            ? 'Completed service requests will appear here.' 
+                            : 'Service requests you accept will appear here.'
+                          }
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
         </div>

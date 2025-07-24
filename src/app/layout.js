@@ -17,9 +17,13 @@ export const metadata = {
   title: "ThanksDoc - On-Demand Healthcare for Businesses",
   description: "Connect pharmacies and businesses with verified doctors instantly. Request medical consultations within 10km radius.",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon.ico", sizes: "any" }
+    ],
+    shortcut: "/favicon/favicon.ico",
+    apple: "/favicon/favicon-32x32.png",
   },
 };
 
