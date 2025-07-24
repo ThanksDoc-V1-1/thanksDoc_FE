@@ -51,7 +51,10 @@ export default function BusinessDashboard() {
     description: '',
     estimatedDuration: 1,
     preferredDoctorId: null,
+    doctorSelectionType: 'any', // 'any' or 'previous'
   });
+  const [previousDoctors, setPreviousDoctors] = useState([]);
+  const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [showHoursPopup, setShowHoursPopup] = useState(false);
@@ -198,6 +201,87 @@ export default function BusinessDashboard() {
     }
   };
 
+  const fetchPreviousDoctors = async () => {
+    try {
+      setLoadingPreviousDoctors(true);
+      console.log('🔍 Fetching previously worked with doctors for business:', user.id);
+      
+      // Get all completed service requests for this business
+      const response = await serviceRequestAPI.getBusinessRequests(user.id);
+      console.log('📊 Business requests for previous doctors:', response.data);
+
+      let allRequests = [];
+      if (Array.isArray(response.data)) {
+        allRequests = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        allRequests = response.data.data;
+      }
+
+      // Extract unique doctors from completed requests
+      const completedRequests = allRequests.filter(req => req.status === 'completed' && req.doctor);
+      const uniqueDoctorIds = new Set();
+      const uniqueDoctors = {};
+      
+      completedRequests.forEach(req => {
+        if (req.doctor && req.doctor.id && !uniqueDoctorIds.has(req.doctor.id)) {
+          uniqueDoctorIds.add(req.doctor.id);
+          uniqueDoctors[req.doctor.id] = {
+            id: req.doctor.id,
+            firstName: req.doctor.firstName,
+            lastName: req.doctor.lastName,
+            specialization: req.doctor.specialization,
+            hourlyRate: req.doctor.hourlyRate,
+            isAvailable: req.doctor.isAvailable,
+            lastWorkedWith: req.completedAt || req.updatedAt
+          };
+        }
+      });
+
+      // Now fetch current availability status for these doctors
+      try {
+        const availabilityPromises = Object.keys(uniqueDoctors).map(async (doctorId) => {
+          try {
+            // Get current doctor availability from the available doctors endpoint
+            const availableResponse = await doctorAPI.getAvailable();
+            const availableDoctors = availableResponse.data || [];
+            const currentDoctor = availableDoctors.find(d => d.id.toString() === doctorId.toString());
+            
+            if (currentDoctor) {
+              // Update with current availability and rate information
+              uniqueDoctors[doctorId] = {
+                ...uniqueDoctors[doctorId],
+                isAvailable: true, // If they're in the available list, they're available
+                hourlyRate: currentDoctor.hourlyRate || uniqueDoctors[doctorId].hourlyRate,
+                specialization: currentDoctor.specialisation || uniqueDoctors[doctorId].specialization
+              };
+            } else {
+              // Doctor is not in available list, mark as unavailable
+              uniqueDoctors[doctorId].isAvailable = false;
+            }
+          } catch (err) {
+            console.error(`Error checking availability for doctor ${doctorId}:`, err);
+            // Default to unavailable if we can't check
+            uniqueDoctors[doctorId].isAvailable = false;
+          }
+        });
+
+        await Promise.all(availabilityPromises);
+      } catch (availabilityError) {
+        console.error('Error checking doctor availability:', availabilityError);
+      }
+
+      const previousDoctorsList = Object.values(uniqueDoctors);
+      console.log('👨‍⚕️ Previously worked with doctors with current availability:', previousDoctorsList);
+      console.log('✅ Available previous doctors:', previousDoctorsList.filter(d => d.isAvailable));
+      setPreviousDoctors(previousDoctorsList);
+    } catch (error) {
+      console.error('❌ Error fetching previous doctors:', error);
+      setPreviousDoctors([]);
+    } finally {
+      setLoadingPreviousDoctors(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     router.push('/');
@@ -341,6 +425,26 @@ export default function BusinessDashboard() {
       ...prev,
       [name]: value
     }));
+
+    // If doctor selection type changes, reset preferred doctor and fetch previous doctors if needed
+    if (name === 'doctorSelectionType') {
+      setFormData(prev => ({
+        ...prev,
+        preferredDoctorId: null
+      }));
+      
+      if (value === 'previous' && previousDoctors.length === 0) {
+        fetchPreviousDoctors();
+      }
+    }
+  };
+
+  const handleOpenRequestForm = () => {
+    setShowRequestForm(true);
+    // Fetch previous doctors when form opens for the first time
+    if (previousDoctors.length === 0) {
+      fetchPreviousDoctors();
+    }
   };
 
   const handleSubmitRequest = async (e) => {
@@ -348,6 +452,23 @@ export default function BusinessDashboard() {
     setLoading(true);
 
     try {
+      // Validation: If previous doctors option is selected, a doctor must be chosen
+      if (formData.doctorSelectionType === 'previous' && !formData.preferredDoctorId) {
+        alert('Please select a doctor from your previously worked with doctors, or choose "Any available doctor" option.');
+        setLoading(false);
+        return;
+      }
+
+      // Additional validation: Ensure the selected doctor is available if previous option is chosen
+      if (formData.doctorSelectionType === 'previous' && formData.preferredDoctorId) {
+        const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+        if (!selectedDoctor || !selectedDoctor.isAvailable) {
+          alert('The selected doctor is no longer available. Please choose another doctor or refresh the list.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const requestData = {
         businessId: user.id,
         ...formData,
@@ -359,13 +480,18 @@ export default function BusinessDashboard() {
       const response = await serviceRequestAPI.createServiceRequest(requestData);
       
       if (response.data) {
-        alert(`Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`);
+        const notificationMessage = formData.doctorSelectionType === 'previous' && formData.preferredDoctorId
+          ? `Service request created successfully! Your selected doctor has been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`
+          : `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+        
+        alert(notificationMessage);
         setShowRequestForm(false);
         setFormData({
           serviceType: '',
           description: '',
           estimatedDuration: 1,
           preferredDoctorId: null,
+          doctorSelectionType: 'any',
         });
         console.log('🔄 Manually refreshing after creating service request');
         await fetchServiceRequests();
@@ -585,7 +711,7 @@ export default function BusinessDashboard() {
               </div>
               
               <button
-                onClick={() => setShowRequestForm(true)}
+                onClick={handleOpenRequestForm}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -638,7 +764,7 @@ export default function BusinessDashboard() {
               
               <button
                 onClick={() => {
-                  setShowRequestForm(true);
+                  handleOpenRequestForm();
                   const mobileMenu = document.getElementById('mobile-menu-business');
                   if (mobileMenu) mobileMenu.classList.add('hidden');
                 }}
@@ -1265,27 +1391,112 @@ export default function BusinessDashboard() {
 
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Preferred Doctor
+                  Doctor Selection *
                 </label>
                 <select
-                  name="preferredDoctorId"
-                  value={formData.preferredDoctorId || ''}
+                  name="doctorSelectionType"
+                  value={formData.doctorSelectionType}
                   onChange={handleInputChange}
+                  required
                   className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 >
-                  <option value="">Any available doctor</option>
-                  {nearbyDoctors.map((doctor) => (
-                    <option key={doctor.id} value={doctor.id}>
-                      Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
-                    </option>
-                  ))}
+                  <option value="any">Any available doctor</option>
+                  <option value="previous">Previously worked with doctors</option>
                 </select>
-                {formData.preferredDoctorId && (
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                    Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
-                  </p>
-                )}
               </div>
+
+              {formData.doctorSelectionType === 'previous' && (
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Select Previous Doctor *
+                  </label>
+                  {loadingPreviousDoctors ? (
+                    <div className={`flex items-center justify-center py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      Loading previous doctors...
+                    </div>
+                  ) : previousDoctors.filter(doctor => doctor.isAvailable).length > 0 ? (
+                    <>
+                      <select
+                        name="preferredDoctorId"
+                        value={formData.preferredDoctorId || ''}
+                        onChange={handleInputChange}
+                        required
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      >
+                        <option value="">Select a previous doctor</option>
+                        {previousDoctors
+                          .filter(doctor => doctor.isAvailable)
+                          .map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} ({formatCurrency(doctor.hourlyRate)}/hr)
+                            </option>
+                          ))}
+                      </select>
+                      <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
+                          ✅ Showing {previousDoctors.filter(doctor => doctor.isAvailable).length} available doctor(s) you've worked with before
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'}`}>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {previousDoctors.length === 0 
+                          ? "No previously worked with doctors found. You need to complete at least one service request first."
+                          : "None of your previous doctors are currently available. Please try the 'Any available doctor' option instead."
+                        }
+                      </p>
+                      {previousDoctors.length > 0 && (
+                        <div className="mt-2">
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            Previous doctors ({previousDoctors.filter(doctor => !doctor.isAvailable).length} unavailable):
+                          </p>
+                          <ul className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
+                            {previousDoctors
+                              .filter(doctor => !doctor.isAvailable)
+                              .slice(0, 3)
+                              .map((doctor) => (
+                                <li key={doctor.id}>
+                                  • Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                                </li>
+                              ))}
+                            {previousDoctors.filter(doctor => !doctor.isAvailable).length > 3 && (
+                              <li>... and {previousDoctors.filter(doctor => !doctor.isAvailable).length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {formData.doctorSelectionType === 'any' && (
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Preferred Doctor (Optional)
+                  </label>
+                  <select
+                    name="preferredDoctorId"
+                    value={formData.preferredDoctorId || ''}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  >
+                    <option value="">Any available doctor</option>
+                    {nearbyDoctors.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
+                      </option>
+                    ))}
+                  </select>
+                  {formData.preferredDoctorId && (
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                      Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
