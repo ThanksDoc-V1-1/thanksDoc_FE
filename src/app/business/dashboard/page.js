@@ -63,6 +63,8 @@ export default function BusinessDashboard() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [requestHours, setRequestHours] = useState(1);
   const [quickRequestServiceType, setQuickRequestServiceType] = useState('');
+  const [quickRequestServiceDate, setQuickRequestServiceDate] = useState('');
+  const [quickRequestServiceTime, setQuickRequestServiceTime] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const requestsPerPage = 5;
 
@@ -365,6 +367,20 @@ export default function BusinessDashboard() {
       return;
     }
 
+    // Validate date and time
+    if (!quickRequestServiceDate || !quickRequestServiceTime) {
+      alert('Please select the date and time when you need the service.');
+      return;
+    }
+
+    // Validation: Check if service date is not in the past
+    const serviceDateTime = new Date(`${quickRequestServiceDate}T${quickRequestServiceTime}`);
+    const now = new Date();
+    if (serviceDateTime <= now) {
+      alert('Service date and time must be in the future.');
+      return;
+    }
+
     setLoading(true);
     try {
       const serviceAmount = (selectedDoctor.hourlyRate || 0) * parseFloat(requestHours);
@@ -378,7 +394,8 @@ export default function BusinessDashboard() {
         description: `${quickRequestServiceType} service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
-        estimatedCost: totalWithServiceCharge
+        estimatedCost: totalWithServiceCharge,
+        serviceDateTime: serviceDateTime.toISOString() // Send combined date and time
       };
 
       const response = await serviceRequestAPI.createDirectRequest(requestData);
@@ -389,6 +406,8 @@ export default function BusinessDashboard() {
         setSelectedDoctor(null);
         setRequestHours(1);
         setQuickRequestServiceType('');
+        setQuickRequestServiceDate('');
+        setQuickRequestServiceTime('');
         fetchServiceRequests(); // Refresh the requests list
       }
     } catch (error) {
@@ -1683,6 +1702,36 @@ export default function BusinessDashboard() {
                   <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} service charge)</span>
                 </p>
               </div>
+              
+              {/* Date and Time Fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Service Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={quickRequestServiceDate}
+                    onChange={(e) => setQuickRequestServiceDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Service Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={quickRequestServiceTime}
+                    onChange={(e) => setQuickRequestServiceTime(e.target.value)}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    required
+                  />
+                </div>
+              </div>
+              
               <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'} p-4 rounded-lg border`}>
                 <h4 className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2 flex items-center`}>
                   <div className={`${isDarkMode ? 'bg-blue-900/50' : 'bg-blue-100'} p-1 rounded mr-2`}>
@@ -1703,6 +1752,8 @@ export default function BusinessDashboard() {
                     setSelectedDoctor(null);
                     setRequestHours(1);
                     setQuickRequestServiceType('');
+                    setQuickRequestServiceDate('');
+                    setQuickRequestServiceTime('');
                   }}
                   className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
                 >
@@ -1710,7 +1761,7 @@ export default function BusinessDashboard() {
                 </button>
                 <button
                   onClick={handleSubmitQuickRequest}
-                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceType}
+                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceType || !quickRequestServiceDate || !quickRequestServiceTime}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
                   {loading ? 'Sending...' : 'Send Request'}
