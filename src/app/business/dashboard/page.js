@@ -656,11 +656,13 @@ export default function BusinessDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              <button 
+                onClick={() => router.push('/business/expenditure')}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-400 font-medium">Total Requests</p>
@@ -676,12 +678,14 @@ export default function BusinessDashboard() {
                     }`} />
                   </div>
                 </div>
-              </div>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              </button>
+              <button 
+                onClick={() => router.push('/business/expenditure?filter=active')}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-yellow-400 font-medium">Active Requests</p>
@@ -697,12 +701,14 @@ export default function BusinessDashboard() {
                     }`} />
                   </div>
                 </div>
-              </div>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              </button>
+              <button 
+                onClick={() => router.push('/business/expenditure?filter=completed')}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-green-400 font-medium">Completed</p>
@@ -718,28 +724,26 @@ export default function BusinessDashboard() {
                     }`} />
                   </div>
                 </div>
-              </div>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              </button>
+              <button 
+                onClick={() => router.push('/business/expenditure')}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-400 font-medium">Total Spent</p>
+                    <p className="text-sm font-medium" style={{color: '#0F9297'}}>Total Spent</p>
                     <p className={`text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{formatCurrency(stats.totalSpent)}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
-                    isDarkMode ? 'bg-purple-900/30' : 'bg-purple-600'
-                  }`}>
-                    <User className={`h-6 w-6 ${
-                      isDarkMode ? 'text-purple-400' : 'text-white'
-                    }`} />
+                  <div className={`p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <DollarSign className={`h-6 w-6`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Quick Actions */}
@@ -1120,9 +1124,9 @@ export default function BusinessDashboard() {
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{business.description}</span>
                   </div>
                 )}
-                <div className={`flex justify-between items-center py-2 ${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 rounded-lg mt-4`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>Total Spent:</span>
-                  <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-bold text-lg`}>{formatCurrency(stats.totalSpent)}</span>
+                <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
+                  <span className={`font-medium`} style={{color: '#0F9297'}}>Total Spent:</span>
+                  <span className={`font-bold text-lg`} style={{color: '#0F9297'}}>{formatCurrency(stats.totalSpent)}</span>
                 </div>
               </div>
             </div>
