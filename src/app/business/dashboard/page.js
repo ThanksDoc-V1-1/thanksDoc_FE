@@ -69,6 +69,9 @@ export default function BusinessDashboard() {
     email: '',
     phone: '',
     address: '',
+    city: '',
+    state: '',
+    zipCode: '',
     description: ''
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
@@ -213,6 +216,9 @@ export default function BusinessDashboard() {
       email: business?.email || '',
       phone: business?.phone || '',
       address: business?.address || '',
+      city: business?.city || '',
+      state: business?.state || '',
+      zipCode: business?.zipCode || '',
       description: business?.description || ''
     });
     setShowEditProfile(true);
@@ -260,6 +266,9 @@ export default function BusinessDashboard() {
       email: '',
       phone: '',
       address: '',
+      city: '',
+      state: '',
+      zipCode: '',
       description: ''
     });
   };
@@ -1654,6 +1663,48 @@ export default function BusinessDashboard() {
                     onChange={handleProfileInputChange}
                     className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Enter business address"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={editProfileData.city}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter city"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    name="state"
+                    value={editProfileData.state}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter state"
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    name="zipCode"
+                    value={editProfileData.zipCode}
+                    onChange={handleProfileInputChange}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter postal code"
                   />
                 </div>
 
