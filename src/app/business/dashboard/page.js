@@ -52,6 +52,8 @@ export default function BusinessDashboard() {
     estimatedDuration: 1,
     preferredDoctorId: null,
     doctorSelectionType: 'any', // 'any' or 'previous'
+    serviceDate: '',
+    serviceTime: '',
   });
   const [previousDoctors, setPreviousDoctors] = useState([]);
   const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
@@ -469,12 +471,29 @@ export default function BusinessDashboard() {
         }
       }
 
+      // Validation: Check if service date and time are provided
+      if (!formData.serviceDate || !formData.serviceTime) {
+        alert('Please provide both service date and time.');
+        setLoading(false);
+        return;
+      }
+
+      // Validation: Check if service date is not in the past
+      const serviceDateTime = new Date(`${formData.serviceDate}T${formData.serviceTime}`);
+      const now = new Date();
+      if (serviceDateTime <= now) {
+        alert('Service date and time must be in the future.');
+        setLoading(false);
+        return;
+      }
+
       const requestData = {
         businessId: user.id,
         ...formData,
         urgencyLevel: 'medium', // Default urgency level since we removed it from UI
         estimatedDuration: parseInt(formData.estimatedDuration),
-        serviceCharge: SERVICE_CHARGE
+        serviceCharge: SERVICE_CHARGE,
+        serviceDateTime: serviceDateTime.toISOString(), // Send combined date and time
       };
 
       const response = await serviceRequestAPI.createServiceRequest(requestData);
@@ -492,6 +511,8 @@ export default function BusinessDashboard() {
           estimatedDuration: 1,
           preferredDoctorId: null,
           doctorSelectionType: 'any',
+          serviceDate: '',
+          serviceTime: '',
         });
         console.log('🔄 Manually refreshing after creating service request');
         await fetchServiceRequests();
@@ -1361,8 +1382,8 @@ export default function BusinessDashboard() {
       {/* Request Form Modal */}
       {showRequestForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-md w-full border`}>
-            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-lg w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg flex-shrink-0`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                   <Plus className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
@@ -1370,7 +1391,8 @@ export default function BusinessDashboard() {
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Request a Doctor</h2>
               </div>
             </div>
-            <form onSubmit={handleSubmitRequest} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitRequest} className="flex flex-col flex-1 min-h-0">
+              <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Service Type *
@@ -1528,12 +1550,53 @@ export default function BusinessDashboard() {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Service Date *
+                  </label>
+                  <input
+                    type="date"
+                    name="serviceDate"
+                    value={formData.serviceDate}
+                    onChange={handleInputChange}
+                    required
+                    min={new Date().toISOString().split('T')[0]}
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  />
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Service Time *
+                  </label>
+                  <input
+                    type="time"
+                    name="serviceTime"
+                    value={formData.serviceTime}
+                    onChange={handleInputChange}
+                    required
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  />
+                </div>
+              </div>
+
+              <div className={`${isDarkMode ? 'bg-yellow-900/20 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} p-3 rounded-lg border`}>
+                <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'} font-medium`}>
+                  📅 Please select when you need the medical service. The date and time must be in the future.
+                </p>
+              </div>
+
               {/* Service Charge Notice */}
               <div className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} p-3 rounded-lg border`}>
                 <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} font-medium`}>
                   ℹ️ Service Charge: A {formatCurrency(SERVICE_CHARGE)} service charge will be added to your final payment.
                 </p>
-              </div>                <div className="flex space-x-3 pt-4">
+              </div>
+              </div>
+              
+              <div className={`p-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} flex-shrink-0`}>
+                <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -1544,6 +1607,9 @@ export default function BusinessDashboard() {
                       description: '',
                       estimatedDuration: 1,
                       preferredDoctorId: null,
+                      doctorSelectionType: 'any',
+                      serviceDate: '',
+                      serviceTime: '',
                     });
                   }}
                   className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
@@ -1557,6 +1623,7 @@ export default function BusinessDashboard() {
                 >
                   {loading ? 'Requesting...' : 'Request Doctor'}
                 </button>
+                </div>
               </div>
             </form>
           </div>

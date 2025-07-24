@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -1265,22 +1265,36 @@ export default function DoctorDashboard() {
                               {formatDate(request.requestedAt)}
                             </span>
                           </div>
-                          <h3 className={`font-semibold mb-1 ${
+                          
+                          {/* Service Date/Time Display */}
+                          {/* Business Name - Made more prominent */}
+                          <h2 className={`text-lg font-bold mb-2 ${
                             isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`} style={{color: '#0F9297'}}>{request.business?.businessName || 'Business'}</h2>
+                          
+                          {request.requestedServiceDateTime && (
+                            <div className={`mb-3 p-2 rounded-lg border ${
+                              isDarkMode 
+                                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
+                                : 'bg-blue-50 border-blue-200 text-blue-700'
+                            }`}>
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm font-medium">
+                                  Service Requested for: {formatDate(request.requestedServiceDateTime)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <h3 className={`font-medium mb-1 text-sm ${
+                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
                           }`}>{request.serviceType}</h3>
                           <p className={`text-sm mb-3 ${
                             isDarkMode ? 'text-gray-400' : 'text-gray-600'
                           }`}>{request.description}</p>
                           
                           <div className="flex items-center space-x-4 text-sm">
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'bg-gray-800/50' 
-                                : 'bg-gray-100'
-                            }`} style={{color: '#0F9297', backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
-                              <Building2 className="h-4 w-4" style={{color: '#0F9297'}} />
-                              <span className="font-medium" style={{color: '#0F9297'}}>{request.business?.businessName || 'Business'}</span>
-                            </div>
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
                               isDarkMode 
                                 ? 'text-gray-400 bg-gray-700/50' 
@@ -1294,7 +1308,6 @@ export default function DoctorDashboard() {
                                 ? 'text-green-400 bg-green-900/20' 
                                 : 'text-green-600 bg-green-50'
                             }`}>
-                              <DollarSign className="h-4 w-4" />
                               <span className="font-semibold">£{((doctor.hourlyRate || 0) * (request.estimatedDuration || 1)).toFixed(2)}</span>
                             </div>
                           </div>
@@ -1620,6 +1633,23 @@ export default function DoctorDashboard() {
                           </div>
                           <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>{request.serviceType}</h3>
                           <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-2`}>{request.description}</p>
+                          
+                          {/* Service Date/Time Display */}
+                          {request.requestedServiceDateTime && (
+                            <div className={`mb-2 p-2 rounded border ${
+                              isDarkMode 
+                                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
+                                : 'bg-blue-50 border-blue-200 text-blue-700'
+                            }`}>
+                              <div className="flex items-center space-x-1">
+                                <Clock className="h-3 w-3" />
+                                <span className="text-xs font-medium">
+                                  Service for: {formatDate(request.requestedServiceDateTime)}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
                           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             Requested: {formatDate(request.requestedAt)}
                           </p>
