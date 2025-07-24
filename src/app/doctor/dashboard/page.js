@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User, Banknote } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, DollarSign, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -1042,29 +1042,31 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </div>
-              <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
-                isDarkMode 
-                  ? 'bg-gray-900 border-gray-800' 
-                  : 'bg-white border-gray-200'
-              }`}>
+              <button 
+                onClick={() => router.push('/doctor/earnings')}
+                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-400 font-medium">My Requests</p>
+                    <p className="text-sm text-blue-400 font-medium">My Earnings</p>
                     <p className={`text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>{stats.myRequests}</p>
+                    }`}>£{(stats.totalEarnings || 0).toFixed(2)}</p>
                   </div>
                   <div className={`p-3 rounded-lg ${
                     isDarkMode 
                       ? 'bg-blue-900/30' 
                       : 'bg-blue-600'
                   }`}>
-                    <Stethoscope className={`h-6 w-6 ${
+                    <TrendingUp className={`h-6 w-6 ${
                       isDarkMode ? 'text-blue-400' : 'text-white'
                     }`} />
                   </div>
                 </div>
-              </div>
+              </button>
               <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
                 isDarkMode 
                   ? 'bg-gray-900 border-gray-800' 

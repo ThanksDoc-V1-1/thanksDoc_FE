@@ -9,10 +9,48 @@ const api = axios.create({
   },
 });
 
+// Add request interceptor to include JWT token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('jwt');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle authentication errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear invalid tokens
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('user');
+      
+      // Redirect to appropriate login page based on current path
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/admin')) {
+        window.location.href = '/admin/login';
+      } else if (currentPath.includes('/doctor')) {
+        window.location.href = '/doctor/login';
+      } else if (currentPath.includes('/business')) {
+        window.location.href = '/business/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Doctor API calls
 export const doctorAPI = {
   getAll: () => api.get('/doctors'),
   getById: (id) => api.get(`/doctors/${id}`),
+  getProfile: () => api.get('/doctors/profile'), // Get current doctor's profile
   create: (data) => api.post('/doctors', { data }),
   update: (id, data) => api.put(`/doctors/${id}`, { data }),
   updateProfile: (id, data) => {
