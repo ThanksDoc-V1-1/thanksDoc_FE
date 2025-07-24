@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Stethoscope, ArrowLeft, MapPin, Eye, EyeOff } from 'lucide-react';
-import { authAPI } from '../../../lib/api';
+import { authAPI, serviceAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -17,6 +17,8 @@ export default function DoctorRegister() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [services, setServices] = useState({ inPerson: [], online: [] });
+  const [servicesLoading, setServicesLoading] = useState(true);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -38,6 +40,7 @@ export default function DoctorRegister() {
     certifications: [],
     latitude: '',
     longitude: '',
+    selectedServices: [] // Add services array
   });
 
   const handleInputChange = (e) => {
@@ -45,6 +48,46 @@ export default function DoctorRegister() {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  // Load services on component mount
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        setServicesLoading(true);
+        const [inPersonResponse, onlineResponse] = await Promise.all([
+          serviceAPI.getByCategory('in-person'),
+          serviceAPI.getByCategory('online')
+        ]);
+        
+        setServices({
+          inPerson: inPersonResponse.data.data || [],
+          online: onlineResponse.data.data || []
+        });
+      } catch (error) {
+        console.error('Error loading services:', error);
+        // Show error message instead of fallback services
+        alert('Unable to load services. Please try again or contact support.');
+        setServices({
+          inPerson: [],
+          online: []
+        });
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+
+    loadServices();
+  }, []);
+
+  // Handle service selection
+  const handleServiceToggle = (serviceId) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedServices: prev.selectedServices.includes(serviceId)
+        ? prev.selectedServices.filter(id => id !== serviceId)
+        : [...prev.selectedServices, serviceId]
     }));
   };
 
@@ -85,14 +128,21 @@ export default function DoctorRegister() {
       if (!formData.latitude || !formData.longitude) {
         throw new Error('Please provide your location coordinates');
       }
+      if (formData.selectedServices.length === 0) {
+        throw new Error('Please select at least one service you offer');
+      }
 
-      const { confirmPassword, ...dataToSend } = {
+      const { confirmPassword, selectedServices, specialisation, licenceNumber, postcode, ...dataToSend } = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`, // Add combined name field
+        specialization: formData.specialisation, // Map specialisation to specialization
+        licenseNumber: formData.licenceNumber, // Map licenceNumber to licenseNumber
+        zipCode: formData.postcode, // Map postcode to zipCode
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
         yearsOfExperience: parseInt(formData.yearsOfExperience),
         hourlyRate: parseFloat(formData.hourlyRate),
+        services: formData.selectedServices // Add services to the data
       };
 
       // Use the new authentication API
@@ -376,6 +426,84 @@ export default function DoctorRegister() {
                     placeholder="Brief bio about yourself and experience"
                   />
                 </div>
+              </div>
+
+              {/* Services Offered */}
+              <div className="space-y-4">
+                <h2 className="form-section-heading">Services You Offer</h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+                  Select the services you provide to help businesses find you
+                </p>
+                
+                {servicesLoading ? (
+                  <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Loading services...
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* In-Person Services */}
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        In-Person Services
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {services.inPerson.map((service) => (
+                          <label
+                            key={service.id}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                              formData.selectedServices.includes(service.id)
+                                ? isDarkMode
+                                  ? 'border-blue-500 bg-blue-900/20 text-blue-300'
+                                  : 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDarkMode
+                                  ? 'border-gray-600 hover:border-gray-500 text-gray-300'
+                                  : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.selectedServices.includes(service.id)}
+                              onChange={() => handleServiceToggle(service.id)}
+                              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm font-medium">{service.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Online Services */}
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Online Services
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {services.online.map((service) => (
+                          <label
+                            key={service.id}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                              formData.selectedServices.includes(service.id)
+                                ? isDarkMode
+                                  ? 'border-blue-500 bg-blue-900/20 text-blue-300'
+                                  : 'border-blue-500 bg-blue-50 text-blue-700'
+                                : isDarkMode
+                                  ? 'border-gray-600 hover:border-gray-500 text-gray-300'
+                                  : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.selectedServices.includes(service.id)}
+                              onChange={() => handleServiceToggle(service.id)}
+                              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm font-medium">{service.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Location Information */}
