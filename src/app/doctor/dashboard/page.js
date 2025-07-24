@@ -1099,7 +1099,7 @@ export default function DoctorDashboard() {
                     <p className={`text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
-                      ${doctor.hourlyRate || 0}
+                      £{doctor.hourlyRate || 0}
                     </p>
                   </div>
                   <div className={`p-3 rounded-lg ${
