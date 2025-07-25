@@ -155,6 +155,14 @@ export default function BusinessDashboard() {
     };
   }, [autoRefresh, user?.id]);
 
+  // Log whenever service requests change
+  useEffect(() => {
+    if (serviceRequests.length > 0) {
+      console.log('💼 Current service requests state:', serviceRequests);
+      console.log('✅ Requests with isPaid:', serviceRequests.filter(req => req.isPaid).length);
+    }
+  }, [serviceRequests]);
+
   // Show loading screen while authentication is being checked
   if (authLoading) {
     return (
@@ -881,56 +889,6 @@ export default function BusinessDashboard() {
     // Scroll back to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  // Authentication check - redirect if not authenticated or not business
-  useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated || !user) {
-        console.log('🚫 No authentication, redirecting to home');
-        window.location.href = '/';
-        return;
-      }
-      
-      if (user.role !== 'business') {
-        console.log('🚫 Not business role, redirecting to home');
-        window.location.href = '/';
-        return;
-      }
-      
-      console.log('✅ Business authenticated, loading dashboard');
-    }
-  }, [authLoading, isAuthenticated, user]);
-
-  // Log whenever service requests change
-  useEffect(() => {
-    if (serviceRequests.length > 0) {
-      console.log('💼 Current service requests state:', serviceRequests);
-      console.log('✅ Requests with isPaid:', serviceRequests.filter(req => req.isPaid).length);
-    }
-  }, [serviceRequests]);
-
-  // Don't render anything if not authenticated
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-300">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user || user.role !== 'business') {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <p className="text-gray-300">Access Denied</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={`min-h-screen transition-colors ${
