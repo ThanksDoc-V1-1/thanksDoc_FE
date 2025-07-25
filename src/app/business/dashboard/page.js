@@ -584,8 +584,13 @@ export default function BusinessDashboard() {
     // If service selection changes, fetch doctors for that service
     if (name === 'serviceId') {
       setSelectedServiceId(value);
+      
+      // Find the selected service to get its name for serviceType
+      const selectedService = availableServices.find(service => service.id.toString() === value);
+      
       setFormData(prev => ({
         ...prev,
+        serviceType: selectedService ? selectedService.name : '', // Update serviceType when service changes
         preferredDoctorId: null // Reset selected doctor when service changes
       }));
       
