@@ -1405,28 +1405,28 @@ export default function DoctorDashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Stats Cards */}
-            <div className="grid md:grid-cols-4 gap-4">
+            {/* Stats Cards - Mobile responsive */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               <button 
                 onClick={handlePendingRequestsClick}
-                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-yellow-400 font-medium">Pending Requests</p>
-                    <p className={`text-2xl font-bold ${
+                    <p className="text-xs lg:text-sm text-yellow-400 font-medium">Pending Requests</p>
+                    <p className={`text-xl lg:text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.pendingRequests}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
+                  <div className={`p-2 lg:p-3 rounded-lg ${
                     isDarkMode 
                       ? 'bg-yellow-900/30' 
                       : 'bg-yellow-600'
                   }`}>
-                    <Clock className={`h-6 w-6 ${
+                    <Clock className={`h-4 w-4 lg:h-6 lg:w-6 ${
                       isDarkMode ? 'text-yellow-400' : 'text-white'
                     }`} />
                   </div>
@@ -1434,24 +1434,24 @@ export default function DoctorDashboard() {
               </button>
               <button 
                 onClick={handleCompletedRequestsClick}
-                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-400 font-medium">Completed</p>
-                    <p className={`text-2xl font-bold ${
+                    <p className="text-xs lg:text-sm text-green-400 font-medium">Completed</p>
+                    <p className={`text-xl lg:text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.completedRequests}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
+                  <div className={`p-2 lg:p-3 rounded-lg ${
                     isDarkMode 
                       ? 'bg-green-900/30' 
                       : 'bg-green-600'
                   }`}>
-                    <Check className={`h-6 w-6 ${
+                    <Check className={`h-4 w-4 lg:h-6 lg:w-6 ${
                       isDarkMode ? 'text-green-400' : 'text-white'
                     }`} />
                   </div>
@@ -1459,26 +1459,26 @@ export default function DoctorDashboard() {
               </button>
               <button 
                 onClick={handleHourlyRateClick}
-                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-400 font-medium">Hourly Rate</p>
-                    <p className={`text-2xl font-bold ${
+                    <p className="text-xs lg:text-sm text-purple-400 font-medium">Hourly Rate</p>
+                    <p className={`text-xl lg:text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
                       £{doctor.hourlyRate || 0}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
+                  <div className={`p-2 lg:p-3 rounded-lg ${
                     isDarkMode 
                       ? 'bg-purple-900/30' 
                       : 'bg-purple-600'
                   }`}>
-                    <Banknote className={`h-6 w-6 ${
+                    <Banknote className={`h-4 w-4 lg:h-6 lg:w-6 ${
                       isDarkMode ? 'text-purple-400' : 'text-white'
                     }`} />
                   </div>
@@ -1486,20 +1486,20 @@ export default function DoctorDashboard() {
               </button>
               <button 
                 onClick={() => router.push('/doctor/earnings')}
-                className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium" style={{color: '#0F9297'}}>My Earnings</p>
-                    <p className={`text-2xl font-bold ${
+                    <p className="text-xs lg:text-sm font-medium" style={{color: '#0F9297'}}>My Earnings</p>
+                    <p className={`text-xl lg:text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>£{(stats.totalEarnings || 0).toFixed(2)}</p>
                   </div>
-                  <div className={`p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                    <TrendingUp className={`h-6 w-6 ${
+                  <div className={`p-2 lg:p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <TrendingUp className={`h-4 w-4 lg:h-6 lg:w-6 ${
                       isDarkMode ? 'text-white' : 'text-white'
                     }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
@@ -1920,18 +1920,18 @@ export default function DoctorDashboard() {
 
         {/* Recent Service Requests Section - Side by side with My Services */}
         <div id="recent-requests-section" className="mt-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Recent Service Requests - Takes 2 columns */}
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+            {/* Recent Service Requests - Takes 2 columns on desktop, full width on mobile */}
+            <div className="lg:col-span-2 order-1 lg:order-1">
               <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
-            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
-              <div className="flex items-center justify-between mb-4">
+            <div className={`p-4 lg:p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                     <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
                   <div>
-                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h2 className={`text-lg lg:text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {requestFilter === 'completed' ? 'Completed Service Requests' : 'Recent Service Requests'}
                     </h2>
                     {requestFilter !== 'all' && (
@@ -1958,32 +1958,32 @@ export default function DoctorDashboard() {
                 })()}
               </div>
               
-              {/* Date Filter Controls */}
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <div className="flex items-center space-x-2">
-                  <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              {/* Date Filter Controls - Mobile responsive */}
+              <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     From:
                   </label>
                   <input
                     type="date"
                     value={dateFromFilter}
                     onChange={(e) => setDateFromFilter(e.target.value)}
-                    className={`px-3 py-1 text-sm rounded border ${
+                    className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
                       isDarkMode 
                         ? 'bg-gray-800 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
                     } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                   />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     To:
                   </label>
                   <input
                     type="date"
                     value={dateToFilter}
                     onChange={(e) => setDateToFilter(e.target.value)}
-                    className={`px-3 py-1 text-sm rounded border ${
+                    className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
                       isDarkMode 
                         ? 'bg-gray-800 border-gray-600 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
@@ -1993,7 +1993,7 @@ export default function DoctorDashboard() {
                 {(dateFromFilter || dateToFilter) && (
                   <button
                     onClick={clearDateFilters}
-                    className={`px-3 py-1 text-sm rounded border transition-colors ${
+                    className={`w-full sm:w-auto px-3 py-1 text-sm rounded border transition-colors ${
                       isDarkMode 
                         ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
                         : 'border-gray-300 text-gray-600 hover:bg-gray-100'
@@ -2096,58 +2096,144 @@ export default function DoctorDashboard() {
                     {/* Pagination Controls */}
                     {totalPages > 1 && (
                       <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
-                        <div className="flex items-center justify-between">
-                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} order-2 sm:order-1`}>
                             Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} requests
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2 order-1 sm:order-2">
                             <button
                               onClick={() => handlePageChange(currentPage - 1)}
                               disabled={!hasPrevPage}
-                              className={`px-3 py-1 rounded border transition-colors ${
+                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 !hasPrevPage
                                   ? isDarkMode 
-                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed' 
-                                    : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
+                                    : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
                                   : isDarkMode 
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                              }`}
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
+                              } disabled:opacity-50`}
                             >
                               Previous
                             </button>
                             
-                            {/* Page Numbers */}
-                            <div className="flex space-x-1">
-                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                <button
-                                  key={page}
-                                  onClick={() => handlePageChange(page)}
-                                  className={`px-3 py-1 rounded border transition-colors ${
-                                    page === currentPage
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : isDarkMode 
-                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                                  }`}
-                                >
-                                  {page}
-                                </button>
-                              ))}
+                            {/* Page Numbers - Mobile optimized with simplified display */}
+                            <div className="flex items-center space-x-1">
+                              {/* Simple mobile pagination - show only current page info and basic controls */}
+                              <div className="hidden sm:flex space-x-1 overflow-x-auto max-w-sm scrollbar-hide">
+                                {(() => {
+                                  const maxVisiblePages = 3; // Reduced further for better mobile fit
+                                  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                                  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                                  
+                                  // Adjust start page if we're near the end
+                                  if (endPage - startPage + 1 < maxVisiblePages) {
+                                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                                  }
+                                  
+                                  const pages = [];
+                                  
+                                  // Add first page if not in visible range
+                                  if (startPage > 1) {
+                                    pages.push(
+                                      <button
+                                        key={1}
+                                        onClick={() => handlePageChange(1)}
+                                        className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                          currentPage === 1
+                                            ? 'bg-blue-600 text-white'
+                                            : isDarkMode 
+                                              ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                              : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        1
+                                      </button>
+                                    );
+                                    
+                                    if (startPage > 2) {
+                                      pages.push(
+                                        <span key="ellipsis1" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                          ...
+                                        </span>
+                                      );
+                                    }
+                                  }
+                                  
+                                  // Add visible page range
+                                  for (let i = startPage; i <= endPage; i++) {
+                                    if (i !== 1 && i !== totalPages) {
+                                      pages.push(
+                                        <button
+                                          key={i}
+                                          onClick={() => handlePageChange(i)}
+                                          className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                            currentPage === i
+                                              ? 'bg-blue-600 text-white'
+                                              : isDarkMode 
+                                                ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                                : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          {i}
+                                        </button>
+                                      );
+                                    }
+                                  }
+                                  
+                                  // Add last page if not in visible range
+                                  if (endPage < totalPages) {
+                                    if (endPage < totalPages - 1) {
+                                      pages.push(
+                                        <span key="ellipsis2" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                          ...
+                                        </span>
+                                      );
+                                    }
+                                    
+                                    pages.push(
+                                      <button
+                                        key={totalPages}
+                                        onClick={() => handlePageChange(totalPages)}
+                                        className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                          currentPage === totalPages
+                                            ? 'bg-blue-600 text-white'
+                                            : isDarkMode 
+                                              ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                              : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {totalPages}
+                                      </button>
+                                    );
+                                  }
+                                  
+                                  return pages;
+                                })()}
+                              </div>
+                              
+                              {/* Mobile-only simple page indicator */}
+                              <div className={`sm:hidden px-3 py-1 text-sm rounded border ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-600 text-gray-300' 
+                                  : 'bg-gray-100 border-gray-300 text-gray-600'
+                              }`}>
+                                {currentPage} / {totalPages}
+                              </div>
                             </div>
                             
                             <button
                               onClick={() => handlePageChange(currentPage + 1)}
                               disabled={!hasNextPage}
-                              className={`px-3 py-1 rounded border transition-colors ${
+                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                                 !hasNextPage
                                   ? isDarkMode 
-                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed' 
-                                    : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
+                                    : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
                                   : isDarkMode 
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                              }`}
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
+                              } disabled:opacity-50`}
                             >
                               Next
                             </button>
@@ -2184,10 +2270,10 @@ export default function DoctorDashboard() {
               </div>
             </div>
             
-            {/* My Services Section in Sidebar - Takes 1 column */}
-            <div className="lg:col-span-1">
-              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
-                <div className="flex items-center justify-between mb-4">
+            {/* My Services Section - Mobile responsive order */}
+            <div className="lg:col-span-1 order-2 lg:order-2">
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-4 lg:p-6`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                       <Settings className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
@@ -2196,7 +2282,7 @@ export default function DoctorDashboard() {
                   </div>
                   <button
                     onClick={handleManageServices}
-                    className={`px-4 py-2 rounded-lg transition-colors ${
+                    className={`w-full sm:w-auto px-4 py-2 rounded-lg transition-colors ${
                       isDarkMode 
                         ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -2209,30 +2295,30 @@ export default function DoctorDashboard() {
                 
                 <div className="space-y-2">
                   {doctorServices.length === 0 ? (
-                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>No services selected yet.</p>
-                      <p className="text-sm">Click "Manage Services" to add services you offer.</p>
+                    <div className={`text-center py-6 lg:py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Stethoscope className="h-10 w-10 lg:h-12 lg:w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm lg:text-base">No services selected yet.</p>
+                      <p className="text-xs lg:text-sm">Click "Manage Services" to add services you offer.</p>
                     </div>
                   ) : (
                     doctorServices.map((service) => (
                       <div 
                         key={service.id} 
-                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border space-y-2 sm:space-y-0 ${
                           isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full ${
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                             service.category === 'in-person' 
                               ? 'bg-green-500' 
                               : 'bg-blue-500'
                           }`}></div>
-                          <div>
-                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <div className="flex-1">
+                            <div className={`font-medium text-sm lg:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                               {service.name}
-                            </span>
-                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            </div>
+                            <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${
                               service.category === 'in-person'
                                 ? isDarkMode 
                                   ? 'bg-green-900/30 text-green-400' 
@@ -2247,7 +2333,7 @@ export default function DoctorDashboard() {
                         </div>
                         <button
                           onClick={() => handleRemoveService(service.id)}
-                          className={`p-1 rounded-lg transition-colors ${
+                          className={`w-full sm:w-auto p-2 rounded-lg transition-colors ${
                             isDarkMode 
                               ? 'hover:bg-red-900/30 text-red-400' 
                               : 'hover:bg-red-100 text-red-600'
@@ -2255,7 +2341,7 @@ export default function DoctorDashboard() {
                           disabled={serviceLoading}
                           title="Remove service"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-4 w-4 mx-auto sm:mx-0" />
                         </button>
                       </div>
                     ))
