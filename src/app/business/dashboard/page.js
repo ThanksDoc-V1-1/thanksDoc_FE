@@ -107,19 +107,21 @@ export default function BusinessDashboard() {
       user: user ? { id: user.id, email: user.email, role: user.role } : null
     });
 
-    if (!authLoading) {
-      if (!isAuthenticated || !user) {
-        console.log('🚫 No authentication, redirecting to business login');
-        router.push('/business/login');
-        return;
-      }
-      
-      if (user.role !== 'business') {
-        console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
-        router.push('/');
-        return;
-      }
-      
+    // Only redirect if we're sure about the authentication state (not loading)
+    if (!authLoading && isAuthenticated === false) {
+      console.log('🚫 Not authenticated, redirecting to business login');
+      router.push('/business/login');
+      return;
+    }
+    
+    // Only check role if we have a user and are not loading
+    if (!authLoading && isAuthenticated && user && user.role !== 'business') {
+      console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
+      router.push('/');
+      return;
+    }
+    
+    if (!authLoading && isAuthenticated && user && user.role === 'business') {
       console.log('✅ Business authenticated, loading dashboard');
     }
   }, [authLoading, isAuthenticated, user, router]);
@@ -170,6 +172,18 @@ export default function BusinessDashboard() {
         <div className="text-center">
           <Building2 className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-pulse" />
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard if not authenticated or not business user
+  if (!isAuthenticated || !user || user.role !== 'business') {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Access denied. Please login as a business user.</p>
         </div>
       </div>
     );

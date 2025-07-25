@@ -63,19 +63,27 @@ export default function DoctorDashboard() {
 
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated || !user) {
-        console.log('🚫 No authentication, redirecting to home');
-        window.location.href = '/';
-        return;
-      }
-      
-      if (user.role !== 'doctor') {
-        console.log('🚫 Not doctor role, redirecting to home');
-        window.location.href = '/';
-        return;
-      }
-      
+    console.log('🔍 Doctor Dashboard - Auth state check:', {
+      authLoading,
+      isAuthenticated,
+      user: user ? { id: user.id, email: user.email, role: user.role } : null
+    });
+
+    // Only redirect if we're sure about the authentication state (not loading)
+    if (!authLoading && isAuthenticated === false) {
+      console.log('🚫 Not authenticated, redirecting to doctor login');
+      window.location.href = '/doctor/login';
+      return;
+    }
+    
+    // Only check role if we have a user and are not loading
+    if (!authLoading && isAuthenticated && user && user.role !== 'doctor') {
+      console.log('🚫 Not doctor role (got:', user.role, '), redirecting to home');
+      window.location.href = '/';
+      return;
+    }
+    
+    if (!authLoading && isAuthenticated && user && user.role === 'doctor') {
       console.log('✅ Doctor authenticated, loading dashboard');
     }
   }, [authLoading, isAuthenticated, user]);
