@@ -127,12 +127,18 @@ export default function DoctorDashboard() {
         console.log('✅ Doctor data received:', doctor);
         console.log('👤 Doctor ID from backend:', doctor.id);
         console.log('📧 Doctor email from backend:', doctor.email);
+        console.log('🔧 Doctor services from backend:', doctor.services);
+        console.log('🔧 Services type:', typeof doctor.services);
+        console.log('🔧 Services length:', doctor.services?.length);
         setDoctorData(doctor);
         setIsAvailable(doctor.isAvailable || false);
         
         // Load doctor's services
         if (doctor.services) {
+          console.log('✅ Setting doctor services:', doctor.services);
           setDoctorServices(doctor.services);
+        } else {
+          console.log('⚠️ No services found in doctor data');
         }
       } else {
         console.log('⚠️ No doctor data in response, falling back to user data');
