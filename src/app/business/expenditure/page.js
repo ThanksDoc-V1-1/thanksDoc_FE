@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, 
@@ -21,7 +21,8 @@ import { formatDate, formatCurrency } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 
-export default function BusinessExpenditure() {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function ExpenditureContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isAuthenticated, authLoading } = useAuth();
@@ -755,5 +756,29 @@ export default function BusinessExpenditure() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback component
+function ExpenditureLoading() {
+  const { isDarkMode } = useTheme();
+  
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          Loading expenditure data...
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function BusinessExpenditure() {
+  return (
+    <Suspense fallback={<ExpenditureLoading />}>
+      <ExpenditureContent />
+    </Suspense>
   );
 }
