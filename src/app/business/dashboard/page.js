@@ -255,7 +255,7 @@ export default function BusinessDashboard() {
         }
       });
 
-      // Now fetch current availability status for these doctors
+      // Now fetch current availability status and services for these doctors
       try {
         const availabilityPromises = Object.keys(uniqueDoctors).map(async (doctorId) => {
           try {
@@ -264,22 +264,52 @@ export default function BusinessDashboard() {
             const availableDoctors = availableResponse.data || [];
             const currentDoctor = availableDoctors.find(d => d.id.toString() === doctorId.toString());
             
+            console.log(`🔍 Checking doctor ${doctorId}:`, {
+              foundInAvailable: !!currentDoctor,
+              currentDoctorServices: currentDoctor?.services,
+              availableDoctorsCount: availableDoctors.length
+            });
+            
+            // Also fetch full doctor profile with services
+            let doctorWithServices = null;
+            try {
+              const profileResponse = await doctorAPI.getProfile(doctorId);
+              doctorWithServices = profileResponse.data;
+              console.log(`🔍 Doctor ${doctorId} profile services:`, doctorWithServices?.services);
+            } catch (profileErr) {
+              console.log(`Could not fetch profile for doctor ${doctorId}:`, profileErr);
+            }
+            
             if (currentDoctor) {
-              // Update with current availability and rate information
-              uniqueDoctors[doctorId] = {
+              // Update with current availability, rate information, and services
+              const updatedDoctor = {
                 ...uniqueDoctors[doctorId],
                 isAvailable: true, // If they're in the available list, they're available
                 hourlyRate: currentDoctor.hourlyRate || uniqueDoctors[doctorId].hourlyRate,
-                specialization: currentDoctor.specialisation || uniqueDoctors[doctorId].specialization
+                specialization: currentDoctor.specialisation || uniqueDoctors[doctorId].specialization,
+                services: currentDoctor.services || doctorWithServices?.services || [] // Prefer services from available endpoint, fallback to profile
               };
+              
+              console.log(`✅ Updated doctor ${doctorId}:`, {
+                name: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
+                isAvailable: updatedDoctor.isAvailable,
+                servicesCount: updatedDoctor.services?.length || 0,
+                services: updatedDoctor.services?.map(s => ({ id: s.id, name: s.name }))
+              });
+              
+              uniqueDoctors[doctorId] = updatedDoctor;
             } else {
-              // Doctor is not in available list, mark as unavailable
+              // Doctor is not in available list, mark as unavailable but still add services if available
               uniqueDoctors[doctorId].isAvailable = false;
+              uniqueDoctors[doctorId].services = doctorWithServices?.services || [];
+              
+              console.log(`❌ Doctor ${doctorId} not available, services:`, uniqueDoctors[doctorId].services?.map(s => ({ id: s.id, name: s.name })));
             }
           } catch (err) {
             console.error(`Error checking availability for doctor ${doctorId}:`, err);
             // Default to unavailable if we can't check
             uniqueDoctors[doctorId].isAvailable = false;
+            uniqueDoctors[doctorId].services = [];
           }
         });
 
@@ -509,17 +539,23 @@ export default function BusinessDashboard() {
       doctor: doctor?.firstName + ' ' + doctor?.lastName,
       doctorServices: doctor?.services,
       serviceId,
-      serviceIdType: typeof serviceId
+      serviceIdType: typeof serviceId,
+      servicesLength: doctor?.services?.length
     });
     
     if (!doctor?.services || !serviceId) {
-      console.log('❌ Missing doctor services or serviceId');
+      console.log('❌ Missing doctor services or serviceId:', {
+        hasServices: !!doctor?.services,
+        servicesLength: doctor?.services?.length,
+        hasServiceId: !!serviceId
+      });
       return false;
     }
     
     const hasService = doctor.services.some(service => {
       console.log('🔍 Comparing service:', {
         serviceIdFromDoctor: service.id,
+        serviceNameFromDoctor: service.name,
         serviceIdFromDropdown: serviceId,
         comparison: service.id.toString() === serviceId.toString()
       });
@@ -588,10 +624,20 @@ export default function BusinessDashboard() {
       // Find the selected service to get its name for serviceType
       const selectedService = availableServices.find(service => service.id.toString() === value);
       
+      // Check if currently selected doctor still offers the new service (for previous doctor selection)
+      let shouldResetDoctor = false;
+      if (formData.preferredDoctorId && formData.doctorSelectionType === 'previous' && value) {
+        const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+        if (selectedDoctor && !doctorOffersService(selectedDoctor, value)) {
+          shouldResetDoctor = true;
+          console.log('🔄 Selected doctor no longer offers the new service, resetting selection');
+        }
+      }
+      
       setFormData(prev => ({
         ...prev,
         serviceType: selectedService ? selectedService.name : '', // Update serviceType when service changes
-        preferredDoctorId: null // Reset selected doctor when service changes
+        preferredDoctorId: shouldResetDoctor || !value ? null : prev.preferredDoctorId // Reset selected doctor when service changes or doctor doesn't offer service
       }));
       
       // Fetch doctors for the selected service for any selection type
@@ -1628,7 +1674,12 @@ export default function BusinessDashboard() {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                       Loading previous doctors...
                     </div>
-                  ) : previousDoctors.filter(doctor => doctor.isAvailable).length > 0 ? (
+                  ) : previousDoctors.filter(doctor => {
+                      // Filter by availability and service if service is selected
+                      const isAvailable = doctor.isAvailable;
+                      const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                      return isAvailable && offersService;
+                    }).length > 0 ? (
                     <>
                       <select
                         name="preferredDoctorId"
@@ -1639,7 +1690,12 @@ export default function BusinessDashboard() {
                       >
                         <option value="">Select a previous doctor</option>
                         {previousDoctors
-                          .filter(doctor => doctor.isAvailable)
+                          .filter(doctor => {
+                            // Filter by availability and service if service is selected
+                            const isAvailable = doctor.isAvailable;
+                            const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                            return isAvailable && offersService;
+                          })
                           .map((doctor) => (
                             <option key={doctor.id} value={doctor.id}>
                               Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} ({formatCurrency(doctor.hourlyRate)}/hr)
@@ -1648,7 +1704,11 @@ export default function BusinessDashboard() {
                       </select>
                       <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
                         <p className={`text-xs ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
-                          ✅ Showing {previousDoctors.filter(doctor => doctor.isAvailable).length} available doctor(s) you've worked with before
+                          ✅ Showing {previousDoctors.filter(doctor => {
+                            const isAvailable = doctor.isAvailable;
+                            const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                            return isAvailable && offersService;
+                          }).length} available doctor(s) you've worked with before{formData.serviceId ? ' who offer the selected service' : ''}
                         </p>
                       </div>
                     </>
@@ -1657,25 +1717,28 @@ export default function BusinessDashboard() {
                       <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {previousDoctors.length === 0 
                           ? "No previously worked with doctors found. You need to complete at least one service request first."
-                          : "None of your previous doctors are currently available. Please try the 'Any available doctor' option instead."
+                          : formData.serviceId 
+                            ? `None of your previous doctors who offer the selected service are currently available. ${previousDoctors.filter(d => d.isAvailable && !doctorOffersService(d, formData.serviceId)).length > 0 ? 'Some of your previous doctors are available but don\'t offer this service.' : ''} Please try the 'Any available doctor' option instead.`
+                            : "None of your previous doctors are currently available. Please try the 'Any available doctor' option instead."
                         }
                       </p>
                       {previousDoctors.length > 0 && (
                         <div className="mt-2">
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            Previous doctors ({previousDoctors.filter(doctor => !doctor.isAvailable).length} unavailable):
+                            Previous doctors ({previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length} unavailable{formData.serviceId ? '/don\'t offer this service' : ''}):
                           </p>
                           <ul className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
                             {previousDoctors
-                              .filter(doctor => !doctor.isAvailable)
+                              .filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId)))
                               .slice(0, 3)
                               .map((doctor) => (
                                 <li key={doctor.id}>
                                   • Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                                  {!doctor.isAvailable ? ' (unavailable)' : formData.serviceId && !doctorOffersService(doctor, formData.serviceId) ? ' (doesn\'t offer this service)' : ''}
                                 </li>
                               ))}
-                            {previousDoctors.filter(doctor => !doctor.isAvailable).length > 3 && (
-                              <li>... and {previousDoctors.filter(doctor => !doctor.isAvailable).length - 3} more</li>
+                            {previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length > 3 && (
+                              <li>... and {previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length - 3} more</li>
                             )}
                           </ul>
                         </div>
