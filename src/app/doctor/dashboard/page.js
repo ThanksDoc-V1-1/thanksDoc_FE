@@ -1915,90 +1915,15 @@ export default function DoctorDashboard() {
                 </div>
               </div>
             </div>
-
-            {/* Doctor Services Section */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                    <Settings className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
-                  </div>
-                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>My Services</h3>
-                </div>
-                <button
-                  onClick={handleManageServices}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isDarkMode 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                  disabled={serviceLoading}
-                >
-                  {serviceLoading ? 'Loading...' : 'Manage Services'}
-                </button>
-              </div>
-              
-              <div className="space-y-2">
-                {doctorServices.length === 0 ? (
-                  <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>No services selected yet.</p>
-                    <p className="text-sm">Click "Manage Services" to add services you offer.</p>
-                  </div>
-                ) : (
-                  doctorServices.map((service) => (
-                    <div 
-                      key={service.id} 
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          service.category === 'in-person' 
-                            ? 'bg-green-500' 
-                            : 'bg-blue-500'
-                        }`}></div>
-                        <div>
-                          <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {service.name}
-                          </span>
-                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                            service.category === 'in-person'
-                              ? isDarkMode 
-                                ? 'bg-green-900/30 text-green-400' 
-                                : 'bg-green-100 text-green-700'
-                              : isDarkMode 
-                                ? 'bg-blue-900/30 text-blue-400' 
-                                : 'bg-blue-100 text-blue-700'
-                          }`}>
-                            {service.category === 'in-person' ? 'In-Person' : 'Online'}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveService(service.id)}
-                        className={`p-1 rounded-lg transition-colors ${
-                          isDarkMode 
-                            ? 'hover:bg-red-900/30 text-red-400' 
-                            : 'hover:bg-red-100 text-red-600'
-                        }`}
-                        disabled={serviceLoading}
-                        title="Remove service"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
-        {/* Recent Service Requests Section */}
+        {/* Recent Service Requests Section - Side by side with My Services */}
         <div id="recent-requests-section" className="mt-8">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Recent Service Requests - Takes 2 columns */}
+            <div className="lg:col-span-2">
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -2255,6 +2180,88 @@ export default function DoctorDashboard() {
                   </div>
                 );
               })()}
+            </div>
+              </div>
+            </div>
+            
+            {/* My Services Section in Sidebar - Takes 1 column */}
+            <div className="lg:col-span-1">
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                      <Settings className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                    </div>
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>My Services</h3>
+                  </div>
+                  <button
+                    onClick={handleManageServices}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      isDarkMode 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                    disabled={serviceLoading}
+                  >
+                    {serviceLoading ? 'Loading...' : 'Manage Services'}
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  {doctorServices.length === 0 ? (
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No services selected yet.</p>
+                      <p className="text-sm">Click "Manage Services" to add services you offer.</p>
+                    </div>
+                  ) : (
+                    doctorServices.map((service) => (
+                      <div 
+                        key={service.id} 
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            service.category === 'in-person' 
+                              ? 'bg-green-500' 
+                              : 'bg-blue-500'
+                          }`}></div>
+                          <div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {service.name}
+                            </span>
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                              service.category === 'in-person'
+                                ? isDarkMode 
+                                  ? 'bg-green-900/30 text-green-400' 
+                                  : 'bg-green-100 text-green-700'
+                                : isDarkMode 
+                                  ? 'bg-blue-900/30 text-blue-400' 
+                                  : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {service.category === 'in-person' ? 'In-Person' : 'Online'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveService(service.id)}
+                          className={`p-1 rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'hover:bg-red-900/30 text-red-400' 
+                              : 'hover:bg-red-100 text-red-600'
+                          }`}
+                          disabled={serviceLoading}
+                          title="Remove service"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
