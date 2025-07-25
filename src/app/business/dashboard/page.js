@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
+import api from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -72,6 +73,7 @@ export default function BusinessDashboard() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [requestHours, setRequestHours] = useState(1);
   const [quickRequestServiceType, setQuickRequestServiceType] = useState('');
+  const [quickRequestServiceId, setQuickRequestServiceId] = useState('');
   const [quickRequestServiceDate, setQuickRequestServiceDate] = useState('');
   const [quickRequestServiceTime, setQuickRequestServiceTime] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -201,15 +203,17 @@ export default function BusinessDashboard() {
 
   const fetchNearbyDoctors = async () => {
     try {
-      // Get all available doctors instead of limiting by location radius
-      const response = await doctorAPI.getAvailable({
-        // Remove location filtering to show all available doctors
-        // latitude: business.latitude,
-        // longitude: business.longitude,
-        // radius: 10
-      });
+      // Get all available doctors with services populated
+      const response = await api.get('/doctors?populate=services&filters[isAvailable][$eq]=true&filters[isVerified][$eq]=true');
       console.log('📍 Available doctors response:', response.data);
-      setNearbyDoctors(response.data || []);
+      
+      // Handle the response structure - check if it's response.data.data or response.data
+      let doctors = response.data;
+      if (!Array.isArray(doctors) && response.data?.data) {
+        doctors = response.data.data;
+      }
+      
+      setNearbyDoctors(doctors || []);
     } catch (error) {
       console.error('Error fetching available doctors:', error);
     }
@@ -432,8 +436,14 @@ export default function BusinessDashboard() {
   };
 
   const handleSubmitQuickRequest = async () => {
-    if (!selectedDoctor || !requestHours || !quickRequestServiceType) {
-      alert('Please specify the service type and number of hours required.');
+    if (!selectedDoctor || !requestHours || !quickRequestServiceId) {
+      alert('Please select a service and specify the number of hours required.');
+      return;
+    }
+
+    // Check if doctor offers the selected service
+    if (!doctorOffersService(selectedDoctor, quickRequestServiceId)) {
+      alert(`Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} does not offer this service. Please select a different service.`);
       return;
     }
 
@@ -456,12 +466,16 @@ export default function BusinessDashboard() {
       const serviceAmount = (selectedDoctor.hourlyRate || 0) * parseFloat(requestHours);
       const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
       
+      // Find the selected service details
+      const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
+      
       const requestData = {
         businessId: user.id,
         doctorId: selectedDoctor.id,
         urgencyLevel: 'medium',
-        serviceType: quickRequestServiceType,
-        description: `${quickRequestServiceType} service request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
+        serviceId: quickRequestServiceId,
+        serviceType: selectedService?.name || 'Selected Service',
+        description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
         estimatedCost: totalWithServiceCharge,
@@ -476,6 +490,7 @@ export default function BusinessDashboard() {
         setSelectedDoctor(null);
         setRequestHours(1);
         setQuickRequestServiceType('');
+        setQuickRequestServiceId('');
         setQuickRequestServiceDate('');
         setQuickRequestServiceTime('');
         fetchServiceRequests(); // Refresh the requests list
@@ -486,6 +501,33 @@ export default function BusinessDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to check if a doctor offers a specific service
+  const doctorOffersService = (doctor, serviceId) => {
+    console.log('🔍 Checking if doctor offers service:', {
+      doctor: doctor?.firstName + ' ' + doctor?.lastName,
+      doctorServices: doctor?.services,
+      serviceId,
+      serviceIdType: typeof serviceId
+    });
+    
+    if (!doctor?.services || !serviceId) {
+      console.log('❌ Missing doctor services or serviceId');
+      return false;
+    }
+    
+    const hasService = doctor.services.some(service => {
+      console.log('🔍 Comparing service:', {
+        serviceIdFromDoctor: service.id,
+        serviceIdFromDropdown: serviceId,
+        comparison: service.id.toString() === serviceId.toString()
+      });
+      return service.id.toString() === serviceId.toString();
+    });
+    
+    console.log('✅ Doctor offers service result:', hasService);
+    return hasService;
   };
 
   const handleCancelRequest = async (requestId) => {
@@ -1513,7 +1555,7 @@ export default function BusinessDashboard() {
       {/* Request Form Modal */}
       {showRequestForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-lg w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg flex-shrink-0`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
@@ -1843,16 +1885,23 @@ export default function BusinessDashboard() {
                   Service Type *
                 </label>
                 <select
-                  value={quickRequestServiceType}
-                  onChange={(e) => setQuickRequestServiceType(e.target.value)}
+                  value={quickRequestServiceId}
+                  onChange={(e) => setQuickRequestServiceId(e.target.value)}
                   className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   required
                 >
-                  <option value="">Select service type</option>
-                  <option value="In Person">In Person</option>
-                  <option value="Online">Online</option>
-                  <option value="NHS">NHS</option>
+                  <option value="">Select a service</option>
+                  {availableServices.map(service => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
                 </select>
+                {quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId) && (
+                  <p className={`mt-2 text-sm font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                    ⚠️ Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} does not offer this service
+                  </p>
+                )}
               </div>
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
@@ -1923,6 +1972,7 @@ export default function BusinessDashboard() {
                     setSelectedDoctor(null);
                     setRequestHours(1);
                     setQuickRequestServiceType('');
+                    setQuickRequestServiceId('');
                     setQuickRequestServiceDate('');
                     setQuickRequestServiceTime('');
                   }}
@@ -1932,7 +1982,7 @@ export default function BusinessDashboard() {
                 </button>
                 <button
                   onClick={handleSubmitQuickRequest}
-                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceType || !quickRequestServiceDate || !quickRequestServiceTime}
+                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceId || !quickRequestServiceDate || !quickRequestServiceTime || (quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId))}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
                   {loading ? 'Sending...' : 'Send Request'}

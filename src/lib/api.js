@@ -59,7 +59,7 @@ export const doctorAPI = {
     return api.put(`/doctors/${id}`, { data });
   }, // Convenience method for profile updates
   delete: (id) => api.delete(`/doctors/${id}`),
-  getAvailable: (params) => api.get('/doctors/available', { params }),
+  getAvailable: (params) => api.get('/doctors/available?populate=services', { params }),
   updateAvailability: (id, isAvailable) => api.put(`/doctors/${id}/availability`, { isAvailable }),
   getStats: (id) => api.get(`/doctors/${id}/stats`),
   getOverallStats: () => api.get('/doctors/stats'),
