@@ -213,7 +213,74 @@ export const serviceAPI = {
   update: (id, data) => api.put(`/services/${id}`, { data }),
   delete: (id) => api.delete(`/services/${id}`),
   getByCategory: (category) => api.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`),
-  getDoctorsByService: (serviceId, params) => api.get(`/services/${serviceId}/doctors`, { params }),
+  getDoctorsByService: async (serviceId, params) => {
+    try {
+      // Get all doctors with their services populated
+      const response = await api.get('/doctors?populate=services&filters[isAvailable][$eq]=true&filters[isVerified][$eq]=true');
+      
+      console.log('🔍 Raw response from doctors API:', response);
+      console.log('🔍 Response data structure:', response.data);
+      console.log('🔍 Is response.data an array?', Array.isArray(response.data));
+      
+      // Handle different response structures
+      let doctors = response.data;
+      
+      // If response.data is not an array, try response.data.data
+      if (!Array.isArray(doctors) && response.data?.data) {
+        doctors = response.data.data;
+      }
+      
+      // If still not an array, return empty array
+      if (!Array.isArray(doctors)) {
+        console.error('❌ Doctors data is not an array:', doctors);
+        return { data: [] };
+      }
+      
+      console.log(`🔍 Processing ${doctors.length} doctors for service ID: ${serviceId}`);
+      
+      // Filter doctors who have the specified service
+      const doctorsWithService = doctors.filter(doctor => {
+        const hasService = doctor.services && doctor.services.some(service => service.id == serviceId);
+        if (hasService) {
+          console.log(`✅ Doctor ${doctor.firstName} ${doctor.lastName} offers service ${serviceId}`);
+        }
+        return hasService;
+      });
+      
+      console.log(`🔍 Found ${doctorsWithService.length} doctors with service ${serviceId}`);
+      
+      return { data: doctorsWithService };
+    } catch (error) {
+      console.error('❌ Error in getDoctorsByService:', error);
+      // Fallback: return empty array instead of throwing
+      return { data: [] };
+    }
+  },
+
+  // Alternative method using service endpoint
+  getDoctorsByServiceAlternative: async (serviceId, params) => {
+    try {
+      // Get the specific service with its doctors populated
+      const response = await api.get(`/services/${serviceId}?populate=doctors`);
+      
+      console.log('🔍 Service response:', response);
+      
+      if (response.data?.doctors) {
+        // Filter only available and verified doctors
+        const availableDoctors = response.data.doctors.filter(doctor => 
+          doctor.isAvailable && doctor.isVerified
+        );
+        
+        console.log(`🔍 Found ${availableDoctors.length} available doctors for service ${serviceId}`);
+        return { data: availableDoctors };
+      }
+      
+      return { data: [] };
+    } catch (error) {
+      console.error('❌ Error in getDoctorsByServiceAlternative:', error);
+      return { data: [] };
+    }
+  },
 };
 
 export default api;

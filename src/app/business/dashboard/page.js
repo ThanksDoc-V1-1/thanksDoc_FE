@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
-import { serviceRequestAPI, doctorAPI, businessAPI } from '../../../lib/api';
+import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -48,6 +48,7 @@ export default function BusinessDashboard() {
   });
   const [formData, setFormData] = useState({
     serviceType: '',
+    serviceId: '', // Add serviceId for service selection
     description: '',
     estimatedDuration: 1,
     preferredDoctorId: null,
@@ -57,6 +58,14 @@ export default function BusinessDashboard() {
   });
   const [previousDoctors, setPreviousDoctors] = useState([]);
   const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
+  
+  // New states for service selection and service-based doctor filtering
+  const [availableServices, setAvailableServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [serviceBasedDoctors, setServiceBasedDoctors] = useState([]);
+  const [loadingServiceDoctors, setLoadingServiceDoctors] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [showHoursPopup, setShowHoursPopup] = useState(false);
@@ -97,6 +106,7 @@ export default function BusinessDashboard() {
       fetchBusinessData();
       fetchServiceRequests();
       fetchNearbyDoctors();
+      fetchAvailableServices(); // Fetch available services
     }
   }, [user]);
 
@@ -286,6 +296,66 @@ export default function BusinessDashboard() {
     }
   };
 
+  // Fetch available services from backend
+  const fetchAvailableServices = async () => {
+    try {
+      setLoadingServices(true);
+      console.log('🔍 Fetching available services from backend');
+      
+      const response = await serviceAPI.getAll();
+      console.log('📊 Available services response:', response.data);
+      
+      let services = [];
+      if (Array.isArray(response.data)) {
+        services = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        services = response.data.data;
+      }
+      
+      console.log('✅ Available services:', services);
+      setAvailableServices(services);
+    } catch (error) {
+      console.error('❌ Error fetching available services:', error);
+      setAvailableServices([]);
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  // Fetch doctors who have the selected service
+  const fetchDoctorsForService = async (serviceId) => {
+    if (!serviceId) {
+      setServiceBasedDoctors([]);
+      return;
+    }
+
+    try {
+      setLoadingServiceDoctors(true);
+      console.log('🔍 Fetching doctors for service ID:', serviceId);
+      
+      const response = await serviceAPI.getDoctorsByService(serviceId, {
+        available: true // Only get available doctors
+      });
+      
+      console.log('👨‍⚕️ Doctors for service response:', response.data);
+      
+      let doctors = [];
+      if (Array.isArray(response.data)) {
+        doctors = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        doctors = response.data.data;
+      }
+      
+      console.log('✅ Available doctors for service:', doctors);
+      setServiceBasedDoctors(doctors);
+    } catch (error) {
+      console.error('❌ Error fetching doctors for service:', error);
+      setServiceBasedDoctors([]);
+    } finally {
+      setLoadingServiceDoctors(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     router.push('/');
@@ -457,6 +527,30 @@ export default function BusinessDashboard() {
       if (value === 'previous' && previousDoctors.length === 0) {
         fetchPreviousDoctors();
       }
+      
+      // For 'any' doctor selection, also load previous doctors and service-based doctors if service is selected
+      if (value === 'any') {
+        if (previousDoctors.length === 0) {
+          fetchPreviousDoctors();
+        }
+        if (formData.serviceId) {
+          fetchDoctorsForService(formData.serviceId);
+        }
+      }
+    }
+
+    // If service selection changes, fetch doctors for that service
+    if (name === 'serviceId') {
+      setSelectedServiceId(value);
+      setFormData(prev => ({
+        ...prev,
+        preferredDoctorId: null // Reset selected doctor when service changes
+      }));
+      
+      // Fetch doctors for the selected service for any selection type
+      if (value) {
+        fetchDoctorsForService(value);
+      }
     }
   };
 
@@ -466,6 +560,10 @@ export default function BusinessDashboard() {
     if (previousDoctors.length === 0) {
       fetchPreviousDoctors();
     }
+    // If a service is already selected (from quick actions), fetch doctors for that service
+    if (formData.serviceId && serviceBasedDoctors.length === 0) {
+      fetchDoctorsForService(formData.serviceId);
+    }
   };
 
   const handleSubmitRequest = async (e) => {
@@ -473,6 +571,13 @@ export default function BusinessDashboard() {
     setLoading(true);
 
     try {
+      // Validation: If service is required but not selected
+      if (!formData.serviceId) {
+        alert('Please select a service for your request.');
+        setLoading(false);
+        return;
+      }
+
       // Validation: If previous doctors option is selected, a doctor must be chosen
       if (formData.doctorSelectionType === 'previous' && !formData.preferredDoctorId) {
         alert('Please select a doctor from your previously worked with doctors, or choose "Any available doctor" option.');
@@ -518,14 +623,18 @@ export default function BusinessDashboard() {
       const response = await serviceRequestAPI.createServiceRequest(requestData);
       
       if (response.data) {
-        const notificationMessage = formData.doctorSelectionType === 'previous' && formData.preferredDoctorId
-          ? `Service request created successfully! Your selected doctor has been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`
-          : `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+        let notificationMessage;
+        if ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId) {
+          notificationMessage = `Service request created successfully! Your selected doctor has been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+        } else {
+          notificationMessage = `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+        }
         
         alert(notificationMessage);
         setShowRequestForm(false);
         setFormData({
           serviceType: '',
+          serviceId: '',
           description: '',
           estimatedDuration: 1,
           preferredDoctorId: null,
@@ -533,6 +642,9 @@ export default function BusinessDashboard() {
           serviceDate: '',
           serviceTime: '',
         });
+        // Reset service-related states
+        setSelectedServiceId('');
+        setServiceBasedDoctors([]);
         console.log('🔄 Manually refreshing after creating service request');
         await fetchServiceRequests();
         await fetchNearbyDoctors(); // Also refresh doctors in case availability changed
@@ -1414,20 +1526,33 @@ export default function BusinessDashboard() {
               <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Service Type *
+                  Select Service *
                 </label>
-                <select
-                  name="serviceType"
-                  value={formData.serviceType}
-                  onChange={handleInputChange}
-                  required
-                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                >
-                  <option value="">Select service type</option>
-                  <option value="In Person">In Person</option>
-                  <option value="Online">Online</option>
-                  <option value="NHS">NHS</option>
-                </select>
+                {loadingServices ? (
+                  <div className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-400' : 'border-gray-300 bg-gray-100 text-gray-500'} rounded-lg`}>
+                    Loading services...
+                  </div>
+                ) : (
+                  <select
+                    name="serviceId"
+                    value={formData.serviceId}
+                    onChange={handleInputChange}
+                    required
+                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  >
+                    <option value="">Select a service</option>
+                    {availableServices.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} ({service.category === 'in-person' ? 'In-Person' : 'Online'})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {availableServices.length === 0 && !loadingServices && (
+                  <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    No services available at the moment
+                  </p>
+                )}
               </div>
 
               <div>
@@ -1518,22 +1643,68 @@ export default function BusinessDashboard() {
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                     Preferred Doctor (Optional)
                   </label>
-                  <select
-                    name="preferredDoctorId"
-                    value={formData.preferredDoctorId || ''}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  >
-                    <option value="">Any available doctor</option>
-                    {nearbyDoctors.map((doctor) => (
-                      <option key={doctor.id} value={doctor.id}>
-                        Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
-                      </option>
-                    ))}
-                  </select>
+                  {(formData.serviceId && loadingServiceDoctors) ? (
+                    <div className={`flex items-center justify-center py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      Loading doctors for this service...
+                    </div>
+                  ) : (
+                    <select
+                      name="preferredDoctorId"
+                      value={formData.preferredDoctorId || ''}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    >
+                      <option value="">Any available doctor</option>
+                      {/* Show doctors who offer the selected service */}
+                      {formData.serviceId && serviceBasedDoctors.length > 0 && (
+                        <>
+                          <optgroup label="Doctors who offer this service">
+                            {serviceBasedDoctors.map((doctor) => (
+                              <option key={`service-${doctor.id}`} value={doctor.id}>
+                                Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization || 'Medical Professional'} (£{doctor.hourlyRate}/hr)
+                              </option>
+                            ))}
+                          </optgroup>
+                        </>
+                      )}
+                      {/* Show previously worked doctors who also offer this service */}
+                      {formData.serviceId && previousDoctors.length > 0 && (
+                        <>
+                          <optgroup label="Previously worked doctors (who offer this service)">
+                            {previousDoctors
+                              .filter(prevDoc => serviceBasedDoctors.some(serviceDoc => serviceDoc.id === prevDoc.id))
+                              .map((doctor) => (
+                                <option key={`previous-${doctor.id}`} value={doctor.id}>
+                                  Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr) ⭐ Previous
+                                </option>
+                              ))}
+                          </optgroup>
+                        </>
+                      )}
+                      {/* If no service selected, show all nearby doctors */}
+                      {!formData.serviceId && nearbyDoctors.map((doctor) => (
+                        <option key={doctor.id} value={doctor.id}>
+                          Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   {formData.preferredDoctorId && (
                     <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                      Selected: Dr. {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.firstName} {nearbyDoctors.find(d => d.id == formData.preferredDoctorId)?.lastName}
+                      Selected: Dr. {
+                        // Find doctor from appropriate list
+                        (() => {
+                          let selectedDoctor = null;
+                          if (formData.serviceId) {
+                            selectedDoctor = serviceBasedDoctors.find(d => d.id == formData.preferredDoctorId) ||
+                                           previousDoctors.find(d => d.id == formData.preferredDoctorId);
+                          } else {
+                            selectedDoctor = nearbyDoctors.find(d => d.id == formData.preferredDoctorId);
+                          }
+                          return selectedDoctor ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}` : 'Unknown';
+                        })()
+                      }
                     </p>
                   )}
                 </div>
