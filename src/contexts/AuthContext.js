@@ -33,48 +33,63 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in on app start
     console.log('🔍 AuthContext: Checking localStorage for user data...');
+    console.log('🌍 Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
     
-    try {
-      const savedUser = localStorage.getItem('user');
-      const savedToken = localStorage.getItem('jwt');
-      
-      if (savedUser && savedToken) {
-        const userData = JSON.parse(savedUser);
-        console.log('👤 Found saved user data:', userData);
+    // Add delay in production to ensure localStorage is accessible
+    const checkAuth = () => {
+      try {
+        const savedUser = localStorage.getItem('user');
+        const savedToken = localStorage.getItem('jwt');
         
-        // Validate user data structure
-        if (userData && (userData.id || userData.email) && userData.role) {
-          // Normalize role to string format
-          const normalizedRole = normalizeRole(userData.role);
-          const normalizedUser = {
-            ...userData,
-            role: normalizedRole
-          };
+        console.log('💾 Saved user exists:', !!savedUser);
+        console.log('🔑 Saved token exists:', !!savedToken);
+        
+        if (savedUser && savedToken) {
+          const userData = JSON.parse(savedUser);
+          console.log('👤 Found saved user data:', userData);
           
-          console.log('✅ Setting user with normalized role:', normalizedRole);
-          setUser(normalizedUser);
-          
-          // Update localStorage with normalized data
-          localStorage.setItem('user', JSON.stringify(normalizedUser));
+          // Validate user data structure
+          if (userData && (userData.id || userData.email) && userData.role) {
+            // Normalize role to string format
+            const normalizedRole = normalizeRole(userData.role);
+            const normalizedUser = {
+              ...userData,
+              role: normalizedRole
+            };
+            
+            console.log('✅ Setting user with normalized role:', normalizedRole);
+            setUser(normalizedUser);
+            
+            // Update localStorage with normalized data
+            localStorage.setItem('user', JSON.stringify(normalizedUser));
+          } else {
+            console.log('❌ Invalid user data, clearing storage');
+            localStorage.removeItem('user');
+            localStorage.removeItem('jwt');
+          }
         } else {
-          console.log('❌ Invalid user data, clearing storage');
-          localStorage.removeItem('user');
-          localStorage.removeItem('jwt');
+          console.log('ℹ️ No saved user data found');
         }
-      } else {
-        console.log('ℹ️ No saved user data found');
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('jwt');
       }
-    } catch (error) {
-      console.error('❌ Error loading user data:', error);
-      localStorage.removeItem('user');
-      localStorage.removeItem('jwt');
+      
+      setLoading(false);
+    };
+
+    // Small delay to ensure localStorage is ready in production
+    if (typeof window !== 'undefined') {
+      setTimeout(checkAuth, 100);
+    } else {
+      setLoading(false);
     }
-    
-    setLoading(false);
   }, []);
 
   const login = async (userData, jwt) => {
     console.log('🔐 Login called with:', userData);
+    console.log('🌍 Login environment:', typeof window !== 'undefined' ? 'browser' : 'server');
 
     // Normalize role to string format
     const normalizedRole = normalizeRole(userData.role);
@@ -89,8 +104,13 @@ export const AuthProvider = ({ children }) => {
     setUser(normalizedUser);
 
     // Save to localStorage
-    localStorage.setItem('user', JSON.stringify(normalizedUser));
-    localStorage.setItem('jwt', jwt);
+    try {
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
+      localStorage.setItem('jwt', jwt);
+      console.log('💾 User data saved to localStorage');
+    } catch (error) {
+      console.error('❌ Error saving to localStorage:', error);
+    }
 
     console.log('✅ User logged in successfully');
 
@@ -104,8 +124,10 @@ export const AuthProvider = ({ children }) => {
     const redirectUrl = dashboardUrls[normalizedRole] || '/';
     console.log('🎯 Redirecting to URL:', redirectUrl);
 
-    // Navigate to the dashboard
-    window.location.href = redirectUrl;
+    // Use a small delay to ensure state is updated
+    setTimeout(() => {
+      window.location.href = redirectUrl;
+    }, 100);
   };
 
   const logout = () => {

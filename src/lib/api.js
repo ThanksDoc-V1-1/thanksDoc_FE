@@ -1,12 +1,15 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+console.log('🌐 API URL configured as:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Add request interceptor to include JWT token
@@ -16,31 +19,55 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('📡 Making API request to:', config.url);
     return config;
   },
   (error) => {
+    console.error('❌ Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
 
 // Add response interceptor to handle authentication errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API response received:', response.config.url);
+    return response;
+  },
   (error) => {
+    console.error('❌ API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message,
+      data: error.response?.data
+    });
+
+    // Handle network errors (backend not reachable)
+    if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
+      console.error('🚨 Network error - Backend may not be reachable');
+      alert('Unable to connect to the server. Please check if the backend is running and accessible.');
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log('🔒 Authentication error, clearing tokens and redirecting');
+      
       // Clear invalid tokens
       localStorage.removeItem('jwt');
       localStorage.removeItem('user');
       
-      // Redirect to appropriate login page based on current path
-      const currentPath = window.location.pathname;
-      if (currentPath.includes('/admin')) {
-        window.location.href = '/admin/login';
-      } else if (currentPath.includes('/doctor')) {
-        window.location.href = '/doctor/login';
-      } else if (currentPath.includes('/business')) {
-        window.location.href = '/business/login';
-      }
+      // Small delay to prevent immediate redirect loops
+      setTimeout(() => {
+        // Redirect to appropriate login page based on current path
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/admin')) {
+          window.location.href = '/admin/login';
+        } else if (currentPath.includes('/doctor')) {
+          window.location.href = '/doctor/login';
+        } else if (currentPath.includes('/business')) {
+          window.location.href = '/business/login';
+        }
+      }, 1000);
     }
     return Promise.reject(error);
   }

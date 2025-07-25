@@ -99,6 +99,31 @@ export default function BusinessDashboard() {
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds refresh rate
 
+  // Authentication check - redirect if not authenticated or not business
+  useEffect(() => {
+    console.log('🔍 Business Dashboard - Auth state check:', {
+      authLoading,
+      isAuthenticated,
+      user: user ? { id: user.id, email: user.email, role: user.role } : null
+    });
+
+    if (!authLoading) {
+      if (!isAuthenticated || !user) {
+        console.log('🚫 No authentication, redirecting to business login');
+        router.push('/business/login');
+        return;
+      }
+      
+      if (user.role !== 'business') {
+        console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
+        router.push('/');
+        return;
+      }
+      
+      console.log('✅ Business authenticated, loading dashboard');
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
   useEffect(() => {
     console.log('🏢 Business Dashboard useEffect - User:', user);
     console.log('🆔 User ID:', user?.id);
@@ -130,6 +155,19 @@ export default function BusinessDashboard() {
     };
   }, [autoRefresh, user?.id]);
 
+  // Show loading screen while authentication is being checked
+  if (authLoading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="text-center">
+          <Building2 className="h-12 w-12 text-blue-400 mx-auto mb-4 animate-pulse" />
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // fetchBusinessData function
   const fetchBusinessData = async () => {
     try {
       console.log('🔍 Fetching business data for ID:', user.id);
