@@ -55,6 +55,12 @@ export default function DoctorDashboard() {
   // Request filtering states
   const [requestFilter, setRequestFilter] = useState('all'); // 'all', 'pending', 'completed'
 
+  // Pagination and filtering states for Recent Service Requests
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
+  const itemsPerPage = 5;
+
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
     if (!authLoading) {
@@ -551,6 +557,71 @@ export default function DoctorDashboard() {
     setShowManageServices(true);
     await loadAllServices();
   };
+
+  // Filter and pagination functions for Recent Service Requests
+  const getFilteredAndPaginatedRequests = () => {
+    let filteredRequests = myRequests;
+    
+    // Apply status filter
+    if (requestFilter === 'completed') {
+      filteredRequests = myRequests.filter(req => req.status === 'completed');
+    }
+    
+    // Apply date filtering
+    if (dateFromFilter || dateToFilter) {
+      filteredRequests = filteredRequests.filter(req => {
+        const requestDate = new Date(req.requestedAt);
+        const fromDate = dateFromFilter ? new Date(dateFromFilter) : null;
+        const toDate = dateToFilter ? new Date(dateToFilter + 'T23:59:59') : null; // Include full day
+        
+        let includeRequest = true;
+        
+        if (fromDate && requestDate < fromDate) {
+          includeRequest = false;
+        }
+        
+        if (toDate && requestDate > toDate) {
+          includeRequest = false;
+        }
+        
+        return includeRequest;
+      });
+    }
+    
+    // Calculate pagination
+    const totalItems = filteredRequests.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedRequests = filteredRequests.slice(startIndex, endIndex);
+    
+    return {
+      requests: paginatedRequests,
+      totalItems,
+      totalPages,
+      currentPage,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1
+    };
+  };
+
+  const handlePageChange = (newPage) => {
+    const { totalPages } = getFilteredAndPaginatedRequests();
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const clearDateFilters = () => {
+    setDateFromFilter('');
+    setDateToFilter('');
+    setCurrentPage(1);
+  };
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [requestFilter, dateFromFilter, dateToFilter]);
 
   // Handler functions for card clicks
   const handlePendingRequestsClick = () => {
@@ -1929,7 +2000,7 @@ export default function DoctorDashboard() {
         <div id="recent-requests-section" className="mt-8">
           <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                     <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
@@ -1953,29 +2024,70 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
                 {(() => {
-                  let displayRequests = myRequests;
-                  if (requestFilter === 'completed') {
-                    displayRequests = myRequests.filter(req => req.status === 'completed');
-                  }
-                  return displayRequests.length > 0 && (
+                  const { totalItems } = getFilteredAndPaginatedRequests();
+                  return totalItems > 0 && (
                     <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {displayRequests.length} {requestFilter === 'completed' ? 'completed' : 'total'} requests
+                      {totalItems} {requestFilter === 'completed' ? 'completed' : 'total'} requests
                     </div>
                   );
                 })()}
               </div>
+              
+              {/* Date Filter Controls */}
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    From:
+                  </label>
+                  <input
+                    type="date"
+                    value={dateFromFilter}
+                    onChange={(e) => setDateFromFilter(e.target.value)}
+                    className={`px-3 py-1 text-sm rounded border ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    To:
+                  </label>
+                  <input
+                    type="date"
+                    value={dateToFilter}
+                    onChange={(e) => setDateToFilter(e.target.value)}
+                    className={`px-3 py-1 text-sm rounded border ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-gray-600 text-white' 
+                        : 'bg-white border-gray-300 text-gray-900'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+                {(dateFromFilter || dateToFilter) && (
+                  <button
+                    onClick={clearDateFilters}
+                    className={`px-3 py-1 text-sm rounded border transition-colors ${
+                      isDarkMode 
+                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Clear Filters
+                  </button>
+                )}
+              </div>
             </div>
-              <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                {(() => {
-                  let displayRequests = myRequests;
-                  
-                  // Apply filter based on requestFilter state
-                  if (requestFilter === 'completed') {
-                    displayRequests = myRequests.filter(req => req.status === 'completed');
-                  }
-                  
-                  return displayRequests.length > 0 ? (
-                    displayRequests.slice(0, 10).map((request) => (
+            
+            <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+              {(() => {
+                const { requests, totalItems, totalPages, currentPage, hasNextPage, hasPrevPage } = getFilteredAndPaginatedRequests();
+                
+                return totalItems > 0 ? (
+                  <>
+                    {/* Service Request List */}
+                    {requests.map((request) => (
                     <div key={request.id} className={`p-6 ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -2054,26 +2166,97 @@ export default function DoctorDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))
-                  ) : (
-                    <div className="p-8 text-center">
-                      <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
-                        <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
-                        <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          {requestFilter === 'completed' ? 'No completed requests yet' : 'No service requests yet'}
-                        </p>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {requestFilter === 'completed' 
+                    ))}
+                    
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
+                        <div className="flex items-center justify-between">
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} requests
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={!hasPrevPage}
+                              className={`px-3 py-1 rounded border transition-colors ${
+                                !hasPrevPage
+                                  ? isDarkMode 
+                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed' 
+                                    : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                  : isDarkMode 
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              Previous
+                            </button>
+                            
+                            {/* Page Numbers */}
+                            <div className="flex space-x-1">
+                              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <button
+                                  key={page}
+                                  onClick={() => handlePageChange(page)}
+                                  className={`px-3 py-1 rounded border transition-colors ${
+                                    page === currentPage
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : isDarkMode 
+                                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              ))}
+                            </div>
+                            
+                            <button
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={!hasNextPage}
+                              className={`px-3 py-1 rounded border transition-colors ${
+                                !hasNextPage
+                                  ? isDarkMode 
+                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed' 
+                                    : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                                  : isDarkMode 
+                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                    : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              Next
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-8 text-center">
+                    <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
+                      <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
+                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {(dateFromFilter || dateToFilter) 
+                          ? 'No requests found for the selected date range' 
+                          : requestFilter === 'completed' 
+                            ? 'No completed requests yet' 
+                            : 'No service requests yet'
+                        }
+                      </p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {(dateFromFilter || dateToFilter) 
+                          ? 'Try adjusting your date filters to see more results.' 
+                          : requestFilter === 'completed' 
                             ? 'Completed service requests will appear here.' 
                             : 'Service requests you accept will appear here.'
-                          }
-                        </p>
-                      </div>
+                        }
+                      </p>
                     </div>
-                  );
-                })()}
-              </div>
+                  </div>
+                );
+              })()}
             </div>
+          </div>
         </div>
       </div>
     </div>
