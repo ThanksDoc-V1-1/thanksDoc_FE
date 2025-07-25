@@ -49,8 +49,8 @@ api.interceptors.response.use(
 // Doctor API calls
 export const doctorAPI = {
   getAll: () => api.get('/doctors'),
-  getById: (id) => api.get(`/doctors/${id}`),
-  getProfile: () => api.get('/doctors/profile'), // Get current doctor's profile
+  getById: (id) => api.get(`/doctors/${id}?populate=services`),
+  getProfile: (id) => api.get(`/doctors/${id}?populate=services`), // Get doctor profile with services
   create: (data) => api.post('/doctors', { data }),
   update: (id, data) => api.put(`/doctors/${id}`, { data }),
   updateProfile: (id, data) => {

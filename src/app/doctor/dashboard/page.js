@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp } from 'lucide-react';
-import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
+import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings } from 'lucide-react';
+import { serviceRequestAPI, doctorAPI, serviceAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -45,6 +45,12 @@ export default function DoctorDashboard() {
     bio: ''
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
+
+  // Service management states
+  const [doctorServices, setDoctorServices] = useState([]);
+  const [allServices, setAllServices] = useState({ inPerson: [], online: [] });
+  const [showManageServices, setShowManageServices] = useState(false);
+  const [serviceLoading, setServiceLoading] = useState(false);
 
   // Request filtering states
   const [requestFilter, setRequestFilter] = useState('all'); // 'all', 'pending', 'completed'
@@ -123,6 +129,11 @@ export default function DoctorDashboard() {
         console.log('📧 Doctor email from backend:', doctor.email);
         setDoctorData(doctor);
         setIsAvailable(doctor.isAvailable || false);
+        
+        // Load doctor's services
+        if (doctor.services) {
+          setDoctorServices(doctor.services);
+        }
       } else {
         console.log('⚠️ No doctor data in response, falling back to user data');
         setDoctorData(user);
@@ -444,6 +455,95 @@ export default function DoctorDashboard() {
       qualifications: '',
       bio: ''
     });
+  };
+
+  // Service Management Functions
+  const loadDoctorServices = async () => {
+    if (!doctorData?.id) return;
+    
+    try {
+      setServiceLoading(true);
+      // Get doctor data with populated services
+      const response = await doctorAPI.getProfile(doctorData.id);
+      if (response.data?.data?.services) {
+        setDoctorServices(response.data.data.services);
+      }
+    } catch (error) {
+      console.error('Error loading doctor services:', error);
+    } finally {
+      setServiceLoading(false);
+    }
+  };
+
+  const loadAllServices = async () => {
+    try {
+      const [inPersonResponse, onlineResponse] = await Promise.all([
+        serviceAPI.getByCategory('in-person'),
+        serviceAPI.getByCategory('online')
+      ]);
+      
+      setAllServices({
+        inPerson: inPersonResponse.data.data || [],
+        online: onlineResponse.data.data || []
+      });
+    } catch (error) {
+      console.error('Error loading all services:', error);
+    }
+  };
+
+  const handleAddService = async (serviceId) => {
+    if (!doctorData?.id || doctorServices.find(s => s.id === serviceId)) return;
+    
+    try {
+      setServiceLoading(true);
+      
+      // Find the service to add
+      const allServicesList = [...allServices.inPerson, ...allServices.online];
+      const serviceToAdd = allServicesList.find(s => s.id === serviceId);
+      
+      if (!serviceToAdd) return;
+      
+      // Update doctor services
+      const updatedServices = [...doctorServices.map(s => s.id), serviceId];
+      await doctorAPI.updateProfile(doctorData.id, { services: updatedServices });
+      
+      // Update local state
+      setDoctorServices([...doctorServices, serviceToAdd]);
+      
+      alert('Service added successfully!');
+    } catch (error) {
+      console.error('Error adding service:', error);
+      alert('Failed to add service. Please try again.');
+    } finally {
+      setServiceLoading(false);
+    }
+  };
+
+  const handleRemoveService = async (serviceId) => {
+    if (!doctorData?.id || !doctorServices.find(s => s.id === serviceId)) return;
+    
+    try {
+      setServiceLoading(true);
+      
+      // Update doctor services
+      const updatedServices = doctorServices.filter(s => s.id !== serviceId).map(s => s.id);
+      await doctorAPI.updateProfile(doctorData.id, { services: updatedServices });
+      
+      // Update local state
+      setDoctorServices(doctorServices.filter(s => s.id !== serviceId));
+      
+      alert('Service removed successfully!');
+    } catch (error) {
+      console.error('Error removing service:', error);
+      alert('Failed to remove service. Please try again.');
+    } finally {
+      setServiceLoading(false);
+    }
+  };
+
+  const handleManageServices = async () => {
+    setShowManageServices(true);
+    await loadAllServices();
   };
 
   // Handler functions for card clicks
@@ -841,6 +941,180 @@ export default function DoctorDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Services Modal */}
+      {showManageServices && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+              <div className="flex items-center justify-between">
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Manage Your Services
+                </h3>
+                <button
+                  onClick={() => setShowManageServices(false)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Current Services */}
+              <div>
+                <h4 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Your Current Services ({doctorServices.length})
+                </h4>
+                <div className="grid gap-3">
+                  {doctorServices.length === 0 ? (
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No services selected yet.</p>
+                    </div>
+                  ) : (
+                    doctorServices.map((service) => (
+                      <div 
+                        key={service.id} 
+                        className={`flex items-center justify-between p-4 rounded-lg border ${
+                          isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            service.category === 'in-person' ? 'bg-green-500' : 'bg-blue-500'
+                          }`}></div>
+                          <div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {service.name}
+                            </span>
+                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                              service.category === 'in-person'
+                                ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
+                                : isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {service.category === 'in-person' ? 'In-Person' : 'Online'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveService(service.id)}
+                          className={`px-3 py-2 rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'bg-red-900/30 hover:bg-red-900/50 text-red-400' 
+                              : 'bg-red-100 hover:bg-red-200 text-red-600'
+                          }`}
+                          disabled={serviceLoading}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Available Services to Add */}
+              <div>
+                <h4 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Available Services to Add
+                </h4>
+                
+                {/* In-Person Services */}
+                <div className="mb-6">
+                  <h5 className={`text-md font-medium mb-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                    In-Person Services
+                  </h5>
+                  <div className="grid gap-3">
+                    {allServices.inPerson
+                      .filter(service => !doctorServices.find(ds => ds.id === service.id))
+                      .map((service) => (
+                        <div 
+                          key={service.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {service.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleAddService(service.id)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              isDarkMode 
+                                ? 'bg-green-900/30 hover:bg-green-900/50 text-green-400' 
+                                : 'bg-green-100 hover:bg-green-200 text-green-600'
+                            }`}
+                            disabled={serviceLoading}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Online Services */}
+                <div>
+                  <h5 className={`text-md font-medium mb-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                    Online Services
+                  </h5>
+                  <div className="grid gap-3">
+                    {allServices.online
+                      .filter(service => !doctorServices.find(ds => ds.id === service.id))
+                      .map((service) => (
+                        <div 
+                          key={service.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {service.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleAddService(service.id)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              isDarkMode 
+                                ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-400' 
+                                : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                            }`}
+                            disabled={serviceLoading}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className={`p-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowManageServices(false)}
+                  className={`px-6 py-2 rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                  }`}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1562,6 +1836,84 @@ export default function DoctorDashboard() {
                     {isAvailable ? '✅ Available' : '❌ Unavailable'}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Doctor Services Section */}
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <Settings className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                  </div>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>My Services</h3>
+                </div>
+                <button
+                  onClick={handleManageServices}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                  disabled={serviceLoading}
+                >
+                  {serviceLoading ? 'Loading...' : 'Manage Services'}
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {doctorServices.length === 0 ? (
+                  <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <Stethoscope className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No services selected yet.</p>
+                    <p className="text-sm">Click "Manage Services" to add services you offer.</p>
+                  </div>
+                ) : (
+                  doctorServices.map((service) => (
+                    <div 
+                      key={service.id} 
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          service.category === 'in-person' 
+                            ? 'bg-green-500' 
+                            : 'bg-blue-500'
+                        }`}></div>
+                        <div>
+                          <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {service.name}
+                          </span>
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            service.category === 'in-person'
+                              ? isDarkMode 
+                                ? 'bg-green-900/30 text-green-400' 
+                                : 'bg-green-100 text-green-700'
+                              : isDarkMode 
+                                ? 'bg-blue-900/30 text-blue-400' 
+                                : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {service.category === 'in-person' ? 'In-Person' : 'Online'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveService(service.id)}
+                        className={`p-1 rounded-lg transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-red-900/30 text-red-400' 
+                            : 'hover:bg-red-100 text-red-600'
+                        }`}
+                        disabled={serviceLoading}
+                        title="Remove service"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
