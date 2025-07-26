@@ -69,23 +69,35 @@ export default function DoctorDashboard() {
       user: user ? { id: user.id, email: user.email, role: user.role } : null
     });
 
-    // Only redirect if we're sure about the authentication state (not loading)
-    if (!authLoading && isAuthenticated === false) {
-      console.log('🚫 Not authenticated, redirecting to doctor login');
-      window.location.href = '/doctor/login';
+    // Don't redirect while authentication is still loading
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...');
       return;
     }
-    
-    // Only check role if we have a user and are not loading
-    if (!authLoading && isAuthenticated && user && user.role !== 'doctor') {
-      console.log('🚫 Not doctor role (got:', user.role, '), redirecting to home');
-      window.location.href = '/';
-      return;
-    }
-    
-    if (!authLoading && isAuthenticated && user && user.role === 'doctor') {
-      console.log('✅ Doctor authenticated, loading dashboard');
-    }
+
+    // Add a small delay to ensure AuthContext has fully initialized
+    const timeoutId = setTimeout(() => {
+      // Only redirect if we're sure about the authentication state (not loading)
+      if (!authLoading && isAuthenticated === false) {
+        console.log('🚫 Not authenticated after delay, redirecting to doctor login');
+        window.location.href = '/doctor/login';
+        return;
+      }
+      
+      // Only check role if we have a user and are not loading
+      if (!authLoading && isAuthenticated && user && user.role !== 'doctor') {
+        console.log('🚫 Not doctor role (got:', user.role, '), redirecting to home');
+        window.location.href = '/';
+        return;
+      }
+      
+      if (!authLoading && isAuthenticated && user && user.role === 'doctor') {
+        console.log('✅ Doctor authenticated, loading dashboard');
+      }
+    }, 500); // 500ms delay to ensure auth is fully loaded
+
+    // Cleanup timeout if component unmounts or dependencies change
+    return () => clearTimeout(timeoutId);
   }, [authLoading, isAuthenticated, user]);
 
   useEffect(() => {
@@ -677,7 +689,8 @@ export default function DoctorDashboard() {
     );
   }
 
-  if (!isAuthenticated || !user || user.role !== 'doctor') {
+  // Only show access denied if we're definitely not authenticated AND not loading
+  if (!authLoading && (!isAuthenticated || !user || user.role !== 'doctor')) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">

@@ -72,8 +72,8 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('❌ Error loading user data:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('jwt');
+        // Don't clear localStorage on errors - might be temporary
+        console.log('⚠️ Keeping existing auth data despite error');
       }
       
       setLoading(false);
@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
 
     // Small delay to ensure localStorage is ready in production
     if (typeof window !== 'undefined') {
-      setTimeout(checkAuth, 100);
+      setTimeout(checkAuth, 200); // Increased from 100ms to 200ms
     } else {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }) => {
 
     console.log('✅ Normalized user for login:', normalizedUser);
 
-    // Set user state
+    // Set user state first
     setUser(normalizedUser);
 
     // Save to localStorage
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
     console.log('✅ User logged in successfully');
 
-    // Redirect the user to their dashboard
+    // Determine redirect URL but don't redirect immediately
     const dashboardUrls = {
       admin: '/admin/dashboard',
       doctor: '/doctor/dashboard',
@@ -122,12 +122,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     const redirectUrl = dashboardUrls[normalizedRole] || '/';
-    console.log('🎯 Redirecting to URL:', redirectUrl);
+    console.log('🎯 Will redirect to URL:', redirectUrl);
 
-    // Use a small delay to ensure state is updated
-    setTimeout(() => {
-      window.location.href = redirectUrl;
-    }, 100);
+    // Return the redirect URL so the login component can handle the navigation
+    return redirectUrl;
   };
 
   const logout = () => {

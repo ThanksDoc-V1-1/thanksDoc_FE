@@ -45,35 +45,80 @@ api.interceptors.response.use(
     // Handle network errors (backend not reachable)
     if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
       console.error('🚨 Network error - Backend may not be reachable');
-      alert('Unable to connect to the server. Please check if the backend is running and accessible.');
+      // Don't show alert on every network error to avoid spam
       return Promise.reject(error);
     }
 
+    // Only handle authentication errors for login attempts
+    // Do NOT auto-logout users for other API failures
     if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log('🔒 Authentication error, clearing tokens and redirecting');
+      console.log('🔒 Authentication error detected:', {
+        status: error.response?.status,
+        url: error.config?.url,
+        message: error.response?.data?.message
+      });
       
-      // Clear invalid tokens
-      localStorage.removeItem('jwt');
-      localStorage.removeItem('user');
+      // Only auto-logout if this is specifically the login endpoint failing with invalid credentials
+      const isLoginEndpoint = error.config?.url?.includes('/auth/login');
       
-      // Small delay to prevent immediate redirect loops
-      setTimeout(() => {
-        // Redirect to appropriate login page based on current path
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/admin')) {
-          window.location.href = '/admin/login';
-        } else if (currentPath.includes('/doctor')) {
-          window.location.href = '/doctor/login';
-        } else if (currentPath.includes('/business')) {
-          window.location.href = '/business/login';
-        }
-      }, 1000);
+      if (isLoginEndpoint) {
+        console.log('🔒 Login endpoint failed - this is expected for invalid credentials');
+        // Don't auto-logout here - let the login component handle the error
+      } else {
+        console.log('🔒 API endpoint failed but NOT auto-logging out - user stays logged in');
+        // Log the error but don't logout the user automatically
+        // This prevents the issue where dashboard API calls failing cause auto-logout
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// Doctor API calls
+// Helper function to manually logout user (can be called by components)
+export const forceLogout = () => {
+  console.log('🔒 Force logout called');
+  
+  // Clear tokens
+  localStorage.removeItem('jwt');
+  localStorage.removeItem('user');
+  
+  // Redirect to appropriate login page based on current path
+  const currentPath = window.location.pathname;
+  if (currentPath.includes('/admin')) {
+    window.location.href = '/admin/login';
+  } else if (currentPath.includes('/doctor')) {
+    window.location.href = '/doctor/login';
+  } else if (currentPath.includes('/business')) {
+    window.location.href = '/business/login';
+  } else {
+    window.location.href = '/';
+  }
+};
+
+// Helper function to check if user should remain authenticated
+export const isUserAuthenticated = () => {
+  try {
+    const user = localStorage.getItem('user');
+    const jwt = localStorage.getItem('jwt');
+    
+    if (!user || !jwt) {
+      console.log('🔍 No authentication data found');
+      return false;
+    }
+    
+    const userData = JSON.parse(user);
+    if (!userData.id && !userData.email) {
+      console.log('🔍 Invalid user data structure');
+      return false;
+    }
+    
+    console.log('✅ User authentication data is valid');
+    return true;
+  } catch (error) {
+    console.error('❌ Error checking authentication:', error);
+    return false;
+  }
+};
 export const doctorAPI = {
   getAll: () => api.get('/doctors'),
   getById: (id) => api.get(`/doctors/${id}?populate=services`),

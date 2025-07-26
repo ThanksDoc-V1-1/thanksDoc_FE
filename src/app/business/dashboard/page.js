@@ -107,23 +107,35 @@ export default function BusinessDashboard() {
       user: user ? { id: user.id, email: user.email, role: user.role } : null
     });
 
-    // Only redirect if we're sure about the authentication state (not loading)
-    if (!authLoading && isAuthenticated === false) {
-      console.log('🚫 Not authenticated, redirecting to business login');
-      router.push('/business/login');
+    // Don't redirect while authentication is still loading
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...');
       return;
     }
-    
-    // Only check role if we have a user and are not loading
-    if (!authLoading && isAuthenticated && user && user.role !== 'business') {
-      console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
-      router.push('/');
-      return;
-    }
-    
-    if (!authLoading && isAuthenticated && user && user.role === 'business') {
-      console.log('✅ Business authenticated, loading dashboard');
-    }
+
+    // Add a small delay to ensure AuthContext has fully initialized
+    const timeoutId = setTimeout(() => {
+      // Only redirect if we're sure about the authentication state (not loading)
+      if (!authLoading && isAuthenticated === false) {
+        console.log('🚫 Not authenticated after delay, redirecting to business login');
+        router.push('/business/login');
+        return;
+      }
+      
+      // Only check role if we have a user and are not loading
+      if (!authLoading && isAuthenticated && user && user.role !== 'business') {
+        console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
+        router.push('/');
+        return;
+      }
+      
+      if (!authLoading && isAuthenticated && user && user.role === 'business') {
+        console.log('✅ Business authenticated, loading dashboard');
+      }
+    }, 500); // 500ms delay to ensure auth is fully loaded
+
+    // Cleanup timeout if component unmounts or dependencies change
+    return () => clearTimeout(timeoutId);
   }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
@@ -177,8 +189,8 @@ export default function BusinessDashboard() {
     );
   }
 
-  // Don't render dashboard if not authenticated or not business user
-  if (!isAuthenticated || !user || user.role !== 'business') {
+  // Only show access denied if we're definitely not authenticated AND not loading
+  if (!authLoading && (!isAuthenticated || !user || user.role !== 'business')) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">

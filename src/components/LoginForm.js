@@ -46,11 +46,14 @@ export default function LoginForm() {
         
         console.log('🎯 Received redirect URL:', redirectUrl);
         
-        // Ensure redirect happens immediately
+        // Ensure redirect happens with a small delay to let auth state settle
         if (redirectUrl && redirectUrl !== '/') {
-          console.log('🚀 Navigating to dashboard:', redirectUrl);
-          // Navigate directly to the dashboard
-          window.location.href = redirectUrl;
+          console.log('🚀 Will navigate to dashboard:', redirectUrl);
+          // Add a small delay to ensure authentication state is fully set
+          setTimeout(() => {
+            console.log('🚀 Navigating to dashboard now:', redirectUrl);
+            window.location.href = redirectUrl;
+          }, 200); // 200ms delay to ensure auth state is set
         } else {
           console.log('⚠️ No valid redirect URL, staying on home page');
         }
