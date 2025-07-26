@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings } from 'lucide-react';
-import { serviceRequestAPI, doctorAPI, serviceAPI } from '../../../lib/api';
+import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -509,17 +509,51 @@ export default function DoctorDashboard() {
 
   const loadAllServices = async () => {
     try {
-      const [inPersonResponse, onlineResponse] = await Promise.all([
-        serviceAPI.getByCategory('in-person'),
-        serviceAPI.getByCategory('online')
-      ]);
+      console.log('🔄 Loading all services...');
+      
+      // Use the general services endpoint (public access) instead of filtered ones
+      const response = await serviceAPI.getAll();
+      console.log('📊 All services response:', response.data);
+      
+      const allServicesData = response.data.data || [];
+      console.log('📋 All services data:', allServicesData);
+      
+      // Filter on frontend instead of backend
+      const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
+      const onlineServices = allServicesData.filter(service => service.category === 'online');
+      
+      console.log('📍 In-person services:', inPersonServices.length);
+      console.log('💻 Online services:', onlineServices.length);
       
       setAllServices({
-        inPerson: inPersonResponse.data.data || [],
-        online: onlineResponse.data.data || []
+        inPerson: inPersonServices,
+        online: onlineServices
       });
     } catch (error) {
       console.error('Error loading all services:', error);
+      // Fallback: try without authentication in case JWT is the issue
+      try {
+        console.log('🔄 Retrying without JWT token...');
+        const token = localStorage.getItem('jwt');
+        localStorage.removeItem('jwt');
+        
+        const response = await serviceAPI.getAll();
+        const allServicesData = response.data.data || [];
+        
+        const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
+        const onlineServices = allServicesData.filter(service => service.category === 'online');
+        
+        setAllServices({
+          inPerson: inPersonServices,
+          online: onlineServices
+        });
+        
+        // Restore token
+        if (token) localStorage.setItem('jwt', token);
+        console.log('✅ Services loaded successfully without JWT');
+      } catch (fallbackError) {
+        console.error('❌ Failed to load services even without JWT:', fallbackError);
+      }
     }
   };
 

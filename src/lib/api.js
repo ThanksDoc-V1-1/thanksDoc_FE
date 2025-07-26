@@ -12,6 +12,15 @@ const api = axios.create({
   timeout: 10000, // 10 second timeout
 });
 
+// Create a separate axios instance for public API calls (no JWT token)
+const publicAPI = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
 // Add request interceptor to include JWT token
 api.interceptors.request.use(
   (config) => {
@@ -119,6 +128,160 @@ export const isUserAuthenticated = () => {
     return false;
   }
 };
+
+// Helper function to test JWT token validity
+export const testJWTToken = async () => {
+  try {
+    console.log('🧪 Testing JWT token validity...');
+    const token = localStorage.getItem('jwt');
+    const user = localStorage.getItem('user');
+    
+    if (!token) {
+      console.log('❌ No JWT token found');
+      return false;
+    }
+    
+    console.log('🔑 JWT token found:', token.substring(0, 50) + '...');
+    console.log('👤 User data:', user);
+    
+    // Try to decode the JWT token first
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('🔍 JWT Payload:', payload);
+      console.log('🆔 User ID in token:', payload.id);
+      console.log('🕐 JWT Expires:', new Date(payload.exp * 1000));
+      console.log('🕐 Current time:', new Date());
+      console.log('⏰ Token expired?', payload.exp * 1000 < Date.now());
+    } catch (decodeError) {
+      console.error('❌ Cannot decode JWT token:', decodeError);
+    }
+    
+    // Test with a simple endpoint that should always work if JWT is valid
+    const response = await api.get('/services');
+    console.log('✅ JWT token is valid - services endpoint accessible');
+    console.log('📊 Services response:', response.data);
+    return true;
+  } catch (error) {
+    console.error('❌ JWT token test failed:', error);
+    console.error('📄 Error response:', error.response?.data);
+    return false;
+  }
+};
+
+// Helper function to test if user exists in current database
+export const testUserExists = async () => {
+  try {
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const userEmail = userData.email;
+    
+    if (!userEmail) {
+      console.log('❌ No user email found');
+      return false;
+    }
+    
+    console.log('🔍 Testing if user exists in database:', userEmail);
+    
+    // Try to find user by email without authentication (this should work)
+    const response = await api.get(`/doctors?filters[email][$eq]=${userEmail}`);
+    console.log('👨‍⚕️ User search result:', response.data);
+    
+    if (response.data.data && response.data.data.length > 0) {
+      const foundUser = response.data.data[0];
+      console.log('✅ User exists in hosted database:', foundUser);
+      console.log('🆔 Hosted DB User ID:', foundUser.id);
+      console.log('🆔 Local storage User ID:', userData.id);
+      
+      if (foundUser.id !== userData.id) {
+        console.warn('⚠️ USER ID MISMATCH! This is the problem!');
+        alert(`USER ID MISMATCH!\nLocal storage: ${userData.id}\nHosted database: ${foundUser.id}\n\nThis is why JWT fails! Use Re-login button.`);
+      }
+      
+      return true;
+    } else {
+      console.log('❌ User not found in hosted database');
+      alert('User not found in hosted database! You may need to register again.');
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error checking user existence:', error);
+    return false;
+  }
+};
+
+// Helper function to test services endpoint permissions
+export const testServicesPermissions = async () => {
+  try {
+    console.log('🧪 Testing services endpoint permissions...');
+    
+    // Test 1: Try without JWT (public access)
+    const originalToken = localStorage.getItem('jwt');
+    localStorage.removeItem('jwt'); // Temporarily remove JWT
+    
+    try {
+      const publicResponse = await api.get('/services');
+      console.log('✅ Services accessible without JWT (public permissions)');
+      console.log('📊 Public services response:', publicResponse.data);
+      localStorage.setItem('jwt', originalToken); // Restore JWT
+      return { public: true, authenticated: null };
+    } catch (publicError) {
+      console.log('❌ Services NOT accessible without JWT');
+      localStorage.setItem('jwt', originalToken); // Restore JWT
+      
+      // Test 2: Try with JWT (authenticated access)
+      try {
+        const authResponse = await api.get('/services');
+        console.log('✅ Services accessible with JWT (authenticated permissions)');
+        console.log('📊 Auth services response:', authResponse.data);
+        return { public: false, authenticated: true };
+      } catch (authError) {
+        console.log('❌ Services NOT accessible with JWT either');
+        console.log('🔍 This suggests a backend permissions configuration issue');
+        return { public: false, authenticated: false };
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error testing services permissions:', error);
+    return { public: false, authenticated: false };
+  }
+};
+
+// Test category-specific services API calls (like the dashboard uses)
+export const testServiceCategories = async () => {
+  console.log('🧪 Testing category-specific services API calls...');
+  
+  try {
+    // Test in-person services
+    console.log('📡 Testing in-person services...');
+    const inPersonResponse = await api.get('/services?filters[category][$eq]=in-person&sort=displayOrder:asc');
+    console.log('✅ In-person services response:', inPersonResponse.data);
+    
+    // Test online services  
+    console.log('📡 Testing online services...');
+    const onlineResponse = await api.get('/services?filters[category][$eq]=online&sort=displayOrder:asc');
+    console.log('✅ Online services response:', onlineResponse.data);
+    
+    // Test data structure
+    console.log('📊 In-person services count:', inPersonResponse.data?.data?.length || 0);
+    console.log('📊 Online services count:', onlineResponse.data?.data?.length || 0);
+    
+    // Alert with results
+    const inPersonCount = inPersonResponse.data?.data?.length || 0;
+    const onlineCount = onlineResponse.data?.data?.length || 0;
+    
+    alert(`🧪 Category Services Test Results:
+📍 In-person services: ${inPersonCount}
+💻 Online services: ${onlineCount}
+🔍 Total should be: 11
+📊 Check console for detailed response structures`);
+    
+    return { inPersonCount, onlineCount };
+  } catch (error) {
+    console.error('❌ Category services test failed:', error);
+    alert('❌ Category services test failed - check console for details');
+    return false;
+  }
+};
+
 export const doctorAPI = {
   getAll: () => api.get('/doctors'),
   getById: (id) => api.get(`/doctors/${id}?populate=services`),
@@ -279,12 +442,12 @@ export const serviceRequestAPI = {
 
 // Service API calls
 export const serviceAPI = {
-  getAll: () => api.get('/services'),
-  getById: (id) => api.get(`/services/${id}`),
+  getAll: () => publicAPI.get('/services'), // Use public API (no JWT) for services
+  getById: (id) => publicAPI.get(`/services/${id}`), // Use public API for individual service
   create: (data) => api.post('/services', { data }),
   update: (id, data) => api.put(`/services/${id}`, { data }),
   delete: (id) => api.delete(`/services/${id}`),
-  getByCategory: (category) => api.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`),
+  getByCategory: (category) => publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`), // Use public API
   getDoctorsByService: async (serviceId, params) => {
     try {
       // Get all doctors with their services populated
