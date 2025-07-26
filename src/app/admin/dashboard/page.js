@@ -347,8 +347,8 @@ export default function AdminDashboard() {
         name: fullName,
         email: doctorFormData.email,
         password: doctorFormData.password,
-        specialisation: doctorFormData.specialisation,
-        licenceNumber: doctorFormData.licenceNumber,
+        specialization: doctorFormData.specialisation, // Map to American spelling for backend
+        licenseNumber: doctorFormData.licenceNumber, // Map to American spelling for backend
         phone: doctorFormData.phone,
         address: doctorFormData.address,
         city: doctorFormData.city || 'Not specified', // Use form data or default
@@ -404,9 +404,9 @@ export default function AdminDashboard() {
     // Handle both direct properties and nested attributes structure
     const firstName = doctor.firstName || doctor.attributes?.firstName || '';
     const lastName = doctor.lastName || doctor.attributes?.lastName || '';
-    const specialisation = doctor.specialisation || doctor.attributes?.specialisation || '';
+    const specialisation = doctor.specialization || doctor.specialisation || doctor.attributes?.specialization || doctor.attributes?.specialisation || '';
     const email = doctor.email || doctor.attributes?.email || '';
-    const licenceNumber = doctor.licenceNumber || doctor.attributes?.licenceNumber || '';
+    const licenceNumber = doctor.licenseNumber || doctor.licenceNumber || doctor.attributes?.licenseNumber || doctor.attributes?.licenceNumber || '';
     
     if (searchTerm === '') return true;
     
@@ -455,7 +455,7 @@ export default function AdminDashboard() {
   const filteredDoctorEarnings = doctorEarnings.filter(earning => {
     const doctorFirstName = earning.doctor?.firstName || earning.doctor?.attributes?.firstName || '';
     const doctorLastName = earning.doctor?.lastName || earning.doctor?.attributes?.lastName || '';
-    const specialisation = earning.doctor?.specialisation || earning.doctor?.attributes?.specialisation || '';
+    const specialisation = earning.doctor?.specialization || earning.doctor?.specialisation || earning.doctor?.attributes?.specialization || earning.doctor?.attributes?.specialisation || '';
     
     if (searchTerm === '') return true;
     
@@ -1098,8 +1098,8 @@ export default function AdminDashboard() {
                     const firstName = doctor.firstName || doctor.attributes?.firstName;
                     const lastName = doctor.lastName || doctor.attributes?.lastName;
                     const email = doctor.email || doctor.attributes?.email;
-                    const licenceNumber = doctor.licenceNumber || doctor.attributes?.licenceNumber;
-                    const specialisation = doctor.specialisation || doctor.attributes?.specialisation;
+                    const licenceNumber = doctor.licenseNumber || doctor.licenceNumber || doctor.attributes?.licenseNumber || doctor.attributes?.licenceNumber;
+                    const specialisation = doctor.specialization || doctor.specialisation || doctor.attributes?.specialization || doctor.attributes?.specialisation;
                     const yearsOfExperience = doctor.yearsOfExperience || doctor.attributes?.yearsOfExperience;
                     const hourlyRate = doctor.hourlyRate || doctor.attributes?.hourlyRate;
                     const isVerified = doctor.isVerified || doctor.attributes?.isVerified;
@@ -1732,7 +1732,7 @@ export default function AdminDashboard() {
                             </div>
                             <div>
                               <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{doctorName}</h3>
-                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{doctor.specialisation}</p>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{doctor.specialization || doctor.specialisation || 'Medical Professional'}</p>
                               <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>Rate: {formatCurrency(doctor.hourlyRate)}/hour</p>
                             </div>
                           </div>
@@ -2359,7 +2359,7 @@ export default function AdminDashboard() {
                       Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
                     </h2>
                     <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                      {selectedDoctor.specialisation}
+                      {selectedDoctor.specialization || selectedDoctor.specialisation || 'Medical Professional'}
                     </p>
                   </div>
                 </div>
@@ -2411,11 +2411,11 @@ export default function AdminDashboard() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>specialisation:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.specialisation}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.specialization || selectedDoctor.specialisation || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>License Number:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.licenceNumber || 'N/A'}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDoctor.licenseNumber || selectedDoctor.licenceNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Years of Experience:</span>
