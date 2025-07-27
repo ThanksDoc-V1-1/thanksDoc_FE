@@ -632,22 +632,13 @@ export default function BusinessDashboard() {
       if (response.data) {
         const requestId = response.data.id || response.data.data?.id;
         
-        // Enable automatic fallback for direct requests (2 minutes for testing)
-        if (requestId) {
-          try {
-            console.log('🔄 Enabling auto-fallback for request:', requestId);
-            await serviceRequestAPI.enableAutoFallback(requestId, 2); // 2 minutes for testing
-            console.log('✅ Auto-fallback enabled successfully');
-          } catch (fallbackError) {
-            console.error('⚠️ Failed to enable auto-fallback:', fallbackError);
-            // Don't block the main flow if fallback enablement fails
-          }
-        }
+        // Auto-fallback is now handled automatically by the backend cron job (24 hours)
+        // No need for manual enablement - the system will automatically broadcast after 24 hours
         
         alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! 
         
 ✅ Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} service charge)
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 2 minutes, your request will be automatically sent to other available doctors.`);
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.`);
         
         setShowHoursPopup(false);
         setSelectedDoctor(null);
@@ -852,22 +843,14 @@ export default function BusinessDashboard() {
         const requestId = response.data.id || response.data.data?.id;
         
         // Enable automatic fallback if a specific doctor was selected
-        if (requestId && ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId)) {
-          try {
-            console.log('🔄 Enabling auto-fallback for specific doctor request:', requestId);
-            await serviceRequestAPI.enableAutoFallback(requestId, 2); // 2 minutes for testing
-            console.log('✅ Auto-fallback enabled successfully');
-          } catch (fallbackError) {
-            console.error('⚠️ Failed to enable auto-fallback:', fallbackError);
-            // Don't block the main flow if fallback enablement fails
-          }
-        }
+        // Auto-fallback is now handled automatically by the backend cron job (24 hours)
+        // No need for manual enablement - the system will automatically broadcast after 24 hours
         
         let notificationMessage;
         if ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId) {
           notificationMessage = `Service request created successfully! Your selected doctor has been notified. 
           
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 2 minutes, your request will be automatically sent to other available doctors.
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
 
 A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
         } else {
@@ -1370,7 +1353,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                                     <span className={`text-xs font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
                                       {fallbackStatuses[request.id].fallbackTriggered 
                                         ? '🔄 Request reassigned to other doctors' 
-                                        : '⏱️ Auto-fallback enabled (2 min timeout)'
+                                        : '⏱️ Auto-fallback enabled (24 hour timeout)'
                                       }
                                     </span>
                                   </div>
