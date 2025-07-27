@@ -143,6 +143,17 @@ export default function DoctorLogin() {
                 </button>
               </div>
 
+              <div className="text-center space-y-3">
+                <Link 
+                  href="/doctor/forgot-password" 
+                  className={`inline-block transition-colors ${
+                    isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'
+                  }`}
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+
               <div className="form-footer-text">
                 Don't have an account?{' '}
                 <Link href="/doctor/register" className="form-link">

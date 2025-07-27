@@ -183,6 +183,19 @@ export default function LoginForm() {
         </button>
       </form>
 
+      <div className="mt-4 text-center">
+        <a 
+          href="/forgot-password" 
+          className={`text-sm transition-colors ${
+            isDarkMode 
+              ? 'text-blue-400 hover:text-blue-300' 
+              : 'text-blue-600 hover:text-blue-500'
+          } hover:underline`}
+        >
+          Forgot your password?
+        </a>
+      </div>
+
       <div className="mt-6 text-center text-sm text-gray-400">
         <p>Don't have an account?</p>
         <div className="mt-2 space-x-4">
