@@ -9,6 +9,17 @@ import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../.
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 
+// Helper function to check fallback status
+const checkFallbackStatus = async (requestId) => {
+  try {
+    const response = await serviceRequestAPI.checkFallbackStatus(requestId);
+    return response.data || response;
+  } catch (error) {
+    console.error('Error checking fallback status:', error);
+    return null;
+  }
+};
+
 export default function BusinessDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -77,6 +88,9 @@ export default function BusinessDashboard() {
   const [quickRequestServiceDate, setQuickRequestServiceDate] = useState('');
   const [quickRequestServiceTime, setQuickRequestServiceTime] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Fallback status tracking
+  const [fallbackStatuses, setFallbackStatuses] = useState({});
   const requestsPerPage = 5;
 
   // Business profile editing states
@@ -168,6 +182,35 @@ export default function BusinessDashboard() {
       clearInterval(refreshInterval);
     };
   }, [autoRefresh, user?.id]);
+
+  // Check fallback statuses for requests
+  useEffect(() => {
+    const checkAllFallbackStatuses = async () => {
+      if (serviceRequests.length === 0) return;
+      
+      const newStatuses = {};
+      
+      for (const request of serviceRequests) {
+        // Only check fallback status for pending requests with assigned doctors
+        if (request.status === 'pending' && request.doctor) {
+          const status = await checkFallbackStatus(request.id);
+          if (status) {
+            newStatuses[request.id] = status;
+          }
+        }
+      }
+      
+      setFallbackStatuses(newStatuses);
+    };
+    
+    // Check fallback statuses when requests change
+    checkAllFallbackStatuses();
+    
+    // Set up periodic checking every 30 seconds
+    const fallbackInterval = setInterval(checkAllFallbackStatuses, 30000);
+    
+    return () => clearInterval(fallbackInterval);
+  }, [serviceRequests]);
 
   // Log whenever service requests change
   useEffect(() => {
@@ -587,7 +630,25 @@ export default function BusinessDashboard() {
       const response = await serviceRequestAPI.createDirectRequest(requestData);
       
       if (response.data) {
-        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} service charge)`);
+        const requestId = response.data.id || response.data.data?.id;
+        
+        // Enable automatic fallback for direct requests (2 minutes for testing)
+        if (requestId) {
+          try {
+            console.log('🔄 Enabling auto-fallback for request:', requestId);
+            await serviceRequestAPI.enableAutoFallback(requestId, 2); // 2 minutes for testing
+            console.log('✅ Auto-fallback enabled successfully');
+          } catch (fallbackError) {
+            console.error('⚠️ Failed to enable auto-fallback:', fallbackError);
+            // Don't block the main flow if fallback enablement fails
+          }
+        }
+        
+        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! 
+        
+✅ Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} service charge)
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 2 minutes, your request will be automatically sent to other available doctors.`);
+        
         setShowHoursPopup(false);
         setSelectedDoctor(null);
         setRequestHours(1);
@@ -788,9 +849,27 @@ export default function BusinessDashboard() {
       const response = await serviceRequestAPI.createServiceRequest(requestData);
       
       if (response.data) {
+        const requestId = response.data.id || response.data.data?.id;
+        
+        // Enable automatic fallback if a specific doctor was selected
+        if (requestId && ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId)) {
+          try {
+            console.log('🔄 Enabling auto-fallback for specific doctor request:', requestId);
+            await serviceRequestAPI.enableAutoFallback(requestId, 2); // 2 minutes for testing
+            console.log('✅ Auto-fallback enabled successfully');
+          } catch (fallbackError) {
+            console.error('⚠️ Failed to enable auto-fallback:', fallbackError);
+            // Don't block the main flow if fallback enablement fails
+          }
+        }
+        
         let notificationMessage;
         if ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId) {
-          notificationMessage = `Service request created successfully! Your selected doctor has been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+          notificationMessage = `Service request created successfully! Your selected doctor has been notified. 
+          
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 2 minutes, your request will be automatically sent to other available doctors.
+
+A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
         } else {
           notificationMessage = `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
         }
@@ -1282,6 +1361,26 @@ export default function BusinessDashboard() {
                               <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
                                 Doctor: Dr. {request.doctor.firstName} {request.doctor.lastName}
                               </p>
+                              
+                              {/* Show fallback status for pending requests */}
+                              {request.status === 'pending' && fallbackStatuses[request.id] && (
+                                <div className={`mt-2 p-2 ${isDarkMode ? 'bg-yellow-900/20 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} border rounded-lg`}>
+                                  <div className="flex items-center space-x-2">
+                                    <Clock className={`h-3 w-3 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                                    <span className={`text-xs font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                                      {fallbackStatuses[request.id].fallbackTriggered 
+                                        ? '🔄 Request reassigned to other doctors' 
+                                        : '⏱️ Auto-fallback enabled (2 min timeout)'
+                                      }
+                                    </span>
+                                  </div>
+                                  {!fallbackStatuses[request.id].fallbackTriggered && fallbackStatuses[request.id].fallbackTimeout && (
+                                    <p className={`text-xs mt-1 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                      Timeout: {new Date(fallbackStatuses[request.id].fallbackTimeout).toLocaleTimeString()}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                               
                               {/* Show doctor contact info when request is accepted */}
                               {request.status === 'accepted' && request.doctor.phone && (

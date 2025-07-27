@@ -438,6 +438,10 @@ export const serviceRequestAPI = {
   getAvailableRequests: (doctorId) => api.get(`/service-requests/available/${doctorId}`),
   getBusinessRequests: (businessId) => api.get(`/service-requests/business/${businessId}`),
   getOverallStats: () => api.get('/service-requests/stats'),
+  // New fallback functionality
+  enableAutoFallback: (requestId, timeoutMinutes = 2) => api.put(`/service-requests/${requestId}/enable-fallback`, { timeoutMinutes }),
+  checkFallbackStatus: (requestId) => api.get(`/service-requests/${requestId}/fallback-status`),
+  triggerFallback: (requestId) => api.put(`/service-requests/${requestId}/trigger-fallback`),
 };
 
 // Service API calls
