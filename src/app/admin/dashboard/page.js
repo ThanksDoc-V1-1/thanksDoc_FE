@@ -20,7 +20,7 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Service form states
+  // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [serviceFormData, setServiceFormData] = useState({
@@ -30,6 +30,96 @@ export default function AdminDashboard() {
     isActive: true,
     displayOrder: 0
   });
+
+  const handleServiceFormChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'isActive') {
+      setServiceFormData(prev => ({
+        ...prev,
+        [name]: e.target.checked
+      }));
+    } else {
+      setServiceFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleServiceSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      let response;
+      if (editingService) {
+        response = await serviceAPI.update(editingService.id, {
+          name: serviceFormData.name,
+          description: serviceFormData.description,
+          category: serviceFormData.category,
+          isActive: serviceFormData.isActive,
+          displayOrder: parseInt(serviceFormData.displayOrder)
+        });
+        setServices(prev => prev.map(service => 
+          service.id === editingService.id ? response.data.data : service
+        ));
+      } else {
+        response = await serviceAPI.create({
+          name: serviceFormData.name,
+          description: serviceFormData.description,
+          category: serviceFormData.category,
+          isActive: serviceFormData.isActive,
+          displayOrder: parseInt(serviceFormData.displayOrder)
+        });
+        setServices(prev => [...prev, response.data.data]);
+      }
+
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceFormData({
+        name: '',
+        description: '',
+        category: 'in-person',
+        isActive: true,
+        displayOrder: services.length
+      });
+      await fetchAllData(); // Refresh all data to ensure consistency
+      alert(`Service ${editingService ? 'updated' : 'created'} successfully`);
+    } catch (error) {
+      console.error('Error saving service:', error);
+      alert('Failed to save service. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setServiceFormData({
+      name: service.attributes?.name || service.name,
+      description: service.attributes?.description || service.description || '',
+      category: service.attributes?.category || service.category,
+      isActive: service.attributes?.isActive || service.isActive,
+      displayOrder: service.attributes?.displayOrder || service.displayOrder || 0
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleDeleteService = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this service?')) return;
+
+    setDataLoading(true);
+    try {
+      await serviceAPI.delete(id);
+      setServices(prev => prev.filter(service => service.id !== id));
+      alert('Service deleted successfully');
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('Failed to delete service. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
   const requestsPerPage = 5;
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -70,6 +160,8 @@ export default function AdminDashboard() {
     postcode: '',
     description: ''
   });
+
+  // Calculate doctor earnings function - defined before fetchAllData to avoid ReferenceError
 
   // Calculate doctor earnings function - defined before fetchAllData to avoid ReferenceError
   const calculateDoctorEarnings = (doctorsData, requestsData, businessesData) => {
@@ -124,6 +216,8 @@ export default function AdminDashboard() {
     
     setDoctorEarnings(earningsArray);
   };
+
+  // Registration functions for doctors and businesses
 
   const fetchAllData = async () => {
     setDataLoading(true);
@@ -285,68 +379,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleServiceSubmit = async (e) => {
-    e.preventDefault();
-    setDataLoading(true);
-
-    try {
-      if (editingService) {
-        // Update existing service
-        await serviceAPI.update(editingService.id, serviceFormData);
-        alert('Service updated successfully!');
-      } else {
-        // Create new service
-        await serviceAPI.create(serviceFormData);
-        alert('Service created successfully!');
-      }
-      setShowServiceForm(false);
-      setEditingService(null);
-      setServiceFormData({
-        name: '',
-        description: '',
-        category: 'in-person',
-        isActive: true,
-        displayOrder: 0
-      });
-      fetchAllData(); // Refresh the data
-    } catch (error) {
-      console.error('Error saving service:', error);
-      alert('Failed to save service. Please try again.');
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  const handleEditService = (service) => {
-    setEditingService(service);
-    setServiceFormData({
-      name: service.attributes.name,
-      description: service.attributes.description || '',
-      category: service.attributes.category,
-      isActive: service.attributes.isActive,
-      displayOrder: service.attributes.displayOrder || 0
-    });
-    setShowServiceForm(true);
-  };
-
-  const handleDeleteService = async (serviceId) => {
-    if (!window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-      return;
-    }
-
-    setDataLoading(true);
-    try {
-      await serviceAPI.delete(serviceId);
-      alert('Service deleted successfully!');
-      fetchAllData(); // Refresh the data
-    } catch (error) {
-      console.error('Error deleting service:', error);
-      alert('Failed to delete service. Please try again.');
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
   const handleBusinessRegistration = async (e) => {
     e.preventDefault();
     setDataLoading(true);
@@ -477,7 +509,10 @@ export default function AdminDashboard() {
   };
 
   // Filter functions for search functionality only
+  // Filter functions for search
   const filteredDoctors = doctors.filter(doctor => {
+    if (!searchTerm) return true;
+    
     // Handle both direct properties and nested attributes structure
     const firstName = doctor.firstName || doctor.attributes?.firstName || '';
     const lastName = doctor.lastName || doctor.attributes?.lastName || '';
@@ -485,16 +520,16 @@ export default function AdminDashboard() {
     const email = doctor.email || doctor.attributes?.email || '';
     const licenceNumber = doctor.licenseNumber || doctor.licenceNumber || doctor.attributes?.licenseNumber || doctor.attributes?.licenceNumber || '';
     
-    if (searchTerm === '') return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return `${firstName} ${lastName}`.toLowerCase().includes(searchLower) ||
-           specialisation.toLowerCase().includes(searchLower) ||
-           email.toLowerCase().includes(searchLower) ||
-           licenceNumber.toLowerCase().includes(searchLower);
+    const search = searchTerm.toLowerCase();
+    return `${firstName} ${lastName}`.toLowerCase().includes(search) ||
+           specialisation.toLowerCase().includes(search) ||
+           email.toLowerCase().includes(search) ||
+           licenceNumber.toLowerCase().includes(search);
   });
 
   const filteredBusinesses = businesses.filter(business => {
+    if (!searchTerm) return true;
+    
     // Handle both direct properties and nested attributes structure
     const businessName = business.businessName || business.name || business.attributes?.businessName || business.attributes?.name || '';
     const businessType = business.businessType || business.attributes?.businessType || '';
@@ -502,27 +537,26 @@ export default function AdminDashboard() {
     const businessLicence = business.businessLicence || business.attributes?.businessLicence || '';
     const contactPersonName = business.contactPersonName || business.attributes?.contactPersonName || '';
     
-    if (searchTerm === '') return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return businessName.toLowerCase().includes(searchLower) ||
-           businessType.toLowerCase().includes(searchLower) ||
-           email.toLowerCase().includes(searchLower) ||
-           businessLicence.toLowerCase().includes(searchLower) ||
-           contactPersonName.toLowerCase().includes(searchLower);
+    const search = searchTerm.toLowerCase();
+    return businessName.toLowerCase().includes(search) ||
+           businessType.toLowerCase().includes(search) ||
+           email.toLowerCase().includes(search) ||
+           businessLicence.toLowerCase().includes(search) ||
+           contactPersonName.toLowerCase().includes(search);
   });
 
   const filteredServices = services.filter(service => {
+    if (!searchTerm) return true;
     const name = service.attributes?.name || service.name || '';
-    const category = service.attributes?.category || service.category || '';
     const description = service.attributes?.description || service.description || '';
+    const category = service.attributes?.category || service.category || '';
+    const status = service.attributes?.isActive || service.isActive ? 'active' : 'inactive';
+    const search = searchTerm.toLowerCase();
     
-    if (searchTerm === '') return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return name.toLowerCase().includes(searchLower) ||
-           category.toLowerCase().includes(searchLower) ||
-           description.toLowerCase().includes(searchLower);
+    return name.toLowerCase().includes(search) ||
+           description.toLowerCase().includes(search) ||
+           category.toLowerCase().includes(search) ||
+           status.includes(search);
   });
 
   const filteredRequests = serviceRequests.filter(request => {
@@ -1682,24 +1716,35 @@ export default function AdminDashboard() {
 
         {/* Service Form Modal */}
         {showServiceForm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 transition-opacity" onClick={() => setShowServiceForm(false)}>
-                <div className={`absolute inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-500'} opacity-75`}></div>
-              </div>
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowServiceForm(false)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
               <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
 
-              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full ${
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50 ${
                 isDarkMode ? 'bg-gray-900' : 'bg-white'
               }`}>
                 <form onSubmit={handleServiceSubmit}>
                   <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
                     <div className="sm:flex sm:items-start">
                       <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                        <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {editingService ? 'Edit Service' : 'Add New Service'}
-                        </h3>
+                        <div className="flex justify-between items-center">
+                          <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {editingService ? 'Edit Service' : 'Add New Service'}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowServiceForm(false)}
+                            className="text-gray-400 hover:text-gray-500"
+                          >
+                            <span className="sr-only">Close</span>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                         <div className="mt-4 space-y-4">
                           <div>
                             <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -1709,9 +1754,10 @@ export default function AdminDashboard() {
                               type="text"
                               name="name"
                               value={serviceFormData.name}
-                              onChange={(e) => setServiceFormData(prev => ({ ...prev, name: e.target.value }))}
+                              onChange={handleServiceFormChange}
                               required
-                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              autoFocus
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                 isDarkMode 
                                   ? 'bg-gray-800 border-gray-700 text-white' 
                                   : 'bg-white border-gray-300 text-gray-900'

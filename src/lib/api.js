@@ -446,10 +446,10 @@ export const serviceRequestAPI = {
 
 // Service API calls
 export const serviceAPI = {
-  getAll: () => publicAPI.get('/services'), // Use public API (no JWT) for services
-  getById: (id) => publicAPI.get(`/services/${id}`), // Use public API for individual service
-  create: (data) => api.post('/services', { data }),
-  update: (id, data) => api.put(`/services/${id}`, { data }),
+  getAll: () => publicAPI.get('/services?populate=*'), // Use public API (no JWT) for services
+  getById: (id) => publicAPI.get(`/services/${id}?populate=*`), // Use public API for individual service
+  create: (data) => api.post('/services', { data: { ...data } }),
+  update: (id, data) => api.put(`/services/${id}`, { data: { ...data } }),
   delete: (id) => api.delete(`/services/${id}`),
   getByCategory: (category) => publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`), // Use public API
   getDoctorsByService: async (serviceId, params) => {
