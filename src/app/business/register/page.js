@@ -28,8 +28,8 @@ export default function BusinessRegister() {
     address: '',
     city: '',
     state: '',
-    PostcodeCode: '',
-    businessLicence: '',
+    zipCode: '',
+    businessLicense: '',
     description: '',
     latitude: '',
     longitude: '',
@@ -81,11 +81,18 @@ export default function BusinessRegister() {
         throw new Error('Please provide your location coordinates');
       }
 
-      const { confirmPassword, ...dataToSend } = {
-        ...formData,
-        name: formData.businessName, // Add name field for consistency
+      const { confirmPassword, businessName, ...rest } = formData;
+      
+      const dataToSend = {
+        businessName,
+        name: businessName, // required field
+        ...rest,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
+        // Ensure these required fields are properly named and formatted
+        businessType: formData.businessType || 'pharmacy',
+        businessLicense: formData.businessLicense,
+        zipCode: formData.zipCode
       };
 
       // Use the new authentication API
