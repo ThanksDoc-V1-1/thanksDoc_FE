@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus } from 'lucide-react';
-import { doctorAPI, businessAPI, serviceRequestAPI } from '../../../lib/api';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus, Package, Globe } from 'lucide-react';
+import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -14,10 +14,22 @@ export default function AdminDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
+  const [services, setServices] = useState([]);
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // Service form states
+  const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
+  const [serviceFormData, setServiceFormData] = useState({
+    name: '',
+    description: '',
+    category: 'in-person',
+    isActive: true,
+    displayOrder: 0
+  });
   const requestsPerPage = 5;
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -116,18 +128,21 @@ export default function AdminDashboard() {
   const fetchAllData = async () => {
     setDataLoading(true);
     try {
-      const [doctorsRes, businessesRes, requestsRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
-        serviceRequestAPI.getAll()
+        serviceRequestAPI.getAll(),
+        serviceAPI.getAll()
       ]);
 
       console.log('🏥 Raw doctors response:', doctorsRes.data);
       console.log('🏢 Raw businesses response:', businessesRes.data);
       console.log('📋 Raw requests response:', requestsRes.data);
+      console.log('📦 Raw services response:', servicesRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
+      setServices(servicesRes.data?.data || []);
       
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
@@ -265,6 +280,68 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error registering doctor:', error);
       alert('Failed to register doctor. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleServiceSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      if (editingService) {
+        // Update existing service
+        await serviceAPI.update(editingService.id, serviceFormData);
+        alert('Service updated successfully!');
+      } else {
+        // Create new service
+        await serviceAPI.create(serviceFormData);
+        alert('Service created successfully!');
+      }
+      setShowServiceForm(false);
+      setEditingService(null);
+      setServiceFormData({
+        name: '',
+        description: '',
+        category: 'in-person',
+        isActive: true,
+        displayOrder: 0
+      });
+      fetchAllData(); // Refresh the data
+    } catch (error) {
+      console.error('Error saving service:', error);
+      alert('Failed to save service. Please try again.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setServiceFormData({
+      name: service.attributes.name,
+      description: service.attributes.description || '',
+      category: service.attributes.category,
+      isActive: service.attributes.isActive,
+      displayOrder: service.attributes.displayOrder || 0
+    });
+    setShowServiceForm(true);
+  };
+
+  const handleDeleteService = async (serviceId) => {
+    if (!window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
+      return;
+    }
+
+    setDataLoading(true);
+    try {
+      await serviceAPI.delete(serviceId);
+      alert('Service deleted successfully!');
+      fetchAllData(); // Refresh the data
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      alert('Failed to delete service. Please try again.');
     } finally {
       setDataLoading(false);
     }
@@ -435,6 +512,19 @@ export default function AdminDashboard() {
            contactPersonName.toLowerCase().includes(searchLower);
   });
 
+  const filteredServices = services.filter(service => {
+    const name = service.attributes?.name || service.name || '';
+    const category = service.attributes?.category || service.category || '';
+    const description = service.attributes?.description || service.description || '';
+    
+    if (searchTerm === '') return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return name.toLowerCase().includes(searchLower) ||
+           category.toLowerCase().includes(searchLower) ||
+           description.toLowerCase().includes(searchLower);
+  });
+
   const filteredRequests = serviceRequests.filter(request => {
     // Handle both direct properties and nested attributes structure
     const serviceType = request.serviceType || request.attributes?.serviceType || '';
@@ -602,6 +692,7 @@ export default function AdminDashboard() {
                 placeholder={
                   activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
                   activeTab === 'businesses' ? "Search businesses by name, type, email..." :
+                  activeTab === 'services' ? "Search services by name, category..." :
                   activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
                   activeTab === 'earnings' ? "Search by doctor name..." :
                   "Search..."
@@ -617,11 +708,12 @@ export default function AdminDashboard() {
         <div className={`mb-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-1.5 rounded-xl shadow border`}>
           <nav className="grid grid-cols-2 sm:flex gap-1.5">
             {[
-              { id: 'overview', name: 'Overview', icon: Eye },
+              { id: 'overview', name: 'Overview', icon: Shield },
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
               { id: 'businesses', name: 'Businesses', icon: Building2 },
-              { id: 'requests', name: 'Service Requests', icon: Users },
-              { id: 'earnings', name: 'Doctor Earnings', icon: Users },
+              { id: 'services', name: 'Services', icon: Package },
+              { id: 'requests', name: 'Service Requests', icon: Calendar },
+              { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -1422,6 +1514,309 @@ export default function AdminDashboard() {
                 Showing {filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'business' : 'businesses'} of {businesses.length} total
               </div>
             )}
+          </div>
+        )}
+
+        {/* Services Tab */}
+        {activeTab === 'services' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <Package className="h-5 w-5 text-purple-500 mr-2" />
+                  Medical Services
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage available medical services</p>
+              </div>
+              <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
+                <button
+                  onClick={() => {
+                    setEditingService(null);
+                    setServiceFormData({
+                      name: '',
+                      description: '',
+                      category: 'in-person',
+                      isActive: true,
+                      displayOrder: services.length
+                    });
+                    setShowServiceForm(true);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Service
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className={`sticky top-0 z-10 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
+                  <tr>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Name
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Category
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Status
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Order
+                    </th>
+                    <th className={`px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
+                  {filteredServices.length > 0 ? filteredServices.map((service) => {
+                    const id = service.id;
+                    const name = service.attributes?.name || service.name;
+                    const category = service.attributes?.category || service.category;
+                    const isActive = service.attributes?.isActive || service.isActive;
+                    const displayOrder = service.attributes?.displayOrder || service.displayOrder || 0;
+
+                    return (
+                      <tr key={id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div>
+                              <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                            category === 'in-person' 
+                              ? isDarkMode ? 'bg-blue-900/40 text-blue-400 border border-blue-900' : 'bg-blue-100 text-blue-700 border border-blue-300'
+                              : isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300'
+                          }`}>
+                            {category === 'in-person' ? (
+                              <>
+                                <MapPin className="h-3.5 w-3.5 mr-1" />
+                                In-Person
+                              </>
+                            ) : (
+                              <>
+                                <Globe className="h-3.5 w-3.5 mr-1" />
+                                Online
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                            isActive 
+                              ? isDarkMode ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-900' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                              : isDarkMode ? 'bg-red-900/40 text-red-400 border border-red-900' : 'bg-red-100 text-red-700 border border-red-300'
+                          }`}>
+                            {isActive ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 mr-1" />
+                                Active
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-3.5 w-3.5 mr-1" />
+                                Inactive
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                            {displayOrder}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => handleEditService(service)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              <Eye className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteService(id)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              <X className={`h-4 w-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-8 text-center">
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No services found</h3>
+                          <p className="max-w-md mx-auto">
+                            {searchTerm ? 
+                              'Try adjusting your search criteria to find what you\'re looking for.' :
+                              'No services have been added yet. Click the "Add New Service" button to create one.'
+                            }
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            {filteredServices.length > 0 && (
+              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
+                Showing {filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} of {services.length} total
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Service Form Modal */}
+        {showServiceForm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 transition-opacity" onClick={() => setShowServiceForm(false)}>
+                <div className={`absolute inset-0 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-500'} opacity-75`}></div>
+              </div>
+
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <form onSubmit={handleServiceSubmit}>
+                  <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {editingService ? 'Edit Service' : 'Add New Service'}
+                        </h3>
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Service Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="name"
+                              value={serviceFormData.name}
+                              onChange={(e) => setServiceFormData(prev => ({ ...prev, name: e.target.value }))}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Description
+                            </label>
+                            <textarea
+                              name="description"
+                              value={serviceFormData.description}
+                              onChange={(e) => setServiceFormData(prev => ({ ...prev, description: e.target.value }))}
+                              rows={3}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Category *
+                            </label>
+                            <select
+                              name="category"
+                              value={serviceFormData.category}
+                              onChange={(e) => setServiceFormData(prev => ({ ...prev, category: e.target.value }))}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="in-person">In-Person</option>
+                              <option value="online">Online</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Display Order
+                            </label>
+                            <input
+                              type="number"
+                              name="displayOrder"
+                              value={serviceFormData.displayOrder}
+                              onChange={(e) => setServiceFormData(prev => ({ ...prev, displayOrder: parseInt(e.target.value) }))}
+                              min={0}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              name="isActive"
+                              checked={serviceFormData.isActive}
+                              onChange={(e) => setServiceFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                            />
+                            <label className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Active
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t flex flex-row-reverse gap-3`}>
+                    <button
+                      type="submit"
+                      disabled={dataLoading}
+                      className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        isDarkMode
+                          ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                          : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      } ${dataLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {dataLoading ? 'Saving...' : editingService ? 'Save Changes' : 'Add Service'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowServiceForm(false)}
+                      className={`inline-flex justify-center rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-gray-500'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
 
