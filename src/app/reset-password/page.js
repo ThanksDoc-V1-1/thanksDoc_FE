@@ -139,21 +139,6 @@ function ResetPasswordContent() {
     );
   }
 
-}
-
-export default function ResetPassword() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    }>
-      <ResetPasswordContent />
-    </Suspense>
-  );
-}
-
-function ResetPasswordContent() {
   return (
     <div className={`min-h-screen py-12 transition-colors duration-200 ${
       isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
@@ -292,3 +277,18 @@ function ResetPasswordContent() {
     </div>
   );
 }
+
+export default function ResetPassword() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+  
+
