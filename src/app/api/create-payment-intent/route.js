@@ -4,7 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
   try {
-    const { amount, currency = 'gbp', metadata = {} } = await request.json();
+    const { amount, currency = 'gbp', metadata = {}, idempotencyKey } = await request.json();
 
     console.log('Creating payment intent for amount:', amount, currency);
     console.log('Metadata:', metadata);
@@ -16,6 +16,9 @@ export async function POST(request) {
       );
     }
 
+    // Generate idempotency key if not provided
+    const idemKey = idempotencyKey || `pi_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Stripe expects amount in pence for GBP
@@ -24,6 +27,8 @@ export async function POST(request) {
       automatic_payment_methods: {
         enabled: true,
       },
+    }, {
+      idempotencyKey: idemKey, // Prevents duplicate PaymentIntents
     });
 
     console.log('Payment intent created:', paymentIntent.id);

@@ -14,14 +14,24 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
   const [loading, setLoading] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentError, setPaymentError] = useState(null);
+  const [paymentIntentCreated, setPaymentIntentCreated] = useState(false);
 
   useEffect(() => {
-    // Create PaymentIntent as soon as the page loads
-    createPaymentIntent();
-  }, [serviceRequest]);
+    // Only create PaymentIntent once
+    if (!paymentIntentCreated && serviceRequest && !clientSecret) {
+      createPaymentIntent();
+    }
+  }, [serviceRequest, paymentIntentCreated, clientSecret]);
 
   const createPaymentIntent = async () => {
+    if (paymentIntentCreated) return; // Prevent duplicate creation
+    
     try {
+      setPaymentIntentCreated(true); // Mark as being created
+      
+      // Generate a unique idempotency key for this payment
+      const idempotencyKey = `pi_${serviceRequest.id}_${Date.now()}`;
+      
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
@@ -30,10 +40,12 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
         body: JSON.stringify({
           amount: serviceRequest.totalAmount,
           currency: 'gbp',
+          idempotencyKey: idempotencyKey,
           metadata: {
+            serviceRequestId: serviceRequest.id?.toString() || '',
             serviceType: serviceRequest.serviceType,
-            doctorId: serviceRequest.doctor?.id || '',
-            patientId: serviceRequest.patientId || '',
+            doctorId: serviceRequest.doctor?.id?.toString() || '',
+            patientId: serviceRequest.patientId?.toString() || '',
           },
         }),
       });
@@ -42,6 +54,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
       
       if (data.error) {
         setPaymentError(data.error);
+        setPaymentIntentCreated(false); // Reset on error
         return;
       }
 
@@ -49,14 +62,15 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
     } catch (error) {
       console.error('Error creating payment intent:', error);
       setPaymentError('Failed to initialize payment. Please try again.');
+      setPaymentIntentCreated(false); // Reset on error
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!stripe || !elements || !clientSecret) {
-      return;
+    if (!stripe || !elements || !clientSecret || loading) {
+      return; // Prevent multiple submissions
     }
 
     setLoading(true);
