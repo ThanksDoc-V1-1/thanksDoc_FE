@@ -329,7 +329,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
   if (customerLoading) {
     return (
-      <div className="max-w-md mx-auto bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800">
+      <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-700 rounded mb-4"></div>
           <div className="h-4 bg-gray-700 rounded mb-2"></div>
@@ -340,10 +340,27 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800 max-h-[80vh] overflow-y-auto modal-scrollable">
+    <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-800 max-h-[80vh] overflow-y-auto modal-scrollable">
       <div className="flex items-center justify-center mb-6">
         <Lock className="h-6 w-6 text-green-400 mr-2" />
         <h2 className="text-xl font-semibold text-white">Secure Payment</h2>
+      </div>
+
+      {/* Stripe Badge for Trust */}
+      <div className="flex items-center justify-center mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
+            <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
+              <span className="text-white text-xs font-bold">S</span>
+            </div>
+            <span className="text-gray-300 text-sm font-medium">Powered by Stripe</span>
+          </div>
+          <div className="text-gray-400 text-xs">•</div>
+          <div className="flex items-center space-x-1">
+            <Lock className="h-3 w-3 text-green-400" />
+            <span className="text-gray-400 text-xs">SSL Encrypted</span>
+          </div>
+        </div>
       </div>
 
       {/* Service Summary */}
@@ -390,9 +407,9 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
       {/* Payment Form - Only show when adding a new card or no saved methods selected */}
       {(showAddCard || !selectedPaymentMethodId) && (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {showAddCard && (
-            <div className="flex items-center mb-4">
+            <div className="flex items-center mb-6">
               <button
                 type="button"
                 onClick={() => setShowAddCard(false)}
@@ -405,10 +422,10 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-300 mb-3">
               Card Information
             </label>
-            <div className="border border-gray-600 rounded-lg bg-gray-700 p-3">
+            <div className="border border-gray-600 rounded-lg bg-gray-700 p-4">
               <CardElement
                 options={{
                   hidePostalCode: true,
@@ -416,6 +433,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
                     base: {
                       fontSize: '16px',
                       color: '#ffffff',
+                      fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
                       '::placeholder': {
                         color: '#9ca3af',
                       },
@@ -430,15 +448,15 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </div>
 
           {/* Save payment method checkbox */}
-          <div className="flex items-center">
+          <div className="flex items-center py-2">
             <input
               type="checkbox"
               id="saveCard"
               checked={savePaymentMethod}
               onChange={(e) => setSavePaymentMethod(e.target.checked)}
-              className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900"
+              className="rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500 focus:ring-offset-gray-900 w-4 h-4"
             />
-            <label htmlFor="saveCard" className="ml-2 text-sm text-gray-300">
+            <label htmlFor="saveCard" className="ml-3 text-sm text-gray-300">
               Save this card for future payments
             </label>
           </div>
@@ -464,10 +482,19 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 mb-2">
               <Lock className="inline h-3 w-3 mr-1" />
               Your payment information is secure and encrypted
             </p>
+            <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
+              <span>Secured by</span>
+              <div className="flex items-center space-x-1">
+                <div className="w-4 h-4 bg-indigo-600 rounded flex items-center justify-center">
+                  <span className="text-white text-[8px] font-bold">S</span>
+                </div>
+                <span className="font-medium">Stripe</span>
+              </div>
+            </div>
           </div>
         </form>
       )}
@@ -494,10 +521,19 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </button>
           
           <div className="text-center mt-2">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 mb-2">
               <Lock className="inline h-3 w-3 mr-1" />
               Your payment information is secure and encrypted
             </p>
+            <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
+              <span>Secured by</span>
+              <div className="flex items-center space-x-1">
+                <div className="w-4 h-4 bg-indigo-600 rounded flex items-center justify-center">
+                  <span className="text-white text-[8px] font-bold">S</span>
+                </div>
+                <span className="font-medium">Stripe</span>
+              </div>
+            </div>
           </div>
         </div>
       )}
