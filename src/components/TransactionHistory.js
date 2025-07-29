@@ -6,6 +6,8 @@ import { Calendar, Download, Eye, DollarSign, Users, CreditCard, TrendingUp, Fil
 export default function TransactionHistory() {
   const [transactions, setTransactions] = useState([]);
   const [doctorEarnings, setDoctorEarnings] = useState([]);
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [paidPayments, setPaidPayments] = useState([]);
   const [summary, setSummary] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedDoctor, setSelectedDoctor] = useState('');
@@ -14,7 +16,7 @@ export default function TransactionHistory() {
     endDate: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' or 'earnings'
+  const [activeTab, setActiveTab] = useState('transactions'); // 'transactions', 'earnings', 'pending', or 'paid'
 
   useEffect(() => {
     fetchTransactionHistory();
@@ -87,67 +89,98 @@ export default function TransactionHistory() {
           paymentStatus: item.paymentStatus,
           doctorPaidAt: item.doctorPaidAt,
         };
-      });
+      }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending (latest first)
 
-      // Group by doctor for earnings and check payment status
-      const doctorEarningsMap = {};
-      transactions.forEach(transaction => {
-        if (!doctorEarningsMap[transaction.doctorId]) {
-          doctorEarningsMap[transaction.doctorId] = {
-            doctorId: transaction.doctorId,
-            doctorName: transaction.doctorName,
-            totalEarnings: 0,
-            totalTransactions: 0,
-            transactions: [],
-            isPaid: false,
-            paymentDate: null
-          };
-        }
-        
-        doctorEarningsMap[transaction.doctorId].totalEarnings += transaction.doctorFee;
-        doctorEarningsMap[transaction.doctorId].totalTransactions += 1;
-        doctorEarningsMap[transaction.doctorId].transactions.push(transaction);
-      });
+      // Create individual doctor payment records (no grouping)
+      // Show all transactions with their payment status
+      const doctorPayments = transactions
+        .map(transaction => ({
+          id: transaction.id,
+          doctorId: transaction.doctorId,
+          doctorName: transaction.doctorName,
+          serviceType: transaction.serviceType,
+          businessName: transaction.businessName,
+          amount: transaction.doctorFee,
+          totalAmount: transaction.totalAmount,
+          date: transaction.date,
+          paymentStatus: transaction.paymentStatus,
+          doctorPaidAt: transaction.doctorPaidAt,
+          stripePaymentId: transaction.stripePaymentId,
+          isPaid: transaction.paymentStatus === 'doctor_paid'
+        }))
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending (latest first)
 
-      // Check payment status for each doctor after all transactions are grouped
-      Object.keys(doctorEarningsMap).forEach(doctorId => {
-        const doctor = doctorEarningsMap[doctorId];
-        
-        console.log('🔍 Checking payment status for doctor:', doctor.doctorName);
-        console.log('🔍 Doctor transactions:', doctor.transactions.map(t => ({
-          id: t.id,
-          paymentStatus: t.paymentStatus,
-          doctorPaidAt: t.doctorPaidAt
-        })));
-        
-        // Check if any transaction for this doctor has paymentStatus 'doctor_paid'
-        const hasAnyPaidTransaction = doctor.transactions.some(t => t.paymentStatus === 'doctor_paid');
-        
-        console.log('🔍 Has any paid transaction:', hasAnyPaidTransaction);
-        
-        if (hasAnyPaidTransaction) {
-          doctor.isPaid = true;
-          // Use the latest doctorPaidAt date
-          const paidTransactions = doctor.transactions.filter(t => t.doctorPaidAt);
-          if (paidTransactions.length > 0) {
-            const latestPaymentDate = Math.max(
-              ...paidTransactions.map(t => new Date(t.doctorPaidAt).getTime())
-            );
-            doctor.paymentDate = new Date(latestPaymentDate).toISOString();
-          } else {
-            doctor.paymentDate = new Date().toISOString(); // Fallback to current date
+      console.log('🔍 Individual doctor payments:', doctorPayments.length);
+      console.log('🔍 Doctor payments data:', doctorPayments.map(p => ({
+        id: p.id,
+        doctorName: p.doctorName,
+        amount: p.amount,
+        paymentStatus: p.paymentStatus
+      })));
+
+      // Create aggregated pending payments by doctor
+      const pendingPaymentsMap = {};
+      doctorPayments
+        .filter(payment => !payment.isPaid)
+        .forEach(payment => {
+          if (!pendingPaymentsMap[payment.doctorId]) {
+            pendingPaymentsMap[payment.doctorId] = {
+              doctorId: payment.doctorId,
+              doctorName: payment.doctorName,
+              totalPending: 0,
+              transactionCount: 0,
+              transactions: []
+            };
           }
-        }
-        
-        console.log('🔍 Final doctor status:', {
-          doctorId: doctor.doctorId,
-          doctorName: doctor.doctorName,
-          isPaid: doctor.isPaid,
-          paymentDate: doctor.paymentDate
+          pendingPaymentsMap[payment.doctorId].totalPending += payment.amount;
+          pendingPaymentsMap[payment.doctorId].transactionCount += 1;
+          pendingPaymentsMap[payment.doctorId].transactions.push(payment);
         });
-      });
 
-      const doctorEarnings = Object.values(doctorEarningsMap);
+      const pendingPayments = Object.values(pendingPaymentsMap)
+        .sort((a, b) => {
+          // Sort by the latest transaction date for each doctor (descending)
+          const aLatestDate = Math.max(...a.transactions.map(t => new Date(t.date).getTime()));
+          const bLatestDate = Math.max(...b.transactions.map(t => new Date(t.date).getTime()));
+          return bLatestDate - aLatestDate;
+        });
+
+      // Create aggregated paid payments by doctor
+      const paidPaymentsMap = {};
+      doctorPayments
+        .filter(payment => payment.isPaid)
+        .forEach(payment => {
+          if (!paidPaymentsMap[payment.doctorId]) {
+            paidPaymentsMap[payment.doctorId] = {
+              doctorId: payment.doctorId,
+              doctorName: payment.doctorName,
+              totalPaid: 0,
+              transactionCount: 0,
+              lastPaymentDate: null,
+              transactions: []
+            };
+          }
+          paidPaymentsMap[payment.doctorId].totalPaid += payment.amount;
+          paidPaymentsMap[payment.doctorId].transactionCount += 1;
+          paidPaymentsMap[payment.doctorId].transactions.push(payment);
+          
+          // Track the most recent payment date
+          if (payment.doctorPaidAt) {
+            const paymentDate = new Date(payment.doctorPaidAt);
+            if (!paidPaymentsMap[payment.doctorId].lastPaymentDate || 
+                paymentDate > new Date(paidPaymentsMap[payment.doctorId].lastPaymentDate)) {
+              paidPaymentsMap[payment.doctorId].lastPaymentDate = payment.doctorPaidAt;
+            }
+          }
+        });
+
+      const paidPayments = Object.values(paidPaymentsMap)
+        .sort((a, b) => {
+          // Sort by the latest payment date (descending)
+          const aLatestDate = a.lastPaymentDate ? new Date(a.lastPaymentDate).getTime() : 0;
+          const bLatestDate = b.lastPaymentDate ? new Date(b.lastPaymentDate).getTime() : 0;
+          return bLatestDate - aLatestDate;
+        });
 
       setTransactions(transactions);
       setSummary({
@@ -156,30 +189,32 @@ export default function TransactionHistory() {
         totalDoctorEarnings: transactions.reduce((sum, t) => sum + (t.doctorFee || 0), 0),
         totalServiceCharges: transactions.reduce((sum, t) => sum + (t.serviceCharge || 0), 0),
       });
-      setDoctorEarnings(doctorEarnings);
+      setDoctorEarnings(doctorPayments);
+      
+      // Store aggregated data in state (we'll use a different state variable)
+      setPendingPayments(pendingPayments);
+      setPaidPayments(paidPayments);
       
       console.log('✅ Loaded transactions:', transactions.length);
-      console.log('✅ Loaded doctor earnings:', doctorEarnings.length);
-      console.log('✅ Doctor earnings data:', doctorEarnings.map(d => ({
-        id: d.doctorId, 
-        name: d.doctorName, 
-        isPaid: d.isPaid, 
-        paymentDate: d.paymentDate
-      })));
+      console.log('✅ Loaded doctor payments:', doctorPayments.length);
+      console.log('✅ Loaded pending payments:', pendingPayments.length);
+      console.log('✅ Loaded paid payments:', paidPayments.length);
       
     } catch (error) {
       console.error('Error fetching transaction history:', error);
       setTransactions([]);
       setDoctorEarnings([]);
+      setPendingPayments([]);
+      setPaidPayments([]);
       setSummary({});
     } finally {
       setLoading(false);
     }
   };
 
-  const markDoctorAsPaid = async (doctorId) => {
+  const markDoctorAsPaid = async (transactionId) => {
     try {
-      console.log('🔵 Marking doctor as paid:', doctorId);
+      console.log('🔵 Marking transaction as paid:', transactionId);
       
       const response = await fetch('/api/doctor-earnings', {
         method: 'POST',
@@ -187,7 +222,7 @@ export default function TransactionHistory() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          doctorId: parseInt(doctorId),
+          transactionId: parseInt(transactionId),
           action: 'mark_paid'
         })
       });
@@ -197,17 +232,21 @@ export default function TransactionHistory() {
       console.log('🔵 Response data:', responseData);
 
       if (response.ok) {
-        // Update the local state immediately for better UX
-        const currentDate = new Date().toISOString();
+        // Update the specific transaction's status in the local state
         setDoctorEarnings(prevEarnings => 
-          prevEarnings.map(doctor => 
-            doctor.doctorId === doctorId 
-              ? { ...doctor, isPaid: true, paymentDate: currentDate }
-              : doctor
+          prevEarnings.map(payment => 
+            payment.id === transactionId 
+              ? { 
+                  ...payment, 
+                  isPaid: true, 
+                  paymentStatus: 'doctor_paid',
+                  doctorPaidAt: new Date().toISOString()
+                }
+              : payment
           )
         );
         
-        alert('Doctor marked as paid successfully!');
+        alert('Payment marked as paid successfully!');
         
         // Refresh data from server to ensure consistency
         setTimeout(() => {
@@ -215,11 +254,11 @@ export default function TransactionHistory() {
           fetchTransactionHistory();
         }, 1000);
       } else {
-        alert(`Failed to mark doctor as paid: ${responseData.error || 'Unknown error'}`);
+        alert(`Failed to mark payment as paid: ${responseData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error marking doctor as paid:', error);
-      alert('Failed to mark doctor as paid');
+      console.error('Error marking payment as paid:', error);
+      alert('Failed to mark payment as paid');
     }
   };
 
@@ -234,7 +273,20 @@ export default function TransactionHistory() {
     (transaction.stripePaymentId && transaction.stripePaymentId.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const filteredDoctorEarnings = doctorEarnings.filter(doctor =>
+  const filteredDoctorEarnings = doctorEarnings.filter(payment =>
+    String(payment.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(payment.doctorId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.serviceType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.businessName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredPendingPayments = pendingPayments.filter(doctor =>
+    String(doctor.doctorId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doctor.doctorName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredPaidPayments = paidPayments.filter(doctor =>
     String(doctor.doctorId).toLowerCase().includes(searchTerm.toLowerCase()) ||
     doctor.doctorName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -372,6 +424,26 @@ export default function TransactionHistory() {
               >
                 Doctor Payments ({filteredDoctorEarnings.length})
               </button>
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'pending'
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                Total Pending Payments ({filteredPendingPayments.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('paid')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'paid'
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-300'
+                }`}
+              >
+                Total Paid ({filteredPaidPayments.length})
+              </button>
             </nav>
           </div>
         </div>
@@ -379,12 +451,24 @@ export default function TransactionHistory() {
         {/* Content */}
         {activeTab === 'transactions' ? (
           <TransactionTable transactions={filteredTransactions} formatCurrency={formatCurrency} formatDate={formatDate} />
-        ) : (
-          <DoctorEarningsTable 
-            doctorEarnings={filteredDoctorEarnings} 
+        ) : activeTab === 'earnings' ? (
+          <DoctorPaymentsTable 
+            doctorPayments={filteredDoctorEarnings} 
             formatCurrency={formatCurrency} 
             formatDate={formatDate}
             onMarkAsPaid={markDoctorAsPaid}
+          />
+        ) : activeTab === 'pending' ? (
+          <PendingPaymentsTable 
+            pendingPayments={filteredPendingPayments} 
+            formatCurrency={formatCurrency} 
+            formatDate={formatDate}
+          />
+        ) : (
+          <PaidPaymentsTable 
+            paidPayments={filteredPaidPayments} 
+            formatCurrency={formatCurrency} 
+            formatDate={formatDate}
           />
         )}
       </div>
@@ -456,8 +540,8 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
   );
 }
 
-// Doctor Earnings Table Component
-function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMarkAsPaid }) {
+// Doctor Payments Table Component (Individual Transactions)
+function DoctorPaymentsTable({ doctorPayments, formatCurrency, formatDate, onMarkAsPaid }) {
   return (
     <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
       <div className="overflow-x-auto">
@@ -465,13 +549,25 @@ function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMar
           <thead className="bg-gray-800">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Transaction ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Doctor Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Total Earnings
+                Service Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Doctor Payments
+                Business
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Doctor Earning
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Date
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Payment Status
@@ -482,39 +578,153 @@ function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMar
             </tr>
           </thead>
           <tbody className="bg-gray-900 divide-y divide-gray-800">
-            {doctorEarnings.map((doctor) => (
-              <tr key={doctor.doctorId} className="hover:bg-gray-800">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
-                  {doctor.doctorName}
+            {doctorPayments.map((payment) => (
+              <tr key={payment.id} className="hover:bg-gray-800">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-mono">
+                  #{payment.id}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-400 font-bold">
-                  {formatCurrency(doctor.totalEarnings)}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
+                  {payment.doctorName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {doctor.totalTransactions} payments
+                  {payment.serviceType}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {payment.businessName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-400 font-bold">
+                  {formatCurrency(payment.amount)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
+                  {formatCurrency(payment.totalAmount)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {formatDate(payment.date)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    doctor.isPaid 
+                    payment.isPaid 
                       ? 'bg-green-900 text-green-300'
                       : 'bg-yellow-900 text-yellow-300'
                   }`}>
-                    {doctor.isPaid ? 'Paid' : 'Pending'}
+                    {payment.isPaid ? 'Paid' : 'Pending'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {!doctor.isPaid ? (
+                  {!payment.isPaid ? (
                     <button
-                      onClick={() => onMarkAsPaid(doctor.doctorId)}
+                      onClick={() => onMarkAsPaid(payment.id)}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                     >
                       Mark as Paid
                     </button>
                   ) : (
                     <span className="text-green-400 text-xs font-medium">
-                      Paid on {doctor.paymentDate ? formatDate(doctor.paymentDate) : 'Recently'}
+                      Paid on {payment.doctorPaidAt ? formatDate(payment.doctorPaidAt) : 'Recently'}
                     </span>
                   )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Pending Payments Table Component (Aggregated by Doctor)
+function PendingPaymentsTable({ pendingPayments, formatCurrency, formatDate }) {
+  return (
+    <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-800">
+          <thead className="bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Doctor Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Pending Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Number of Transactions
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-gray-900 divide-y divide-gray-800">
+            {pendingPayments.map((doctor) => (
+              <tr key={doctor.doctorId} className="hover:bg-gray-800">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
+                  {doctor.doctorName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-400 font-bold">
+                  {formatCurrency(doctor.totalPending)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {doctor.transactionCount} payments
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-900 text-yellow-300">
+                    Pending
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// Paid Payments Table Component (Aggregated by Doctor)
+function PaidPaymentsTable({ paidPayments, formatCurrency, formatDate }) {
+  return (
+    <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-800">
+          <thead className="bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Doctor Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Total Paid Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Number of Transactions
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Last Payment Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Status
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-gray-900 divide-y divide-gray-800">
+            {paidPayments.map((doctor) => (
+              <tr key={doctor.doctorId} className="hover:bg-gray-800">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
+                  {doctor.doctorName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-400 font-bold">
+                  {formatCurrency(doctor.totalPaid)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {doctor.transactionCount} payments
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {doctor.lastPaymentDate ? formatDate(doctor.lastPaymentDate) : 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-900 text-green-300">
+                    Paid
+                  </span>
                 </td>
               </tr>
             ))}
