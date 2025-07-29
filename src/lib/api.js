@@ -454,8 +454,15 @@ export const serviceAPI = {
   getAll: () => publicAPI.get('/services?populate=*'), // Use public API (no JWT) for services
   getById: (id) => publicAPI.get(`/services/${id}?populate=*`), // Use public API for individual service
   create: (data) => api.post('/services', { data: { ...data } }),
-  update: (id, data) => api.put(`/services/${id}`, { data: { ...data } }),
-  delete: (id) => api.delete(`/services/${id}`),
+  update: (id, data) => {
+    // For Strapi v5, we need to determine if we're using numeric ID or documentId
+    console.log('🔄 Service update - ID type:', typeof id, 'ID value:', id);
+    return api.put(`/services/${id}`, { data: { ...data } });
+  },
+  delete: (id) => {
+    console.log('🗑️ Service delete - ID type:', typeof id, 'ID value:', id);
+    return api.delete(`/services/${id}`);
+  },
   getByCategory: (category) => publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`), // Use public API
   getDoctorsByService: async (serviceId, params) => {
     try {

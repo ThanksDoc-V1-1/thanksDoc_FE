@@ -33,18 +33,13 @@ export default function AdminDashboard() {
   });
 
   const handleServiceFormChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'isActive') {
-      setServiceFormData(prev => ({
-        ...prev,
-        [name]: e.target.checked
-      }));
-    } else {
-      setServiceFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    const { name, value, type, checked } = e.target;
+    console.log('📝 Form field changed:', { name, value, type, checked });
+    
+    setServiceFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : (name === 'displayOrder' ? parseInt(value) || 0 : value)
+    }));
   };
 
   const handleServiceSubmit = async (e) => {
@@ -52,26 +47,52 @@ export default function AdminDashboard() {
     setDataLoading(true);
 
     try {
+      console.log('🛠️ Service form submission started');
+      console.log('📝 Form data:', serviceFormData);
+      console.log('✏️ Editing service:', editingService);
+      
+      // Check JWT token
+      const token = localStorage.getItem('jwt');
+      console.log('🔑 JWT token present:', !!token);
+      console.log('🔑 JWT token (first 50 chars):', token ? token.substring(0, 50) + '...' : 'No token');
+
       let response;
       if (editingService) {
-        response = await serviceAPI.update(editingService.id, {
+        console.log('📝 Updating service - ID:', editingService.id, 'DocumentID:', editingService.documentId);
+        // Use documentId for Strapi v5 if available, fallback to id
+        const serviceIdentifier = editingService.documentId || editingService.id;
+        console.log('📝 Using identifier:', serviceIdentifier);
+        
+        const updateData = {
           name: serviceFormData.name,
           description: serviceFormData.description,
           category: serviceFormData.category,
           isActive: serviceFormData.isActive,
           displayOrder: parseInt(serviceFormData.displayOrder)
-        });
+        };
+        console.log('📝 Update payload:', updateData);
+        
+        response = await serviceAPI.update(serviceIdentifier, updateData);
+        console.log('✅ Update response:', response);
+        
         setServices(prev => prev.map(service => 
-          service.id === editingService.id ? response.data.data : service
+          (service.id === editingService.id || service.documentId === editingService.documentId) 
+            ? response.data.data : service
         ));
       } else {
-        response = await serviceAPI.create({
+        console.log('🆕 Creating new service');
+        const createData = {
           name: serviceFormData.name,
           description: serviceFormData.description,
           category: serviceFormData.category,
           isActive: serviceFormData.isActive,
           displayOrder: parseInt(serviceFormData.displayOrder)
-        });
+        };
+        console.log('🆕 Create payload:', createData);
+        
+        response = await serviceAPI.create(createData);
+        console.log('✅ Create response:', response);
+        
         setServices(prev => [...prev, response.data.data]);
       }
 
@@ -87,36 +108,65 @@ export default function AdminDashboard() {
       await fetchAllData(); // Refresh all data to ensure consistency
       alert(`Service ${editingService ? 'updated' : 'created'} successfully`);
     } catch (error) {
-      console.error('Error saving service:', error);
-      alert('Failed to save service. Please try again.');
+      console.error('❌ Error saving service:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: error.config
+      });
+      
+      // Check if this is an authentication error
+      if (error.response?.status === 401) {
+        console.error('🔒 Authentication failed - token may be expired');
+        const currentToken = localStorage.getItem('jwt');
+        console.error('🔑 Current token exists:', !!currentToken);
+        
+        // Try to refresh authentication or prompt re-login
+        alert('Authentication expired. Please refresh the page and log in again.');
+      } else {
+        alert(`Failed to save service. Error: ${error.response?.data?.error?.message || error.message}`);
+      }
     } finally {
       setDataLoading(false);
     }
   };
 
   const handleEditService = (service) => {
+    console.log('✏️ Edit service clicked:', service);
     setEditingService(service);
-    setServiceFormData({
-      name: service.attributes?.name || service.name,
+    
+    const formData = {
+      name: service.attributes?.name || service.name || '',
       description: service.attributes?.description || service.description || '',
-      category: service.attributes?.category || service.category,
-      isActive: service.attributes?.isActive || service.isActive,
+      category: service.attributes?.category || service.category || 'in-person',
+      isActive: service.attributes?.isActive !== undefined ? service.attributes.isActive : (service.isActive !== undefined ? service.isActive : true),
       displayOrder: service.attributes?.displayOrder || service.displayOrder || 0
-    });
+    };
+    
+    console.log('✏️ Setting form data:', formData);
+    setServiceFormData(formData);
     setShowServiceForm(true);
+    console.log('✏️ Edit form should now be visible');
   };
 
-  const handleDeleteService = async (id) => {
+  const handleDeleteService = async (id, documentId) => {
     if (!window.confirm('Are you sure you want to delete this service?')) return;
 
     setDataLoading(true);
     try {
-      await serviceAPI.delete(id);
-      setServices(prev => prev.filter(service => service.id !== id));
+      // Use documentId for Strapi v5 if available, fallback to id
+      const serviceIdentifier = documentId || id;
+      console.log('🗑️ Deleting service - ID:', id, 'DocumentID:', documentId, 'Using:', serviceIdentifier);
+      
+      await serviceAPI.delete(serviceIdentifier);
+      setServices(prev => prev.filter(service => 
+        service.id !== id && service.documentId !== documentId
+      ));
       alert('Service deleted successfully');
     } catch (error) {
       console.error('Error deleting service:', error);
-      alert('Failed to delete service. Please try again.');
+      alert(`Failed to delete service. Error: ${error.response?.data?.error?.message || error.message}`);
     } finally {
       setDataLoading(false);
     }
@@ -1568,6 +1618,7 @@ export default function AdminDashboard() {
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
                 <button
                   onClick={() => {
+                    console.log('🆕 Add New Service button clicked');
                     setEditingService(null);
                     setServiceFormData({
                       name: '',
@@ -1577,6 +1628,7 @@ export default function AdminDashboard() {
                       displayOrder: services.length
                     });
                     setShowServiceForm(true);
+                    console.log('🆕 Service form should now be visible');
                   }}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
                 >
@@ -1610,6 +1662,7 @@ export default function AdminDashboard() {
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
                   {filteredServices.length > 0 ? filteredServices.map((service) => {
                     const id = service.id;
+                    const documentId = service.documentId;
                     const name = service.attributes?.name || service.name;
                     const category = service.attributes?.category || service.category;
                     const isActive = service.attributes?.isActive || service.isActive;
@@ -1678,7 +1731,7 @@ export default function AdminDashboard() {
                               <Eye className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                             </button>
                             <button
-                              onClick={() => handleDeleteService(id)}
+                              onClick={() => handleDeleteService(id, documentId)}
                               className={`p-1.5 rounded-lg transition-colors ${
                                 isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
                               }`}
@@ -1775,9 +1828,9 @@ export default function AdminDashboard() {
                             <textarea
                               name="description"
                               value={serviceFormData.description}
-                              onChange={(e) => setServiceFormData(prev => ({ ...prev, description: e.target.value }))}
+                              onChange={handleServiceFormChange}
                               rows={3}
-                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                 isDarkMode 
                                   ? 'bg-gray-800 border-gray-700 text-white' 
                                   : 'bg-white border-gray-300 text-gray-900'
@@ -1792,9 +1845,9 @@ export default function AdminDashboard() {
                             <select
                               name="category"
                               value={serviceFormData.category}
-                              onChange={(e) => setServiceFormData(prev => ({ ...prev, category: e.target.value }))}
+                              onChange={handleServiceFormChange}
                               required
-                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                 isDarkMode 
                                   ? 'bg-gray-800 border-gray-700 text-white' 
                                   : 'bg-white border-gray-300 text-gray-900'
@@ -1813,9 +1866,9 @@ export default function AdminDashboard() {
                               type="number"
                               name="displayOrder"
                               value={serviceFormData.displayOrder}
-                              onChange={(e) => setServiceFormData(prev => ({ ...prev, displayOrder: parseInt(e.target.value) }))}
+                              onChange={handleServiceFormChange}
                               min={0}
-                              className={`mt-1 block w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                 isDarkMode 
                                   ? 'bg-gray-800 border-gray-700 text-white' 
                                   : 'bg-white border-gray-300 text-gray-900'
@@ -1828,7 +1881,7 @@ export default function AdminDashboard() {
                               type="checkbox"
                               name="isActive"
                               checked={serviceFormData.isActive}
-                              onChange={(e) => setServiceFormData(prev => ({ ...prev, isActive: e.target.checked }))}
+                              onChange={handleServiceFormChange}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
                             />
                             <label className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
