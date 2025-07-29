@@ -433,7 +433,12 @@ export const serviceRequestAPI = {
   acceptRequest: (id, doctorId) => api.put(`/service-requests/${id}/accept`, { doctorId }),
   rejectRequest: (id, doctorId, reason) => api.put(`/service-requests/${id}/reject`, { doctorId, reason }),
   completeRequest: (id, notes) => api.put(`/service-requests/${id}/complete`, { notes }),
-  processPayment: (id, paymentMethod, paymentDetails) => api.put(`/service-requests/${id}/payment`, { paymentMethod, paymentDetails }),
+  processPayment: (id, paymentMethod, paymentDetails, additionalData = {}) => 
+    api.put(`/service-requests/${id}/payment`, { 
+      paymentMethod, 
+      paymentDetails, 
+      ...additionalData 
+    }),
   getDoctorRequests: (doctorId) => api.get(`/service-requests/doctor/${doctorId}`),
   getAvailableRequests: (doctorId) => api.get(`/service-requests/available/${doctorId}`),
   getBusinessRequests: (businessId) => api.get(`/service-requests/business/${businessId}`),
@@ -520,6 +525,25 @@ export const serviceAPI = {
       return { data: [] };
     }
   },
+};
+
+// Transaction API calls
+export const transactionAPI = {
+  getTransactionHistory: (params) => {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return api.get(`/transaction-history${queryString}`);
+  },
+  getPaymentDetails: (paymentIntentId) => api.post('/transaction-history', { paymentIntentId }),
+};
+
+// Doctor Earnings API calls
+export const earningsAPI = {
+  getDoctorEarnings: (params) => {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return api.get(`/doctor-earnings${queryString}`);
+  },
+  markDoctorAsPaid: (doctorId, paymentDetails) => 
+    api.post('/doctor-earnings', { doctorId, ...paymentDetails }),
 };
 
 export default api;

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus, Package, Globe } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus, Package, Globe, CreditCard } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import TransactionHistory from '../../../components/TransactionHistory';
 
 export default function AdminDashboard() {
   const { logout, user, isAuthenticated, loading } = useAuth();
@@ -728,6 +729,7 @@ export default function AdminDashboard() {
                   activeTab === 'businesses' ? "Search businesses by name, type, email..." :
                   activeTab === 'services' ? "Search services by name, category..." :
                   activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
+                  activeTab === 'transactions' ? "Search transactions by payment ID, doctor ID..." :
                   activeTab === 'earnings' ? "Search by doctor name..." :
                   "Search..."
                 }
@@ -747,6 +749,7 @@ export default function AdminDashboard() {
               { id: 'businesses', name: 'Businesses', icon: Building2 },
               { id: 'services', name: 'Services', icon: Package },
               { id: 'requests', name: 'Service Requests', icon: Calendar },
+              { id: 'transactions', name: 'Transactions', icon: CreditCard },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -2139,6 +2142,13 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Transactions Tab */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <TransactionHistory />
           </div>
         )}
 

@@ -892,39 +892,16 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
       return;
     }
     
-    if (paymentMethod === 'cash') {
-      handleCashPayment(request);
-    } else {
+    // Only allow card payments now
+    if (paymentMethod === 'card') {
       // Show card payment modal
       setPaymentRequest(request);
       setShowPaymentModal(true);
+    } else {
+      alert('Only card payments are supported.');
     }
   };
   
-  const handleCashPayment = async (request) => {
-    setLoading(true);
-    try {
-      const response = await serviceRequestAPI.processPayment(request.id, 'cash', {});
-      console.log('💰 Cash Payment Response:', response.data);
-      if (response.data) {
-        alert(`Cash payment of ${formatCurrency(calculateTotalAmount(request))} processed successfully! (includes £${SERVICE_CHARGE} service charge) The payment status has been updated.`);
-        // Force update the request in the local state too
-        setServiceRequests(prev => 
-          prev.map(req => 
-            req.id === request.id ? { ...req, isPaid: true, paymentMethod: 'cash' } : req
-          )
-        );
-        // Also fetch fresh data from server immediately regardless of auto-refresh
-        console.log('🔄 Manually refreshing after cash payment');
-        await fetchServiceRequests(); 
-      }
-    } catch (error) {
-      console.error('Error processing cash payment:', error);
-      alert('Failed to process payment. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
   
   const handlePaymentSuccess = async (paymentIntent) => {
     if (!paymentRequest) return;
@@ -933,12 +910,28 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
     setLoading(true);
     
     try {
+      // Extract charge information from payment intent
+      const charge = paymentIntent.charges?.data?.[0];
+      
       const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
         paymentIntentId: paymentIntent.id,
+        chargeId: charge?.id,
+        receiptUrl: charge?.receipt_url,
         amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
-        currency: paymentIntent.currency,
+        currency: paymentIntent.currency || 'gbp',
         status: paymentIntent.status,
         timestamp: new Date().toISOString(),
+        // Include additional payment details for comprehensive tracking
+        stripeCustomerId: paymentIntent.customer,
+        paymentMethodId: paymentIntent.payment_method,
+        description: paymentIntent.description,
+        metadata: paymentIntent.metadata,
+      }, {
+        // Additional details for backend processing
+        paymentIntentId: paymentIntent.id,
+        chargeId: charge?.id,
+        receiptUrl: charge?.receipt_url,
+        currency: paymentIntent.currency || 'gbp'
       });
       
       console.log('💳 Card Payment Response:', response.data);
@@ -954,7 +947,11 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
               isPaid: true, 
               paymentMethod: 'card',
               paymentIntentId: paymentIntent.id,
-              paymentStatus: paymentIntent.status
+              chargeId: charge?.id,
+              paymentStatus: paymentIntent.status,
+              paidAt: new Date().toISOString(),
+              currency: paymentIntent.currency || 'gbp',
+              totalAmount: calculateTotalAmount(paymentRequest)
             } : req
           )
         );
@@ -1407,16 +1404,10 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                               <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'} mb-2`}>{formatCurrency(calculateTotalAmount(request))}</span>
                               <div className="flex space-x-2">
                                 <button
-                                  onClick={() => handlePayment(request.id, 'cash')}
-                                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium flex items-center"
-                                >
-                                  Pay Cash
-                                </button>
-                                <button
                                   onClick={() => handlePayment(request.id, 'card')}
                                   className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium flex items-center"
                                 >
-                                  Pay Card
+                                  Pay by Card
                                 </button>
                               </div>
                             </div>
@@ -1425,7 +1416,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
                               <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateTotalAmount(request))}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
-                                PAID ({request.paymentMethod === 'cash' ? 'CASH' : 'CARD'})
+                                PAID
                               </div>
                             </div>
                           )}
