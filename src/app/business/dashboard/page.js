@@ -935,7 +935,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
     try {
       const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
         paymentIntentId: paymentIntent.id,
-        amount: paymentIntent.amount_received / 100,
+        amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
         currency: paymentIntent.currency,
         status: paymentIntent.status,
         timestamp: new Date().toISOString(),

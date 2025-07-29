@@ -88,11 +88,12 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
         // Payment succeeded
         console.log('Payment succeeded:', result.paymentIntent);
         console.log('Payment ID:', result.paymentIntent.id);
-        console.log('Amount received:', result.paymentIntent.amount_received / 100);
+        console.log('Amount:', result.paymentIntent.amount / 100);
         console.log('Status:', result.paymentIntent.status);
         
-        // Show success message
-        alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${result.paymentIntent.amount_received / 100}\nStatus: ${result.paymentIntent.status}`);
+        // Show success message with proper amount formatting
+        const amount = (result.paymentIntent.amount || result.paymentIntent.amount_received || 0) / 100;
+        alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${amount.toFixed(2)}\nStatus: ${result.paymentIntent.status}`);
         
         onPaymentSuccess?.(result.paymentIntent);
       }
