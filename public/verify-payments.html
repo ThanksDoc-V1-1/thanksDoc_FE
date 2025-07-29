@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Payment Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #635bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5a54e5;
+        }
+        .payment-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .pending { color: #ffc107; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stripe Payment Verification</h1>
+        
+        <div>
+            <h3>Check Recent Payments</h3>
+            <button onclick="fetchRecentPayments()">Fetch Recent Payments</button>
+            <div id="recentPayments"></div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3>Verify Specific Payment</h3>
+            <input type="text" id="paymentId" placeholder="Enter Payment Intent ID">
+            <button onclick="verifyPayment()">Verify Payment</button>
+            <div id="paymentDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchRecentPayments() {
+            try {
+                const response = await fetch('/api/verify-payment');
+                const data = await response.json();
+                
+                const container = document.getElementById('recentPayments');
+                
+                if (data.payments && data.payments.length > 0) {
+                    container.innerHTML = '<h4>Recent Payments:</h4>' + 
+                        data.payments.map(payment => `
+                            <div class="payment-item">
+                                <strong>ID:</strong> ${payment.id}<br>
+                                <strong>Amount:</strong> £${payment.amount} ${payment.currency.toUpperCase()}<br>
+                                <strong>Status:</strong> <span class="${payment.status}">${payment.status}</span><br>
+                                <strong>Created:</strong> ${new Date(payment.created).toLocaleString()}<br>
+                                <strong>Metadata:</strong> ${JSON.stringify(payment.metadata)}
+                            </div>
+                        `).join('');
+                } else {
+                    container.innerHTML = '<p>No payments found.</p>';
+                }
+            } catch (error) {
+                document.getElementById('recentPayments').innerHTML = 
+                    '<p class="error">Error fetching payments: ' + error.message + '</p>';
+            }
+        }
+        
+        async function verifyPayment() {
+            const paymentId = document.getElementById('paymentId').value;
+            if (!paymentId) {
+                alert('Please enter a Payment Intent ID');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ paymentIntentId: paymentId })
+                });
+                
+                const payment = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('paymentDetails').innerHTML = `
+                        <div class="payment-item">
+                            <h4>Payment Details:</h4>
+                            <strong>ID:</strong> ${payment.id}<br>
+                            <strong>Amount:</strong> £${payment.amount} ${payment.currency.toUpperCase()}<br>
+                            <strong>Status:</strong> <span class="${payment.status}">${payment.status}</span><br>
+                            <strong>Created:</strong> ${new Date(payment.created).toLocaleString()}<br>
+                            <strong>Metadata:</strong> ${JSON.stringify(payment.metadata)}<br>
+                            <strong>Charges:</strong> ${payment.charges.map(charge => 
+                                `<br>&nbsp;&nbsp;- ${charge.id}: £${charge.amount} (${charge.status})`
+                            ).join('')}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('paymentDetails').innerHTML = 
+                        '<p class="error">Error: ' + payment.error + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('paymentDetails').innerHTML = 
+                    '<p class="error">Error verifying payment: ' + error.message + '</p>';
+            }
+        }
+        
+        // Auto-load recent payments on page load
+        window.onload = fetchRecentPayments;
+    </script>
+</body>
+</html>

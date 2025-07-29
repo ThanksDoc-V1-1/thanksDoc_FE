@@ -8,6 +8,7 @@ import api from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import PaymentForm from '../../../components/PaymentForm';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -925,7 +926,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
     }
   };
   
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paymentIntent) => {
     if (!paymentRequest) return;
     
     setShowPaymentModal(false);
@@ -933,18 +934,28 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
     
     try {
       const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
+        paymentIntentId: paymentIntent.id,
+        amount: paymentIntent.amount_received / 100,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
         timestamp: new Date().toISOString(),
       });
       
       console.log('💳 Card Payment Response:', response.data);
       
       if (response.data) {
-        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} service charge) The payment status has been updated.`);
+        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} service charge) Payment ID: ${paymentIntent.id}`);
         
         // Force update the request in the local state too
         setServiceRequests(prev => 
           prev.map(req => 
-            req.id === paymentRequest.id ? { ...req, isPaid: true, paymentMethod: 'card' } : req
+            req.id === paymentRequest.id ? { 
+              ...req, 
+              isPaid: true, 
+              paymentMethod: 'card',
+              paymentIntentId: paymentIntent.id,
+              paymentStatus: paymentIntent.status
+            } : req
           )
         );
         
@@ -2165,127 +2176,26 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
         </div>
       )}
 
-      {/* Payment Modal */}              {showPaymentModal && paymentRequest && (
+      {/* Payment Modal */}
+      {showPaymentModal && paymentRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-md w-full border max-h-[90vh] flex flex-col`}>
-            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
-              <div className="flex items-center space-x-3">
-                <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
-                  <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
-                </div>
-                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Payment for Service</h2>
-              </div>
-            </div>
-            <div className="p-6 overflow-y-auto modal-scrollable">
-              <div className={`mb-6 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
-                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>Service Details</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Service:</span>
-                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>{paymentRequest.serviceType}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Doctor:</span>
-                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
-                      {paymentRequest.doctor ? `Dr. ${paymentRequest.doctor.firstName} ${paymentRequest.doctor.lastName}` : 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Duration:</span>
-                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>{paymentRequest.estimatedDuration} hour(s)</span>
-                  </div>
-                  
-                  {/* Payment Breakdown */}
-                  <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} mt-3 pt-3 space-y-2`}>
-                    <div className="flex justify-between">
-                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Service Amount:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
-                        {formatCurrency(calculateTotalAmount(paymentRequest) - SERVICE_CHARGE)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Service Charge:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
-                        {formatCurrency(SERVICE_CHARGE)}
-                      </span>
-                    </div>
-                    <div className={`flex justify-between pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                      <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-semibold`}>Total Amount:</span>
-                      <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-bold text-xl`}>{formatCurrency(calculateTotalAmount(paymentRequest))}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className={`border ${isDarkMode ? 'border-gray-800 bg-gray-800/50' : 'border-gray-200 bg-gray-50'} rounded-lg p-4`}>
-                  <h4 className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'} font-medium mb-3`}>Card Information</h4>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>Card Number</label>
-                      <input
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>Expiry Date</label>
-                        <input
-                          type="text"
-                          placeholder="MM/YY"
-                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>CVV</label>
-                        <input
-                          type="text"
-                          placeholder="123"
-                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>Name on Card</label>
-                      <input
-                        type="text"
-                        placeholder="John Smith"
-                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} p-3 rounded-lg border flex items-center space-x-2`}>
-                  <Lock className="h-4 w-4 text-green-400" />
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Your payment information is encrypted and secure</span>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3 pt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPaymentModal(false);
-                    setPaymentRequest(null);
-                  }}
-                  className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePaymentSuccess}
-                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow flex items-center justify-center"
-                >
-                  <Lock className="h-4 w-4 mr-2" />
-                  Pay {formatCurrency(calculateTotalAmount(paymentRequest))}
-                </button>
-              </div>
-            </div>
+          <div className="relative max-w-md w-full">
+            <button
+              onClick={() => {
+                setShowPaymentModal(false);
+                setPaymentRequest(null);
+              }}
+              className="absolute -top-2 -right-2 z-10 bg-red-600 hover:bg-red-700 text-white rounded-full p-2 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <PaymentForm 
+              serviceRequest={{
+                ...paymentRequest,
+                totalAmount: calculateTotalAmount(paymentRequest)
+              }} 
+              onPaymentSuccess={handlePaymentSuccess} 
+            />
           </div>
         </div>
       )}

@@ -1,40 +1,104 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Lock } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Mock Stripe integration for demo purposes
-export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+// Payment Form Component that uses Stripe Elements
+function CheckoutForm({ serviceRequest, onPaymentSuccess }) {
+  const stripe = useStripe();
+  const elements = useElements();
   const [loading, setLoading] = useState(false);
-  const [cardData, setCardData] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: '',
-  });
+  const [clientSecret, setClientSecret] = useState('');
+  const [paymentError, setPaymentError] = useState(null);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCardData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  useEffect(() => {
+    // Create PaymentIntent as soon as the page loads
+    createPaymentIntent();
+  }, [serviceRequest]);
+
+  const createPaymentIntent = async () => {
+    try {
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: serviceRequest.totalAmount,
+          currency: 'gbp',
+          metadata: {
+            serviceType: serviceRequest.serviceType,
+            doctorId: serviceRequest.doctor?.id || '',
+            patientId: serviceRequest.patientId || '',
+          },
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        setPaymentError(data.error);
+        return;
+      }
+
+      setClientSecret(data.clientSecret);
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      setPaymentError('Failed to initialize payment. Please try again.');
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!stripe || !elements || !clientSecret) {
+      return;
+    }
+
     setLoading(true);
+    setPaymentError(null);
+
+    const card = elements.getElement(CardElement);
+
+    if (!card) {
+      setPaymentError('Card element not found');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // For demo purposes, we'll just show success
-      alert('Payment processed successfully!');
-      onPaymentSuccess?.();
+      // Confirm the payment
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: card,
+          billing_details: {
+            name: `Dr. ${serviceRequest.doctor?.firstName} ${serviceRequest.doctor?.lastName}`,
+          },
+        },
+      });
+
+      if (result.error) {
+        console.error('Payment failed:', result.error);
+        setPaymentError(result.error.message);
+      } else {
+        // Payment succeeded
+        console.log('Payment succeeded:', result.paymentIntent);
+        console.log('Payment ID:', result.paymentIntent.id);
+        console.log('Amount received:', result.paymentIntent.amount_received / 100);
+        console.log('Status:', result.paymentIntent.status);
+        
+        // Show success message
+        alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${result.paymentIntent.amount_received / 100}\nStatus: ${result.paymentIntent.status}`);
+        
+        onPaymentSuccess?.(result.paymentIntent);
+      }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment failed. Please try again.');
+      setPaymentError('Payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,76 +129,40 @@ export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
           </div>
           <div className="flex justify-between font-medium text-white pt-2 border-t border-gray-700">
             <span>Total:</span>
-            <span>${serviceRequest.totalAmount}</span>
+            <span>£{serviceRequest.totalAmount}</span>
           </div>
         </div>
       </div>
+
+      {paymentError && (
+        <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-4">
+          <p className="text-sm">{paymentError}</p>
+        </div>
+      )}
 
       {/* Payment Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Cardholder Name
+            Card Information
           </label>
-          <input
-            type="text"
-            name="cardholderName"
-            value={cardData.cardholderName}
-            onChange={handleInputChange}
-            required
-            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="John Doe"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Card Number
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              name="cardNumber"
-              value={cardData.cardNumber}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 pl-10 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="1234 5678 9012 3456"
-              maxLength="19"
-            />
-            <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Expiry Date
-            </label>
-            <input
-              type="text"
-              name="expiryDate"
-              value={cardData.expiryDate}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="MM/YY"
-              maxLength="5"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              CVV
-            </label>
-            <input
-              type="text"
-              name="cvv"
-              value={cardData.cvv}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="123"
-              maxLength="4"
+          <div className="border border-gray-600 rounded-lg bg-gray-700 p-3">
+            <CardElement
+              options={{
+                hidePostalCode: true,
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#ffffff',
+                    '::placeholder': {
+                      color: '#9ca3af',
+                    },
+                  },
+                  invalid: {
+                    color: '#ef4444',
+                  },
+                },
+              }}
             />
           </div>
         </div>
@@ -142,7 +170,7 @@ export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
         <div className="pt-4">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !stripe || !clientSecret}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
           >
             {loading ? (
@@ -153,7 +181,7 @@ export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                <span>Pay ${serviceRequest.totalAmount}</span>
+                <span>Pay £{serviceRequest.totalAmount}</span>
               </>
             )}
           </button>
@@ -167,5 +195,14 @@ export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
         </div>
       </form>
     </div>
+  );
+}
+
+// Main PaymentForm component that wraps CheckoutForm with Stripe Elements
+export default function PaymentForm({ serviceRequest, onPaymentSuccess }) {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm serviceRequest={serviceRequest} onPaymentSuccess={onPaymentSuccess} />
+    </Elements>
   );
 }

@@ -9,18 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^2.4.0",
+    "@stripe/stripe-js": "^2.4.0",
+    "axios": "^1.6.5",
+    "clsx": "^2.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.305.0",
+    "next": "15.3.5",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "next": "15.3.5",
-    "@stripe/stripe-js": "^2.4.0",
-    "@stripe/react-stripe-js": "^2.4.0",
-    "axios": "^1.6.5",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
-    "leaflet": "^1.9.4",
     "react-leaflet": "^4.2.1",
-    "lucide-react": "^0.305.0",
-    "clsx": "^2.1.0",
+    "stripe": "^18.3.0",
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
