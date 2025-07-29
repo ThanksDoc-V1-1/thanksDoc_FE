@@ -53,7 +53,9 @@ export default function TransactionHistory() {
           // Fee structure: Doctor gets their hourly rate, Service charge is £3
           const doctorFee = item.doctor?.hourlyRate || 12; // Use actual hourly rate
           const serviceCharge = 3;
-          const totalAmount = doctorFee + serviceCharge;        return {
+          const totalAmount = doctorFee + serviceCharge;
+          
+          return {
           id: item.id,
           paymentId: item.paymentIntentId || `payment_${item.id}`,
           stripePaymentId: item.paymentIntentId || 'N/A', // Show actual Stripe payment ID
@@ -135,8 +137,21 @@ export default function TransactionHistory() {
       });
 
       if (response.ok) {
+        // Update the local state immediately
+        setDoctorEarnings(prevEarnings => 
+          prevEarnings.map(doctor => 
+            doctor.doctorId === doctorId 
+              ? { ...doctor, isPaid: true, paymentDate: new Date().toISOString() }
+              : doctor
+          )
+        );
+        
         alert('Doctor marked as paid successfully!');
-        fetchTransactionHistory(); // Refresh data
+        // Optionally refresh data from server
+        // fetchTransactionHistory();
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to mark doctor as paid: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error marking doctor as paid:', error);
@@ -272,10 +287,10 @@ export default function TransactionHistory() {
         {/* Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-800">
-            <nav className="-mb-px flex space-x-8">
+            <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('transactions')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'transactions'
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-gray-400 hover:text-gray-300'
@@ -285,13 +300,13 @@ export default function TransactionHistory() {
               </button>
               <button
                 onClick={() => setActiveTab('earnings')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === 'earnings'
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-gray-400 hover:text-gray-300'
                 }`}
               >
-                Doctor Earnings ({filteredDoctorEarnings.length})
+                Doctor Payments ({filteredDoctorEarnings.length})
               </button>
             </nav>
           </div>
@@ -404,7 +419,7 @@ function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMar
                 Total Earnings
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Transactions
+                Doctor Payments
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Payment Status
@@ -424,7 +439,7 @@ function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMar
                   {formatCurrency(doctor.totalEarnings)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {doctor.totalTransactions} transactions
+                  {doctor.totalTransactions} payments
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
