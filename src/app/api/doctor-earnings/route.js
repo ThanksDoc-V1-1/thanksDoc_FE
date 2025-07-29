@@ -98,7 +98,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { doctorId, paymentDate, paymentMethod } = body;
+    const { doctorId, action } = body;
 
     // Validate required fields
     if (!doctorId) {
@@ -108,40 +108,88 @@ export async function POST(request) {
       );
     }
 
-    // Here we create a doctor payment record in the database
-    // This will track when doctors are paid out their earnings
-    console.log('Marking doctor as paid:', {
-      doctorId,
-      paymentDate,
-      paymentMethod
-    });
+    if (action !== 'mark_paid') {
+      return NextResponse.json(
+        { error: 'Invalid action. Only "mark_paid" is supported.' },
+        { status: 400 }
+      );
+    }
 
-    // Create a doctor payment record in Strapi
+    console.log('🔵 Updating paymentStatus for doctor:', doctorId);
+    
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const currentDate = new Date().toISOString();
     
     try {
-      const paymentRecord = await fetch(`${API_URL}/doctor-payments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: {
-            doctor: doctorId,
-            paymentDate: paymentDate,
-            paymentMethod: paymentMethod,
-            status: 'completed',
-            notes: 'Doctor marked as paid via admin dashboard'
+      // First, get all paid service requests for this doctor
+      const serviceRequestsResponse = await fetch(`${API_URL}/service-requests?filters[doctor][id][$eq]=${doctorId}&filters[isPaid][$eq]=true`);
+      
+      if (serviceRequestsResponse.ok) {
+        const requestsData = await serviceRequestsResponse.json();
+        const requests = requestsData.data || [];
+        
+        console.log(`🔵 Found ${requests.length} paid requests for doctor ${doctorId}`);
+        
+        // Update paymentStatus to 'doctor_paid' for all requests
+        const updatePromises = requests.map(async (request) => {
+          try {
+            // In Strapi v4, use documentId for updates, not id
+            const updateUrl = `${API_URL}/service-requests/${request.documentId}`;
+            console.log(`🔍 Updating request ${request.id} using documentId ${request.documentId} at ${updateUrl}`);
+            
+            const updateResponse = await fetch(updateUrl, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                data: {
+                  paymentStatus: 'doctor_paid',
+                  doctorPaidAt: currentDate
+                }
+              })
+            });
+            
+            if (!updateResponse.ok) {
+              const errorText = await updateResponse.text();
+              console.error(`❌ Failed to update request ${request.id}:`, updateResponse.status, errorText);
+              return false;
+            } else {
+              console.log(`✅ Updated request ${request.id} payment status to doctor_paid`);
+              return true;
+            }
+          } catch (updateError) {
+            console.error(`❌ Error updating request ${request.id}:`, updateError);
+            return false;
           }
-        })
-      });
-
-      if (!paymentRecord.ok) {
-        console.log('Warning: Could not create payment record in database, but continuing...');
+        });
+        
+        const results = await Promise.all(updatePromises);
+        const successCount = results.filter(Boolean).length;
+        
+        console.log(`✅ Updated ${successCount}/${requests.length} service requests`);
+        
+        if (successCount === 0) {
+          return NextResponse.json(
+            { error: 'Failed to update any service requests' },
+            { status: 500 }
+          );
+        }
+        
+      } else {
+        const errorText = await serviceRequestsResponse.text();
+        console.error('❌ Failed to fetch service requests for doctor:', serviceRequestsResponse.status, errorText);
+        return NextResponse.json(
+          { error: 'Failed to fetch service requests for doctor' },
+          { status: 500 }
+        );
       }
     } catch (dbError) {
-      console.log('Warning: Database error when creating payment record:', dbError.message);
-      // Continue anyway - the frontend will handle the status update
+      console.error('❌ Database error when updating payment status:', dbError);
+      return NextResponse.json(
+        { error: 'Database error when updating payment status' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
@@ -149,14 +197,13 @@ export async function POST(request) {
         success: true, 
         message: 'Doctor marked as paid successfully',
         doctorId,
-        paymentDate,
-        paymentMethod
+        paymentDate: currentDate
       },
       { status: 200 }
     );
 
   } catch (error) {
-    console.error('Error processing doctor payment:', error);
+    console.error('❌ Error processing doctor payment:', error);
     return NextResponse.json(
       { error: 'Failed to process payment' },
       { status: 500 }

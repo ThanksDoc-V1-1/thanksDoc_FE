@@ -55,6 +55,12 @@ export default function TransactionHistory() {
           const serviceCharge = 3;
           const totalAmount = doctorFee + serviceCharge;
           
+          console.log('🔍 Raw transaction data for ID', item.id, ':', {
+            paymentStatus: item.paymentStatus,
+            doctorPaidAt: item.doctorPaidAt,
+            isPaid: item.isPaid
+          });
+          
           return {
           id: item.id,
           paymentId: item.paymentIntentId || `payment_${item.id}`,
@@ -77,10 +83,13 @@ export default function TransactionHistory() {
                        'Unknown Business',
           chargeId: item.chargeId,
           paymentIntentId: item.paymentIntentId,
+          // Include the paymentStatus and doctorPaidAt from backend
+          paymentStatus: item.paymentStatus,
+          doctorPaidAt: item.doctorPaidAt,
         };
       });
 
-      // Group by doctor for earnings
+      // Group by doctor for earnings and check payment status
       const doctorEarningsMap = {};
       transactions.forEach(transaction => {
         if (!doctorEarningsMap[transaction.doctorId]) {
@@ -89,13 +98,53 @@ export default function TransactionHistory() {
             doctorName: transaction.doctorName,
             totalEarnings: 0,
             totalTransactions: 0,
-            transactions: []
+            transactions: [],
+            isPaid: false,
+            paymentDate: null
           };
         }
         
         doctorEarningsMap[transaction.doctorId].totalEarnings += transaction.doctorFee;
         doctorEarningsMap[transaction.doctorId].totalTransactions += 1;
         doctorEarningsMap[transaction.doctorId].transactions.push(transaction);
+      });
+
+      // Check payment status for each doctor after all transactions are grouped
+      Object.keys(doctorEarningsMap).forEach(doctorId => {
+        const doctor = doctorEarningsMap[doctorId];
+        
+        console.log('🔍 Checking payment status for doctor:', doctor.doctorName);
+        console.log('🔍 Doctor transactions:', doctor.transactions.map(t => ({
+          id: t.id,
+          paymentStatus: t.paymentStatus,
+          doctorPaidAt: t.doctorPaidAt
+        })));
+        
+        // Check if any transaction for this doctor has paymentStatus 'doctor_paid'
+        const hasAnyPaidTransaction = doctor.transactions.some(t => t.paymentStatus === 'doctor_paid');
+        
+        console.log('🔍 Has any paid transaction:', hasAnyPaidTransaction);
+        
+        if (hasAnyPaidTransaction) {
+          doctor.isPaid = true;
+          // Use the latest doctorPaidAt date
+          const paidTransactions = doctor.transactions.filter(t => t.doctorPaidAt);
+          if (paidTransactions.length > 0) {
+            const latestPaymentDate = Math.max(
+              ...paidTransactions.map(t => new Date(t.doctorPaidAt).getTime())
+            );
+            doctor.paymentDate = new Date(latestPaymentDate).toISOString();
+          } else {
+            doctor.paymentDate = new Date().toISOString(); // Fallback to current date
+          }
+        }
+        
+        console.log('🔍 Final doctor status:', {
+          doctorId: doctor.doctorId,
+          doctorName: doctor.doctorName,
+          isPaid: doctor.isPaid,
+          paymentDate: doctor.paymentDate
+        });
       });
 
       const doctorEarnings = Object.values(doctorEarningsMap);
@@ -111,6 +160,12 @@ export default function TransactionHistory() {
       
       console.log('✅ Loaded transactions:', transactions.length);
       console.log('✅ Loaded doctor earnings:', doctorEarnings.length);
+      console.log('✅ Doctor earnings data:', doctorEarnings.map(d => ({
+        id: d.doctorId, 
+        name: d.doctorName, 
+        isPaid: d.isPaid, 
+        paymentDate: d.paymentDate
+      })));
       
     } catch (error) {
       console.error('Error fetching transaction history:', error);
@@ -124,34 +179,43 @@ export default function TransactionHistory() {
 
   const markDoctorAsPaid = async (doctorId) => {
     try {
+      console.log('🔵 Marking doctor as paid:', doctorId);
+      
       const response = await fetch('/api/doctor-earnings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          doctorId,
-          paymentDate: new Date().toISOString(),
-          paymentMethod: 'bank_transfer'
+          doctorId: parseInt(doctorId),
+          action: 'mark_paid'
         })
       });
 
+      console.log('🔵 Response status:', response.status);
+      const responseData = await response.json();
+      console.log('🔵 Response data:', responseData);
+
       if (response.ok) {
-        // Update the local state immediately
+        // Update the local state immediately for better UX
+        const currentDate = new Date().toISOString();
         setDoctorEarnings(prevEarnings => 
           prevEarnings.map(doctor => 
             doctor.doctorId === doctorId 
-              ? { ...doctor, isPaid: true, paymentDate: new Date().toISOString() }
+              ? { ...doctor, isPaid: true, paymentDate: currentDate }
               : doctor
           )
         );
         
         alert('Doctor marked as paid successfully!');
-        // Optionally refresh data from server
-        // fetchTransactionHistory();
+        
+        // Refresh data from server to ensure consistency
+        setTimeout(() => {
+          console.log('🔵 Refreshing data...');
+          fetchTransactionHistory();
+        }, 1000);
       } else {
-        const errorData = await response.json();
-        alert(`Failed to mark doctor as paid: ${errorData.error || 'Unknown error'}`);
+        alert(`Failed to mark doctor as paid: ${responseData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error marking doctor as paid:', error);
@@ -357,9 +421,6 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Status
-              </th>
             </tr>
           </thead>
           <tbody className="bg-gray-900 divide-y divide-gray-800">
@@ -385,15 +446,6 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {formatDate(transaction.date)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    transaction.status === 'Paid' 
-                      ? 'bg-green-900 text-green-300'
-                      : 'bg-red-900 text-red-300'
-                  }`}>
-                    {transaction.status}
-                  </span>
                 </td>
               </tr>
             ))}
@@ -451,13 +503,17 @@ function DoctorEarningsTable({ doctorEarnings, formatCurrency, formatDate, onMar
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {!doctor.isPaid && (
+                  {!doctor.isPaid ? (
                     <button
                       onClick={() => onMarkAsPaid(doctor.doctorId)}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                     >
                       Mark as Paid
                     </button>
+                  ) : (
+                    <span className="text-green-400 text-xs font-medium">
+                      Paid on {doctor.paymentDate ? formatDate(doctor.paymentDate) : 'Recently'}
+                    </span>
                   )}
                 </td>
               </tr>
