@@ -2185,7 +2185,17 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                 ...paymentRequest,
                 totalAmount: calculateTotalAmount(paymentRequest)
               }} 
-              onPaymentSuccess={handlePaymentSuccess} 
+              onPaymentSuccess={handlePaymentSuccess}
+              businessInfo={(() => {
+                const info = {
+                  id: user?.id,
+                  email: user?.email,
+                  name: businessData?.businessName || user?.businessName,
+                  businessName: businessData?.businessName || user?.businessName
+                };
+                console.log('🏢 Business info for payment:', info);
+                return info;
+              })()}
             />
           </div>
         </div>
