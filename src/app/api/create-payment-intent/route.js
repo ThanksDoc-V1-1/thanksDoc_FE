@@ -14,12 +14,17 @@ export async function POST(request) {
       savePaymentMethod = false 
     } = await request.json();
 
-    console.log('Creating payment intent for amount:', amount, currency);
-    console.log('Metadata:', metadata);
-    console.log('Customer ID:', customerId);
-    console.log('Payment Method ID:', paymentMethodId);
+    console.log('🔵 Creating payment intent with:', {
+      amount,
+      currency,
+      customerId,
+      paymentMethodId,
+      savePaymentMethod,
+      idempotencyKey
+    });
 
     if (!amount || amount <= 0) {
+      console.error('❌ Invalid amount:', amount);
       return NextResponse.json(
         { error: 'Invalid amount' },
         { status: 400 }
@@ -45,9 +50,10 @@ export async function POST(request) {
     }
 
     if (paymentMethodId) {
+      // For saved payment methods, don't auto-confirm - let the frontend handle confirmation
       paymentIntentData.payment_method = paymentMethodId;
       paymentIntentData.confirmation_method = 'manual';
-      paymentIntentData.confirm = true;
+      // Don't set confirm: true - let the frontend confirm it
     }
 
     // Setup future usage if saving payment method
@@ -56,11 +62,12 @@ export async function POST(request) {
     }
 
     // Create a PaymentIntent with the order amount and currency
+    console.log('🔵 Creating Stripe payment intent with data:', paymentIntentData);
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData, {
       idempotencyKey: idemKey, // Prevents duplicate PaymentIntents
     });
 
-    console.log('Payment intent created:', paymentIntent.id);
+    console.log('✅ Payment intent created successfully:', paymentIntent.id, 'Status:', paymentIntent.status);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
@@ -68,7 +75,13 @@ export async function POST(request) {
       status: paymentIntent.status,
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    console.error('❌ Error creating payment intent:', error);
+    console.error('❌ Error details:', {
+      type: error.type,
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     
     // Handle specific Stripe errors
     if (error.type === 'StripeCardError') {

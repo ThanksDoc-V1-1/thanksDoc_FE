@@ -36,10 +36,10 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
   useEffect(() => {
     // Only create PaymentIntent once we have all necessary info
-    if (!paymentIntentCreated && serviceRequest && !clientSecret && customerId) {
+    if (!paymentIntentCreated && serviceRequest && customerId) {
       createPaymentIntent();
     }
-  }, [serviceRequest, paymentIntentCreated, clientSecret, customerId, selectedPaymentMethodId]);
+  }, [serviceRequest, customerId]); // Removed selectedPaymentMethodId and paymentIntentCreated to prevent loops
 
   const initializeCustomer = async () => {
     try {
@@ -205,26 +205,98 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
     setPaymentError(null);
 
     try {
-      // For saved payment methods, the payment intent should already be confirmed
-      // Just need to verify the payment status
-      if (clientSecret) {
-        const result = await stripe.retrievePaymentIntent(clientSecret);
+      console.log('💳 Starting saved card payment with:', {
+        selectedPaymentMethodId,
+        clientSecret,
+        customerId
+      });
+
+      // If no client secret or it wasn't created with the selected payment method, create a new one
+      if (!clientSecret) {
+        console.log('💳 Creating new payment intent for saved payment method');
+        await createPaymentIntentForSavedMethod();
         
-        if (result.error) {
-          setPaymentError(result.error.message);
-        } else if (result.paymentIntent.status === 'succeeded') {
+        // Wait a moment for the payment intent to be created
+        if (!clientSecret) {
+          setPaymentError('Failed to initialize payment. Please try again.');
+          return;
+        }
+      }
+
+      // For saved payment methods, we need to confirm the payment intent with the saved payment method
+      console.log('💳 Confirming payment with saved payment method:', selectedPaymentMethodId);
+      
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: selectedPaymentMethodId
+      });
+      
+      console.log('💳 Confirmation result:', result);
+      
+      if (result.error) {
+        console.error('❌ Saved card payment failed:', result.error);
+        setPaymentError(result.error.message || 'Payment failed with saved card');
+      } else if (result.paymentIntent) {
+        if (result.paymentIntent.status === 'succeeded') {
+          console.log('✅ Saved card payment succeeded:', result.paymentIntent);
           const amount = (result.paymentIntent.amount || 0) / 100;
           alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${amount.toFixed(2)}\nStatus: ${result.paymentIntent.status}`);
           onPaymentSuccess?.(result.paymentIntent);
         } else {
-          setPaymentError('Payment failed. Please try a different payment method.');
+          console.error('❌ Payment intent status:', result.paymentIntent.status);
+          setPaymentError(`Payment ${result.paymentIntent.status}. Please try a different payment method.`);
         }
+      } else {
+        console.error('❌ No payment intent in result');
+        setPaymentError('Payment failed. Please try again.');
       }
     } catch (error) {
-      console.error('Saved card payment error:', error);
+      console.error('❌ Saved card payment error:', error);
       setPaymentError('Payment failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createPaymentIntentForSavedMethod = async () => {
+    try {
+      // Generate a unique idempotency key for this payment
+      const idempotencyKey = `pi_saved_${serviceRequest.id}_${Date.now()}`;
+      
+      const requestBody = {
+        amount: serviceRequest.totalAmount,
+        currency: 'gbp',
+        idempotencyKey: idempotencyKey,
+        customerId: customerId,
+        paymentMethodId: selectedPaymentMethodId,
+        metadata: {
+          serviceRequestId: serviceRequest.id?.toString() || '',
+          serviceType: serviceRequest.serviceType,
+          doctorId: serviceRequest.doctor?.id?.toString() || '',
+          patientId: serviceRequest.patientId?.toString() || '',
+        },
+      };
+      
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (data.error) {
+        setPaymentError(data.error);
+        return;
+      }
+
+      setClientSecret(data.clientSecret);
+      console.log('✅ Payment intent created for saved method:', data.clientSecret);
+      
+    } catch (error) {
+      console.error('Error creating payment intent for saved method:', error);
+      setPaymentError('Failed to initialize payment. Please try again.');
     }
   };
 
