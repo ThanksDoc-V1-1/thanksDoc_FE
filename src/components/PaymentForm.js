@@ -329,11 +329,49 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
   if (customerLoading) {
     return (
-      <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-6 border border-gray-800">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-700 rounded mb-4"></div>
-          <div className="h-4 bg-gray-700 rounded mb-2"></div>
-          <div className="h-4 bg-gray-700 rounded"></div>
+      <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-800">
+        <div className="flex flex-col items-center justify-center py-12">
+          {/* Animated loading spinner */}
+          <div className="relative mb-6">
+            <div className="w-16 h-16 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-ping opacity-20"></div>
+          </div>
+          
+          {/* Loading text */}
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-white mb-2">Preparing Your Payment</h3>
+            <p className="text-gray-400 text-sm mb-4">Setting up secure payment options...</p>
+            
+            {/* Progress steps */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center space-x-2 text-xs">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-300">Initializing customer account</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-xs">
+                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <span className="text-gray-500">Loading saved payment methods</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-xs">
+                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                <span className="text-gray-500">Preparing secure checkout</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Security indicators */}
+          <div className="flex items-center justify-center mt-6 space-x-4 text-xs text-gray-500">
+            <div className="flex items-center space-x-1">
+              <Lock className="h-3 w-3 text-green-400" />
+              <span>SSL Encrypted</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-indigo-600 rounded flex items-center justify-center">
+                <span className="text-white text-[8px] font-bold">S</span>
+              </div>
+              <span>Stripe Secure</span>
+            </div>
+          </div>
         </div>
       </div>
     );
