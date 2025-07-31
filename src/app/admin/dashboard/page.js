@@ -22,6 +22,12 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Pagination states
+  const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
+  const [businessTypesCurrentPage, setBusinessTypesCurrentPage] = useState(1);
+  const servicesPerPage = 5;
+  const businessTypesPerPage = 5;
+  
   // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
@@ -725,6 +731,18 @@ export default function AdminDashboard() {
            status.includes(search);
   });
 
+  // Pagination calculations for services
+  const totalServicesPages = Math.ceil(filteredServices.length / servicesPerPage);
+  const servicesStartIndex = (servicesCurrentPage - 1) * servicesPerPage;
+  const servicesEndIndex = servicesStartIndex + servicesPerPage;
+  const paginatedServices = filteredServices.slice(servicesStartIndex, servicesEndIndex);
+
+  // Pagination calculations for business types
+  const totalBusinessTypesPages = Math.ceil(filteredBusinessTypes.length / businessTypesPerPage);
+  const businessTypesStartIndex = (businessTypesCurrentPage - 1) * businessTypesPerPage;
+  const businessTypesEndIndex = businessTypesStartIndex + businessTypesPerPage;
+  const paginatedBusinessTypes = filteredBusinessTypes.slice(businessTypesStartIndex, businessTypesEndIndex);
+
   const filteredRequests = serviceRequests.filter(request => {
     // Handle both direct properties and nested attributes structure
     const serviceType = request.serviceType || request.attributes?.serviceType || '';
@@ -801,6 +819,78 @@ export default function AdminDashboard() {
     totalRequests: serviceRequests.length,
     completedRequests: serviceRequests.filter(r => r.status === 'completed').length,
   };
+
+  // Pagination component for services
+  const ServicesPagination = () => (
+    <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t flex items-center justify-between`}>
+      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        Showing {servicesStartIndex + 1} to {Math.min(servicesEndIndex, filteredServices.length)} of {filteredServices.length} services
+      </div>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setServicesCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={servicesCurrentPage === 1}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            servicesCurrentPage === 1
+              ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Previous
+        </button>
+        <span className={`px-3 py-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          Page {servicesCurrentPage} of {totalServicesPages}
+        </span>
+        <button
+          onClick={() => setServicesCurrentPage(prev => Math.min(prev + 1, totalServicesPages))}
+          disabled={servicesCurrentPage === totalServicesPages}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            servicesCurrentPage === totalServicesPages
+              ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+
+  // Pagination component for business types
+  const BusinessTypesPagination = () => (
+    <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t flex items-center justify-between`}>
+      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        Showing {businessTypesStartIndex + 1} to {Math.min(businessTypesEndIndex, filteredBusinessTypes.length)} of {filteredBusinessTypes.length} business types
+      </div>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => setBusinessTypesCurrentPage(prev => Math.max(prev - 1, 1))}
+          disabled={businessTypesCurrentPage === 1}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            businessTypesCurrentPage === 1
+              ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Previous
+        </button>
+        <span className={`px-3 py-1 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          Page {businessTypesCurrentPage} of {totalBusinessTypesPages}
+        </span>
+        <button
+          onClick={() => setBusinessTypesCurrentPage(prev => Math.min(prev + 1, totalBusinessTypesPages))}
+          disabled={businessTypesCurrentPage === totalBusinessTypesPages}
+          className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+            businessTypesCurrentPage === totalBusinessTypesPages
+              ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : isDarkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+          }`}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
@@ -1775,7 +1865,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                  {filteredServices.length > 0 ? filteredServices.map((service) => {
+                  {paginatedServices.length > 0 ? paginatedServices.map((service) => {
                     const id = service.id;
                     const documentId = service.documentId;
                     const name = service.attributes?.name || service.name;
@@ -1877,13 +1967,7 @@ export default function AdminDashboard() {
               </table>
             </div>
             
-            {filteredServices.length > 0 && (
-              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
-                Showing {filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} of {services.length} total
-              </div>
-            )}
-
-          {/* Business Types Section - within Services Tab */}
+            {filteredServices.length > 0 && <ServicesPagination />}
           <div className={`mt-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
@@ -1936,7 +2020,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                  {filteredBusinessTypes.length > 0 ? filteredBusinessTypes.map((businessType) => {
+                  {paginatedBusinessTypes.length > 0 ? paginatedBusinessTypes.map((businessType) => {
                     const id = businessType.id;
                     const documentId = businessType.documentId;
                     const name = businessType.attributes?.name || businessType.name;
@@ -2028,11 +2112,7 @@ export default function AdminDashboard() {
               </table>
             </div>
             
-            {filteredBusinessTypes.length > 0 && (
-              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
-                Showing {filteredBusinessTypes.length} {filteredBusinessTypes.length === 1 ? 'business type' : 'business types'} of {businessTypes.length} total
-              </div>
-            )}
+            {filteredBusinessTypes.length > 0 && <BusinessTypesPagination />}
           </div>
         </div>
         )}
