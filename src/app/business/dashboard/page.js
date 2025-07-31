@@ -2048,57 +2048,11 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
                       className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     >
                       <option value="">Any available doctor</option>
-                      {/* Show doctors who offer the selected service */}
-                      {formData.serviceId && serviceBasedDoctors.length > 0 && (
-                        <>
-                          <optgroup label="Doctors who offer this service">
-                            {serviceBasedDoctors.map((doctor) => (
-                              <option key={`service-${doctor.id}`} value={doctor.id}>
-                                Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization || 'Medical Professional'} (£{doctor.hourlyRate}/hr)
-                              </option>
-                            ))}
-                          </optgroup>
-                        </>
-                      )}
-                      {/* Show previously worked doctors who also offer this service */}
-                      {formData.serviceId && previousDoctors.length > 0 && (
-                        <>
-                          <optgroup label="Previously worked doctors (who offer this service)">
-                            {previousDoctors
-                              .filter(prevDoc => serviceBasedDoctors.some(serviceDoc => serviceDoc.id === prevDoc.id))
-                              .map((doctor) => (
-                                <option key={`previous-${doctor.id}`} value={doctor.id}>
-                                  Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr) ⭐ Previous
-                                </option>
-                              ))}
-                          </optgroup>
-                        </>
-                      )}
-                      {/* If no service selected, show all nearby doctors */}
-                      {!formData.serviceId && nearbyDoctors.map((doctor) => (
-                        <option key={doctor.id} value={doctor.id}>
-                          Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialisation} ({formatCurrency(doctor.hourlyRate)}/hr)
-                        </option>
-                      ))}
                     </select>
                   )}
-                  {formData.preferredDoctorId && (
-                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                      Selected: Dr. {
-                        // Find doctor from appropriate list
-                        (() => {
-                          let selectedDoctor = null;
-                          if (formData.serviceId) {
-                            selectedDoctor = serviceBasedDoctors.find(d => d.id == formData.preferredDoctorId) ||
-                                           previousDoctors.find(d => d.id == formData.preferredDoctorId);
-                          } else {
-                            selectedDoctor = nearbyDoctors.find(d => d.id == formData.preferredDoctorId);
-                          }
-                          return selectedDoctor ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}` : 'Unknown';
-                        })()
-                      }
-                    </p>
-                  )}
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                    We will assign the best available doctor for your request based on location and specialization.
+                  </p>
                 </div>
               )}
 
