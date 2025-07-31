@@ -625,7 +625,6 @@ export default function BusinessDashboard() {
       return;
     }
 
-    setLoading(true);
     try {
       const serviceAmount = (selectedDoctor.hourlyRate || 0) * parseFloat(requestHours);
       const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
@@ -633,46 +632,40 @@ export default function BusinessDashboard() {
       // Find the selected service details
       const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
       
-      const requestData = {
+      // Create a temporary request object for payment
+      const tempRequest = {
+        id: 'temp-quick-' + Date.now(), // Temporary ID for payment
         businessId: user.id,
-        doctorId: selectedDoctor.id,
-        urgencyLevel: 'medium',
-        serviceId: quickRequestServiceId,
         serviceType: selectedService?.name || 'Selected Service',
         description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
-        estimatedCost: totalWithServiceCharge,
-        serviceDateTime: serviceDateTime.toISOString() // Send combined date and time
+        serviceDateTime: serviceDateTime.toISOString(),
+        totalAmount: totalWithServiceCharge,
+        // Store the complete request data for later use
+        _quickRequestData: {
+          doctorId: selectedDoctor.id,
+          urgencyLevel: 'medium',
+          serviceId: quickRequestServiceId,
+          serviceType: selectedService?.name || 'Selected Service',
+          description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
+          estimatedDuration: parseFloat(requestHours),
+          serviceCharge: SERVICE_CHARGE,
+          estimatedCost: totalWithServiceCharge,
+          serviceDateTime: serviceDateTime.toISOString()
+        },
+        _isQuickRequest: true,
+        _selectedDoctor: selectedDoctor,
+        _requestHours: requestHours
       };
 
-      const response = await serviceRequestAPI.createDirectRequest(requestData);
+      // Show payment modal first - payment is now required before service request creation
+      setPaymentRequest(tempRequest);
+      setShowPaymentModal(true);
       
-      if (response.data) {
-        const requestId = response.data.id || response.data.data?.id;
-        
-        // Auto-fallback is now handled automatically by the backend cron job (24 hours)
-        // No need for manual enablement - the system will automatically broadcast after 24 hours
-        
-        alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! 
-        
-✅ Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} booking fee)
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.`);
-        
-        setShowHoursPopup(false);
-        setSelectedDoctor(null);
-        setRequestHours(1);
-        setQuickRequestServiceType('');
-        setQuickRequestServiceId('');
-        setQuickRequestServiceDate('');
-        setQuickRequestServiceTime('');
-        fetchServiceRequests(); // Refresh the requests list
-      }
     } catch (error) {
-      console.error('Error creating service request:', error);
-      alert('Failed to send service request. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error preparing quick service request:', error);
+      alert('Failed to prepare service request. Please try again.');
     }
   };
 
@@ -875,58 +868,34 @@ export default function BusinessDashboard() {
         return;
       }
 
-      const requestData = {
+      // Calculate total cost including booking fee
+      const selectedService = availableServices.find(service => service.id.toString() === formData.serviceId.toString());
+      const baseServiceCost = (serviceCost?.fixedPrice || 0) * parseFloat(formData.estimatedDuration);
+      const totalCost = baseServiceCost + SERVICE_CHARGE;
+
+      // Create a temporary request object for payment
+      const tempRequest = {
+        id: 'temp-' + Date.now(), // Temporary ID for payment
         businessId: user.id,
-        ...formData,
-        urgencyLevel: 'medium', // Default urgency level since we removed it from UI
+        serviceType: selectedService?.name || 'Selected Service',
+        description: formData.description,
         estimatedDuration: parseInt(formData.estimatedDuration),
         serviceCharge: SERVICE_CHARGE,
-        serviceDateTime: serviceDateTime.toISOString(), // Send combined date and time
+        serviceDateTime: serviceDateTime.toISOString(),
+        totalAmount: totalCost,
+        // Store the complete form data for later use
+        _formData: formData,
+        _serviceDateTime: serviceDateTime
       };
 
-      const response = await serviceRequestAPI.createServiceRequest(requestData);
-      
-      if (response.data) {
-        const requestId = response.data.id || response.data.data?.id;
-        
-        // Enable automatic fallback if a specific doctor was selected
-        // Auto-fallback is now handled automatically by the backend cron job (24 hours)
-        // No need for manual enablement - the system will automatically broadcast after 24 hours
-        
-        let notificationMessage;
-        if ((formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'any') && formData.preferredDoctorId) {
-          notificationMessage = `Service request created successfully! Your selected doctor has been notified. 
-          
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
+      // Show payment modal first - payment is now required before service request creation
+      setPaymentRequest(tempRequest);
+      setShowPaymentModal(true);
+      setLoading(false); // Remove loading since we're showing payment modal
 
-A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
-        } else {
-          notificationMessage = `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
-        }
-        
-        alert(notificationMessage);
-        setShowRequestForm(false);
-        setFormData({
-          serviceType: '',
-          serviceId: '',
-          description: '',
-          estimatedDuration: 1,
-          preferredDoctorId: null,
-          doctorSelectionType: 'any',
-          serviceDate: '',
-          serviceTime: '',
-        });
-        // Reset service-related states
-        setSelectedServiceId('');
-        setServiceBasedDoctors([]);
-        console.log('🔄 Manually refreshing after creating service request');
-        await fetchServiceRequests();
-        await fetchNearbyDoctors(); // Also refresh doctors in case availability changed
-      }
     } catch (error) {
-      console.error('Error creating service request:', error);
-      alert('Failed to create service request. Please try again.');
-    } finally {
+      console.error('Error preparing service request:', error);
+      alert('Failed to prepare service request. Please try again.');
       setLoading(false);
     }
   };
@@ -956,59 +925,206 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
     setLoading(true);
     
     try {
-      // Extract charge information from payment intent
-      const charge = paymentIntent.charges?.data?.[0];
+      // Check if this is a new service request (temporary) or an existing one
+      const isNewServiceRequest = paymentRequest.id.startsWith('temp-');
       
-      const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
-        paymentIntentId: paymentIntent.id,
-        chargeId: charge?.id,
-        receiptUrl: charge?.receipt_url,
-        amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
-        currency: paymentIntent.currency || 'gbp',
-        status: paymentIntent.status,
-        timestamp: new Date().toISOString(),
-        // Include additional payment details for comprehensive tracking
-        stripeCustomerId: paymentIntent.customer,
-        paymentMethodId: paymentIntent.payment_method,
-        description: paymentIntent.description,
-        metadata: paymentIntent.metadata,
-      }, {
-        // Additional details for backend processing
-        paymentIntentId: paymentIntent.id,
-        chargeId: charge?.id,
-        receiptUrl: charge?.receipt_url,
-        currency: paymentIntent.currency || 'gbp'
-      });
-      
-      console.log('💳 Card Payment Response:', response.data);
-      
-      if (response.data) {
-        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee) Payment ID: ${paymentIntent.id}`);
+      if (isNewServiceRequest) {
+        // Check if this is a quick request or regular request
+        const isQuickRequest = paymentRequest._isQuickRequest;
         
-        // Force update the request in the local state too
-        setServiceRequests(prev => 
-          prev.map(req => 
-            req.id === paymentRequest.id ? { 
-              ...req, 
-              isPaid: true, 
-              paymentMethod: 'card',
+        if (isQuickRequest) {
+          // Handle quick request creation
+          const quickRequestData = paymentRequest._quickRequestData;
+          const selectedDoctor = paymentRequest._selectedDoctor;
+          const requestHours = paymentRequest._requestHours;
+          
+          const requestData = {
+            ...quickRequestData,
+            businessId: user.id,
+            // Mark as paid since payment was successful
+            isPaid: true,
+            paymentMethod: 'card',
+            paymentIntentId: paymentIntent.id,
+            paymentStatus: paymentIntent.status,
+            paidAt: new Date().toISOString(),
+            totalAmount: paymentRequest.totalAmount
+          };
+
+          // Create the direct service request with payment information
+          const response = await serviceRequestAPI.createDirectRequest(requestData);
+          
+          if (response.data) {
+            const requestId = response.data.id || response.data.data?.id;
+            
+            // Update the newly created request with complete payment details
+            const charge = paymentIntent.charges?.data?.[0];
+            await serviceRequestAPI.processPayment(requestId, 'card', {
               paymentIntentId: paymentIntent.id,
               chargeId: charge?.id,
-              paymentStatus: paymentIntent.status,
-              paidAt: new Date().toISOString(),
+              receiptUrl: charge?.receipt_url,
+              amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
               currency: paymentIntent.currency || 'gbp',
-              totalAmount: calculateTotalAmount(paymentRequest)
-            } : req
-          )
-        );
+              status: paymentIntent.status,
+              timestamp: new Date().toISOString(),
+              stripeCustomerId: paymentIntent.customer,
+              paymentMethodId: paymentIntent.payment_method,
+              description: paymentIntent.description,
+              metadata: paymentIntent.metadata,
+            }, {
+              paymentIntentId: paymentIntent.id,
+              chargeId: charge?.id,
+              receiptUrl: charge?.receipt_url,
+              currency: paymentIntent.currency || 'gbp'
+            });
+            
+            alert(`Payment successful! Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!
+            
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
+
+Payment ID: ${paymentIntent.id}`);
+            
+            setShowHoursPopup(false);
+            setSelectedDoctor(null);
+            setRequestHours(1);
+            setQuickRequestServiceType('');
+            setQuickRequestServiceId('');
+            setQuickRequestServiceDate('');
+            setQuickRequestServiceTime('');
+            console.log('🔄 Manually refreshing after creating paid quick service request');
+            await fetchServiceRequests();
+          }
+        } else {
+          // Handle regular request creation
+          const formDataFromTemp = paymentRequest._formData;
+          const serviceDateTime = paymentRequest._serviceDateTime;
+          
+          const requestData = {
+            businessId: user.id,
+            ...formDataFromTemp,
+            urgencyLevel: 'medium', // Default urgency level since we removed it from UI
+            estimatedDuration: parseInt(formDataFromTemp.estimatedDuration),
+            serviceCharge: SERVICE_CHARGE,
+            serviceDateTime: serviceDateTime.toISOString(),
+            // Mark as paid since payment was successful
+            isPaid: true,
+            paymentMethod: 'card',
+            paymentIntentId: paymentIntent.id,
+            paymentStatus: paymentIntent.status,
+            paidAt: new Date().toISOString(),
+            totalAmount: paymentRequest.totalAmount
+          };
+
+          // Create the service request with payment information
+          const response = await serviceRequestAPI.createServiceRequest(requestData);
+          
+          if (response.data) {
+            const requestId = response.data.id || response.data.data?.id;
+            
+            // Update the newly created request with complete payment details
+            const charge = paymentIntent.charges?.data?.[0];
+            await serviceRequestAPI.processPayment(requestId, 'card', {
+              paymentIntentId: paymentIntent.id,
+              chargeId: charge?.id,
+              receiptUrl: charge?.receipt_url,
+              amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
+              currency: paymentIntent.currency || 'gbp',
+              status: paymentIntent.status,
+              timestamp: new Date().toISOString(),
+              stripeCustomerId: paymentIntent.customer,
+              paymentMethodId: paymentIntent.payment_method,
+              description: paymentIntent.description,
+              metadata: paymentIntent.metadata,
+            }, {
+              paymentIntentId: paymentIntent.id,
+              chargeId: charge?.id,
+              receiptUrl: charge?.receipt_url,
+              currency: paymentIntent.currency || 'gbp'
+            });
+            
+            let notificationMessage;
+            if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
+              notificationMessage = `Payment successful! Service request created and your selected doctor has been notified.
+              
+⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
+
+Payment ID: ${paymentIntent.id}`;
+            } else {
+              notificationMessage = `Payment successful! Service request created and ${response.data.notifiedDoctors} nearby doctors have been notified. Payment ID: ${paymentIntent.id}`;
+            }
+            
+            alert(notificationMessage);
+            setShowRequestForm(false);
+            setFormData({
+              serviceType: '',
+              serviceId: '',
+              description: '',
+              estimatedDuration: 1,
+              preferredDoctorId: null,
+              doctorSelectionType: 'any',
+              serviceDate: '',
+              serviceTime: '',
+            });
+            // Reset service-related states
+            setSelectedServiceId('');
+            setServiceBasedDoctors([]);
+            console.log('🔄 Manually refreshing after creating paid service request');
+            await fetchServiceRequests();
+            await fetchNearbyDoctors();
+          }
+        }
+      } else {
+        // This is an existing service request - process payment normally (old flow for existing requests)
+        const charge = paymentIntent.charges?.data?.[0];
         
-        // Also fetch fresh data from server immediately regardless of auto-refresh
-        console.log('🔄 Manually refreshing after card payment');
-        await fetchServiceRequests();
+        const response = await serviceRequestAPI.processPayment(paymentRequest.id, 'card', {
+          paymentIntentId: paymentIntent.id,
+          chargeId: charge?.id,
+          receiptUrl: charge?.receipt_url,
+          amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
+          currency: paymentIntent.currency || 'gbp',
+          status: paymentIntent.status,
+          timestamp: new Date().toISOString(),
+          stripeCustomerId: paymentIntent.customer,
+          paymentMethodId: paymentIntent.payment_method,
+          description: paymentIntent.description,
+          metadata: paymentIntent.metadata,
+        }, {
+          paymentIntentId: paymentIntent.id,
+          chargeId: charge?.id,
+          receiptUrl: charge?.receipt_url,
+          currency: paymentIntent.currency || 'gbp'
+        });
+        
+        console.log('💳 Card Payment Response:', response.data);
+        
+        if (response.data) {
+          alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee) Payment ID: ${paymentIntent.id}`);
+          
+          // Force update the request in the local state too
+          setServiceRequests(prev => 
+            prev.map(req => 
+              req.id === paymentRequest.id ? { 
+                ...req, 
+                isPaid: true, 
+                paymentMethod: 'card',
+                paymentIntentId: paymentIntent.id,
+                chargeId: charge?.id,
+                paymentStatus: paymentIntent.status,
+                paidAt: new Date().toISOString(),
+                currency: paymentIntent.currency || 'gbp',
+                totalAmount: calculateTotalAmount(paymentRequest)
+              } : req
+            )
+          );
+          
+          // Also fetch fresh data from server immediately regardless of auto-refresh
+          console.log('🔄 Manually refreshing after card payment');
+          await fetchServiceRequests();
+        }
       }
     } catch (error) {
-      console.error('Error processing card payment:', error);
-      alert('Payment record failed. Please contact support.');
+      console.error('Error processing payment/creating service request:', error);
+      alert('Payment processed but service request creation failed. Please contact support.');
     } finally {
       setLoading(false);
       setPaymentRequest(null); // Clear payment request
@@ -1914,7 +2030,7 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
                               <span>£{pricing.servicePrice}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Platform fee:</span>
+                              <span>Booking fee:</span>
                               <span>£{pricing.serviceCharge}</span>
                             </div>
                             <div className={`flex justify-between font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} pt-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'}`}>
@@ -2157,7 +2273,7 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
                   disabled={loading}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
-                  {loading ? 'Requesting...' : 'Request Doctor'}
+                  {loading ? 'Processing...' : 'Pay & Request Doctor'}
                 </button>
                 </div>
               </div>
@@ -2313,6 +2429,11 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
                   Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0) + SERVICE_CHARGE)}
                   <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} booking fee)</span>
                 </p>
+                <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-orange-900/20 border-orange-600/30' : 'bg-orange-50 border-orange-200'} border`}>
+                  <p className={`text-xs ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                    💳 Payment required before request is sent to doctor
+                  </p>
+                </div>
               </div>
               
               {/* Date and Time Fields */}
@@ -2377,7 +2498,7 @@ A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
                   disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceId || !quickRequestServiceDate || !quickRequestServiceTime || (quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId))}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
-                  {loading ? 'Sending...' : 'Send Request'}
+                  {loading ? 'Processing...' : 'Pay & Send Request'}
                 </button>
               </div>
             </div>
