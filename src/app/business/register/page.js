@@ -22,6 +22,7 @@ export default function BusinessRegister() {
   const [townQuery, setTownQuery] = useState('');
   const [showTownSuggestions, setShowTownSuggestions] = useState(false);
   const [filteredTowns, setFilteredTowns] = useState([]);
+  const [selectedTownIndex, setSelectedTownIndex] = useState(-1);
   
   // UK Towns and Counties data
   const ukTownsAndCounties = [
@@ -178,9 +179,11 @@ export default function BusinessRegister() {
       ).slice(0, 10); // Limit to 10 suggestions
       setFilteredTowns(filtered);
       setShowTownSuggestions(true);
+      setSelectedTownIndex(-1); // Reset selection
     } else {
       setShowTownSuggestions(false);
       setFilteredTowns([]);
+      setSelectedTownIndex(-1);
       // Clear county when town is cleared
       setFormData(prev => ({
         ...prev,
@@ -199,6 +202,38 @@ export default function BusinessRegister() {
     }));
     setShowTownSuggestions(false);
     setFilteredTowns([]);
+    setSelectedTownIndex(-1);
+  };
+
+  // Handle keyboard navigation for town suggestions
+  const handleTownKeyDown = (e) => {
+    if (!showTownSuggestions || filteredTowns.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedTownIndex(prev => 
+          prev < filteredTowns.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedTownIndex(prev => 
+          prev > 0 ? prev - 1 : filteredTowns.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedTownIndex >= 0 && selectedTownIndex < filteredTowns.length) {
+          handleTownSelect(filteredTowns[selectedTownIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowTownSuggestions(false);
+        setSelectedTownIndex(-1);
+        break;
+    }
   };
 
   const handleGetLocation = async () => {
@@ -542,6 +577,7 @@ export default function BusinessRegister() {
                       name="town"
                       value={townQuery}
                       onChange={handleTownChange}
+                      onKeyDown={handleTownKeyDown}
                       onFocus={() => townQuery.length > 0 && setShowTownSuggestions(true)}
                       onBlur={() => setTimeout(() => setShowTownSuggestions(false), 200)}
                       required
@@ -557,15 +593,24 @@ export default function BusinessRegister() {
                           <button
                             key={index}
                             type="button"
-                            className={`w-full text-left px-4 py-2 text-sm hover:${
-                              isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-                            } first:rounded-t-md last:rounded-b-md ${
-                              isDarkMode ? 'text-gray-200 hover:text-white' : 'text-gray-700 hover:text-gray-900'
+                            className={`w-full text-left px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md ${
+                              index === selectedTownIndex
+                                ? isDarkMode 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-blue-500 text-white'
+                                : isDarkMode 
+                                  ? 'text-gray-200 hover:text-white hover:bg-gray-700' 
+                                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                             }`}
                             onClick={() => handleTownSelect(townData)}
+                            onMouseEnter={() => setSelectedTownIndex(index)}
                           >
                             <div className="font-medium">{townData.town}</div>
-                            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <div className={`text-xs ${
+                              index === selectedTownIndex
+                                ? 'text-blue-100'
+                                : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
                               {townData.county}
                             </div>
                           </button>
