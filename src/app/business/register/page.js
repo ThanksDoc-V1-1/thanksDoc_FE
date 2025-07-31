@@ -207,7 +207,8 @@ export default function BusinessRegister() {
                     value={formData.businessType}
                     onChange={handleInputChange}
                     required
-                    className="form-input"
+                    className="form-input business-type-select"
+                    size="1"
                   >
                     {businessTypes.map((type) => (
                       <option key={type.id} value={type.id}>

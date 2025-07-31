@@ -160,3 +160,55 @@ body {
 .light .form-link:hover {
   color: #2563eb;
 }
+
+/* Scrollable select dropdown for business types */
+.business-type-select {
+  max-height: 200px;
+  overflow-y: auto;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+}
+
+/* Dark mode select dropdown styling */
+.dark .business-type-select {
+  border: 1px solid #4b5563;
+  background-color: #374151;
+  color: #fff;
+}
+
+.dark .business-type-select:focus {
+  outline: 2px solid #3b82f6;
+  border-color: transparent;
+}
+
+/* Light mode select dropdown styling */
+.light .business-type-select {
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+}
+
+.light .business-type-select:focus {
+  outline: 2px solid #3b82f6;
+  border-color: transparent;
+}
+
+/* Option styling for better readability */
+.business-type-select option {
+  padding: 8px 12px;
+  line-height: 1.5;
+}
+
+.dark .business-type-select option {
+  background-color: #374151;
+  color: #fff;
+}
+
+.light .business-type-select option {
+  background-color: #ffffff;
+  color: #1f2937;
+}
