@@ -204,7 +204,7 @@ export default function LoginForm() {
           </a>
           <span>•</span>
           <a href="/business/register" className="text-blue-400 hover:underline">
-            Register Business
+            Join as Business
           </a>
         </div>
       </div>
