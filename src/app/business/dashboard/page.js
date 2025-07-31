@@ -26,25 +26,25 @@ export default function BusinessDashboard() {
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme();
   
-  // Service charge constant
-  const SERVICE_CHARGE = 3.00; // £3 service charge for all requests
+  // Booking fee constant
+  const SERVICE_CHARGE = 3.00; // £3 booking fee for all requests
   
-  // Helper function to calculate total amount including service charge
+  // Helper function to calculate total amount including booking fee
   const calculateTotalAmount = (request) => {
-    // If totalAmount already includes service charge (backend calculated), use it
-    // Otherwise, add service charge to ensure correct total
+    // If totalAmount already includes booking fee (backend calculated), use it
+    // Otherwise, add booking fee to ensure correct total
     const baseAmount = request.totalAmount || 0;
     const serviceCharge = request.serviceCharge || SERVICE_CHARGE;
     
-    // Check if service charge is already included by seeing if totalAmount is significantly larger than expected doctor fee
+    // Check if booking fee is already included by seeing if totalAmount is significantly larger than expected doctor fee
     const estimatedDoctorFee = (request.doctor?.hourlyRate || 0) * (request.estimatedDuration || 0);
     const expectedTotal = estimatedDoctorFee + serviceCharge;
     
-    // If totalAmount is close to expected total, use it; otherwise add service charge
+    // If totalAmount is close to expected total, use it; otherwise add booking fee
     if (baseAmount >= expectedTotal - 1 && baseAmount <= expectedTotal + 1) {
-      return baseAmount; // Service charge likely already included
+      return baseAmount; // Booking fee likely already included
     } else {
-      return baseAmount + serviceCharge; // Add service charge
+      return baseAmount + serviceCharge; // Add booking fee
     }
   };
   
@@ -656,7 +656,7 @@ export default function BusinessDashboard() {
         
         alert(`Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)! 
         
-✅ Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} service charge)
+✅ Total cost: ${formatCurrency(totalWithServiceCharge)} (includes £${SERVICE_CHARGE} booking fee)
 ⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.`);
         
         setShowHoursPopup(false);
@@ -899,9 +899,9 @@ export default function BusinessDashboard() {
           
 ⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
 
-A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
         } else {
-          notificationMessage = `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
+          notificationMessage = `Service request created successfully! ${response.data.notifiedDoctors} nearby doctors have been notified. A £${SERVICE_CHARGE} booking fee will be added to the final payment.`;
         }
         
         alert(notificationMessage);
@@ -983,7 +983,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
       console.log('💳 Card Payment Response:', response.data);
       
       if (response.data) {
-        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} service charge) Payment ID: ${paymentIntent.id}`);
+        alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee) Payment ID: ${paymentIntent.id}`);
         
         // Force update the request in the local state too
         setServiceRequests(prev => 
@@ -2169,10 +2169,10 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                 </p>
               </div>
 
-              {/* Service Charge Notice */}
+              {/* Booking Fee Notice */}
               <div className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} p-3 rounded-lg border`}>
                 <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} font-medium`}>
-                  ℹ️ Service Charge: A {formatCurrency(SERVICE_CHARGE)} service charge will be added to your final payment.
+                  ℹ️ Booking Fee: A {formatCurrency(SERVICE_CHARGE)} booking fee will be added to your final payment.
                 </p>
               </div>
               </div>
@@ -2357,7 +2357,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                 />
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
                   Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0) + SERVICE_CHARGE)}
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} service charge)</span>
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} booking fee)</span>
                 </p>
               </div>
               
@@ -2400,7 +2400,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Medical consultation with verified doctor</p>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Professional healthcare service</p>
                 <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium`}>• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
-                <p className={`text-xs ${isDarkMode ? 'text-orange-300' : 'text-orange-600'} font-medium`}>• Service charge: {formatCurrency(SERVICE_CHARGE)}</p>
+                <p className={`text-xs ${isDarkMode ? 'text-orange-300' : 'text-orange-600'} font-medium`}>• Booking fee: {formatCurrency(SERVICE_CHARGE)}</p>
               </div>
               <div className="flex space-x-3 pt-4">
                 <button
