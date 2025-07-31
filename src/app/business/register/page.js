@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, ArrowLeft, MapPin, Eye, EyeOff } from 'lucide-react';
-import { authAPI } from '../../../lib/api';
+import { authAPI, businessAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -17,6 +17,18 @@ export default function BusinessRegister() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [businessTypes, setBusinessTypes] = useState([
+    { id: 'pharmacy', name: 'Pharmacy' },
+    { id: 'clinic', name: 'Clinic' },
+    { id: 'hospital', name: 'Hospital' },
+    { id: 'dental', name: 'Dental Practice' },
+    { id: 'physiotherapy', name: 'Physiotherapy Center' },
+    { id: 'mental_health', name: 'Mental Health Practice' },
+    { id: 'laboratory', name: 'Laboratory' },
+    { id: 'medical_supply', name: 'Medical Supply Company' },
+    { id: 'ambulance', name: 'Ambulance Service' },
+    { id: 'other', name: 'Other Healthcare Business' }
+  ]); // Enhanced list of business types
   const [formData, setFormData] = useState({
     businessName: '',
     businessType: 'pharmacy',
@@ -34,6 +46,33 @@ export default function BusinessRegister() {
     latitude: '',
     longitude: '',
   });
+
+  // Fetch business types from backend on component mount
+  useEffect(() => {
+    const fetchBusinessTypes = async () => {
+      try {
+        console.log('🔄 Fetching business types from backend...');
+        const response = await businessAPI.getBusinessTypes();
+        
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          const backendTypes = response.data.data.map(type => ({
+            id: type.value || type.id,
+            name: type.name || type.label
+          }));
+          console.log('✅ Business types loaded from backend:', backendTypes);
+          setBusinessTypes(backendTypes);
+        } else {
+          console.log('⚠️ No business types received from backend, using default types');
+        }
+      } catch (error) {
+        console.error('❌ Error fetching business types:', error);
+        console.log('🔄 Using default business types due to error');
+        // Keep default types as fallback
+      }
+    };
+
+    fetchBusinessTypes();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -170,25 +209,26 @@ export default function BusinessRegister() {
                     required
                     className="form-input"
                   >
-                    <option value="pharmacy">Pharmacy</option>
-                    <option value="clinic">Clinic</option>
-                    <option value="hospital">Hospital</option>
-                    <option value="other">Other</option>
+                    {businessTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
                   <label className="form-label">
-                    Business Licence Number *
+                    Registered Company Number *
                   </label>
                   <input
                     type="text"
-                    name="businessLicence"
-                    value={formData.businessLicence}
+                    name="businessLicense"
+                    value={formData.businessLicense}
                     onChange={handleInputChange}
                     required
                     className="form-input"
-                    placeholder="Enter Business Licence Number"
+                    placeholder="Enter Registered Company Number"
                   />
                 </div>
 

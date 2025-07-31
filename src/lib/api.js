@@ -417,6 +417,7 @@ export const businessAPI = {
   delete: (id) => api.delete(`/businesses/${id}`),
   getStats: (id) => api.get(`/businesses/${id}/stats`),
   getOverallStats: () => api.get('/businesses/stats'),
+  getBusinessTypes: () => publicAPI.get('/business-types'), // Get available business types
 };
 
 // Service Request API calls
