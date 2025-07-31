@@ -45,7 +45,7 @@ export default function DoctorDashboard() {
 
   // Service management states
   const [doctorServices, setDoctorServices] = useState([]);
-  const [allServices, setAllServices] = useState({ inPerson: [], online: [] });
+  const [allServices, setAllServices] = useState({ inPerson: [], online: [], nhs: [] });
   const [showManageServices, setShowManageServices] = useState(false);
   const [serviceLoading, setServiceLoading] = useState(false);
 
@@ -509,13 +509,16 @@ export default function DoctorDashboard() {
       // Filter on frontend instead of backend
       const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
       const onlineServices = allServicesData.filter(service => service.category === 'online');
+      const nhsServices = allServicesData.filter(service => service.category === 'nhs');
       
       console.log('📍 In-person services:', inPersonServices.length);
       console.log('💻 Online services:', onlineServices.length);
+      console.log('🏛️ NHS services:', nhsServices.length);
       
       setAllServices({
         inPerson: inPersonServices,
-        online: onlineServices
+        online: onlineServices,
+        nhs: nhsServices
       });
     } catch (error) {
       console.error('Error loading all services:', error);
@@ -530,10 +533,12 @@ export default function DoctorDashboard() {
         
         const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
         const onlineServices = allServicesData.filter(service => service.category === 'online');
+        const nhsServices = allServicesData.filter(service => service.category === 'nhs');
         
         setAllServices({
           inPerson: inPersonServices,
-          online: onlineServices
+          online: onlineServices,
+          nhs: nhsServices
         });
         
         // Restore token
@@ -552,7 +557,7 @@ export default function DoctorDashboard() {
       setServiceLoading(true);
       
       // Find the service to add
-      const allServicesList = [...allServices.inPerson, ...allServices.online];
+      const allServicesList = [...allServices.inPerson, ...allServices.online, ...allServices.nhs];
       const serviceToAdd = allServicesList.find(s => s.id === serviceId);
       
       if (!serviceToAdd) return;
@@ -1037,7 +1042,11 @@ export default function DoctorDashboard() {
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`w-3 h-3 rounded-full ${
-                            service.category === 'in-person' ? 'bg-green-500' : 'bg-blue-500'
+                            service.category === 'in-person' 
+                              ? 'bg-green-500' 
+                              : service.category === 'online' 
+                                ? 'bg-blue-500' 
+                                : 'bg-purple-500'
                           }`}></div>
                           <div>
                             <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1046,9 +1055,11 @@ export default function DoctorDashboard() {
                             <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
                               service.category === 'in-person'
                                 ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
-                                : isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                                : service.category === 'online'
+                                  ? isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                                  : isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'
                             }`}>
-                              {service.category === 'in-person' ? 'In-Person' : 'Online'}
+                              {service.category === 'in-person' ? 'In-Person' : service.category === 'online' ? 'Online' : 'NHS'}
                             </span>
                           </div>
                         </div>
@@ -1139,6 +1150,43 @@ export default function DoctorDashboard() {
                               isDarkMode 
                                 ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-400' 
                                 : 'bg-blue-100 hover:bg-blue-200 text-blue-600'
+                            }`}
+                            disabled={serviceLoading}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* NHS Services */}
+                <div>
+                  <h5 className={`text-md font-medium mb-3 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                    NHS Services
+                  </h5>
+                  <div className="grid gap-3">
+                    {allServices.nhs
+                      .filter(service => !doctorServices.find(ds => ds.id === service.id))
+                      .map((service) => (
+                        <div 
+                          key={service.id} 
+                          className={`flex items-center justify-between p-4 rounded-lg border ${
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {service.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleAddService(service.id)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              isDarkMode 
+                                ? 'bg-purple-900/30 hover:bg-purple-900/50 text-purple-400' 
+                                : 'bg-purple-100 hover:bg-purple-200 text-purple-600'
                             }`}
                             disabled={serviceLoading}
                           >
