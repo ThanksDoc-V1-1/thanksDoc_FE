@@ -62,6 +62,7 @@ export default function BusinessDashboard() {
   const [formData, setFormData] = useState({
     serviceType: '',
     serviceId: '', // Add serviceId for service selection
+    subcategoryId: '', // Add subcategoryId for subcategory selection
     description: '',
     estimatedDuration: 1,
     preferredDoctorId: null,
@@ -77,6 +78,8 @@ export default function BusinessDashboard() {
   const [loadingServices, setLoadingServices] = useState(false);
   const [serviceBasedDoctors, setServiceBasedDoctors] = useState([]);
   const [loadingServiceDoctors, setLoadingServiceDoctors] = useState(false);
+  const [serviceCost, setServiceCost] = useState(null);
+  const [loadingCost, setLoadingCost] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState('');
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -452,23 +455,38 @@ export default function BusinessDashboard() {
       setLoadingServices(true);
       console.log('🔍 Fetching available services from backend');
       
-      const response = await serviceAPI.getAll();
-      console.log('📊 Available services response:', response.data);
+      // Add a small delay to see the loading state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Fetch only subcategory services (the actual selectable services)
+      const response = await fetch('http://localhost:1337/api/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc');
+      const data = await response.json();
+      console.log('📊 Raw API response:', data);
+      console.log('📊 Response status:', response.status);
       
       let services = [];
-      if (Array.isArray(response.data)) {
-        services = response.data;
-      } else if (response.data?.data && Array.isArray(response.data.data)) {
-        services = response.data.data;
+      if (data && Array.isArray(data.data)) {
+        services = data.data;
+        console.log('📊 Using data.data array:', services.length, 'services');
+      } else if (Array.isArray(data)) {
+        services = data;
+        console.log('📊 Using data array:', services.length, 'services');
+      } else {
+        console.log('❌ Unexpected response structure:', data);
       }
       
-      console.log('✅ Available services:', services);
-      setAvailableServices(services);
+      // Filter out any non-subcategory services as backup
+      const filteredServices = services.filter(service => service.serviceType === 'subcategory');
+      console.log('✅ Filtered subcategory services:', filteredServices.length, 'services');
+      console.log('✅ Service categories found:', [...new Set(filteredServices.map(s => s.category))]);
+      
+      setAvailableServices(filteredServices);
     } catch (error) {
       console.error('❌ Error fetching available services:', error);
       setAvailableServices([]);
     } finally {
       setLoadingServices(false);
+      console.log('🏁 Loading services completed');
     }
   };
 
@@ -768,7 +786,35 @@ export default function BusinessDashboard() {
       // Fetch doctors for the selected service for any selection type
       if (value) {
         fetchDoctorsForService(value);
+        // Calculate service cost
+        calculateServiceCost(value);
+      } else {
+        // Clear service cost when no service is selected
+        setServiceCost(null);
       }
+    }
+  };
+
+  // Calculate service cost
+  const calculateServiceCost = async (serviceId) => {
+    if (!serviceId) {
+      setServiceCost(null);
+      return;
+    }
+
+    try {
+      setLoadingCost(true);
+      console.log('💰 Calculating cost for service:', serviceId);
+      
+      const response = await serviceRequestAPI.calculateServiceCost(serviceId);
+      console.log('💰 Service cost response:', response.data);
+      
+      setServiceCost(response.data);
+    } catch (error) {
+      console.error('❌ Error calculating service cost:', error);
+      setServiceCost(null);
+    } finally {
+      setLoadingCost(false);
     }
   };
 
@@ -1725,33 +1771,163 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
               <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Select Service *
+                  Which service do you require? *
                 </label>
                 {loadingServices ? (
                   <div className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-400' : 'border-gray-300 bg-gray-100 text-gray-500'} rounded-lg`}>
                     Loading services...
                   </div>
                 ) : (
-                  <select
-                    name="serviceId"
-                    value={formData.serviceId}
-                    onChange={handleInputChange}
-                    required
-                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  >
-                    <option value="">Select a service</option>
-                    {availableServices.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name} ({service.category === 'in-person' ? 'In-Person' : 'Online'})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-4">
+                    {/* NHS Services */}
+                    {(() => {
+                      const nhsServices = availableServices.filter(service => service.category === 'nhs');
+                      if (nhsServices.length === 0) return null;
+                      return (
+                        <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                          <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            NHS Work *
+                          </h3>
+                          <div className="space-y-2">
+                            {nhsServices.map(service => (
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="serviceId"
+                                  value={service.id}
+                                  checked={formData.serviceId === service.id.toString()}
+                                  onChange={handleInputChange}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {service.name}
+                                </span>
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  £{service.price}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Online Services */}
+                    {(() => {
+                      const onlineServices = availableServices.filter(service => service.category === 'online');
+                      if (onlineServices.length === 0) return null;
+                      return (
+                        <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                          <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Online Private Doctor *
+                          </h3>
+                          <div className="space-y-2">
+                            {onlineServices.map(service => (
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="serviceId"
+                                  value={service.id}
+                                  checked={formData.serviceId === service.id.toString()}
+                                  onChange={handleInputChange}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {service.name}
+                                </span>
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  £{service.price}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* In-Person Services */}
+                    {(() => {
+                      const inPersonServices = availableServices.filter(service => service.category === 'in-person');
+                      if (inPersonServices.length === 0) return null;
+                      return (
+                        <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                          <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            In Person Private Doctor *
+                          </h3>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {inPersonServices.map(service => (
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="serviceId"
+                                  value={service.id}
+                                  checked={formData.serviceId === service.id.toString()}
+                                  onChange={handleInputChange}
+                                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  {service.name}
+                                </span>
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  £{service.price}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 )}
                 {availableServices.length === 0 && !loadingServices && (
                   <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     No services available at the moment
                   </p>
                 )}
+                
+                {/* Show pricing summary */}
+                {formData.serviceId && (() => {
+                  const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                  if (selectedService && (serviceCost || selectedService.serviceType === 'subcategory')) {
+                    const pricing = serviceCost?.pricing || {
+                      servicePrice: parseFloat(selectedService.price),
+                      serviceCharge: 3.00,
+                      totalAmount: parseFloat(selectedService.price) + 3.00
+                    };
+                    
+                    return (
+                      <div className={`mt-4 p-4 rounded-lg ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border`}>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Service: {selectedService.name}
+                          </span>
+                          <span className={`text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            £{pricing.servicePrice}
+                          </span>
+                        </div>
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
+                          <div>Duration: {selectedService.duration} minutes</div>
+                          <div>Category: {selectedService.category === 'in-person' ? 'In-Person' : selectedService.category === 'online' ? 'Online' : 'NHS'}</div>
+                          <div className={`pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'} space-y-1`}>
+                            <div className="flex justify-between">
+                              <span>Service fee:</span>
+                              <span>£{pricing.servicePrice}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Platform fee:</span>
+                              <span>£{pricing.serviceCharge}</span>
+                            </div>
+                            <div className={`flex justify-between font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} pt-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'}`}>
+                              <span>Total:</span>
+                              <span>£{pricing.totalAmount.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <div>
@@ -2056,22 +2232,110 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
             <div className="p-6 space-y-4">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Service Type *
+                  Which service do you require? *
                 </label>
-                <select
-                  value={quickRequestServiceId}
-                  onChange={(e) => setQuickRequestServiceId(e.target.value)}
-                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  required
-                >
-                  <option value="">Select a service</option>
-                  {availableServices.map(service => (
-                    <option key={service.id} value={service.id}>
-                      {service.name}
-                    </option>
-                  ))}
-                </select>
-                {quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId) && (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {/* NHS Services */}
+                  {(() => {
+                    const nhsServices = availableServices.filter(service => service.category === 'nhs');
+                    if (nhsServices.length === 0) return null;
+                    return (
+                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          NHS Work
+                        </h4>
+                        <div className="space-y-1">
+                          {nhsServices.map(service => (
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="quickRequestServiceId"
+                                value={service.id}
+                                checked={quickRequestServiceId === service.id.toString()}
+                                onChange={(e) => setQuickRequestServiceId(e.target.value)}
+                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {service.name}
+                              </span>
+                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                £{service.price}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Online Services */}
+                  {(() => {
+                    const onlineServices = availableServices.filter(service => service.category === 'online');
+                    if (onlineServices.length === 0) return null;
+                    return (
+                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Online Private Doctor
+                        </h4>
+                        <div className="space-y-1">
+                          {onlineServices.map(service => (
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="quickRequestServiceId"
+                                value={service.id}
+                                checked={quickRequestServiceId === service.id.toString()}
+                                onChange={(e) => setQuickRequestServiceId(e.target.value)}
+                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {service.name}
+                              </span>
+                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                £{service.price}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* In-Person Services */}
+                  {(() => {
+                    const inPersonServices = availableServices.filter(service => service.category === 'in-person');
+                    if (inPersonServices.length === 0) return null;
+                    return (
+                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          In Person Private Doctor
+                        </h4>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {inPersonServices.map(service => (
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="quickRequestServiceId"
+                                value={service.id}
+                                checked={quickRequestServiceId === service.id.toString()}
+                                onChange={(e) => setQuickRequestServiceId(e.target.value)}
+                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {service.name}
+                              </span>
+                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                £{service.price}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+              {quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId) && (
                   <p className={`mt-2 text-sm font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                     ⚠️ Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} does not offer this service
                   </p>
@@ -2150,7 +2414,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
                     setQuickRequestServiceDate('');
                     setQuickRequestServiceTime('');
                   }}
-                  className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 rounded-md transition-colors font-medium"
                 >
                   Cancel
                 </button>
@@ -2164,7 +2428,7 @@ A £${SERVICE_CHARGE} service charge will be added to the final payment.`;
               </div>
             </div>
           </div>
-        </div>
+        
       )}
 
       {/* Payment Modal */}

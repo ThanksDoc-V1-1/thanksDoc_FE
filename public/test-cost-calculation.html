@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cost Calculation API</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f5f7fa; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .test-form { display: grid; gap: 15px; margin: 20px 0; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: bold; margin-bottom: 5px; color: #333; }
+        .form-group select, .form-group input { padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .btn { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .btn:hover { background: #0056b3; }
+        .result { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007bff; }
+        .result.success { border-left-color: #28a745; background: #d4edda; }
+        .result.error { border-left-color: #dc3545; background: #f8d7da; }
+        .cost-breakdown { display: grid; gap: 10px; margin: 15px 0; }
+        .cost-item { display: flex; justify-content: space-between; padding: 8px; background: rgba(0,123,255,0.1); border-radius: 4px; }
+        .cost-total { font-weight: bold; font-size: 18px; color: #007bff; border-top: 2px solid #007bff; padding-top: 10px; margin-top: 10px; }
+        .service-info { background: #e9ecef; padding: 10px; border-radius: 6px; margin: 10px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #333; margin-bottom: 30px;">💰 Cost Calculation API Test</h1>
+        
+        <div class="test-section">
+            <h2>🧪 Test Service Cost Calculation</h2>
+            <p>This tool tests the new service-based pricing system across all three categories.</p>
+            
+            <div class="test-form">
+                <div class="form-group">
+                    <label for="serviceSelect">Select Service:</label>
+                    <select id="serviceSelect">
+                        <option value="">Loading services...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="durationInput">Duration (minutes):</label>
+                    <input type="number" id="durationInput" min="1" max="480" value="30" placeholder="Enter duration in minutes">
+                    <small style="color: #666; margin-top: 5px;">Optional: Override default service duration</small>
+                </div>
+                
+                <button class="btn" onclick="calculateCost()">Calculate Cost</button>
+            </div>
+            
+            <div id="serviceInfo" class="service-info" style="display: none;"></div>
+            <div id="costResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Quick Tests</h2>
+            <p>Pre-configured tests for each service category:</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+                <button class="btn" onclick="quickTest('online')" style="background: #6f42c1;">Test Online Service</button>
+                <button class="btn" onclick="quickTest('in-person')" style="background: #e83e8c;">Test In-Person Service</button>
+                <button class="btn" onclick="quickTest('nhs')" style="background: #17a2b8;">Test NHS Service</button>
+            </div>
+            <div id="quickTestResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let allServices = [];
+        
+        async function loadServices() {
+            try {
+                console.log('🔄 Loading services...');
+                const response = await axios.get('http://localhost:1337/api/services?filters[serviceType][$eq]=subcategory&populate=*');
+                allServices = response.data.data || response.data;
+                
+                const select = document.getElementById('serviceSelect');
+                select.innerHTML = '<option value="">Select a service...</option>';
+                
+                // Group by category
+                const categories = {
+                    'online': 'Online Services',
+                    'in-person': 'In-Person Services', 
+                    'nhs': 'NHS Services'
+                };
+                
+                Object.entries(categories).forEach(([key, label]) => {
+                    const categoryServices = allServices.filter(s => s.category === key);
+                    if (categoryServices.length > 0) {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = label;
+                        
+                        categoryServices.forEach(service => {
+                            const option = document.createElement('option');
+                            option.value = service.id;
+                            option.textContent = `${service.name} (£${service.price}, ${service.duration}min)`;
+                            optgroup.appendChild(option);
+                        });
+                        
+                        select.appendChild(optgroup);
+                    }
+                });
+                
+                console.log(`✅ Loaded ${allServices.length} services`);
+                
+            } catch (error) {
+                console.error('❌ Error loading services:', error);
+                document.getElementById('serviceSelect').innerHTML = '<option value="">Error loading services</option>';
+            }
+        }
+        
+        function updateServiceInfo() {
+            const serviceId = document.getElementById('serviceSelect').value;
+            const serviceInfo = document.getElementById('serviceInfo');
+            
+            if (!serviceId) {
+                serviceInfo.style.display = 'none';
+                return;
+            }
+            
+            const service = allServices.find(s => s.id == serviceId);
+            if (service) {
+                serviceInfo.style.display = 'block';
+                serviceInfo.innerHTML = `
+                    <strong>Service Details:</strong><br>
+                    📝 Name: ${service.name}<br>
+                    🏷️ Category: ${service.category.toUpperCase()}<br>
+                    💰 Base Price: £${service.price}<br>
+                    ⏱️ Default Duration: ${service.duration} minutes<br>
+                    📋 Description: ${service.description || 'No description available'}
+                `;
+                
+                // Update duration input with service default
+                document.getElementById('durationInput').value = service.duration;
+            }
+        }
+        
+        async function calculateCost() {
+            const serviceId = document.getElementById('serviceSelect').value;
+            const duration = document.getElementById('durationInput').value;
+            const resultDiv = document.getElementById('costResult');
+            
+            if (!serviceId) {
+                showResult('Please select a service first.', 'error');
+                return;
+            }
+            
+            if (!duration || duration < 1) {
+                showResult('Please enter a valid duration.', 'error');
+                return;
+            }
+            
+            try {
+                console.log(`🔄 Calculating cost for service ${serviceId}, duration ${duration}min`);
+                
+                const response = await axios.post('http://localhost:1337/api/service-requests/calculate-cost', {
+                    data: {
+                        service: serviceId,
+                        duration: parseInt(duration)
+                    }
+                });
+                
+                const result = response.data;
+                console.log('✅ Cost calculation result:', result);
+                
+                if (result.totalCost) {
+                    const service = allServices.find(s => s.id == serviceId);
+                    showResult(`
+                        <h3>💰 Cost Calculation Result</h3>
+                        <div class="cost-breakdown">
+                            <div class="cost-item">
+                                <span>Service:</span>
+                                <span>${service?.name || 'Unknown Service'}</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Category:</span>
+                                <span>${service?.category?.toUpperCase() || 'Unknown'}</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Duration:</span>
+                                <span>${duration} minutes</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Service Cost:</span>
+                                <span>£${result.serviceCost?.toFixed(2) || 'N/A'}</span>
+                            </div>
+                            <div class="cost-item">
+                                <span>Platform Fee:</span>
+                                <span>£${result.platformFee?.toFixed(2) || '3.00'}</span>
+                            </div>
+                            <div class="cost-item cost-total">
+                                <span>Total Cost:</span>
+                                <span>£${result.totalCost.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `, 'success');
+                } else {
+                    showResult('Cost calculation failed: No total cost returned', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error calculating cost:', error);
+                showResult(`Error calculating cost: ${error.message}`, 'error');
+            }
+        }
+        
+        async function quickTest(category) {
+            const categoryServices = allServices.filter(s => s.category === category);
+            if (categoryServices.length === 0) {
+                showQuickResult(`No ${category} services found`, 'error');
+                return;
+            }
+            
+            // Test with the first service in the category
+            const testService = categoryServices[0];
+            const testDuration = testService.duration;
+            
+            try {
+                console.log(`🧪 Quick testing ${category} service: ${testService.name}`);
+                
+                const response = await axios.post('http://localhost:1337/api/service-requests/calculate-cost', {
+                    data: {
+                        service: testService.id,
+                        duration: testDuration
+                    }
+                });
+                
+                const result = response.data;
+                
+                showQuickResult(`
+                    <h4>✅ ${category.toUpperCase()} Test Successful</h4>
+                    <strong>Service:</strong> ${testService.name}<br>
+                    <strong>Duration:</strong> ${testDuration} minutes<br>
+                    <strong>Service Cost:</strong> £${result.serviceCost?.toFixed(2) || 'N/A'}<br>
+                    <strong>Platform Fee:</strong> £${result.platformFee?.toFixed(2) || '3.00'}<br>
+                    <strong>Total:</strong> £${result.totalCost.toFixed(2)}
+                `, 'success');
+                
+            } catch (error) {
+                console.error(`❌ Error testing ${category}:`, error);
+                showQuickResult(`${category.toUpperCase()} test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('costResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+        
+        function showQuickResult(message, type) {
+            const resultDiv = document.getElementById('quickTestResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+        
+        // Event listeners
+        document.getElementById('serviceSelect').addEventListener('change', updateServiceInfo);
+        
+        // Load services when page loads
+        loadServices();
+    </script>
+</body>
+</html>

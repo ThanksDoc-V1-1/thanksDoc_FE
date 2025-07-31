@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Service Categories</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f5f7fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .category { margin: 20px 0; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .category.online { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .category.in-person { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .category.nhs { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .category h2 { margin: 0 0 15px 0; font-size: 24px; display: flex; align-items: center; }
+        .category-icon { font-size: 28px; margin-right: 10px; }
+        .pricing-badge { background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 20px; font-size: 14px; margin-left: auto; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+        .service-card { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 15px; transition: transform 0.2s, box-shadow 0.2s; }
+        .service-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .service-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .service-price { font-size: 18px; font-weight: bold; color: #ffeb3b; }
+        .service-duration { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .service-description { font-size: 12px; opacity: 0.9; margin-top: 5px; line-height: 1.4; }
+        .error { color: red; background-color: #fee; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .loading { color: #007bff; text-align: center; padding: 40px; font-size: 18px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 24px; font-weight: bold; color: #333; }
+        .stat-label { font-size: 14px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #333; margin-bottom: 30px;">🏥 ThanksDoc Service Categories</h1>
+        
+        <div id="loading" class="loading">
+            <div>Loading services...</div>
+            <div style="margin-top: 10px; font-size: 14px;">Fetching latest service structure</div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="stats" class="stats" style="display: none;"></div>
+        
+        <div id="services" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function testServices() {
+            try {
+                console.log('🚀 Testing new service categories...');
+                
+                // Test basic service fetch
+                const response = await axios.get('http://localhost:1337/api/services');
+                console.log('✅ Services response:', response.data);
+                
+                const services = response.data.data || response.data;
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (!Array.isArray(services)) {
+                    throw new Error('Services data is not an array');
+                }
+                
+                // Group services by category and type
+                const mainCategories = services.filter(s => s.serviceType === 'main').sort((a, b) => a.displayOrder - b.displayOrder);
+                const subServices = services.filter(s => s.serviceType === 'subcategory');
+                
+                console.log(`📊 Found ${mainCategories.length} main categories and ${subServices.length} subcategories`);
+                
+                // Display statistics
+                const statsContainer = document.getElementById('stats');
+                statsContainer.style.display = 'grid';
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${mainCategories.length}</div>
+                        <div class="stat-label">Main Categories</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${subServices.length}</div>
+                        <div class="stat-label">Total Services</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${subServices.filter(s => s.category === 'online').length}</div>
+                        <div class="stat-label">Online Services</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${subServices.filter(s => s.category === 'in-person').length}</div>
+                        <div class="stat-label">In-Person Services</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${subServices.filter(s => s.category === 'nhs').length}</div>
+                        <div class="stat-label">NHS Services</div>
+                    </div>
+                `;
+                
+                const servicesContainer = document.getElementById('services');
+                servicesContainer.style.display = 'block';
+                servicesContainer.innerHTML = '';
+                
+                // Create category sections
+                const categoryConfig = {
+                    'online': { icon: '💻', name: 'Online Services', pricing: 'Individual Rates' },
+                    'in-person': { icon: '🏥', name: 'In-Person Services', pricing: '£100/hour' },
+                    'nhs': { icon: '🏛️', name: 'NHS Services', pricing: '£100/hour' }
+                };
+                
+                for (const [categoryKey, config] of Object.entries(categoryConfig)) {
+                    const categoryServices = subServices.filter(s => s.category === categoryKey).sort((a, b) => a.displayOrder - b.displayOrder);
+                    
+                    if (categoryServices.length > 0) {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.className = `category ${categoryKey}`;
+                        
+                        let totalValue = 0;
+                        let avgDuration = 0;
+                        if (categoryServices.length > 0) {
+                            totalValue = categoryServices.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+                            avgDuration = categoryServices.reduce((sum, s) => sum + (parseInt(s.duration) || 0), 0) / categoryServices.length;
+                        }
+                        
+                        categoryDiv.innerHTML = `
+                            <h2>
+                                <span class="category-icon">${config.icon}</span>
+                                ${config.name}
+                                <span class="pricing-badge">${config.pricing}</span>
+                            </h2>
+                            <p style="margin: 0 0 10px 0; opacity: 0.9;">
+                                ${categoryServices.length} services available • 
+                                Average duration: ${Math.round(avgDuration)} minutes •
+                                Total value: £${totalValue.toFixed(2)}
+                            </p>
+                            <div class="services-grid">
+                                ${categoryServices.map(service => `
+                                    <div class="service-card">
+                                        <div class="service-name">${service.name}</div>
+                                        <div class="service-price">£${service.price}</div>
+                                        <div class="service-duration">${service.duration} minutes</div>
+                                        <div class="service-description">${service.description || 'Professional medical service'}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        
+                        servicesContainer.appendChild(categoryDiv);
+                    }
+                }
+                
+                console.log('🎉 Service categories display completed successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error testing services:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `
+                    <h3>Error Loading Services</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Details:</strong> ${error.response?.data?.error?.message || 'Unknown error occurred'}</p>
+                    <p>Please ensure the backend server is running on <code>http://localhost:1337</code></p>
+                `;
+            }
+        }
+        
+        // Run test when page loads
+        testServices();
+    </script>
+</body>
+</html>

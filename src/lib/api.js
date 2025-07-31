@@ -447,11 +447,13 @@ export const serviceRequestAPI = {
   enableAutoFallback: (requestId, timeoutMinutes = 2) => api.put(`/service-requests/${requestId}/enable-fallback`, { timeoutMinutes }),
   checkFallbackStatus: (requestId) => api.get(`/service-requests/${requestId}/fallback-status`),
   triggerFallback: (requestId) => api.put(`/service-requests/${requestId}/trigger-fallback`),
+  // Service cost calculation
+  calculateServiceCost: (serviceId) => api.post('/service-requests/calculate-cost', { serviceId }),
 };
 
 // Service API calls
 export const serviceAPI = {
-  getAll: () => publicAPI.get('/services?populate=*'), // Use public API (no JWT) for services
+  getAll: () => publicAPI.get('/services?populate[parentService][fields][0]=id&populate[parentService][fields][1]=name&populate[subServices][fields][0]=id&populate[subServices][fields][1]=name&populate[subServices][fields][2]=price&populate[subServices][fields][3]=duration&populate[subServices][sort][0]=displayOrder:asc&populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName'), // Use public API (no JWT) for services with pricing
   getById: (id) => publicAPI.get(`/services/${id}?populate=*`), // Use public API for individual service
   create: (data) => api.post('/services', { data: { ...data } }),
   update: (id, data) => {
