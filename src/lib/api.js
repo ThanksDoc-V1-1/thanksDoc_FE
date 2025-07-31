@@ -418,6 +418,11 @@ export const businessAPI = {
   getStats: (id) => api.get(`/businesses/${id}/stats`),
   getOverallStats: () => api.get('/businesses/stats'),
   getBusinessTypes: () => publicAPI.get('/business-types'), // Get available business types
+  
+  // Business Types CRUD operations (admin only)
+  createBusinessType: (data) => api.post('/business-types', { data }),
+  updateBusinessType: (id, data) => api.put(`/business-types/${id}`, { data }),
+  deleteBusinessType: (id) => api.delete(`/business-types/${id}`),
 };
 
 // Service Request API calls

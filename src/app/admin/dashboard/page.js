@@ -16,6 +16,7 @@ export default function AdminDashboard() {
   const [businesses, setBusinesses] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [services, setServices] = useState([]);
+  const [businessTypes, setBusinessTypes] = useState([]);
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +29,17 @@ export default function AdminDashboard() {
     name: '',
     description: '',
     category: 'in-person',
+    isActive: true,
+    displayOrder: 0
+  });
+
+  // Business Type form states and handlers
+  const [showBusinessTypeForm, setShowBusinessTypeForm] = useState(false);
+  const [editingBusinessType, setEditingBusinessType] = useState(null);
+  const [businessTypeFormData, setBusinessTypeFormData] = useState({
+    name: '',
+    value: '',
+    description: '',
     isActive: true,
     displayOrder: 0
   });
@@ -171,6 +183,103 @@ export default function AdminDashboard() {
       setDataLoading(false);
     }
   };
+
+  // Business Type form handlers
+  const handleBusinessTypeFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setBusinessTypeFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : (name === 'displayOrder' ? parseInt(value) || 0 : value)
+    }));
+  };
+
+  const handleBusinessTypeSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      let response;
+      if (editingBusinessType) {
+        const businessTypeIdentifier = editingBusinessType.documentId || editingBusinessType.id;
+        const updateData = {
+          name: businessTypeFormData.name,
+          value: businessTypeFormData.value,
+          description: businessTypeFormData.description,
+          isActive: businessTypeFormData.isActive,
+          displayOrder: parseInt(businessTypeFormData.displayOrder)
+        };
+        
+        response = await businessAPI.updateBusinessType(businessTypeIdentifier, updateData);
+        setBusinessTypes(prev => prev.map(type => 
+          (type.id === editingBusinessType.id || type.documentId === editingBusinessType.documentId) 
+            ? response.data.data : type
+        ));
+      } else {
+        const createData = {
+          name: businessTypeFormData.name,
+          value: businessTypeFormData.value,
+          description: businessTypeFormData.description,
+          isActive: businessTypeFormData.isActive,
+          displayOrder: parseInt(businessTypeFormData.displayOrder)
+        };
+        
+        response = await businessAPI.createBusinessType(createData);
+        setBusinessTypes(prev => [...prev, response.data.data]);
+      }
+
+      setShowBusinessTypeForm(false);
+      setEditingBusinessType(null);
+      setBusinessTypeFormData({
+        name: '',
+        value: '',
+        description: '',
+        isActive: true,
+        displayOrder: 0
+      });
+      
+      alert(editingBusinessType ? 'Business type updated successfully!' : 'Business type created successfully!');
+    } catch (error) {
+      console.error('Error saving business type:', error);
+      alert(`Failed to save business type. Error: ${error.response?.data?.error?.message || error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditBusinessType = (businessType) => {
+    setEditingBusinessType(businessType);
+    
+    const formData = {
+      name: businessType.attributes?.name || businessType.name || '',
+      value: businessType.attributes?.value || businessType.value || '',
+      description: businessType.attributes?.description || businessType.description || '',
+      isActive: businessType.attributes?.isActive !== undefined ? businessType.attributes.isActive : (businessType.isActive !== undefined ? businessType.isActive : true),
+      displayOrder: businessType.attributes?.displayOrder || businessType.displayOrder || 0
+    };
+    
+    setBusinessTypeFormData(formData);
+    setShowBusinessTypeForm(true);
+  };
+
+  const handleDeleteBusinessType = async (id, documentId) => {
+    if (!window.confirm('Are you sure you want to delete this business type? This action cannot be undone.')) return;
+
+    setDataLoading(true);
+    try {
+      const businessTypeIdentifier = documentId || id;
+      await businessAPI.deleteBusinessType(businessTypeIdentifier);
+      setBusinessTypes(prev => prev.filter(type => 
+        type.id !== id && type.documentId !== documentId
+      ));
+      alert('Business type deleted successfully');
+    } catch (error) {
+      console.error('Error deleting business type:', error);
+      alert(`Failed to delete business type. Error: ${error.response?.data?.error?.message || error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   const requestsPerPage = 5;
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -270,21 +379,24 @@ export default function AdminDashboard() {
   const fetchAllData = async () => {
     setDataLoading(true);
     try {
-      const [doctorsRes, businessesRes, requestsRes, servicesRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
-        serviceAPI.getAll()
+        serviceAPI.getAll(),
+        businessAPI.getBusinessTypes()
       ]);
 
       console.log('🏥 Raw doctors response:', doctorsRes.data);
       console.log('🏢 Raw businesses response:', businessesRes.data);
       console.log('📋 Raw requests response:', requestsRes.data);
       console.log('📦 Raw services response:', servicesRes.data);
+      console.log('🏗️ Raw business types response:', businessTypesRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
       setServices(servicesRes.data?.data || []);
+      setBusinessTypes(businessTypesRes.data?.data || []);
       
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
@@ -596,6 +708,20 @@ export default function AdminDashboard() {
     return name.toLowerCase().includes(search) ||
            description.toLowerCase().includes(search) ||
            category.toLowerCase().includes(search) ||
+           status.includes(search);
+  });
+
+  const filteredBusinessTypes = businessTypes.filter(businessType => {
+    if (!searchTerm) return true;
+    const name = businessType.attributes?.name || businessType.name || '';
+    const value = businessType.attributes?.value || businessType.value || '';
+    const description = businessType.attributes?.description || businessType.description || '';
+    const status = businessType.attributes?.isActive || businessType.isActive ? 'active' : 'inactive';
+    const search = searchTerm.toLowerCase();
+    
+    return name.toLowerCase().includes(search) ||
+           value.toLowerCase().includes(search) ||
+           description.toLowerCase().includes(search) ||
            status.includes(search);
   });
 
@@ -1756,7 +1882,159 @@ export default function AdminDashboard() {
                 Showing {filteredServices.length} {filteredServices.length === 1 ? 'service' : 'services'} of {services.length} total
               </div>
             )}
+
+          {/* Business Types Section - within Services Tab */}
+          <div className={`mt-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <Building2 className="h-5 w-5 text-indigo-500 mr-2" />
+                  Business Types
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage available business types for registration</p>
+              </div>
+              <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
+                <button
+                  onClick={() => {
+                    setEditingBusinessType(null);
+                    setBusinessTypeFormData({
+                      name: '',
+                      value: '',
+                      description: '',
+                      isActive: true,
+                      displayOrder: businessTypes.length
+                    });
+                    setShowBusinessTypeForm(true);
+                  }}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Business Type
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className={`sticky top-0 z-10 ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
+                  <tr>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Name
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Value
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Status
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Order
+                    </th>
+                    <th className={`px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
+                  {filteredBusinessTypes.length > 0 ? filteredBusinessTypes.map((businessType) => {
+                    const id = businessType.id;
+                    const documentId = businessType.documentId;
+                    const name = businessType.attributes?.name || businessType.name;
+                    const value = businessType.attributes?.value || businessType.value;
+                    const description = businessType.attributes?.description || businessType.description;
+                    const isActive = businessType.attributes?.isActive !== undefined ? businessType.attributes.isActive : businessType.isActive;
+                    const displayOrder = businessType.attributes?.displayOrder || businessType.displayOrder || 0;
+
+                    return (
+                      <tr key={id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div>
+                              <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{name}</div>
+                              {description && (
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{description}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700'}`}>
+                            {value}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                            isActive 
+                              ? isDarkMode ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-900' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                              : isDarkMode ? 'bg-red-900/40 text-red-400 border border-red-900' : 'bg-red-100 text-red-700 border border-red-300'
+                          }`}>
+                            {isActive ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 mr-1" />
+                                Active
+                              </>
+                            ) : (
+                              <>
+                                <X className="h-3.5 w-3.5 mr-1" />
+                                Inactive
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                            {displayOrder}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => handleEditBusinessType(businessType)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              <Eye className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBusinessType(id, documentId)}
+                              className={`p-1.5 rounded-lg transition-colors ${
+                                isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+                              }`}
+                            >
+                              <X className={`h-4 w-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }) : (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-8 text-center">
+                        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No business types found</h3>
+                          <p className="max-w-md mx-auto">
+                            {searchTerm ? 
+                              'Try adjusting your search criteria to find what you\'re looking for.' :
+                              'No business types have been added yet. Click the "Add Business Type" button to create one.'
+                            }
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            {filteredBusinessTypes.length > 0 && (
+              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
+                Showing {filteredBusinessTypes.length} {filteredBusinessTypes.length === 1 ? 'business type' : 'business types'} of {businessTypes.length} total
+              </div>
+            )}
           </div>
+        </div>
         )}
 
         {/* Service Form Modal */}
@@ -1896,6 +2174,157 @@ export default function AdminDashboard() {
                     <button
                       type="button"
                       onClick={() => setShowServiceForm(false)}
+                      className={`inline-flex justify-center rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-gray-500'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Business Type Form Modal */}
+        {showBusinessTypeForm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowBusinessTypeForm(false)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <form onSubmit={handleBusinessTypeSubmit}>
+                  <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <div className="flex justify-between items-center">
+                          <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {editingBusinessType ? 'Edit Business Type' : 'Add New Business Type'}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowBusinessTypeForm(false)}
+                            className="text-gray-400 hover:text-gray-500"
+                          >
+                            <span className="sr-only">Close</span>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="mt-4 space-y-4">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Business Type Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="name"
+                              value={businessTypeFormData.name}
+                              onChange={handleBusinessTypeFormChange}
+                              required
+                              autoFocus
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                              placeholder="e.g., Pharmacy, Clinic, Hospital"
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Value (Identifier) *
+                            </label>
+                            <input
+                              type="text"
+                              name="value"
+                              value={businessTypeFormData.value}
+                              onChange={handleBusinessTypeFormChange}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                              placeholder="e.g., pharmacy, clinic, hospital"
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Description
+                            </label>
+                            <textarea
+                              name="description"
+                              value={businessTypeFormData.description}
+                              onChange={handleBusinessTypeFormChange}
+                              rows={3}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                              placeholder="Brief description of this business type"
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Display Order
+                            </label>
+                            <input
+                              type="number"
+                              name="displayOrder"
+                              value={businessTypeFormData.displayOrder}
+                              onChange={handleBusinessTypeFormChange}
+                              min={0}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              name="isActive"
+                              checked={businessTypeFormData.isActive}
+                              onChange={handleBusinessTypeFormChange}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 rounded"
+                            />
+                            <label className={`ml-2 block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Active
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t flex flex-row-reverse gap-3`}>
+                    <button
+                      type="submit"
+                      disabled={dataLoading}
+                      className={`inline-flex justify-center rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                        isDarkMode
+                          ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                          : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                      } ${dataLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {dataLoading ? 'Saving...' : editingBusinessType ? 'Save Changes' : 'Add Business Type'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowBusinessTypeForm(false)}
                       className={`inline-flex justify-center rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
                         isDarkMode
                           ? 'border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-gray-500'
