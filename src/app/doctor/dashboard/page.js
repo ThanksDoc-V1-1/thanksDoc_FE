@@ -1049,18 +1049,28 @@ export default function DoctorDashboard() {
                                 : 'bg-purple-500'
                           }`}></div>
                           <div>
-                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {service.name}
-                            </span>
-                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                              service.category === 'in-person'
-                                ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
-                                : service.category === 'online'
-                                  ? isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
-                                  : isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'
-                            }`}>
-                              {service.category === 'in-person' ? 'In-Person' : service.category === 'online' ? 'Online' : 'NHS'}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {service.name}
+                              </span>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                service.category === 'in-person'
+                                  ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
+                                  : service.category === 'online'
+                                    ? isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                                    : isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'
+                              }`}>
+                                {service.category === 'in-person' ? 'In-Person' : service.category === 'online' ? 'Online' : 'NHS'}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                £{service.price || 0}
+                              </span>
+                              <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                • {service.duration || 30} min
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <button
@@ -1103,9 +1113,21 @@ export default function DoctorDashboard() {
                         >
                           <div className="flex items-center space-x-3">
                             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {service.name}
-                            </span>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {service.name}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                    £{service.price || 0}
+                                  </span>
+                                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    • {service.duration || 30} min
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <button
                             onClick={() => handleAddService(service.id)}
@@ -1140,9 +1162,21 @@ export default function DoctorDashboard() {
                         >
                           <div className="flex items-center space-x-3">
                             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {service.name}
-                            </span>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {service.name}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`text-sm font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    £{service.price || 0}
+                                  </span>
+                                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    • {service.duration || 30} min
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <button
                             onClick={() => handleAddService(service.id)}
@@ -1177,9 +1211,21 @@ export default function DoctorDashboard() {
                         >
                           <div className="flex items-center space-x-3">
                             <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {service.name}
-                            </span>
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {service.name}
+                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`text-sm font-semibold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                                    £{service.price || 0}
+                                  </span>
+                                  <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    • {service.duration || 30} min
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                           <button
                             onClick={() => handleAddService(service.id)}
@@ -2256,23 +2302,49 @@ export default function DoctorDashboard() {
                           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                             service.category === 'in-person' 
                               ? 'bg-green-500' 
-                              : 'bg-blue-500'
+                              : service.category === 'online'
+                                ? 'bg-blue-500'
+                                : 'bg-purple-500'
                           }`}></div>
                           <div className="flex-1">
-                            <div className={`font-medium text-sm lg:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {service.name}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <div className={`font-medium text-sm lg:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {service.name}
+                                </div>
+                                <div className="flex items-center space-x-2 mt-1">
+                                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${
+                                    service.category === 'in-person'
+                                      ? isDarkMode 
+                                        ? 'bg-green-900/30 text-green-400' 
+                                        : 'bg-green-100 text-green-700'
+                                      : service.category === 'online'
+                                        ? isDarkMode 
+                                          ? 'bg-blue-900/30 text-blue-400' 
+                                          : 'bg-blue-100 text-blue-700'
+                                        : isDarkMode 
+                                          ? 'bg-purple-900/30 text-purple-400' 
+                                          : 'bg-purple-100 text-purple-700'
+                                  }`}>
+                                    {service.category === 'in-person' ? 'In-Person' : service.category === 'online' ? 'Online' : 'NHS'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                                <span className={`text-sm font-semibold ${
+                                  service.category === 'in-person'
+                                    ? isDarkMode ? 'text-green-400' : 'text-green-600'
+                                    : service.category === 'online'
+                                      ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                      : isDarkMode ? 'text-purple-400' : 'text-purple-600'
+                                }`}>
+                                  £{service.price || 0}
+                                </span>
+                                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  • {service.duration || 30} min
+                                </span>
+                              </div>
                             </div>
-                            <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${
-                              service.category === 'in-person'
-                                ? isDarkMode 
-                                  ? 'bg-green-900/30 text-green-400' 
-                                  : 'bg-green-100 text-green-700'
-                                : isDarkMode 
-                                  ? 'bg-blue-900/30 text-blue-400' 
-                                  : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {service.category === 'in-person' ? 'In-Person' : 'Online'}
-                            </span>
                           </div>
                         </div>
                         <button
