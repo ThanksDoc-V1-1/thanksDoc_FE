@@ -579,7 +579,7 @@ export default function BusinessRegister() {
                       onChange={handleTownChange}
                       onKeyDown={handleTownKeyDown}
                       onFocus={() => townQuery.length > 0 && setShowTownSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowTownSuggestions(false), 200)}
+                      onBlur={() => setTimeout(() => setShowTownSuggestions(false), 300)}
                       required
                       className="form-input"
                       placeholder="Start typing town or city..."
@@ -593,17 +593,26 @@ export default function BusinessRegister() {
                           <button
                             key={index}
                             type="button"
-                            className={`w-full text-left px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md ${
+                            className={`w-full text-left px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md transition-colors ${
                               index === selectedTownIndex
                                 ? isDarkMode 
                                   ? 'bg-blue-600 text-white' 
                                   : 'bg-blue-500 text-white'
                                 : isDarkMode 
-                                  ? 'text-gray-200 hover:text-white hover:bg-gray-700' 
-                                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                                  ? 'text-gray-200 hover:text-white hover:bg-gray-700 active:bg-gray-600' 
+                                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
                             }`}
                             onClick={() => handleTownSelect(townData)}
                             onMouseEnter={() => setSelectedTownIndex(index)}
+                            onTouchStart={() => setSelectedTownIndex(index)}
+                            onTouchEnd={(e) => {
+                              e.preventDefault();
+                              handleTownSelect(townData);
+                            }}
+                            style={{ 
+                              WebkitTapHighlightColor: 'transparent',
+                              touchAction: 'manipulation'
+                            }}
                           >
                             <div className="font-medium">{townData.town}</div>
                             <div className={`text-xs ${
