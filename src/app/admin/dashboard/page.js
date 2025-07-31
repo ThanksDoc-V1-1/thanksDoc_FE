@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, RefreshCw, LogOut, Plus, Package, Globe, CreditCard } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI } from '../../../lib/api';
-import { formatCurrency, formatDate } from '../../../lib/utils';
+import { formatCurrency, formatDate, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import TransactionHistory from '../../../components/TransactionHistory';
@@ -317,12 +317,95 @@ export default function AdminDashboard() {
     businessType: '',
     registrationNumber: '',
     phone: '',
-    address: '',
-    city: '',
-    state: '',
+    addressLine1: '',
+    addressLine2: '',
+    town: '',
+    county: '',
     postcode: '',
+    latitude: '',
+    longitude: '',
     description: ''
   });
+
+  // Town/City autocomplete states for business form
+  const [businessTownQuery, setBusinessTownQuery] = useState('');
+  const [showBusinessTownSuggestions, setShowBusinessTownSuggestions] = useState(false);
+  const [filteredBusinessTowns, setFilteredBusinessTowns] = useState([]);
+  const [businessLocationLoading, setBusinessLocationLoading] = useState(false);
+  
+  // UK Towns and Counties data for business form
+  const ukTownsAndCounties = [
+    { town: 'London', county: 'Greater London' },
+    { town: 'Birmingham', county: 'West Midlands' },
+    { town: 'Manchester', county: 'Greater Manchester' },
+    { town: 'Liverpool', county: 'Merseyside' },
+    { town: 'Leeds', county: 'West Yorkshire' },
+    { town: 'Sheffield', county: 'South Yorkshire' },
+    { town: 'Bristol', county: 'Bristol' },
+    { town: 'Newcastle upon Tyne', county: 'Tyne and Wear' },
+    { town: 'Nottingham', county: 'Nottinghamshire' },
+    { town: 'Leicester', county: 'Leicestershire' },
+    { town: 'Coventry', county: 'West Midlands' },
+    { town: 'Bradford', county: 'West Yorkshire' },
+    { town: 'Stoke-on-Trent', county: 'Staffordshire' },
+    { town: 'Wolverhampton', county: 'West Midlands' },
+    { town: 'Plymouth', county: 'Devon' },
+    { town: 'Derby', county: 'Derbyshire' },
+    { town: 'Southampton', county: 'Hampshire' },
+    { town: 'Portsmouth', county: 'Hampshire' },
+    { town: 'Brighton', county: 'East Sussex' },
+    { town: 'Hull', county: 'East Yorkshire' },
+    { town: 'Reading', county: 'Berkshire' },
+    { town: 'Oxford', county: 'Oxfordshire' },
+    { town: 'Cambridge', county: 'Cambridgeshire' },
+    { town: 'York', county: 'North Yorkshire' },
+    { town: 'Bath', county: 'Somerset' },
+    { town: 'Canterbury', county: 'Kent' },
+    { town: 'Salisbury', county: 'Wiltshire' },
+    { town: 'Winchester', county: 'Hampshire' },
+    { town: 'Norwich', county: 'Norfolk' },
+    { town: 'Exeter', county: 'Devon' },
+    { town: 'Chester', county: 'Cheshire' },
+    { town: 'Gloucester', county: 'Gloucestershire' },
+    { town: 'Worcester', county: 'Worcestershire' },
+    { town: 'Lincoln', county: 'Lincolnshire' },
+    { town: 'Peterborough', county: 'Cambridgeshire' },
+    { town: 'Lancaster', county: 'Lancashire' },
+    { town: 'Preston', county: 'Lancashire' },
+    { town: 'Blackpool', county: 'Lancashire' },
+    { town: 'Bournemouth', county: 'Dorset' },
+    { town: 'Swindon', county: 'Wiltshire' },
+    { town: 'Warrington', county: 'Cheshire' },
+    { town: 'Stockport', county: 'Greater Manchester' },
+    { town: 'Bolton', county: 'Greater Manchester' },
+    { town: 'Wigan', county: 'Greater Manchester' },
+    { town: 'Rochdale', county: 'Greater Manchester' },
+    { town: 'Salford', county: 'Greater Manchester' },
+    { town: 'Oldham', county: 'Greater Manchester' },
+    { town: 'Bury', county: 'Greater Manchester' },
+    { town: 'Huddersfield', county: 'West Yorkshire' },
+    { town: 'Wakefield', county: 'West Yorkshire' },
+    { town: 'Halifax', county: 'West Yorkshire' },
+    { town: 'Doncaster', county: 'South Yorkshire' },
+    { town: 'Rotherham', county: 'South Yorkshire' },
+    { town: 'Barnsley', county: 'South Yorkshire' },
+    { town: 'Edinburgh', county: 'City of Edinburgh' },
+    { town: 'Glasgow', county: 'Glasgow City' },
+    { town: 'Aberdeen', county: 'Aberdeenshire' },
+    { town: 'Dundee', county: 'Angus' },
+    { town: 'Stirling', county: 'Stirlingshire' },
+    { town: 'Perth', county: 'Perth and Kinross' },
+    { town: 'Inverness', county: 'Highland' },
+    { town: 'Cardiff', county: 'Cardiff' },
+    { town: 'Swansea', county: 'Swansea' },
+    { town: 'Newport', county: 'Newport' },
+    { town: 'Wrexham', county: 'Wrexham' },
+    { town: 'Bangor', county: 'Gwynedd' },
+    { town: 'Belfast', county: 'Belfast' },
+    { town: 'Londonderry', county: 'Londonderry' },
+    { town: 'Lisburn', county: 'Lisburn and Castlereagh' },
+    { town: 'Newtownabbey', county: 'Antrim and Newtownabbey' }
+  ];
 
   // Calculate doctor earnings function - defined before fetchAllData to avoid ReferenceError
 
@@ -547,6 +630,23 @@ export default function AdminDashboard() {
     setDataLoading(true);
     
     try {
+      // Validation for required fields
+      if (!businessFormData.addressLine1.trim()) {
+        throw new Error('Please enter address line 1');
+      }
+      if (!businessFormData.town.trim()) {
+        throw new Error('Please select a town or city');
+      }
+      if (!businessFormData.county.trim()) {
+        throw new Error('Please ensure a county is selected');
+      }
+      if (!businessFormData.postcode.trim()) {
+        throw new Error('Please enter postcode');
+      }
+      if (!businessFormData.latitude || !businessFormData.longitude) {
+        throw new Error('Please provide location coordinates');
+      }
+
       const response = await businessAPI.create({
         businessName: businessFormData.name,
         name: businessFormData.name, // Same as business name
@@ -556,13 +656,19 @@ export default function AdminDashboard() {
         businessType: businessFormData.businessType,
         businessLicence: businessFormData.registrationNumber,
         phone: businessFormData.phone,
-        address: businessFormData.address,
-        city: businessFormData.city || 'Not specified',
-        state: businessFormData.state || 'Not specified',
-        postcode: businessFormData.postcode || '00000',
+        // New UK address format
+        address: `${businessFormData.addressLine1}${businessFormData.addressLine2 ? ', ' + businessFormData.addressLine2 : ''}`,
+        addressLine1: businessFormData.addressLine1,
+        addressLine2: businessFormData.addressLine2,
+        town: businessFormData.town,
+        city: businessFormData.town, // Use town as city for compatibility
+        county: businessFormData.county,
+        state: businessFormData.county, // Use county as state for compatibility
+        postcode: businessFormData.postcode,
+        zipCode: businessFormData.postcode, // Use postcode as zipCode for compatibility
+        latitude: parseFloat(businessFormData.latitude),
+        longitude: parseFloat(businessFormData.longitude),
         description: businessFormData.description || '',
-        latitude: 0.0, // Default coordinate
-        longitude: 0.0, // Default coordinate
         isVerified: true, // Admin registered businesses are automatically verified
         operatingHours: {},
         emergencyContact: '',
@@ -580,17 +686,23 @@ export default function AdminDashboard() {
           businessType: '',
           registrationNumber: '',
           phone: '',
-          address: '',
-          city: '',
-          state: '',
+          addressLine1: '',
+          addressLine2: '',
+          town: '',
+          county: '',
           postcode: '',
+          latitude: '',
+          longitude: '',
           description: ''
         });
+        setBusinessTownQuery('');
+        setShowBusinessTownSuggestions(false);
+        setFilteredBusinessTowns([]);
         fetchAllData(); // Refresh the data
       }
     } catch (error) {
       console.error('Error registering business:', error);
-      alert('Failed to register business. Please try again.');
+      alert(error.message || 'Failed to register business. Please try again.');
     } finally {
       setDataLoading(false);
     }
@@ -664,6 +776,61 @@ export default function AdminDashboard() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Handle business town input with autocomplete
+  const handleBusinessTownChange = (e) => {
+    const value = e.target.value;
+    setBusinessTownQuery(value);
+    setBusinessFormData(prev => ({
+      ...prev,
+      town: value
+    }));
+
+    if (value.length > 0) {
+      const filtered = ukTownsAndCounties.filter(location =>
+        location.town.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10); // Limit to 10 suggestions
+      setFilteredBusinessTowns(filtered);
+      setShowBusinessTownSuggestions(true);
+    } else {
+      setShowBusinessTownSuggestions(false);
+      setFilteredBusinessTowns([]);
+      // Clear county when town is cleared
+      setBusinessFormData(prev => ({
+        ...prev,
+        county: ''
+      }));
+    }
+  };
+
+  // Handle business town selection from suggestions
+  const handleBusinessTownSelect = (townData) => {
+    setBusinessTownQuery(townData.town);
+    setBusinessFormData(prev => ({
+      ...prev,
+      town: townData.town,
+      county: townData.county
+    }));
+    setShowBusinessTownSuggestions(false);
+    setFilteredBusinessTowns([]);
+  };
+
+  // Handle getting business location
+  const handleGetBusinessLocation = async () => {
+    setBusinessLocationLoading(true);
+    try {
+      const location = await getCurrentLocation();
+      setBusinessFormData(prev => ({
+        ...prev,
+        latitude: location.latitude.toString(),
+        longitude: location.longitude.toString(),
+      }));
+    } catch (error) {
+      alert('Unable to get location. Please enter coordinates manually.');
+    } finally {
+      setBusinessLocationLoading(false);
+    }
   };
 
   // Filter functions for search functionality only
@@ -3183,70 +3350,158 @@ export default function AdminDashboard() {
                 </div>
               </div>
               
-              <div>
-                <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Address *
-                </label>
-                <input
-                  type="text"
-                  id="businessAddress"
-                  name="address"
-                  value={businessFormData.address}
-                  onChange={handleBusinessFormChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                  placeholder="Enter complete address"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label htmlFor="businessCity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    id="businessCity"
-                    name="city"
-                    value={businessFormData.city}
-                    onChange={handleBusinessFormChange}
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                    placeholder="Enter city"
-                  />
-                </div>
+              {/* Location Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Location Information</h3>
                 
                 <div>
-                  <label htmlFor="businessState" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    State *
+                  <label htmlFor="businessAddressLine1" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Address Line 1 *
                   </label>
                   <input
                     type="text"
-                    id="businessState"
-                    name="state"
-                    value={businessFormData.state}
+                    id="businessAddressLine1"
+                    name="addressLine1"
+                    value={businessFormData.addressLine1}
                     onChange={handleBusinessFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                    placeholder="Enter state"
+                    placeholder="House number and street name"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="businesspostcode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Postcode *
+                  <label htmlFor="businessAddressLine2" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Address Line 2
                   </label>
                   <input
                     type="text"
-                    id="businesspostcode"
-                    name="postcode"
-                    value={businessFormData.postcode}
+                    id="businessAddressLine2"
+                    name="addressLine2"
+                    value={businessFormData.addressLine2}
                     onChange={handleBusinessFormChange}
-                    required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                    placeholder="Enter postcode"
+                    placeholder="Apartment, suite, unit, building, floor, etc. (optional)"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="relative">
+                    <label htmlFor="businessTown" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Town/City *
+                    </label>
+                    <input
+                      type="text"
+                      id="businessTown"
+                      name="town"
+                      value={businessTownQuery}
+                      onChange={handleBusinessTownChange}
+                      onFocus={() => businessTownQuery.length > 0 && setShowBusinessTownSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowBusinessTownSuggestions(false), 200)}
+                      required
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Start typing town or city..."
+                      autoComplete="off"
+                    />
+                    {showBusinessTownSuggestions && filteredBusinessTowns.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 rounded-md shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto">
+                        {filteredBusinessTowns.map((townData, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+                            onClick={() => handleBusinessTownSelect(townData)}
+                          >
+                            <div className="font-medium">{townData.town}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {townData.county}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label htmlFor="businessCounty" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      County *
+                    </label>
+                    <input
+                      type="text"
+                      id="businessCounty"
+                      name="county"
+                      value={businessFormData.county}
+                      onChange={handleBusinessFormChange}
+                      required
+                      className={`w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500 ${
+                        businessFormData.county ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'
+                      }`}
+                      placeholder="County (auto-filled)"
+                      readOnly={!!businessFormData.county}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="businessPostcode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Postcode *
+                    </label>
+                    <input
+                      type="text"
+                      id="businessPostcode"
+                      name="postcode"
+                      value={businessFormData.postcode}
+                      onChange={handleBusinessFormChange}
+                      required
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Enter postcode"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="businessLatitude" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Latitude * (Auto-filled)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      id="businessLatitude"
+                      name="latitude"
+                      value={businessFormData.latitude}
+                      onChange={handleBusinessFormChange}
+                      required
+                      readOnly
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Use 'Get Current Location' button"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="businessLongitude" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Longitude * (Auto-filled)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      id="businessLongitude"
+                      name="longitude"
+                      value={businessFormData.longitude}
+                      onChange={handleBusinessFormChange}
+                      required
+                      readOnly
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Use 'Get Current Location' button"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGetBusinessLocation}
+                  disabled={businessLocationLoading}
+                  className="inline-flex items-center px-4 py-2 border border-purple-500 text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 hover:bg-purple-50 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {businessLocationLoading ? 'Getting Location...' : 'Get My Location'}
+                </button>
               </div>
               
               <div>
