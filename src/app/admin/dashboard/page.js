@@ -186,16 +186,13 @@ export default function AdminDashboard() {
     name: '',
     email: '',
     password: '',
-    specialisation: '',
     licenceNumber: '',
     phone: '',
     address: '',
     city: '',
     state: '',
     postcode: '',
-    bio: '',
-    experience: '',
-    consultationFee: ''
+    bio: ''
   });
   const [businessFormData, setBusinessFormData] = useState({
     name: '',
@@ -412,13 +409,10 @@ export default function AdminDashboard() {
           name: '',
           email: '',
           password: '',
-          specialisation: '',
           licenceNumber: '',
           phone: '',
           address: '',
-          bio: '',
-          experience: '',
-          consultationFee: ''
+          bio: ''
         });
         fetchAllData(); // Refresh the data
       }
@@ -515,8 +509,6 @@ export default function AdminDashboard() {
         state: doctorFormData.state || 'Not specified', // Use form data or default  
         postcode: doctorFormData.postcode || '00000', // Use form data or default
         bio: doctorFormData.bio || '',
-        yearsOfExperience: parseInt(doctorFormData.experience) || 0,
-        hourlyRate: parseFloat(doctorFormData.consultationFee) || 0,
         latitude: 0.0, // Default coordinate
         longitude: 0.0, // Default coordinate
         isVerified: true, // Admin-registered doctors are auto-verified
@@ -533,13 +525,10 @@ export default function AdminDashboard() {
           name: '',
           email: '',
           password: '',
-          specialisation: '',
           licenceNumber: '',
           phone: '',
           address: '',
-          bio: '',
-          experience: '',
-          consultationFee: ''
+          bio: ''
         });
         fetchAllData(); // Refresh the data
       }
@@ -2406,24 +2395,8 @@ export default function AdminDashboard() {
                 </div>
                 
                 <div>
-                  <label htmlFor="doctorspecialisation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    specialisation *
-                  </label>
-                  <input
-                    type="text"
-                    id="doctorspecialisation"
-                    name="specialisation"
-                    value={doctorFormData.specialisation}
-                    onChange={handleDoctorFormChange}
-                    required
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="e.g., Cardiology, General Practice"
-                  />
-                </div>
-                
-                <div>
                   <label htmlFor="doctorlicenceNumber" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    License Number *
+                    GMC Number *
                   </label>
                   <input
                     type="text"
@@ -2433,42 +2406,7 @@ export default function AdminDashboard() {
                     onChange={handleDoctorFormChange}
                     required
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="Enter Medical Licence Number"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="doctorExperience" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Years of Experience *
-                  </label>
-                  <input
-                    type="number"
-                    id="doctorExperience"
-                    name="experience"
-                    value={doctorFormData.experience}
-                    onChange={handleDoctorFormChange}
-                    required
-                    min="0"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="Enter years of experience"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="doctorConsultationFee" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Consultation Fee ($) *
-                  </label>
-                  <input
-                    type="number"
-                    id="doctorConsultationFee"
-                    name="consultationFee"
-                    value={doctorFormData.consultationFee}
-                    onChange={handleDoctorFormChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="Enter consultation fee"
+                    placeholder="Enter GMC number"
                   />
                 </div>
               </div>

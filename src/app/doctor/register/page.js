@@ -26,16 +26,12 @@ export default function DoctorRegister() {
     password: '',
     confirmPassword: '',
     phone: '',
-    specialisation: '',
     licenceNumber: '',
-    yearsOfExperience: '',
     address: '',
     city: '',
     state: '',
     postcode: '',
-    hourlyRate: '',
     bio: '',
-    emergencyContact: '',
     languages: ['English'],
     certifications: [],
     latitude: '',
@@ -132,16 +128,13 @@ export default function DoctorRegister() {
         throw new Error('Please select at least one service you offer');
       }
 
-      const { confirmPassword, selectedServices, specialisation, licenceNumber, postcode, ...dataToSend } = {
+      const { confirmPassword, selectedServices, licenceNumber, postcode, ...dataToSend } = {
         ...formData,
         name: `${formData.firstName} ${formData.lastName}`, // Add combined name field
-        specialization: formData.specialisation, // Map specialisation to specialization
         licenseNumber: formData.licenceNumber, // Map licenceNumber to licenseNumber
         zipCode: formData.postcode, // Map postcode to zipCode
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
-        yearsOfExperience: parseInt(formData.yearsOfExperience),
-        hourlyRate: parseFloat(formData.hourlyRate),
         services: formData.selectedServices // Add services to the data
       };
 
@@ -320,20 +313,6 @@ export default function DoctorRegister() {
                     placeholder="Enter phone number"
                   />
                 </div>
-
-                <div>
-                  <label className="form-label">
-                    Emergency Contact
-                  </label>
-                  <input
-                    type="tel"
-                    name="emergencyContact"
-                    value={formData.emergencyContact}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Emergency contact number"
-                  />
-                </div>
               </div>
 
               {/* Professional Information */}
@@ -342,31 +321,7 @@ export default function DoctorRegister() {
                 
                 <div>
                   <label className="form-label">
-                    specialisation *
-                  </label>
-                  <select
-                    name="specialisation"
-                    value={formData.specialisation}
-                    onChange={handleInputChange}
-                    required
-                    className="form-input"
-                  >
-                    <option value="">Select specialisation</option>
-                    <option value="General Medicine">General Medicine</option>
-                    <option value="Emergency Medicine">Emergency Medicine</option>
-                    <option value="Family Medicine">Family Medicine</option>
-                    <option value="Internal Medicine">Internal Medicine</option>
-                    <option value="Cardiology">Cardiology</option>
-                    <option value="Dermatology">Dermatology</option>
-                    <option value="Pediatrics">Pediatrics</option>
-                    <option value="Psychiatry">Psychiatry</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="form-label">
-                    Medical Licence Number *
+                    GMC Number *
                   </label>
                   <input
                     type="text"
@@ -375,42 +330,8 @@ export default function DoctorRegister() {
                     onChange={handleInputChange}
                     required
                     className="form-input"
-                    placeholder="Enter licence number"
+                    placeholder="Enter GMC number"
                   />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">
-                      Years of Experience *
-                    </label>
-                    <input
-                      type="number"
-                      name="yearsOfExperience"
-                      value={formData.yearsOfExperience}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      className="form-input"
-                      placeholder="Years"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">
-                      Hourly Rate (GBP) *
-                    </label>
-                    <input
-                      type="number"
-                      name="hourlyRate"
-                      value={formData.hourlyRate}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className="form-input"
-                      placeholder="Rate per hour"
-                    />
-                  </div>
                 </div>
 
                 <div>

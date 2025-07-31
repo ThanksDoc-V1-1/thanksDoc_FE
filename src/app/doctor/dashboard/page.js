@@ -37,9 +37,6 @@ export default function DoctorDashboard() {
     lastName: '',
     email: '',
     phone: '',
-    specialisation: '',
-    yearsOfExperience: '',
-    hourlyRate: '',
     licenceNumber: '',
     qualifications: '',
     bio: ''
@@ -317,10 +314,10 @@ export default function DoctorDashboard() {
       // Continue anyway as we already have the request data
     }
     
-    // Calculate payment amount based on hourly rate and duration
+    // Calculate payment amount based on standard rate and duration
     const hours = request.estimatedDuration || 1;
-    const hourlyRate = doctorData?.hourlyRate || 50;
-    const paymentAmount = hours * hourlyRate;
+    const standardRate = 50; // Default rate per hour
+    const paymentAmount = hours * standardRate;
     
     // Show the completion modal instead of multiple popups
     setCompletionRequest(request);
@@ -389,9 +386,6 @@ export default function DoctorDashboard() {
       lastName: doctorInfo?.lastName || '',
       email: doctorInfo?.email || '',
       phone: doctorInfo?.phone || '',
-      specialisation: doctorInfo?.specialization || '',
-      yearsOfExperience: String(doctorInfo?.yearsOfExperience || ''),
-      hourlyRate: String(doctorInfo?.hourlyRate || ''),
       licenceNumber: doctorInfo?.licenceNumber || '',
       qualifications: doctorInfo?.qualifications || '',
       bio: doctorInfo?.bio || ''
@@ -421,9 +415,6 @@ export default function DoctorDashboard() {
         lastName: editProfileData.lastName,
         email: editProfileData.email,
         phone: editProfileData.phone,
-        specialization: editProfileData.specialisation, // Map UK spelling to US spelling for backend
-        yearsOfExperience: parseInt(editProfileData.yearsOfExperience) || 0,
-        hourlyRate: parseFloat(editProfileData.hourlyRate) || 0,
         licenceNumber: editProfileData.licenceNumber,
         qualifications: editProfileData.qualifications,
         bio: editProfileData.bio
@@ -480,9 +471,6 @@ export default function DoctorDashboard() {
       lastName: '',
       email: '',
       phone: '',
-      specialisation: '',
-      yearsOfExperience: '',
-      hourlyRate: '',
       licenceNumber: '',
       qualifications: '',
       bio: ''
@@ -694,10 +682,6 @@ export default function DoctorDashboard() {
     if (recentRequestsSection) {
       recentRequestsSection.scrollIntoView({ behavior: 'smooth' });
     }
-  };
-
-  const handleHourlyRateClick = () => {
-    router.push('/doctor/earnings');
   };
 
   // Get doctor display data (either from backend or auth context)
@@ -917,78 +901,12 @@ export default function DoctorDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Specialisation
-                  </label>
-                  <input
-                    type="text"
-                    name="specialisation"
-                    value={editProfileData.specialisation}
-                    onChange={handleProfileInputChange}
-                    className={`w-full rounded-lg p-3 transition-colors ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
-                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="e.g., General Practice, Cardiology"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Years of Experience
-                  </label>
-                  <input
-                    type="number"
-                    name="yearsOfExperience"
-                    value={editProfileData.yearsOfExperience}
-                    onChange={handleProfileInputChange}
-                    className={`w-full rounded-lg p-3 transition-colors ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
-                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="Enter years of experience"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Hourly Rate (£)
-                  </label>
-                  <input
-                    type="number"
-                    name="hourlyRate"
-                    value={editProfileData.hourlyRate}
-                    onChange={handleProfileInputChange}
-                    className={`w-full rounded-lg p-3 transition-colors ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
-                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="Enter hourly rate"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Licence Number
+                    GMC Number
                   </label>
                   <input
                     type="text"
@@ -1000,7 +918,7 @@ export default function DoctorDashboard() {
                         ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
                         : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
                     } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="Enter medical licence number"
+                    placeholder="Enter GMC number"
                   />
                 </div>
               </div>
@@ -1270,51 +1188,13 @@ export default function DoctorDashboard() {
                   Dr. {doctorName}
                 </h1>
                 <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  {doctor.specialization || 'Medical Professional'}
+                  Medical Professional
                 </p>
               </div>
             </div>
 
             {/* Right side - Profile Summary and Controls */}
             <div className="flex items-center space-x-4">
-              {/* Compact Profile Summary */}
-              <div className={`hidden lg:flex items-center space-x-3 px-4 py-2 rounded-lg border ${
-                isDarkMode 
-                  ? 'bg-gray-800/50 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
-                <div className="text-right">
-                  <div className={`text-sm font-medium ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                  }`}>
-                    {doctor.yearsOfExperience || 0} years exp. • £{(doctor.hourlyRate || 0).toFixed(2)}/hour
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-xs ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>Total Earnings:</span>
-                    <span className={`text-sm font-semibold`} style={{color: '#0F9297'}}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-                <div className="h-8 w-px bg-gray-300 dark:bg-gray-600"></div>
-                <div className="flex items-center space-x-2">
-                  <span className={`text-xs ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                    isAvailable 
-                      ? isDarkMode 
-                        ? 'bg-green-900/30 text-green-400 border-green-700' 
-                        : 'bg-green-600 text-white border-green-500'
-                      : isDarkMode 
-                        ? 'bg-gray-700 text-gray-400 border-gray-600' 
-                        : 'bg-gray-400 text-white border-gray-300'
-                  }`}>
-                    {isAvailable ? '✅ Available' : '❌ Unavailable'}
-                  </span>
-                </div>
-              </div>
-
               {/* Doctor availability toggle */}
               <div className={`flex items-center space-x-2 px-3 py-2 rounded-md ${
                 isDarkMode 
@@ -1513,33 +1393,6 @@ export default function DoctorDashboard() {
                 </div>
               </button>
               <button 
-                onClick={handleHourlyRateClick}
-                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
-                  isDarkMode 
-                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs lg:text-sm text-purple-400 font-medium">Hourly Rate</p>
-                    <p className={`text-xl lg:text-2xl font-bold ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      £{doctor.hourlyRate || 0}
-                    </p>
-                  </div>
-                  <div className={`p-2 lg:p-3 rounded-lg ${
-                    isDarkMode 
-                      ? 'bg-purple-900/30' 
-                      : 'bg-purple-600'
-                  }`}>
-                    <Banknote className={`h-4 w-4 lg:h-6 lg:w-6 ${
-                      isDarkMode ? 'text-purple-400' : 'text-white'
-                    }`} />
-                  </div>
-                </div>
-              </button>
-              <button 
                 onClick={() => router.push('/doctor/earnings')}
                 className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
@@ -1714,7 +1567,7 @@ export default function DoctorDashboard() {
                                 ? 'text-green-400 bg-green-900/20' 
                                 : 'text-green-600 bg-green-50'
                             }`}>
-                              <span className="font-semibold">£{((doctor.hourlyRate || 0) * (request.estimatedDuration || 1)).toFixed(2)}</span>
+                              <span className="font-semibold">£{(50 * (request.estimatedDuration || 1)).toFixed(2)}</span>
                             </div>
                           </div>
                           
@@ -1920,21 +1773,9 @@ export default function DoctorDashboard() {
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.phone}</span>
                   </div>
                 )}
-                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Specialisation:</span>
-                  <span className={`${isDarkMode ? 'text-green-400' : 'text-green-600'} font-semibold`}>{doctor?.specialization || 'Medical Professional'}</span>
-                </div>
-                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Experience:</span>
-                  <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor?.yearsOfExperience || 0} years</span>
-                </div>
-                <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Rate:</span>
-                  <span className={`${isDarkMode ? 'text-purple-400' : 'text-purple-600'} font-semibold`}>£{(doctor?.hourlyRate || 0).toFixed(2)}/hour</span>
-                </div>
                 {doctor?.licenceNumber && (
                   <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Licence:</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>GMC:</span>
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.licenceNumber}</span>
                   </div>
                 )}
