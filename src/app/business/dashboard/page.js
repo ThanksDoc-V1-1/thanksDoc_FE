@@ -37,19 +37,20 @@ export default function BusinessDashboard() {
     }
     
     // If totalAmount already includes booking fee (backend calculated), use it
-    // Otherwise, add booking fee to ensure correct total
+    // Otherwise, calculate based on service price + booking fee
     const baseAmount = request.totalAmount || 0;
     const serviceCharge = request.serviceCharge || SERVICE_CHARGE;
     
-    // Check if booking fee is already included by seeing if totalAmount is significantly larger than expected doctor fee
-    const estimatedDoctorFee = (request.doctor?.hourlyRate || 0) * (request.estimatedDuration || 0);
-    const expectedTotal = estimatedDoctorFee + serviceCharge;
+    // Find the service price based on serviceType
+    const service = availableServices.find(s => s.name === request.serviceType);
+    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    const expectedTotal = servicePrice + serviceCharge;
     
-    // If totalAmount is close to expected total, use it; otherwise add booking fee
+    // If totalAmount is close to expected total, use it; otherwise calculate from service price
     if (baseAmount >= expectedTotal - 1 && baseAmount <= expectedTotal + 1) {
-      return baseAmount; // Booking fee likely already included
+      return baseAmount; // Already includes correct total
     } else {
-      return baseAmount + serviceCharge; // Add booking fee
+      return servicePrice + serviceCharge; // Calculate from service price + booking fee
     }
   };
   
