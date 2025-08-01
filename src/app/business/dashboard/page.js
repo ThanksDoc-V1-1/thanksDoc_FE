@@ -31,6 +31,11 @@ export default function BusinessDashboard() {
   
   // Helper function to calculate total amount including booking fee
   const calculateTotalAmount = (request) => {
+    // For new temporary requests, the totalAmount is already correctly calculated
+    if (request.id && request.id.toString().startsWith('temp-')) {
+      return request.totalAmount; // Already includes service price + booking fee
+    }
+    
     // If totalAmount already includes booking fee (backend calculated), use it
     // Otherwise, add booking fee to ensure correct total
     const baseAmount = request.totalAmount || 0;
@@ -626,11 +631,10 @@ export default function BusinessDashboard() {
     }
 
     try {
-      const serviceAmount = (selectedDoctor.hourlyRate || 0) * parseFloat(requestHours);
-      const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
-      
       // Find the selected service details
       const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
+      const serviceAmount = parseFloat(selectedService?.price || 0);
+      const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
       
       // Create a temporary request object for payment
       const tempRequest = {
@@ -870,7 +874,7 @@ export default function BusinessDashboard() {
 
       // Calculate total cost including booking fee
       const selectedService = availableServices.find(service => service.id.toString() === formData.serviceId.toString());
-      const baseServiceCost = (serviceCost?.fixedPrice || 0) * parseFloat(formData.estimatedDuration);
+      const baseServiceCost = parseFloat(selectedService?.price || 0);
       const totalCost = baseServiceCost + SERVICE_CHARGE;
 
       // Create a temporary request object for payment
@@ -956,27 +960,6 @@ export default function BusinessDashboard() {
           if (response.data) {
             const requestId = response.data.id || response.data.data?.id;
             
-            // Update the newly created request with complete payment details
-            const charge = paymentIntent.charges?.data?.[0];
-            await serviceRequestAPI.processPayment(requestId, 'card', {
-              paymentIntentId: paymentIntent.id,
-              chargeId: charge?.id,
-              receiptUrl: charge?.receipt_url,
-              amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
-              currency: paymentIntent.currency || 'gbp',
-              status: paymentIntent.status,
-              timestamp: new Date().toISOString(),
-              stripeCustomerId: paymentIntent.customer,
-              paymentMethodId: paymentIntent.payment_method,
-              description: paymentIntent.description,
-              metadata: paymentIntent.metadata,
-            }, {
-              paymentIntentId: paymentIntent.id,
-              chargeId: charge?.id,
-              receiptUrl: charge?.receipt_url,
-              currency: paymentIntent.currency || 'gbp'
-            });
-            
             alert(`Payment successful! Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!
             
 ⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
@@ -1019,27 +1002,6 @@ Payment ID: ${paymentIntent.id}`);
           
           if (response.data) {
             const requestId = response.data.id || response.data.data?.id;
-            
-            // Update the newly created request with complete payment details
-            const charge = paymentIntent.charges?.data?.[0];
-            await serviceRequestAPI.processPayment(requestId, 'card', {
-              paymentIntentId: paymentIntent.id,
-              chargeId: charge?.id,
-              receiptUrl: charge?.receipt_url,
-              amount: (paymentIntent.amount || paymentIntent.amount_received || 0) / 100,
-              currency: paymentIntent.currency || 'gbp',
-              status: paymentIntent.status,
-              timestamp: new Date().toISOString(),
-              stripeCustomerId: paymentIntent.customer,
-              paymentMethodId: paymentIntent.payment_method,
-              description: paymentIntent.description,
-              metadata: paymentIntent.metadata,
-            }, {
-              paymentIntentId: paymentIntent.id,
-              chargeId: charge?.id,
-              receiptUrl: charge?.receipt_url,
-              currency: paymentIntent.currency || 'gbp'
-            });
             
             let notificationMessage;
             if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
@@ -2426,7 +2388,11 @@ Payment ID: ${paymentIntent.id}`;
                   placeholder="Enter hours (e.g., 2, 3.5, 8)"
                 />
                 <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                  Estimated cost: {formatCurrency((selectedDoctor.hourlyRate || 0) * (parseFloat(requestHours) || 0) + SERVICE_CHARGE)}
+                  Estimated cost: {(() => {
+                    const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
+                    const servicePrice = parseFloat(selectedService?.price || 0);
+                    return formatCurrency(servicePrice + SERVICE_CHARGE);
+                  })()}
                   <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} booking fee)</span>
                 </p>
                 <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-orange-900/20 border-orange-600/30' : 'bg-orange-50 border-orange-200'} border`}>
@@ -2474,7 +2440,10 @@ Payment ID: ${paymentIntent.id}`;
                 </h4>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Medical consultation with verified doctor</p>
                 <p className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-1`}>• Professional healthcare service</p>
-                <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium`}>• Rate: {formatCurrency(selectedDoctor.hourlyRate || 0)}/hour</p>
+                <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium`}>• Service price: {(() => {
+                  const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
+                  return formatCurrency(parseFloat(selectedService?.price || 0));
+                })()}</p>
                 <p className={`text-xs ${isDarkMode ? 'text-orange-300' : 'text-orange-600'} font-medium`}>• Booking fee: {formatCurrency(SERVICE_CHARGE)}</p>
               </div>
               <div className="flex space-x-3 pt-4">
