@@ -459,19 +459,45 @@ export const serviceRequestAPI = {
 
 // Service API calls
 export const serviceAPI = {
-  getAll: () => publicAPI.get('/services?populate[parentService][fields][0]=id&populate[parentService][fields][1]=name&populate[subServices][fields][0]=id&populate[subServices][fields][1]=name&populate[subServices][fields][2]=price&populate[subServices][fields][3]=duration&populate[subServices][sort][0]=displayOrder:asc&populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName'), // Use public API (no JWT) for services with pricing
-  getById: (id) => publicAPI.get(`/services/${id}?populate=*`), // Use public API for individual service
-  create: (data) => api.post('/services', { data: { ...data } }),
+  getAll: () => {
+    console.log('🔍 Fetching all services...');
+    return api.get('/services?populate[parentService][fields][0]=id&populate[parentService][fields][1]=name&populate[subServices][fields][0]=id&populate[subServices][fields][1]=name&populate[subServices][fields][2]=price&populate[subServices][fields][3]=duration&populate[subServices][sort][0]=displayOrder:asc&populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName&sort=displayOrder:asc,name:asc');
+  },
+  getById: (id) => {
+    console.log('🔍 Fetching service by ID:', id);
+    return api.get(`/services/${id}?populate=*`);
+  },
+  create: (data) => {
+    console.log('🆕 Creating new service with data:', data);
+    const payload = { data: { ...data } };
+    console.log('🆕 Create payload:', payload);
+    return api.post('/services', payload);
+  },
   update: (id, data) => {
-    // For Strapi v5, we need to determine if we're using numeric ID or documentId
-    console.log('🔄 Service update - ID type:', typeof id, 'ID value:', id);
-    return api.put(`/services/${id}`, { data: { ...data } });
+    // Clean the ID to ensure it's just the ID without any URL fragments
+    const cleanId = typeof id === 'string' ? id.split(':')[0].split('/').pop() : id;
+    console.log('🔄 Service update - Original ID:', id);
+    console.log('🔄 Service update - Clean ID:', cleanId);
+    console.log('🔄 Service update - Data:', data);
+    
+    const payload = { data: { ...data } };
+    console.log('🔄 Update payload:', payload);
+    console.log('🔄 Full URL will be:', `/services/${cleanId}`);
+    
+    return api.put(`/services/${cleanId}`, payload);
   },
   delete: (id) => {
-    console.log('🗑️ Service delete - ID type:', typeof id, 'ID value:', id);
-    return api.delete(`/services/${id}`);
+    // Clean the ID to ensure it's just the ID without any URL fragments
+    const cleanId = typeof id === 'string' ? id.split(':')[0].split('/').pop() : id;
+    console.log('🗑️ Service delete - Original ID:', id);
+    console.log('🗑️ Service delete - Clean ID:', cleanId);
+    
+    return api.delete(`/services/${cleanId}`);
   },
-  getByCategory: (category) => publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`), // Use public API
+  getByCategory: (category) => {
+    console.log('🔍 Fetching services by category:', category);
+    return publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`);
+  },
   getDoctorsByService: async (serviceId, params) => {
     try {
       // Get all doctors with their services populated

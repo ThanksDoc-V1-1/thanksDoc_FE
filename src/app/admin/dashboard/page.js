@@ -35,8 +35,12 @@ export default function AdminDashboard() {
     name: '',
     description: '',
     category: 'in-person',
+    serviceType: 'subcategory', // parent or subcategory
+    price: '',
+    duration: '',
     isActive: true,
-    displayOrder: 0
+    displayOrder: 0,
+    parentService: null // For subcategory services
   });
 
   // Business Type form states and handlers
@@ -68,83 +72,98 @@ export default function AdminDashboard() {
       console.log('🛠️ Service form submission started');
       console.log('📝 Form data:', serviceFormData);
       console.log('✏️ Editing service:', editingService);
-      
-      // Check JWT token
-      const token = localStorage.getItem('jwt');
-      console.log('🔑 JWT token present:', !!token);
-      console.log('🔑 JWT token (first 50 chars):', token ? token.substring(0, 50) + '...' : 'No token');
+
+      const serviceData = {
+        name: serviceFormData.name.trim(),
+        description: serviceFormData.description.trim(),
+        category: serviceFormData.category,
+        serviceType: serviceFormData.serviceType,
+        price: parseFloat(serviceFormData.price) || 0,
+        duration: parseInt(serviceFormData.duration) || 0,
+        isActive: serviceFormData.isActive,
+        displayOrder: parseInt(serviceFormData.displayOrder) || 0,
+        parentService: serviceFormData.parentService || null
+      };
+
+      console.log('📝 Processed service data:', serviceData);
 
       let response;
       if (editingService) {
-        console.log('📝 Updating service - ID:', editingService.id, 'DocumentID:', editingService.documentId);
-        // Use documentId for Strapi v5 if available, fallback to id
-        const serviceIdentifier = editingService.documentId || editingService.id;
-        console.log('📝 Using identifier:', serviceIdentifier);
+        // Extract clean ID - handle both Strapi v4 and v5 formats
+        let serviceId = editingService.documentId || editingService.id;
         
-        const updateData = {
-          name: serviceFormData.name,
-          description: serviceFormData.description,
-          category: serviceFormData.category,
-          isActive: serviceFormData.isActive,
-          displayOrder: parseInt(serviceFormData.displayOrder)
-        };
-        console.log('📝 Update payload:', updateData);
+        // Clean the ID to remove any URL fragments or port numbers
+        if (typeof serviceId === 'string') {
+          serviceId = serviceId.split(':')[0].split('/').pop();
+        }
         
-        response = await serviceAPI.update(serviceIdentifier, updateData);
+        console.log('📝 Updating service with clean ID:', serviceId);
+        
+        response = await serviceAPI.update(serviceId, serviceData);
         console.log('✅ Update response:', response);
         
-        setServices(prev => prev.map(service => 
-          (service.id === editingService.id || service.documentId === editingService.documentId) 
-            ? response.data.data : service
-        ));
+        if (response.data) {
+          const updatedService = response.data.data || response.data;
+          setServices(prev => prev.map(service => 
+            (service.id === editingService.id || service.documentId === editingService.documentId) 
+              ? updatedService : service
+          ));
+          alert('Service updated successfully!');
+        }
       } else {
         console.log('🆕 Creating new service');
-        const createData = {
-          name: serviceFormData.name,
-          description: serviceFormData.description,
-          category: serviceFormData.category,
-          isActive: serviceFormData.isActive,
-          displayOrder: parseInt(serviceFormData.displayOrder)
-        };
-        console.log('🆕 Create payload:', createData);
         
-        response = await serviceAPI.create(createData);
+        response = await serviceAPI.create(serviceData);
         console.log('✅ Create response:', response);
         
-        setServices(prev => [...prev, response.data.data]);
+        if (response.data) {
+          const newService = response.data.data || response.data;
+          setServices(prev => [...prev, newService]);
+          alert('Service created successfully!');
+        }
       }
 
+      // Reset form
       setShowServiceForm(false);
       setEditingService(null);
       setServiceFormData({
         name: '',
         description: '',
         category: 'in-person',
+        serviceType: 'subcategory',
+        price: '',
+        duration: '',
         isActive: true,
-        displayOrder: services.length
+        displayOrder: 0,
+        parentService: null
       });
-      await fetchAllData(); // Refresh all data to ensure consistency
-      alert(`Service ${editingService ? 'updated' : 'created'} successfully`);
+
+      // Refresh all data
+      await fetchAllData();
+      
     } catch (error) {
       console.error('❌ Error saving service:', error);
       console.error('❌ Error details:', {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
-        config: error.config
+        config: error.config,
+        url: error.config?.url
       });
       
-      // Check if this is an authentication error
+      let errorMessage = 'Unknown error occurred';
+      
       if (error.response?.status === 401) {
-        console.error('🔒 Authentication failed - token may be expired');
-        const currentToken = localStorage.getItem('jwt');
-        console.error('🔑 Current token exists:', !!currentToken);
-        
-        // Try to refresh authentication or prompt re-login
-        alert('Authentication expired. Please refresh the page and log in again.');
-      } else {
-        alert(`Failed to save service. Error: ${error.response?.data?.error?.message || error.message}`);
+        errorMessage = 'Authentication expired. Please refresh the page and log in again.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.error?.message || 'Bad request - please check your input data';
+      } else if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
+      alert(`Error ${editingService ? 'updating' : 'creating'} service: ${errorMessage}`);
     } finally {
       setDataLoading(false);
     }
@@ -154,37 +173,59 @@ export default function AdminDashboard() {
     console.log('✏️ Edit service clicked:', service);
     setEditingService(service);
     
+    // Extract data from either Strapi v4 or v5 format
+    const serviceData = service.attributes || service;
+    
     const formData = {
-      name: service.attributes?.name || service.name || '',
-      description: service.attributes?.description || service.description || '',
-      category: service.attributes?.category || service.category || 'in-person',
-      isActive: service.attributes?.isActive !== undefined ? service.attributes.isActive : (service.isActive !== undefined ? service.isActive : true),
-      displayOrder: service.attributes?.displayOrder || service.displayOrder || 0
+      name: serviceData.name || '',
+      description: serviceData.description || '',
+      category: serviceData.category || 'in-person',
+      serviceType: serviceData.serviceType || 'subcategory',
+      price: serviceData.price?.toString() || '',
+      duration: serviceData.duration?.toString() || '',
+      isActive: serviceData.isActive !== undefined ? serviceData.isActive : true,
+      displayOrder: serviceData.displayOrder || 0,
+      parentService: serviceData.parentService?.id || serviceData.parentService || null
     };
     
     console.log('✏️ Setting form data:', formData);
     setServiceFormData(formData);
     setShowServiceForm(true);
-    console.log('✏️ Edit form should now be visible');
   };
 
-  const handleDeleteService = async (id, documentId) => {
-    if (!window.confirm('Are you sure you want to delete this service?')) return;
+  const handleDeleteService = async (service) => {
+    const serviceName = service.attributes?.name || service.name || 'this service';
+    if (!confirm(`Are you sure you want to delete "${serviceName}"?`)) {
+      return;
+    }
 
-    setDataLoading(true);
     try {
-      // Use documentId for Strapi v5 if available, fallback to id
-      const serviceIdentifier = documentId || id;
-      console.log('🗑️ Deleting service - ID:', id, 'DocumentID:', documentId, 'Using:', serviceIdentifier);
+      setDataLoading(true);
       
-      await serviceAPI.delete(serviceIdentifier);
-      setServices(prev => prev.filter(service => 
-        service.id !== id && service.documentId !== documentId
+      // Extract and clean ID
+      let serviceId = service.documentId || service.id;
+      
+      // Clean the ID to remove any URL fragments or port numbers
+      if (typeof serviceId === 'string') {
+        serviceId = serviceId.split(':')[0].split('/').pop();
+      }
+      
+      console.log('🗑️ Deleting service with clean ID:', serviceId);
+      
+      await serviceAPI.delete(serviceId);
+      
+      // Remove from local state
+      setServices(prev => prev.filter(s => 
+        s.id !== service.id && s.documentId !== service.documentId
       ));
-      alert('Service deleted successfully');
+      
+      alert('Service deleted successfully!');
+      await fetchAllData(); // Refresh data
+      
     } catch (error) {
-      console.error('Error deleting service:', error);
-      alert(`Failed to delete service. Error: ${error.response?.data?.error?.message || error.message}`);
+      console.error('❌ Error deleting service:', error);
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error occurred';
+      alert(`Error deleting service: ${errorMessage}`);
     } finally {
       setDataLoading(false);
     }
@@ -480,6 +521,10 @@ export default function AdminDashboard() {
       console.log('🏢 Raw businesses response:', businessesRes.data);
       console.log('📋 Raw requests response:', requestsRes.data);
       console.log('📦 Raw services response:', servicesRes.data);
+      console.log('📦 Services data structure:');
+      if (servicesRes.data?.data && servicesRes.data.data.length > 0) {
+        console.log('📦 First service object:', JSON.stringify(servicesRes.data.data[0], null, 2));
+      }
       console.log('🏗️ Raw business types response:', businessTypesRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
@@ -1996,8 +2041,12 @@ export default function AdminDashboard() {
                       name: '',
                       description: '',
                       category: 'in-person',
+                      serviceType: 'subcategory',
+                      price: '',
+                      duration: '',
                       isActive: true,
-                      displayOrder: services.length
+                      displayOrder: services.length,
+                      parentService: null
                     });
                     setShowServiceForm(true);
                     console.log('🆕 Service form should now be visible');
@@ -2018,13 +2067,19 @@ export default function AdminDashboard() {
                       Name
                     </th>
                     <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Type
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Category
                     </th>
                     <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Status
+                      Price
                     </th>
                     <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Order
+                      Duration
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Status
                     </th>
                     <th className={`px-6 py-3.5 text-right text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Actions
@@ -2037,6 +2092,9 @@ export default function AdminDashboard() {
                     const documentId = service.documentId;
                     const name = service.attributes?.name || service.name;
                     const category = service.attributes?.category || service.category;
+                    const serviceType = service.attributes?.serviceType || service.serviceType || 'subcategory';
+                    const price = service.attributes?.price || service.price || 0;
+                    const duration = service.attributes?.duration || service.duration || 0;
                     const isActive = service.attributes?.isActive || service.isActive;
                     const displayOrder = service.attributes?.displayOrder || service.displayOrder || 0;
 
@@ -2046,27 +2104,68 @@ export default function AdminDashboard() {
                           <div className="flex items-center">
                             <div>
                               <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{name}</div>
+                              {service.attributes?.description || service.description ? (
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate max-w-xs`}>
+                                  {service.attributes?.description || service.description}
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                            serviceType === 'parent' 
+                              ? isDarkMode ? 'bg-purple-900/40 text-purple-400 border border-purple-900' : 'bg-purple-100 text-purple-700 border border-purple-300'
+                              : isDarkMode ? 'bg-orange-900/40 text-orange-400 border border-orange-900' : 'bg-orange-100 text-orange-700 border border-orange-300'
+                          }`}>
+                            {serviceType === 'parent' ? 'Parent' : 'Subcategory'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
                             category === 'in-person' 
                               ? isDarkMode ? 'bg-blue-900/40 text-blue-400 border border-blue-900' : 'bg-blue-100 text-blue-700 border border-blue-300'
-                              : isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300'
+                              : category === 'online'
+                              ? isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300'
+                              : isDarkMode ? 'bg-purple-900/40 text-purple-400 border border-purple-900' : 'bg-purple-100 text-purple-700 border border-purple-300'
                           }`}>
                             {category === 'in-person' ? (
                               <>
                                 <MapPin className="h-3.5 w-3.5 mr-1" />
                                 In-Person
                               </>
-                            ) : (
+                            ) : category === 'online' ? (
                               <>
                                 <Globe className="h-3.5 w-3.5 mr-1" />
                                 Online
                               </>
+                            ) : (
+                              <>
+                                <Shield className="h-3.5 w-3.5 mr-1" />
+                                NHS
+                              </>
                             )}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300'
+                          }`}>
+                            <DollarSign className="h-3.5 w-3.5 mr-1" />
+                            £{parseFloat(price).toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {duration > 0 ? (
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              isDarkMode ? 'bg-blue-900/40 text-blue-400 border border-blue-900' : 'bg-blue-100 text-blue-700 border border-blue-300'
+                            }`}>
+                              <Clock className="h-3.5 w-3.5 mr-1" />
+                              {duration}m
+                            </span>
+                          ) : (
+                            <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>-</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
@@ -2087,11 +2186,6 @@ export default function AdminDashboard() {
                             )}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                            {displayOrder}
-                          </span>
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
                             <button
@@ -2103,7 +2197,7 @@ export default function AdminDashboard() {
                               <Eye className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                             </button>
                             <button
-                              onClick={() => handleDeleteService(id, documentId)}
+                              onClick={() => handleDeleteService(service)}
                               className={`p-1.5 rounded-lg transition-colors ${
                                 isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
                               }`}
@@ -2116,7 +2210,7 @@ export default function AdminDashboard() {
                     );
                   }) : (
                     <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center">
+                      <td colSpan="7" className="px-6 py-8 text-center">
                         <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No services found</h3>
@@ -2369,8 +2463,96 @@ export default function AdminDashboard() {
                             >
                               <option value="in-person">In-Person</option>
                               <option value="online">Online</option>
+                              <option value="nhs">NHS</option>
                             </select>
                           </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Service Type *
+                            </label>
+                            <select
+                              name="serviceType"
+                              value={serviceFormData.serviceType}
+                              onChange={handleServiceFormChange}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="parent">Parent Service</option>
+                              <option value="subcategory">Subcategory Service</option>
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Price (£) *
+                              </label>
+                              <input
+                                type="number"
+                                name="price"
+                                value={serviceFormData.price}
+                                onChange={handleServiceFormChange}
+                                min="0"
+                                step="0.01"
+                                required
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                                placeholder="0.00"
+                              />
+                            </div>
+
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Duration (minutes)
+                              </label>
+                              <input
+                                type="number"
+                                name="duration"
+                                value={serviceFormData.duration}
+                                onChange={handleServiceFormChange}
+                                min="0"
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                                placeholder="60"
+                              />
+                            </div>
+                          </div>
+
+                          {serviceFormData.serviceType === 'subcategory' && (
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Parent Service
+                              </label>
+                              <select
+                                name="parentService"
+                                value={serviceFormData.parentService || ''}
+                                onChange={handleServiceFormChange}
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="">No parent service</option>
+                                {services.filter(s => s.serviceType === 'parent').map(service => (
+                                  <option key={service.id} value={service.id}>
+                                    {service.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
 
                           <div>
                             <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
