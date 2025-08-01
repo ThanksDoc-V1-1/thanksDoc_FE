@@ -28,7 +28,10 @@ export default function DoctorDashboard() {
   // State for controlling auto-refresh
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
-  const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds
+  const AUTO_REFRESH_INTERVAL = 30000; // Increased to 30 seconds to reduce load
+  const [refreshing, setRefreshing] = useState(false); // Prevent multiple simultaneous refreshes
+  const [fetchingNearby, setFetchingNearby] = useState(false); // Prevent multiple fetchNearbyRequests
+  const [fetchingMyRequests, setFetchingMyRequests] = useState(false); // Prevent multiple fetchMyRequests
 
   // Doctor profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -113,9 +116,58 @@ export default function DoctorDashboard() {
 
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
-    // Find the service price based on serviceType
-    const service = availableServices.find(s => s.name === request.serviceType);
-    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    // Debug logging
+    console.log('🔍 Calculating earnings for request:', {
+      requestId: request.id,
+      serviceType: request.serviceType,
+      servicePrice: request.servicePrice,
+      hasServicePrice: !!request.servicePrice,
+      availableServicesCount: availableServices.length
+    });
+    
+    // First priority: Check if request already has service price stored
+    if (request.servicePrice) {
+      console.log('💰 Using stored servicePrice:', request.servicePrice);
+      return parseFloat(request.servicePrice);
+    } else {
+      console.log('❌ NO servicePrice found in request! Will attempt service lookup...');
+    }
+    
+    
+    // If services haven't loaded yet, return 0 and let it recalculate when services load
+    if (availableServices.length === 0) {
+      console.log('⏳ Services not loaded yet, returning 0');
+      return 0;
+    }
+    
+    console.log('🔍 SEARCHING for service match for:', request.serviceType);
+
+    // Second priority: Try exact service name match
+    let service = availableServices.find(s => s.name === request.serviceType);
+    console.log('🎯 Found service (exact match):', service);
+    
+    // Third priority: Try case-insensitive match
+    if (!service) {
+      service = availableServices.find(s => s.name?.toLowerCase() === request.serviceType?.toLowerCase());
+      console.log('🎯 Found service (case-insensitive match):', service);
+    }
+    
+    // Fourth priority: Try partial match (contains)
+    if (!service) {
+      service = availableServices.find(s => 
+        s.name?.toLowerCase().includes(request.serviceType?.toLowerCase()) ||
+        request.serviceType?.toLowerCase().includes(s.name?.toLowerCase())
+      );
+      console.log('🎯 Found service (partial match):', service);
+    }    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found - should rely on stored servicePrice
+    console.log('💵 Final calculated price:', servicePrice);
+    
+    if (!service) {
+      console.log('⚠️ WARNING: No service match found, returning 0!');
+      console.log('🔍 Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
+      console.log('🔍 Looking for service type:', request.serviceType);
+    }
+    
     return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
   };
 
@@ -132,33 +184,93 @@ export default function DoctorDashboard() {
     }
   }, [user, serviceRequests]);
 
+  // Force re-calculation when services are loaded
+  useEffect(() => {
+    if (availableServices.length > 0) {
+      console.log('🔄 Services loaded, triggering re-render for price calculations');
+      // Force a state update to trigger re-render of components using calculateDoctorEarnings
+      setStats(prev => ({ ...prev }));
+    }
+  }, [availableServices]);
+
   // Auto-refresh functionality
   useEffect(() => {
     if (!autoRefresh || !user?.id) return;
     
     console.log('🔄 Setting up auto-refresh for doctor dashboard');
     
-    const refreshInterval = setInterval(() => {
+    const refreshInterval = setInterval(async () => {
+      if (refreshing) {
+        console.log('⏭️ Skipping refresh - already in progress');
+        return;
+      }
+      
       console.log('🔄 Auto-refreshing doctor dashboard data');
-      fetchNearbyRequests();
-      fetchMyRequests();
-      setLastRefreshTime(new Date());
+      setRefreshing(true);
+      
+      try {
+        await Promise.all([
+          fetchNearbyRequests(),
+          fetchMyRequests()
+        ]);
+        setLastRefreshTime(new Date());
+      } catch (error) {
+        console.error('❌ Auto-refresh failed:', error);
+      } finally {
+        setRefreshing(false);
+      }
     }, AUTO_REFRESH_INTERVAL);
     
     return () => {
       console.log('🛑 Clearing auto-refresh interval');
       clearInterval(refreshInterval);
     };
-  }, [autoRefresh, user?.id]);
+  }, [autoRefresh, user?.id, refreshing]);
 
   const fetchServices = async () => {
     try {
-      const response = await serviceRequestAPI.getServices();
-      if (response.data) {
-        setAvailableServices(response.data);
+      console.log('🔍 [DOCTOR] Fetching available services from backend');
+      
+      // Use the same endpoint as business dashboard - fetch subcategory services
+      const response = await fetch('http://localhost:1337/api/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc');
+      const data = await response.json();
+      console.log('📊 [DOCTOR] Raw API response:', data);
+      console.log('📊 [DOCTOR] Response status:', response.status);
+      
+      let services = [];
+      if (data && Array.isArray(data.data)) {
+        services = data.data;
+        console.log('📊 [DOCTOR] Using data.data array:', services.length, 'services');
+      } else if (Array.isArray(data)) {
+        services = data;
+        console.log('📊 [DOCTOR] Using data array:', services.length, 'services');
+      } else {
+        console.log('❌ [DOCTOR] Unexpected API response format:', data);
+      }
+      
+      if (services.length > 0) {
+        console.log('✅ [DOCTOR] Successfully fetched services:', services.map(s => ({ 
+          id: s.id, 
+          name: s.name || s.attributes?.name, 
+          price: s.price || s.attributes?.price 
+        })));
+        
+        // Map services to expected format
+        const formattedServices = services.map(service => ({
+          id: service.id,
+          name: service.name || service.attributes?.name,
+          price: service.price || service.attributes?.price,
+          category: service.category || service.attributes?.category,
+          duration: service.duration || service.attributes?.duration
+        }));
+        
+        setAvailableServices(formattedServices);
+      } else {
+        console.log('⚠️ [DOCTOR] No services found in response');
+        setAvailableServices([]);
       }
     } catch (error) {
-      console.error('❌ Error fetching services:', error);
+      console.error('❌ [DOCTOR] Error fetching services:', error);
       // Set default services if fetch fails
       setAvailableServices([]);
     }
@@ -206,12 +318,24 @@ export default function DoctorDashboard() {
   };
 
   const fetchNearbyRequests = async () => {
+    if (fetchingNearby) {
+      console.log('⏭️ Skipping fetchNearbyRequests - already in progress');
+      return;
+    }
+    
+    setFetchingNearby(true);
     try {
       // Get available requests for this specific doctor (unassigned or assigned to them)
       const response = await serviceRequestAPI.getAvailableRequests(user.id);
       const availableRequests = response.data || [];
       console.log('🔍 Available requests:', availableRequests);
       console.log('📊 Request statuses:', availableRequests.map(req => req.status));
+      console.log('💰 Service prices in requests:', availableRequests.map(req => ({ 
+        id: req.id, 
+        serviceType: req.serviceType, 
+        servicePrice: req.servicePrice,
+        hasServicePrice: !!req.servicePrice 
+      })));
       setServiceRequests(availableRequests);
       
       // Update stats - count only pending requests as "pending"
@@ -223,15 +347,29 @@ export default function DoctorDashboard() {
       }));
     } catch (error) {
       console.error('Error fetching available requests:', error);
+    } finally {
+      setFetchingNearby(false);
     }
   };
 
   const fetchMyRequests = async () => {
+    if (fetchingMyRequests) {
+      console.log('⏭️ Skipping fetchMyRequests - already in progress');
+      return;
+    }
+    
+    setFetchingMyRequests(true);
     try {
       const response = await serviceRequestAPI.getDoctorRequests(user.id);
       const doctorRequests = response.data || [];
       console.log('👨‍⚕️ Doctor requests:', doctorRequests);
       console.log('📊 Doctor request statuses:', doctorRequests.map(req => req.status));
+      console.log('💰 Service prices in doctor requests:', doctorRequests.map(req => ({ 
+        id: req.id, 
+        serviceType: req.serviceType, 
+        servicePrice: req.servicePrice,
+        hasServicePrice: !!req.servicePrice 
+      })));
       setMyRequests(doctorRequests);
       
       // Also fetch stats from backend
@@ -260,6 +398,8 @@ export default function DoctorDashboard() {
       }
     } catch (error) {
       console.error('Error fetching completed requests:', error);
+    } finally {
+      setFetchingMyRequests(false);
     }
   };
 
@@ -1688,7 +1828,7 @@ export default function DoctorDashboard() {
                                 ? 'text-green-400 bg-green-900/20' 
                                 : 'text-green-600 bg-green-50'
                             }`}>
-                              <span className="font-semibold">£{(50 * (request.estimatedDuration || 1)).toFixed(2)}</span>
+                              <span className="font-semibold">£{calculateDoctorEarnings(request).toFixed(2)}</span>
                             </div>
                           </div>
                           

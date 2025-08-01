@@ -41,9 +41,14 @@ function ExpenditureContent() {
   
   // Helper function to calculate total amount based on service pricing
   const calculateExpenditureAmount = (request) => {
+    // First priority: Use stored servicePrice if available
+    if (request.servicePrice) {
+      return parseFloat(request.servicePrice) + SERVICE_CHARGE;
+    }
+    
     // Find the service price based on serviceType
     const service = availableServices.find(s => s.name === request.serviceType);
-    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found
     return servicePrice + SERVICE_CHARGE; // Service price + booking fee
   };
   
@@ -168,7 +173,7 @@ function ExpenditureContent() {
         // Calculate amount based on service pricing
         const totalAmount = calculateExpenditureAmount(request);
         const service = availableServices.find(s => s.name === request.serviceType);
-        const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50
+        const servicePrice = request.servicePrice ? parseFloat(request.servicePrice) : (service ? parseFloat(service.price) : 0); // Use stored servicePrice first, then lookup
         
         return {
           id: request.id,

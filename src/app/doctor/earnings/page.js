@@ -36,9 +36,47 @@ export default function DoctorEarnings() {
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
     const requestData = request.attributes || request;
-    // Find the service price based on serviceType
-    const service = availableServices.find(s => s.name === requestData.serviceType);
-    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    
+    // Debug logging
+    console.log('🔍 [EARNINGS] Calculating earnings for request:', {
+      requestId: request.id,
+      serviceType: requestData.serviceType,
+      availableServicesCount: availableServices.length,
+      availableServiceNames: availableServices.map(s => s.name),
+      requestData: requestData
+    });
+    
+    // First priority: Check if request already has service price stored
+    if (requestData.servicePrice) {
+      console.log('💰 [EARNINGS] Using stored servicePrice:', requestData.servicePrice);
+      return parseFloat(requestData.servicePrice);
+    }
+    
+    // Second priority: Try exact service name match
+    let service = availableServices.find(s => s.name === requestData.serviceType);
+    console.log('🎯 [EARNINGS] Found service (exact match):', service);
+    
+    // Third priority: Try case-insensitive match
+    if (!service) {
+      service = availableServices.find(s => s.name?.toLowerCase() === requestData.serviceType?.toLowerCase());
+      console.log('🎯 [EARNINGS] Found service (case-insensitive match):', service);
+    }
+    
+    // Fourth priority: Try partial match (contains)
+    if (!service) {
+      service = availableServices.find(s => 
+        s.name?.toLowerCase().includes(requestData.serviceType?.toLowerCase()) ||
+        requestData.serviceType?.toLowerCase().includes(s.name?.toLowerCase())
+      );
+      console.log('🎯 [EARNINGS] Found service (partial match):', service);
+    }
+    
+    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found
+    console.log('💵 [EARNINGS] Final calculated price:', servicePrice);
+    if (!service) {
+      console.log('⚠️ [EARNINGS] WARNING: No service match found, returning 0!');
+    }
+    
     return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
   };
   

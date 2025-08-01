@@ -43,7 +43,7 @@ export default function BusinessDashboard() {
     
     // Find the service price based on serviceType
     const service = availableServices.find(s => s.name === request.serviceType);
-    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    const servicePrice = service ? parseFloat(service.price) : 0; // Use 0 if service not found, should rely on stored servicePrice
     const expectedTotal = servicePrice + serviceCharge;
     
     // If totalAmount is close to expected total, use it; otherwise calculate from service price
@@ -645,6 +645,7 @@ export default function BusinessDashboard() {
         description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
+        servicePrice: baseServiceCost, // Store the service price
         serviceDateTime: serviceDateTime.toISOString(),
         totalAmount: totalWithServiceCharge,
         // Store the complete request data for later use
@@ -656,6 +657,7 @@ export default function BusinessDashboard() {
           description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
           estimatedDuration: parseFloat(requestHours),
           serviceCharge: SERVICE_CHARGE,
+          servicePrice: baseServiceCost, // Store the service price
           estimatedCost: totalWithServiceCharge,
           serviceDateTime: serviceDateTime.toISOString()
         },
@@ -886,6 +888,7 @@ export default function BusinessDashboard() {
         description: formData.description,
         estimatedDuration: parseInt(formData.estimatedDuration),
         serviceCharge: SERVICE_CHARGE,
+        servicePrice: parseFloat(selectedService?.price || 0), // Store the service price
         serviceDateTime: serviceDateTime.toISOString(),
         totalAmount: totalCost,
         // Store the complete form data for later use
@@ -988,6 +991,7 @@ Payment ID: ${paymentIntent.id}`);
             urgencyLevel: 'medium', // Default urgency level since we removed it from UI
             estimatedDuration: parseInt(formDataFromTemp.estimatedDuration),
             serviceCharge: SERVICE_CHARGE,
+            servicePrice: paymentRequest.servicePrice, // Store the service price for doctors
             serviceDateTime: serviceDateTime.toISOString(),
             // Mark as paid since payment was successful
             isPaid: true,
