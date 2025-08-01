@@ -46,6 +46,7 @@ export default function DoctorDashboard() {
   // Service management states
   const [doctorServices, setDoctorServices] = useState([]);
   const [allServices, setAllServices] = useState({ inPerson: [], online: [], nhs: [] });
+  const [availableServices, setAvailableServices] = useState([]); // For pricing lookup
   const [showManageServices, setShowManageServices] = useState(false);
   const [serviceLoading, setServiceLoading] = useState(false);
 
@@ -106,8 +107,23 @@ export default function DoctorDashboard() {
     if (user?.id) {
       fetchDoctorData();
       fetchNearbyRequests();
+      fetchServices(); // Fetch services for pricing calculations
     }
   }, [user]);
+
+  // Helper function to calculate doctor earnings based on service pricing
+  const calculateDoctorEarnings = (request) => {
+    // Find the service price based on serviceType
+    const service = availableServices.find(s => s.name === request.serviceType);
+    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
+  };
+
+  // Helper function to calculate total amount including booking fee (for display purposes)
+  const calculateTotalAmount = (request) => {
+    const servicePrice = calculateDoctorEarnings(request);
+    return servicePrice + 3.00; // Service price + £3 booking fee
+  };
   
   // Fetch completed requests after getting available requests to ensure proper stats calculation
   useEffect(() => {
@@ -134,6 +150,19 @@ export default function DoctorDashboard() {
       clearInterval(refreshInterval);
     };
   }, [autoRefresh, user?.id]);
+
+  const fetchServices = async () => {
+    try {
+      const response = await serviceRequestAPI.getServices();
+      if (response.data) {
+        setAvailableServices(response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching services:', error);
+      // Set default services if fetch fails
+      setAvailableServices([]);
+    }
+  };
 
   const fetchDoctorData = async () => {
     try {
@@ -217,7 +246,7 @@ export default function DoctorDashboard() {
       } catch (statsError) {
         console.error('Error fetching stats from backend:', statsError);
         // Fallback to calculating stats from available and completed requests
-        const totalEarnings = completedRequests.reduce((sum, req) => sum + (req.totalAmount || 0), 0);
+        const totalEarnings = completedRequests.reduce((sum, req) => sum + calculateDoctorEarnings(req), 0);
         
         // We'll count accepted requests from serviceRequests
         const acceptedRequests = serviceRequests.filter(req => req.status === 'accepted' && req.doctor?.id === user.id);
@@ -314,14 +343,12 @@ export default function DoctorDashboard() {
       // Continue anyway as we already have the request data
     }
     
-    // Calculate payment amount based on standard rate and duration
-    const hours = request.estimatedDuration || 1;
-    const standardRate = 50; // Default rate per hour
-    const paymentAmount = hours * standardRate;
+    // Calculate payment amount based on service pricing
+    const doctorEarnings = calculateDoctorEarnings(request);
     
     // Show the completion modal instead of multiple popups
     setCompletionRequest(request);
-    setCompletionAmount(paymentAmount);
+    setCompletionAmount(doctorEarnings);
     setCompletionNotes('');
     setShowCompletionModal(true);
   };
@@ -2070,9 +2097,9 @@ export default function DoctorDashboard() {
                               <span className="font-medium">{request.estimatedDuration}h</span>
                             </div>
                           </div>
-                          {request.status === 'completed' && request.totalAmount && (
+                          {request.status === 'completed' && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{(request.totalAmount || 0).toFixed(2)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{calculateDoctorEarnings(request).toFixed(2)}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
                                 COMPLETED
                               </div>

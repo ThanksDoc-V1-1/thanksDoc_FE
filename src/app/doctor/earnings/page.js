@@ -31,6 +31,16 @@ export default function DoctorEarnings() {
   const [filteredEarnings, setFilteredEarnings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [doctorData, setDoctorData] = useState(null);
+  const [availableServices, setAvailableServices] = useState([]); // For pricing lookup
+  
+  // Helper function to calculate doctor earnings based on service pricing
+  const calculateDoctorEarnings = (request) => {
+    const requestData = request.attributes || request;
+    // Find the service price based on serviceType
+    const service = availableServices.find(s => s.name === requestData.serviceType);
+    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
+  };
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
@@ -68,9 +78,30 @@ export default function DoctorEarnings() {
     if (!authLoading && isAuthenticated && user?.role === 'doctor' && user?.id) {
       console.log('✅ Fetching data for authenticated doctor:', user.id);
       fetchDoctorData();
+      fetchServices();
       fetchEarnings();
     }
   }, [isAuthenticated, authLoading, user]);
+
+  // Refetch earnings when services are loaded to recalculate amounts
+  useEffect(() => {
+    if (availableServices.length > 0 && user?.id) {
+      fetchEarnings();
+    }
+  }, [availableServices]);
+
+  const fetchServices = async () => {
+    try {
+      const response = await serviceRequestAPI.getServices();
+      if (response.data) {
+        setAvailableServices(response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching services:', error);
+      // Set default services if fetch fails
+      setAvailableServices([]);
+    }
+  };
 
   const fetchDoctorData = async () => {
     try {
@@ -112,17 +143,15 @@ export default function DoctorEarnings() {
         const requestData = request.attributes || request;
         const status = requestData.status;
         const completedAt = requestData.completedAt;
-        const totalAmount = requestData.totalAmount;
         
         console.log('📊 Request details:', {
           requestId: request.id,
           status,
           completedAt,
-          totalAmount,
-          isCompleted: status === 'completed' && completedAt && totalAmount > 0
+          isCompleted: status === 'completed' && completedAt
         });
         
-        return status === 'completed' && completedAt && totalAmount > 0;
+        return status === 'completed' && completedAt;
       });
 
       console.log('✅ Filtered completed requests:', completedRequests);
@@ -130,10 +159,12 @@ export default function DoctorEarnings() {
       // Transform the data for earnings display
       const earningsData = completedRequests.map(request => {
         const requestData = request.attributes || request;
+        const doctorEarnings = calculateDoctorEarnings(request);
+        
         return {
           id: request.id,
           date: requestData.completedAt,
-          amount: requestData.totalAmount,
+          amount: doctorEarnings,
           serviceType: requestData.serviceType,
           duration: requestData.estimatedDuration,
           business: {
