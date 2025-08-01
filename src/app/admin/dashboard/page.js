@@ -35,7 +35,7 @@ export default function AdminDashboard() {
     name: '',
     description: '',
     category: 'in-person',
-    serviceType: 'subcategory', // parent or subcategory
+    serviceType: 'subcategory', // main or subcategory
     price: '',
     duration: '',
     isActive: true,
@@ -2114,11 +2114,11 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
-                            serviceType === 'parent' 
+                            serviceType === 'main' 
                               ? isDarkMode ? 'bg-purple-900/40 text-purple-400 border border-purple-900' : 'bg-purple-100 text-purple-700 border border-purple-300'
                               : isDarkMode ? 'bg-orange-900/40 text-orange-400 border border-orange-900' : 'bg-orange-100 text-orange-700 border border-orange-300'
                           }`}>
-                            {serviceType === 'parent' ? 'Parent' : 'Subcategory'}
+                            {serviceType === 'main' ? 'Parent' : 'Subcategory'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -2482,7 +2482,7 @@ export default function AdminDashboard() {
                                   : 'bg-white border-gray-300 text-gray-900'
                               }`}
                             >
-                              <option value="parent">Parent Service</option>
+                              <option value="main">Parent Service</option>
                               <option value="subcategory">Subcategory Service</option>
                             </select>
                           </div>
@@ -2545,7 +2545,7 @@ export default function AdminDashboard() {
                                 }`}
                               >
                                 <option value="">No parent service</option>
-                                {services.filter(s => s.serviceType === 'parent').map(service => (
+                                {services.filter(s => s.serviceType === 'main').map(service => (
                                   <option key={service.id} value={service.id}>
                                     {service.name}
                                   </option>
