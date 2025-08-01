@@ -34,6 +34,18 @@ function ExpenditureContent() {
   const [loading, setLoading] = useState(true);
   const [businessData, setBusinessData] = useState(null);
   const [requestFilter, setRequestFilter] = useState('all'); // 'all', 'active', 'completed'
+  const [availableServices, setAvailableServices] = useState([]);
+  
+  // Service charge constant
+  const SERVICE_CHARGE = 3.00; // £3 booking fee for all requests
+  
+  // Helper function to calculate total amount based on service pricing
+  const calculateExpenditureAmount = (request) => {
+    // Find the service price based on serviceType
+    const service = availableServices.find(s => s.name === request.serviceType);
+    const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50 if service not found
+    return servicePrice + SERVICE_CHARGE; // Service price + booking fee
+  };
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
@@ -71,6 +83,7 @@ function ExpenditureContent() {
     if (!authLoading && isAuthenticated && user?.role === 'business' && user?.id) {
       console.log('✅ Fetching data for authenticated business:', user.id);
       fetchBusinessData();
+      fetchServices();
       fetchExpenditures();
     }
   }, [isAuthenticated, authLoading, user]);
@@ -82,6 +95,13 @@ function ExpenditureContent() {
       setRequestFilter(filterParam);
     }
   }, [searchParams]);
+
+  // Refetch expenditures when services are loaded to recalculate amounts
+  useEffect(() => {
+    if (availableServices.length > 0 && user?.id) {
+      fetchExpenditures();
+    }
+  }, [availableServices]);
 
   const fetchBusinessData = async () => {
     try {
@@ -104,6 +124,19 @@ function ExpenditureContent() {
         localStorage.clear(); // Clear potentially invalid tokens
         router.push('/business/login');
       }
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const response = await serviceRequestAPI.getServices();
+      if (response.data) {
+        setAvailableServices(response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching services:', error);
+      // Set default services if fetch fails
+      setAvailableServices([]);
     }
   };
 
@@ -132,15 +165,17 @@ function ExpenditureContent() {
 
       // Transform all requests into expenditure format
       const expenditureData = allRequests.map(request => {
-        const serviceCharge = 3.00; // Standard service charge
-        const doctorFee = Math.max(0, (request.totalAmount || 0) - serviceCharge);
+        // Calculate amount based on service pricing
+        const totalAmount = calculateExpenditureAmount(request);
+        const service = availableServices.find(s => s.name === request.serviceType);
+        const servicePrice = service ? parseFloat(service.price) : 50.00; // Default to £50
         
         return {
           id: request.id,
           date: request.completedAt || request.updatedAt || request.createdAt,
-          amount: request.totalAmount || 0,
-          doctorFee: doctorFee,
-          serviceCharge: serviceCharge,
+          amount: totalAmount,
+          doctorFee: servicePrice, // Now represents service price instead of doctor fee
+          serviceCharge: SERVICE_CHARGE,
           serviceType: request.serviceType || 'Medical Service',
           description: request.description || '',
           duration: request.estimatedDuration || 0,
@@ -263,7 +298,7 @@ function ExpenditureContent() {
   }, [expenditures, dateFrom, dateTo, sortBy, sortOrder, requestFilter]);
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Service Type', 'Doctor', 'Duration (hrs)', 'Doctor Fee', 'Service Charge', 'Total Amount', 'Description'];
+    const headers = ['Date', 'Service Type', 'Doctor', 'Duration (hrs)', 'Service Price', 'Booking Fee', 'Total Amount', 'Description'];
     const csvContent = [
       headers.join(','),
       ...filteredExpenditures.map(exp => [
@@ -743,8 +778,8 @@ function ExpenditureContent() {
                       </div>
                       {expenditure.status === 'completed' && expenditure.amount > 0 && (
                         <div className={`text-xs space-y-1 mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          <div>Doctor Fee: {formatCurrency(expenditure.doctorFee)}</div>
-                          <div>Service Charge: {formatCurrency(expenditure.serviceCharge)}</div>
+                          <div>Service Price: {formatCurrency(expenditure.doctorFee)}</div>
+                          <div>Booking Fee: {formatCurrency(expenditure.serviceCharge)}</div>
                         </div>
                       )}
                     </div>
