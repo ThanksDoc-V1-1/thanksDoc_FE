@@ -1450,15 +1450,11 @@ Payment ID: ${paymentIntent.id}`;
                             {/* Payment Status Flag */}
                             {request.status === 'completed' && (
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                request.isPaid 
-                                  ? isDarkMode 
-                                    ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700' 
-                                    : 'bg-emerald-600 text-white'
-                                  : isDarkMode 
-                                    ? 'bg-orange-900/30 text-orange-400 border border-orange-700' 
-                                    : 'bg-orange-600 text-white'
+                                isDarkMode 
+                                  ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-700' 
+                                  : 'bg-emerald-600 text-white'
                               }`}>
-                                {request.isPaid ? '💰 PAID' : '⏳ PENDING PAYMENT'}
+                                💰 PAID
                               </span>
                             )}
                             {request.status === 'pending' && (
@@ -1525,15 +1521,10 @@ Payment ID: ${paymentIntent.id}`;
                             </button>
                           )}
                           {request.totalAmount && request.status === 'completed' && request.isPaid === false && (
-                            <div className={`${isDarkMode ? 'bg-green-900/20' : 'bg-green-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-700'} mb-2`}>{formatCurrency(calculateTotalAmount(request))}</span>
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => handlePayment(request.id, 'card')}
-                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-medium flex items-center"
-                                >
-                                  Pay by Card
-                                </button>
+                            <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateTotalAmount(request))}</span>
+                              <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
+                                PAID
                               </div>
                             </div>
                           )}
