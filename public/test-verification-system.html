@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Verification System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        .status-uploaded {
+            background-color: #dbeafe;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+        .status-pending {
+            background-color: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        .status-verified {
+            background-color: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+        .status-rejected {
+            background-color: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+        .admin-controls {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .btn {
+            padding: 6px 12px;
+            margin: 0 4px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-verify { background-color: #10b981; color: white; }
+        .btn-reject { background-color: #ef4444; color: white; }
+        .btn-pending { background-color: #f59e0b; color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .verification-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Document Verification System Demo</h1>
+        
+        <h2>📋 System Overview</h2>
+        <p>This demonstrates the dual status pill system with admin verification controls:</p>
+        
+        <h3>🔄 Status Flow:</h3>
+        <ol>
+            <li><strong>Upload:</strong> Documents show "Uploaded" + "Pending" status</li>
+            <li><strong>Admin Review:</strong> Admin can verify, reject, or reset to pending</li>
+            <li><strong>Final Status:</strong> Documents show "Uploaded" + verification status</li>
+        </ol>
+
+        <h3>👩‍💼 Admin Controls:</h3>
+        <div class="admin-controls">
+            <h4>Example Document: Medical License</h4>
+            <div style="margin-bottom: 10px;">
+                <span class="status-pill status-uploaded">📄 Uploaded</span>
+                <span class="status-pill status-pending">⏳ Pending</span>
+            </div>
+            
+            <div>
+                <button class="btn btn-verify">✅ Verify</button>
+                <button class="btn btn-reject">❌ Reject</button>
+                <button class="btn btn-pending">🔄 Reset to Pending</button>
+            </div>
+
+            <div class="verification-details">
+                <p><strong>Current Status:</strong> Pending verification</p>
+                <p><strong>Available Actions:</strong> Admin can verify or reject this document</p>
+            </div>
+        </div>
+
+        <h3>📊 Status Examples:</h3>
+        
+        <div style="margin: 10px 0;">
+            <strong>Newly Uploaded:</strong><br>
+            <span class="status-pill status-uploaded">📄 Uploaded</span>
+            <span class="status-pill status-pending">⏳ Pending</span>
+        </div>
+
+        <div style="margin: 10px 0;">
+            <strong>Admin Verified:</strong><br>
+            <span class="status-pill status-uploaded">📄 Uploaded</span>
+            <span class="status-pill status-verified">✅ Verified</span>
+        </div>
+
+        <div style="margin: 10px 0;">
+            <strong>Admin Rejected:</strong><br>
+            <span class="status-pill status-uploaded">📄 Uploaded</span>
+            <span class="status-pill status-rejected">❌ Rejected</span>
+        </div>
+
+        <h3>🔑 Key Features:</h3>
+        <ul>
+            <li><strong>Dual Status Display:</strong> Upload status + verification status</li>
+            <li><strong>Admin Only Controls:</strong> Verification buttons only for admins</li>
+            <li><strong>Status Colors:</strong> 
+                <ul>
+                    <li>Pending: Yellow (⏳)</li>
+                    <li>Verified: Green (✅)</li>
+                    <li>Rejected: Red (❌)</li>
+                </ul>
+            </li>
+            <li><strong>Verification History:</strong> Shows who verified and when</li>
+            <li><strong>Real-time Updates:</strong> Status refreshes after admin actions</li>
+        </ul>
+
+        <h3>🚀 API Endpoint:</h3>
+        <code>PUT /api/compliance-documents/:id/verify</code>
+        <pre style="background: #f1f5f9; padding: 10px; border-radius: 4px; margin-top: 5px;">
+{
+  "verificationStatus": "verified|rejected|pending",
+  "notes": "Optional verification notes"
+}
+        </pre>
+
+        <h3>✨ Implementation Complete:</h3>
+        <ul>
+            <li>✅ Backend API endpoint for verification</li>
+            <li>✅ Frontend admin controls with buttons</li>
+            <li>✅ Dual status pill display system</li>
+            <li>✅ Real-time status updates</li>
+            <li>✅ Verification history tracking</li>
+            <li>✅ Color-coded status indicators</li>
+        </ul>
+    </div>
+
+    <script>
+        // Demo functionality
+        document.querySelector('.btn-verify').addEventListener('click', function() {
+            alert('Document verified! Status updated to "Verified"');
+        });
+        
+        document.querySelector('.btn-reject').addEventListener('click', function() {
+            alert('Document rejected! Status updated to "Rejected"');
+        });
+        
+        document.querySelector('.btn-pending').addEventListener('click', function() {
+            alert('Document reset to pending! Status updated to "Pending"');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Verification Status API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .verify { background: #10b981; color: white; }
+        .reject { background: #ef4444; color: white; }
+        .pending { background: #f59e0b; color: white; }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error { color: #ef4444; }
+        .success { color: #10b981; }
+    </style>
+</head>
+<body>
+    <h1>Test Verification Status API</h1>
+    
+    <div class="container">
+        <h3>🔧 API Test Controls</h3>
+        <p>First, get a document ID by testing the API:</p>
+        <button onclick="getAllDocuments()">Get All Documents</button>
+        
+        <br><br>
+        
+        <input type="text" id="documentId" placeholder="Enter Document ID" style="padding: 8px; width: 200px;">
+        <br><br>
+        
+        <button class="verify" onclick="testVerify()">Test Verify</button>
+        <button class="reject" onclick="testReject()">Test Reject</button>
+        <button class="pending" onclick="testPending()">Test Pending</button>
+    </div>
+
+    <div class="container">
+        <h3>📊 API Response:</h3>
+        <pre id="response">Click a button to test the API...</pre>
+    </div>
+
+    <div class="container">
+        <h3>🔍 Debug Information:</h3>
+        <ul>
+            <li><strong>API Endpoint:</strong> PUT /api/compliance-documents/:id/verify</li>
+            <li><strong>Valid Status Values:</strong> "pending", "verified", "rejected"</li>
+            <li><strong>Schema Definition:</strong> enumeration field with exact case matching</li>
+        </ul>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:1337';
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    error: error.message
+                };
+            }
+        }
+        
+        async function getAllDocuments() {
+            const result = await makeRequest(`${API_BASE}/api/compliance-documents`);
+            displayResponse('GET All Documents', result);
+        }
+        
+        async function testVerify() {
+            const docId = document.getElementById('documentId').value;
+            if (!docId) {
+                alert('Please enter a document ID first');
+                return;
+            }
+            
+            const result = await makeRequest(`${API_BASE}/api/compliance-documents/${docId}/verify`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    verificationStatus: 'verified',
+                    notes: 'Test verification from API test page'
+                })
+            });
+            
+            displayResponse('PUT Verify Document', result);
+        }
+        
+        async function testReject() {
+            const docId = document.getElementById('documentId').value;
+            if (!docId) {
+                alert('Please enter a document ID first');
+                return;
+            }
+            
+            const result = await makeRequest(`${API_BASE}/api/compliance-documents/${docId}/verify`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    verificationStatus: 'rejected',
+                    notes: 'Test rejection from API test page'
+                })
+            });
+            
+            displayResponse('PUT Reject Document', result);
+        }
+        
+        async function testPending() {
+            const docId = document.getElementById('documentId').value;
+            if (!docId) {
+                alert('Please enter a document ID first');
+                return;
+            }
+            
+            const result = await makeRequest(`${API_BASE}/api/compliance-documents/${docId}/verify`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    verificationStatus: 'pending',
+                    notes: 'Test reset to pending from API test page'
+                })
+            });
+            
+            displayResponse('PUT Reset to Pending', result);
+        }
+        
+        function displayResponse(action, result) {
+            const responseEl = document.getElementById('response');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            let output = `[${timestamp}] ${action}\n`;
+            output += `Status: ${result.status || 'N/A'}\n`;
+            output += `Success: ${result.ok}\n\n`;
+            
+            if (result.error) {
+                output += `❌ Error: ${result.error}\n`;
+            } else {
+                output += `📦 Response Data:\n${JSON.stringify(result.data, null, 2)}\n`;
+            }
+            
+            output += '\n' + '='.repeat(50) + '\n\n';
+            
+            responseEl.textContent = output + responseEl.textContent;
+            
+            // Color coding
+            if (result.ok) {
+                responseEl.className = 'success';
+            } else {
+                responseEl.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileText, Upload, Calendar, AlertTriangle, CheckCircle, X, Download, Eye, ChevronDown, ChevronRight } from 'lucide-react';
+import { FileText, Upload, Calendar, AlertTriangle, CheckCircle, X, Download, Eye, ChevronDown, ChevronRight, Shield, ShieldCheck, ShieldX } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import DateDropdowns from './DateSliders';
 
@@ -276,6 +276,40 @@ export default function ComplianceDocuments({ doctorId }) {
     }));
   };
 
+  const handleVerifyDocument = async (documentId, verificationStatus, notes = '') => {
+    try {
+      setUploadingDoc(documentId);
+      
+      const response = await fetch(`http://localhost:1337/api/compliance-documents/${documentId}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verificationStatus,
+          notes
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Refresh the documents to show updated verification status
+      await loadDocuments();
+      
+      console.log('Document verification updated:', result);
+      
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+      alert('Failed to update verification status. Please try again.');
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
   const handleSaveDocument = async (documentId) => {
     const pendingUpload = pendingUploads[documentId];
     if (!pendingUpload || !pendingUpload.file) {
@@ -505,6 +539,49 @@ export default function ComplianceDocuments({ doctorId }) {
     }
   };
 
+  // Verification status helper functions
+  const getVerificationStatusColor = (verificationStatus) => {
+    switch (verificationStatus) {
+      case 'verified':
+        return isDarkMode 
+          ? 'text-green-400 bg-green-900/20 border-green-800' 
+          : 'text-green-600 bg-green-50 border-green-200';
+      case 'rejected':
+        return isDarkMode 
+          ? 'text-red-400 bg-red-900/20 border-red-800' 
+          : 'text-red-600 bg-red-50 border-red-200';
+      case 'pending':
+      default:
+        return isDarkMode 
+          ? 'text-yellow-400 bg-yellow-900/20 border-yellow-800' 
+          : 'text-yellow-600 bg-yellow-50 border-yellow-200';
+    }
+  };
+
+  const getVerificationStatusIcon = (verificationStatus) => {
+    switch (verificationStatus) {
+      case 'verified':
+        return <CheckCircle className="h-3 w-3" />;
+      case 'rejected':
+        return <X className="h-3 w-3" />;
+      case 'pending':
+      default:
+        return <AlertTriangle className="h-3 w-3" />;
+    }
+  };
+
+  const getVerificationStatusText = (verificationStatus) => {
+    switch (verificationStatus) {
+      case 'verified':
+        return 'Verified';
+      case 'rejected':
+        return 'Invalid';
+      case 'pending':
+      default:
+        return 'Pending';
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -680,9 +757,20 @@ export default function ComplianceDocuments({ doctorId }) {
                         )}
                       </div>
                     </div>
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
-                      {getStatusIcon(status)}
-                      <span>{getStatusText(status, docConfig.id)}</span>
+                    <div className="flex items-center space-x-2">
+                      {/* Upload Status Pill */}
+                      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
+                        {getStatusIcon(status)}
+                        <span>{getStatusText(status, docConfig.id)}</span>
+                      </div>
+                      
+                      {/* Verification Status Pill - Only show for uploaded documents */}
+                      {status === 'uploaded' && doc && (
+                        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getVerificationStatusColor(doc.verificationStatus || 'pending')}`}>
+                          {getVerificationStatusIcon(doc.verificationStatus || 'pending')}
+                          <span>{getVerificationStatusText(doc.verificationStatus || 'pending')}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -855,6 +943,86 @@ export default function ComplianceDocuments({ doctorId }) {
                                 </button>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Admin Verification Controls - Only show for uploaded documents */}
+                      {status === 'uploaded' && doc && (
+                        <div className="mb-4">
+                          <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Admin Verification
+                          </h5>
+                          <div className={`p-3 rounded-lg border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-2">
+                                <Shield className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  Current Status: 
+                                </span>
+                                <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getVerificationStatusColor(doc.verificationStatus || 'pending')}`}>
+                                  {getVerificationStatusIcon(doc.verificationStatus || 'pending')}
+                                  <span>{getVerificationStatusText(doc.verificationStatus || 'pending')}</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Verification Action Buttons */}
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleVerifyDocument(doc.id, 'verified')}
+                                disabled={uploadingDoc === doc.id || doc.verificationStatus === 'verified'}
+                                className={`flex items-center space-x-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                                  uploadingDoc === doc.id || doc.verificationStatus === 'verified'
+                                    ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500'
+                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                                }`}
+                              >
+                                <ShieldCheck className="h-3 w-3" />
+                                <span>Verify</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleVerifyDocument(doc.id, 'rejected')}
+                                disabled={uploadingDoc === doc.id || doc.verificationStatus === 'rejected'}
+                                className={`flex items-center space-x-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                                  uploadingDoc === doc.id || doc.verificationStatus === 'rejected'
+                                    ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500'
+                                    : 'bg-red-600 hover:bg-red-700 text-white'
+                                }`}
+                              >
+                                <ShieldX className="h-3 w-3" />
+                                <span>Reject</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => handleVerifyDocument(doc.id, 'pending')}
+                                disabled={uploadingDoc === doc.id || doc.verificationStatus === 'pending'}
+                                className={`flex items-center space-x-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                                  uploadingDoc === doc.id || doc.verificationStatus === 'pending'
+                                    ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500'
+                                    : isDarkMode 
+                                      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                      : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                }`}
+                              >
+                                <Shield className="h-3 w-3" />
+                                <span>Reset to Pending</span>
+                              </button>
+                            </div>
+
+                            {/* Verification Details */}
+                            {doc.verifiedBy && (
+                              <div className={`mt-3 pt-3 border-t text-xs ${isDarkMode ? 'border-gray-600 text-gray-400' : 'border-gray-200 text-gray-500'}`}>
+                                <p>Verified by: {doc.verifiedBy}</p>
+                                {doc.verifiedAt && (
+                                  <p>Verified on: {new Date(doc.verifiedAt).toLocaleDateString()} at {new Date(doc.verifiedAt).toLocaleTimeString()}</p>
+                                )}
+                                {doc.notes && (
+                                  <p className="mt-1">Notes: {doc.notes}</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
