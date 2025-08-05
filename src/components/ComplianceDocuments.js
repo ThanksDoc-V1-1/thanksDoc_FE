@@ -376,10 +376,14 @@ export default function ComplianceDocuments({ doctorId }) {
   };
 
   const saveReferences = async (documentId) => {
-    const referencesToSave = pendingReferences[documentId] || [];
+    const newReferences = pendingReferences[documentId] || [];
+    const existingReferences = references[doctorId] || [];
+    
+    // Combine existing references with new ones
+    const allReferences = [...existingReferences, ...newReferences];
     
     // Validate all references
-    for (const ref of referencesToSave) {
+    for (const ref of allReferences) {
       if (!ref.firstName || !ref.lastName || !ref.position || !ref.organisation || !ref.email) {
         alert('Please fill in all fields for each reference.');
         return;
@@ -404,17 +408,17 @@ export default function ComplianceDocuments({ doctorId }) {
         body: JSON.stringify({
           doctorId,
           documentType: documentId,
-          references: referencesToSave
+          references: allReferences
         })
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Update the main references state
+          // Update the main references state with all references
           setReferences(prev => ({
             ...prev,
-            [doctorId]: referencesToSave
+            [doctorId]: allReferences
           }));
 
           // Clear pending references
@@ -425,7 +429,7 @@ export default function ComplianceDocuments({ doctorId }) {
           });
 
           // Save to localStorage as backup
-          localStorage.setItem(`professional_references_${doctorId}`, JSON.stringify(referencesToSave));
+          localStorage.setItem(`professional_references_${doctorId}`, JSON.stringify(allReferences));
 
           // Show success state
           setUploadSuccess(prev => ({
