@@ -214,21 +214,40 @@ export default function ComplianceDocuments({ doctorId }) {
     
     setLoading(true);
     try {
-      // In a real app, this would fetch from your API
-      // For now, we'll load from localStorage or initialize empty
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/doctor/${doctorId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Convert array to object keyed by documentType for easier access
+          const docsByType = {};
+          result.data.documents.forEach(doc => {
+            docsByType[doc.documentType] = {
+              ...doc,
+              files: [{
+                id: doc.id,
+                name: doc.originalFileName,
+                size: doc.fileSize,
+                uploadDate: doc.uploadedAt
+              }]
+            };
+          });
+          setDocuments(docsByType);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+      // Fallback to localStorage for development
       const savedDocs = localStorage.getItem(`compliance_docs_${doctorId}`);
       if (savedDocs) {
         setDocuments(JSON.parse(savedDocs));
       }
-    } catch (error) {
-      console.error('Error loading documents:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const saveDocuments = (newDocuments) => {
-    // In a real app, this would save to your API
+  const saveDocuments = async (newDocuments) => {
+    // Save to localStorage as backup
     localStorage.setItem(`compliance_docs_${doctorId}`, JSON.stringify(newDocuments));
     setDocuments(newDocuments);
   };
@@ -239,29 +258,49 @@ export default function ComplianceDocuments({ doctorId }) {
     setUploadingDoc(documentId);
     
     try {
-      // Simulate file upload delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const docConfig = COMPLIANCE_DOCUMENTS.find(d => d.id === documentId);
-      const uploadedFiles = Array.from(files).map(file => ({
-        id: Date.now() + Math.random(),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadDate: new Date().toISOString()
-      }));
+      const file = files[0]; // Only handle one file
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doctorId', doctorId);
+      formData.append('documentType', documentId);
 
-      const newDocuments = {
-        ...documents,
-        [documentId]: {
-          ...documents[documentId],
-          files: [...(documents[documentId]?.files || []), ...uploadedFiles],
-          uploadDate: new Date().toISOString(),
-          status: 'uploaded'
+      // Add existing dates if available
+      const existingDoc = documents[documentId];
+      if (existingDoc?.issueDate) {
+        formData.append('issueDate', existingDoc.issueDate);
+      }
+      if (existingDoc?.expiryDate) {
+        formData.append('expiryDate', existingDoc.expiryDate);
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Update local state
+          const newDocuments = {
+            ...documents,
+            [documentId]: {
+              ...result.data,
+              files: [{
+                id: result.data.id,
+                name: result.data.originalFileName,
+                size: result.data.fileSize,
+                uploadDate: result.data.uploadedAt
+              }]
+            }
+          };
+          saveDocuments(newDocuments);
+        } else {
+          throw new Error(result.message || 'Upload failed');
         }
-      };
-
-      saveDocuments(newDocuments);
+      } else {
+        throw new Error('Upload failed');
+      }
     } catch (error) {
       console.error('Error uploading files:', error);
       alert('Error uploading files. Please try again.');
@@ -270,7 +309,7 @@ export default function ComplianceDocuments({ doctorId }) {
     }
   };
 
-  const handleDateChange = (documentId, field, value) => {
+  const handleDateChange = async (documentId, field, value) => {
     const docConfig = COMPLIANCE_DOCUMENTS.find(d => d.id === documentId);
     const newDocuments = { ...documents };
     
@@ -289,17 +328,62 @@ export default function ComplianceDocuments({ doctorId }) {
     }
 
     saveDocuments(newDocuments);
-  };
 
-  const removeFile = (documentId, fileId) => {
-    const newDocuments = { ...documents };
-    if (newDocuments[documentId]?.files) {
-      newDocuments[documentId].files = newDocuments[documentId].files.filter(f => f.id !== fileId);
-      if (newDocuments[documentId].files.length === 0) {
-        newDocuments[documentId].status = 'missing';
+    // If document exists in database, update it via API
+    if (newDocuments[documentId].id) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${newDocuments[documentId].id}/dates`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            issueDate: newDocuments[documentId].issueDate,
+            expiryDate: newDocuments[documentId].expiryDate
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Failed to update dates on server');
+        }
+      } catch (error) {
+        console.error('Error updating dates:', error);
       }
     }
-    saveDocuments(newDocuments);
+  };
+
+  const removeFile = async (documentId, fileId) => {
+    try {
+      const doc = documents[documentId];
+      if (doc && doc.id) {
+        // Delete from server
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${doc.id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          // Remove from local state
+          const newDocuments = { ...documents };
+          delete newDocuments[documentId];
+          saveDocuments(newDocuments);
+        } else {
+          throw new Error('Failed to delete document');
+        }
+      } else {
+        // Local file only, remove from state
+        const newDocuments = { ...documents };
+        if (newDocuments[documentId]?.files) {
+          newDocuments[documentId].files = newDocuments[documentId].files.filter(f => f.id !== fileId);
+          if (newDocuments[documentId].files.length === 0) {
+            delete newDocuments[documentId];
+          }
+        }
+        saveDocuments(newDocuments);
+      }
+    } catch (error) {
+      console.error('Error removing file:', error);
+      alert('Error removing file. Please try again.');
+    }
   };
 
   const getDocumentStatus = (documentId) => {
