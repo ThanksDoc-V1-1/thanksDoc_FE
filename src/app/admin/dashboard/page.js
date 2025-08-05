@@ -346,6 +346,10 @@ export default function AdminDashboard() {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [updatingVerification, setUpdatingVerification] = useState(false);
   
+  // Professional References state
+  const [professionalReferences, setProfessionalReferences] = useState([]);
+  const [loadingReferences, setLoadingReferences] = useState(false);
+  
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
   const [documentTypesLoading, setDocumentTypesLoading] = useState(true);
@@ -1091,8 +1095,9 @@ export default function AdminDashboard() {
     console.log('🔍 Current selectedDoctor state:', selectedDoctor);
     setSelectedDoctor(doctor);
     setShowDoctorDetails(true);
-    // Load compliance documents for this doctor
+    // Load compliance documents and professional references for this doctor
     loadComplianceDocuments(doctor.id);
+    loadProfessionalReferences(doctor.id);
     console.log('✅ Modal states updated - showDoctorDetails: true, selectedDoctor:', doctor);
   };
 
@@ -1109,6 +1114,7 @@ export default function AdminDashboard() {
     setShowDoctorDetails(false);
     setSelectedDoctor(null);
     setComplianceDocuments([]);
+    setProfessionalReferences([]);
   };
 
   // Compliance Documents Configuration - Now loaded from API
@@ -1441,6 +1447,33 @@ export default function AdminDashboard() {
     }
   };
 
+  // Load professional references for a doctor
+  const loadProfessionalReferences = async (doctorId) => {
+    try {
+      console.log('🔍 Loading professional references for doctor ID:', doctorId);
+      setLoadingReferences(true);
+      const response = await fetch(`http://localhost:1337/api/professional-references/doctor/${doctorId}`);
+      console.log('📡 Professional References API Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📦 Professional References API Response data:', data);
+        setProfessionalReferences(data.data?.references || []);
+        console.log('✅ Professional references set:', data.data?.references || []);
+      } else {
+        console.error('❌ Failed to load professional references, status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        setProfessionalReferences([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading professional references:', error);
+      setProfessionalReferences([]);
+    } finally {
+      setLoadingReferences(false);
+    }
+  };
+
   // Handle document verification
   const handleDocumentVerification = async (documentId, verificationStatus) => {
     try {
@@ -1501,7 +1534,10 @@ export default function AdminDashboard() {
     // Ensure complianceDocuments is always an array
     const documents = Array.isArray(complianceDocuments) ? complianceDocuments : [];
     
-    return documentTypes.map(docType => {
+    // Filter out Professional References from document types as it's handled separately
+    const filteredDocumentTypes = documentTypes.filter(docType => docType.key !== 'professional_references');
+    
+    return filteredDocumentTypes.map(docType => {
       const uploadedDoc = documents.find(doc => doc.documentType === docType.key);
       let status = uploadedDoc ? uploadedDoc.status : 'missing';
       let expiryStatus = null;
@@ -4895,6 +4931,65 @@ export default function AdminDashboard() {
                           }
                         })()}
                       </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Professional References Section */}
+              <div className="mt-8">
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Professional References
+                    </h3>
+                    {loadingReferences && (
+                      <div className="flex items-center">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!loadingReferences && (
+                    <>
+                      {professionalReferences && professionalReferences.length > 0 ? (
+                        <div className="space-y-4">
+                          {professionalReferences.map((reference, index) => (
+                            <div
+                              key={reference.id || index}
+                              className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-4`}
+                            >
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                                    {reference.firstName} {reference.lastName}
+                                  </h4>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} space-y-1`}>
+                                    <div><span className="font-medium">Position:</span> {reference.position}</div>
+                                    <div><span className="font-medium">Organisation:</span> {reference.organisation}</div>
+                                  </div>
+                                </div>
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <div><span className="font-medium">Email:</span> {reference.email}</div>
+                                  {reference.createdAt && (
+                                    <div className="mt-2">
+                                      <span className="font-medium">Added:</span> {new Date(reference.createdAt).toLocaleDateString('en-GB')}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <FileText className={`h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            No professional references have been provided yet.
+                          </p>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
