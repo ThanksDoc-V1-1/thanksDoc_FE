@@ -39,6 +39,7 @@ export default function ComplianceDocuments({ doctorId }) {
             required: type.required,
             autoExpiry: type.autoExpiry || false,
             validityYears: type.validityYears || null,
+            expiryWarningDays: type.expiryWarningDays || 30,
             note: type.description || null
           }));
           
@@ -320,14 +321,14 @@ export default function ComplianceDocuments({ doctorId }) {
       return 'missing';
     }
 
-    if (config.autoExpiry && doc.expiryDate) {
+    if (config && config.autoExpiry && doc.expiryDate) {
       const expiryDate = new Date(doc.expiryDate);
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
       
       if (daysUntilExpiry < 0) {
         return 'expired';
-      } else if (daysUntilExpiry <= 30) {
+      } else if (daysUntilExpiry <= (config.expiryWarningDays || 30)) {
         return 'expiring';
       }
     }
@@ -606,6 +607,16 @@ export default function ComplianceDocuments({ doctorId }) {
                             {docConfig.note}
                           </p>
                         )}
+                        {/* Display auto-expiry information */}
+                        {docConfig.autoExpiry && docConfig.validityYears && (
+                          <p className={`text-xs mt-1 flex items-center ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Auto-expires after {docConfig.validityYears} year{docConfig.validityYears > 1 ? 's' : ''} 
+                            {docConfig.expiryWarningDays !== 30 && (
+                              <span className="ml-1">(warns {docConfig.expiryWarningDays} days before)</span>
+                            )}
+                          </p>
+                        )}
                         {/* Display Issue and Expiry dates if available */}
                         {doc && (doc.issueDate || doc.expiryDate) && (
                           <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -738,6 +749,16 @@ export default function ComplianceDocuments({ doctorId }) {
                           autoCalculated={docConfig.autoExpiry}
                         />
                       </div>
+                      
+                      {/* Auto-expiry explanation */}
+                      {docConfig.autoExpiry && (
+                        <div className={`mt-2 p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'}`}>
+                          <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} flex items-center`}>
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Expiry date will be automatically calculated as {docConfig.validityYears} year{docConfig.validityYears > 1 ? 's' : ''} from the issue date.
+                          </p>
+                        </div>
+                      )}
 
                       {/* Save Button */}
                       {pendingUploads[docConfig.id]?.file && (
