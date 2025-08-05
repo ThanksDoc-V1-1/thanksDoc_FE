@@ -287,8 +287,8 @@ export default function ComplianceDocuments({ doctorId }) {
     
     try {
       const formData = new FormData();
-      formData.append('files', pendingUpload.file);
-      formData.append('docType', documentId);
+      formData.append('file', pendingUpload.file); // Changed from 'files' to 'file'
+      formData.append('documentType', documentId); // Changed from 'docType' to 'documentType'
       formData.append('doctorId', doctorId);
 
       // Add dates if available
