@@ -354,7 +354,10 @@ export default function AdminDashboard() {
   const [documentTypeFormData, setDocumentTypeFormData] = useState({
     name: '',
     required: true,
-    description: ''
+    description: '',
+    autoExpiry: false,
+    validityYears: 1,
+    expiryWarningDays: 30
   });
   const [doctorFormData, setDoctorFormData] = useState({
     name: '',
@@ -1246,7 +1249,10 @@ export default function AdminDashboard() {
               key: documentKey,
               name: documentTypeFormData.name,
               required: documentTypeFormData.required,
-              description: documentTypeFormData.description
+              description: documentTypeFormData.description,
+              autoExpiry: documentTypeFormData.autoExpiry,
+              validityYears: documentTypeFormData.autoExpiry ? documentTypeFormData.validityYears : null,
+              expiryWarningDays: documentTypeFormData.autoExpiry ? documentTypeFormData.expiryWarningDays : 30
             }
           })
         });
@@ -1266,7 +1272,10 @@ export default function AdminDashboard() {
               key: documentKey,
               name: documentTypeFormData.name,
               required: documentTypeFormData.required,
-              description: documentTypeFormData.description
+              description: documentTypeFormData.description,
+              autoExpiry: documentTypeFormData.autoExpiry,
+              validityYears: documentTypeFormData.autoExpiry ? documentTypeFormData.validityYears : null,
+              expiryWarningDays: documentTypeFormData.autoExpiry ? documentTypeFormData.expiryWarningDays : 30
             }
           })
         });
@@ -1285,7 +1294,10 @@ export default function AdminDashboard() {
         setDocumentTypeFormData({
           name: '',
           required: true,
-          description: ''
+          description: '',
+          autoExpiry: false,
+          validityYears: 1,
+          expiryWarningDays: 30
         });
         
         // Reload document types to reflect changes
@@ -1309,7 +1321,10 @@ export default function AdminDashboard() {
     setDocumentTypeFormData({
       name: documentType.name,
       required: documentType.required,
-      description: documentType.description || ''
+      description: documentType.description || '',
+      autoExpiry: documentType.autoExpiry || false,
+      validityYears: documentType.validityYears || 1,
+      expiryWarningDays: documentType.expiryWarningDays || 30
     });
     setShowDocumentTypeForm(true);
   };
@@ -3600,7 +3615,10 @@ export default function AdminDashboard() {
                       setDocumentTypeFormData({
                         name: '',
                         required: true,
-                        description: ''
+                        description: '',
+                        autoExpiry: false,
+                        validityYears: 1,
+                        expiryWarningDays: 30
                       });
                       setShowDocumentTypeForm(true);
                     }}
@@ -3662,6 +3680,20 @@ export default function AdminDashboard() {
                             {docType.description}
                           </p>
                         )}
+                        {docType.autoExpiry ? (
+                          <div className={`p-2 rounded ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                              <span className="font-medium">Auto-Expiry:</span> {docType.validityYears} year{docType.validityYears > 1 ? 's' : ''} validity
+                            </p>
+                            <p className={`text-xs ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600'}`}>
+                              Warning: {docType.expiryWarningDays || 30} days before expiry
+                            </p>
+                          </div>
+                        ) : (
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                            No automatic expiry tracking
+                          </p>
+                        )}
                       </div>
                       
                       <div className="flex items-center space-x-2">
@@ -3703,7 +3735,10 @@ export default function AdminDashboard() {
                         setDocumentTypeFormData({
                           name: '',
                           required: true,
-                          description: ''
+                          description: '',
+                          autoExpiry: false,
+                          validityYears: 1,
+                          expiryWarningDays: 30
                         });
                         setShowDocumentTypeForm(true);
                       }}
@@ -3784,6 +3819,74 @@ export default function AdminDashboard() {
                 <label htmlFor="documentTypeRequired" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   This document is required for compliance
                 </label>
+              </div>
+
+              {/* Expiry Management Section */}
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-blue-50 border border-blue-200'}`}>
+                <div className="flex items-center space-x-3 mb-4">
+                  <input
+                    type="checkbox"
+                    id="documentTypeAutoExpiry"
+                    name="autoExpiry"
+                    checked={documentTypeFormData.autoExpiry}
+                    onChange={handleDocumentTypeFormChange}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                  />
+                  <label htmlFor="documentTypeAutoExpiry" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Enable automatic expiry tracking
+                  </label>
+                </div>
+                
+                {documentTypeFormData.autoExpiry && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="validityYears" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Validity Period (Years) *
+                      </label>
+                      <select
+                        id="validityYears"
+                        name="validityYears"
+                        value={documentTypeFormData.validityYears}
+                        onChange={handleDocumentTypeFormChange}
+                        required={documentTypeFormData.autoExpiry}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                      >
+                        <option value={1}>1 Year</option>
+                        <option value={2}>2 Years</option>
+                        <option value={3}>3 Years</option>
+                        <option value={4}>4 Years</option>
+                        <option value={5}>5 Years</option>
+                        <option value={10}>10 Years</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="expiryWarningDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Warning Period (Days)
+                      </label>
+                      <select
+                        id="expiryWarningDays"
+                        name="expiryWarningDays"
+                        value={documentTypeFormData.expiryWarningDays}
+                        onChange={handleDocumentTypeFormChange}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                      >
+                        <option value={7}>7 Days</option>
+                        <option value={14}>14 Days</option>
+                        <option value={30}>30 Days</option>
+                        <option value={60}>60 Days</option>
+                        <option value={90}>90 Days</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  {documentTypeFormData.autoExpiry 
+                    ? `Documents will automatically expire ${documentTypeFormData.validityYears} year(s) after issue date and show warning ${documentTypeFormData.expiryWarningDays} days before expiry.`
+                    : 'Enable expiry tracking for documents that have a validity period (e.g., training certificates, licenses).'
+                  }
+                </p>
               </div>
               
               <div className="flex justify-end space-x-4 pt-4">
