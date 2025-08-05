@@ -347,7 +347,7 @@ export default function AdminDashboard() {
   const [updatingVerification, setUpdatingVerification] = useState(false);
   
   // Compliance document types management
-  const [documentTypes, setDocumentTypes] = useState({});
+  const [documentTypes, setDocumentTypes] = useState([]);
   const [showDocumentTypeForm, setShowDocumentTypeForm] = useState(false);
   const [editingDocumentType, setEditingDocumentType] = useState(null);
   const [documentTypeFormData, setDocumentTypeFormData] = useState({
@@ -593,6 +593,13 @@ export default function AdminDashboard() {
     // Clean up the interval when the component unmounts
     return () => clearInterval(refreshInterval);
   }, []);
+
+  // Debug effect to track documentTypes changes
+  useEffect(() => {
+    console.log('📋 DocumentTypes state changed:', documentTypes);
+    console.log('📋 DocumentTypes length:', documentTypes.length);
+    console.log('📋 DocumentTypes is array:', Array.isArray(documentTypes));
+  }, [documentTypes]);
 
   // Authentication check - redirect if not authenticated or not admin
   useEffect(() => {
@@ -1044,40 +1051,38 @@ export default function AdminDashboard() {
   // Load compliance document types from API
   const loadDocumentTypes = async () => {
     try {
+      console.log('🔄 Loading document types from API...');
       const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
+      console.log('📡 API Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        // Convert array to object format for easier lookup
-        const typesObject = {};
-        (data.data || []).forEach(type => {
-          typesObject[type.key || type.documentType] = {
-            name: type.name,
-            required: type.required,
-            description: type.description || ''
-          };
-        });
-        setDocumentTypes(typesObject);
+        console.log('📦 Document types received:', data.data?.length || 0);
+        console.log('📋 Document types data:', data.data);
+        
+        // Store the raw array for admin management
+        setDocumentTypes(data.data || []);
       } else {
         console.error('Failed to load document types');
         // Fallback to default types if API fails
-        setDocumentTypes({
-          gmc_registration: { name: 'GMC Registration', required: true },
-          medical_indemnity: { name: 'Medical Indemnity', required: true },
-          dbs_check: { name: 'DBS Check', required: true },
-          right_to_work: { name: 'Right to Work', required: true },
-          photo_id: { name: 'Photo ID', required: true }
-        });
+        setDocumentTypes([
+          { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
+          { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
+          { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
+          { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
+          { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
+        ]);
       }
     } catch (error) {
       console.error('Error loading document types:', error);
       // Fallback to default types
-      setDocumentTypes({
-        gmc_registration: { name: 'GMC Registration', required: true },
-        medical_indemnity: { name: 'Medical Indemnity', required: true },
-        dbs_check: { name: 'DBS Check', required: true },
-        right_to_work: { name: 'Right to Work', required: true },
-        photo_id: { name: 'Photo ID', required: true }
-      });
+      setDocumentTypes([
+        { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
+        { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
+        { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
+        { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
+        { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
+      ]);
     }
   };
 
@@ -1099,7 +1104,8 @@ export default function AdminDashboard() {
       let response;
       if (editingDocumentType) {
         // Update existing document type
-        response = await fetch(`http://localhost:1337/api/compliance-document-types/${editingDocumentType.id}`, {
+        const documentId = editingDocumentType.documentId || editingDocumentType.id;
+        response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1155,26 +1161,27 @@ export default function AdminDashboard() {
   };
 
   // Handle edit document type
-  const handleEditDocumentType = (key, type) => {
-    setEditingDocumentType({ key, ...type, id: key });
+  const handleEditDocumentType = (documentType) => {
+    setEditingDocumentType(documentType);
     setDocumentTypeFormData({
-      key: key,
-      name: type.name,
-      required: type.required,
-      description: type.description || ''
+      key: documentType.key,
+      name: documentType.name,
+      required: documentType.required,
+      description: documentType.description || ''
     });
     setShowDocumentTypeForm(true);
   };
 
   // Handle delete document type
-  const handleDeleteDocumentType = async (key) => {
-    if (!confirm(`Are you sure you want to delete the document type "${documentTypes[key]?.name}"? This action cannot be undone.`)) {
+  const handleDeleteDocumentType = async (documentType) => {
+    if (!confirm(`Are you sure you want to delete the document type "${documentType.name}"? This action cannot be undone.`)) {
       return;
     }
 
     try {
       setDataLoading(true);
-      const response = await fetch(`http://localhost:1337/api/compliance-document-types/${key}`, {
+      const documentId = documentType.documentId || documentType.id;
+      const response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
         method: 'DELETE'
       });
 
@@ -1280,11 +1287,11 @@ export default function AdminDashboard() {
     // Ensure complianceDocuments is always an array
     const documents = Array.isArray(complianceDocuments) ? complianceDocuments : [];
     
-    return Object.entries(documentTypes).map(([type, config]) => {
-      const uploadedDoc = documents.find(doc => doc.documentType === type);
+    return documentTypes.map(docType => {
+      const uploadedDoc = documents.find(doc => doc.documentType === docType.key);
       return {
-        type,
-        config,
+        type: docType.key,
+        config: docType,
         document: uploadedDoc,
         status: uploadedDoc ? uploadedDoc.status : 'missing',
         verificationStatus: uploadedDoc?.verificationStatus || 'pending'
@@ -3447,21 +3454,21 @@ export default function AdminDashboard() {
             </div>
             
             <div className="p-6">
-              {Object.keys(documentTypes).length > 0 ? (
+              {documentTypes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(documentTypes).map(([key, type]) => (
+                  {documentTypes.map((docType) => (
                     <div
-                      key={key}
+                      key={docType.key || docType.id}
                       className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg p-4 border hover:shadow-md transition-shadow`}
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center space-x-2">
                           <FileText className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
-                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{type.name}</h3>
+                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{docType.name}</h3>
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            type.required 
+                            docType.required 
                               ? isDarkMode 
                                 ? 'bg-red-900/30 text-red-400' 
                                 : 'bg-red-100 text-red-700'
@@ -3469,25 +3476,25 @@ export default function AdminDashboard() {
                                 ? 'bg-green-900/30 text-green-400' 
                                 : 'bg-green-100 text-green-700'
                           }`}>
-                            {type.required ? 'Required' : 'Optional'}
+                            {docType.required ? 'Required' : 'Optional'}
                           </span>
                         </div>
                       </div>
                       
                       <div className="space-y-2 mb-4">
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <span className="font-medium">Key:</span> {key}
+                          <span className="font-medium">Key:</span> {docType.key}
                         </p>
-                        {type.description && (
+                        {docType.description && (
                           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {type.description}
+                            {docType.description}
                           </p>
                         )}
                       </div>
                       
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => handleEditDocumentType(key, type)}
+                          onClick={() => handleEditDocumentType(docType)}
                           className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
                             isDarkMode 
                               ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' 
@@ -3497,7 +3504,7 @@ export default function AdminDashboard() {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteDocumentType(key)}
+                          onClick={() => handleDeleteDocumentType(docType)}
                           className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
                             isDarkMode 
                               ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
