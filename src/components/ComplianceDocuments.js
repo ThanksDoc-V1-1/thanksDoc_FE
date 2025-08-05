@@ -203,6 +203,8 @@ export default function ComplianceDocuments({ doctorId }) {
   const [loading, setLoading] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [expandedDocuments, setExpandedDocuments] = useState({});
+  const [pendingUploads, setPendingUploads] = useState({}); // Store files before upload
+  const [uploadSuccess, setUploadSuccess] = useState({}); // Track upload success states
 
   // Initialize documents state
   useEffect(() => {
@@ -255,22 +257,46 @@ export default function ComplianceDocuments({ doctorId }) {
   const handleFileUpload = async (documentId, files) => {
     if (!files || files.length === 0) return;
 
+    const file = files[0]; // Only handle one file
+    
+    // Store file in pendingUploads instead of uploading immediately
+    setPendingUploads(prev => ({
+      ...prev,
+      [documentId]: {
+        file,
+        expiryDate: documents[documentId]?.expiryDate || null
+      }
+    }));
+    
+    // Clear any previous success state
+    setUploadSuccess(prev => ({
+      ...prev,
+      [documentId]: false
+    }));
+  };
+
+  const handleSaveDocument = async (documentId) => {
+    const pendingUpload = pendingUploads[documentId];
+    if (!pendingUpload || !pendingUpload.file) {
+      alert('Please select a file first');
+      return;
+    }
+
     setUploadingDoc(documentId);
     
     try {
-      const file = files[0]; // Only handle one file
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('files', pendingUpload.file);
+      formData.append('docType', documentId);
       formData.append('doctorId', doctorId);
-      formData.append('documentType', documentId);
 
-      // Add existing dates if available
+      // Add dates if available
       const existingDoc = documents[documentId];
       if (existingDoc?.issueDate) {
         formData.append('issueDate', existingDoc.issueDate);
       }
-      if (existingDoc?.expiryDate) {
-        formData.append('expiryDate', existingDoc.expiryDate);
+      if (pendingUpload.expiryDate || existingDoc?.expiryDate) {
+        formData.append('expiryDate', pendingUpload.expiryDate || existingDoc.expiryDate);
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/upload`, {
@@ -281,20 +307,29 @@ export default function ComplianceDocuments({ doctorId }) {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Update local state
-          const newDocuments = {
-            ...documents,
-            [documentId]: {
-              ...result.data,
-              files: [{
-                id: result.data.id,
-                name: result.data.originalFileName,
-                size: result.data.fileSize,
-                uploadDate: result.data.uploadedAt
-              }]
-            }
-          };
-          saveDocuments(newDocuments);
+          // Show success state
+          setUploadSuccess(prev => ({
+            ...prev,
+            [documentId]: true
+          }));
+
+          // Clear pending upload
+          setPendingUploads(prev => {
+            const newPending = { ...prev };
+            delete newPending[documentId];
+            return newPending;
+          });
+
+          // Hide success message after 3 seconds
+          setTimeout(() => {
+            setUploadSuccess(prev => ({
+              ...prev,
+              [documentId]: false
+            }));
+          }, 3000);
+
+          // Refresh documents to show the uploaded file
+          await loadDocuments();
         } else {
           throw new Error(result.message || 'Upload failed');
         }
@@ -302,8 +337,8 @@ export default function ComplianceDocuments({ doctorId }) {
         throw new Error('Upload failed');
       }
     } catch (error) {
-      console.error('Error uploading files:', error);
-      alert('Error uploading files. Please try again.');
+      console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
     } finally {
       setUploadingDoc(null);
     }
@@ -635,44 +670,155 @@ export default function ComplianceDocuments({ doctorId }) {
                         <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Upload Documents
                         </label>
-                        <div className="relative">
+                        <div className="space-y-3">
+                          {/* File Input */}
+                          <div className="relative">
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                              onChange={(e) => handleFileUpload(docConfig.id, e.target.files)}
+                              className="hidden"
+                              id={`file-upload-${docConfig.id}`}
+                              disabled={uploadingDoc === docConfig.id}
+                            />
+                            <label
+                              htmlFor={`file-upload-${docConfig.id}`}
+                              className={`flex items-center justify-center px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                                uploadingDoc === docConfig.id
+                                  ? 'opacity-50 cursor-not-allowed'
+                                  : isDarkMode
+                                    ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50 hover:bg-gray-700/50'
+                                    : 'border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                  Choose file or drag & drop
+                                </span>
+                              </div>
+                            </label>
+                          </div>
+
+                          {/* Selected File Preview */}
+                          {pendingUploads[docConfig.id]?.file && (
+                            <div className={`p-3 rounded border ${
+                              isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-blue-200 bg-blue-50'
+                            }`}>
+                              <div className="flex items-center space-x-3">
+                                <FileText className={`h-4 w-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                                <div className="flex-1">
+                                  <p className={`text-sm font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                                    {pendingUploads[docConfig.id].file.name}
+                                  </p>
+                                  <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {formatFileSize(pendingUploads[docConfig.id].file.size)}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setPendingUploads(prev => {
+                                      const newPending = { ...prev };
+                                      delete newPending[docConfig.id];
+                                      return newPending;
+                                    });
+                                  }}
+                                  className={`p-1 rounded transition-colors ${
+                                    isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
+                                  }`}
+                                  title="Remove selected file"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Date Fields */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Issue Date
+                          </label>
                           <input
-                            type="file"
-                            multiple
-                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                            onChange={(e) => handleFileUpload(docConfig.id, e.target.files)}
-                            className="hidden"
-                            id={`file-upload-${docConfig.id}`}
-                            disabled={uploadingDoc === docConfig.id}
+                            type="date"
+                            value={doc?.issueDate || ''}
+                            onChange={(e) => handleDateChange(docConfig.id, 'issueDate', e.target.value)}
+                            className={`w-full px-3 py-2 text-sm rounded border ${
+                              isDarkMode 
+                                ? 'bg-gray-800 border-gray-600 text-white' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                           />
-                          <label
-                            htmlFor={`file-upload-${docConfig.id}`}
-                            className={`flex items-center justify-center px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                        </div>
+                        <div>
+                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Expiry Date
+                            {docConfig.autoExpiry && (
+                              <span className={`ml-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                (Auto-calculated)
+                              </span>
+                            )}
+                          </label>
+                          <input
+                            type="date"
+                            value={doc?.expiryDate || ''}
+                            onChange={(e) => {
+                              if (pendingUploads[docConfig.id]) {
+                                setPendingUploads(prev => ({
+                                  ...prev,
+                                  [docConfig.id]: {
+                                    ...prev[docConfig.id],
+                                    expiryDate: e.target.value
+                                  }
+                                }));
+                              }
+                              handleDateChange(docConfig.id, 'expiryDate', e.target.value);
+                            }}
+                            disabled={docConfig.autoExpiry}
+                            className={`w-full px-3 py-2 text-sm rounded border ${
+                              docConfig.autoExpiry ? 'opacity-50 cursor-not-allowed' : ''
+                            } ${
+                              isDarkMode 
+                                ? 'bg-gray-800 border-gray-600 text-white' 
+                                : 'bg-white border-gray-300 text-gray-900'
+                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Save Button */}
+                      {pendingUploads[docConfig.id]?.file && (
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => handleSaveDocument(docConfig.id)}
+                            disabled={uploadingDoc === docConfig.id}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                               uploadingDoc === docConfig.id
-                                ? 'opacity-50 cursor-not-allowed'
-                                : isDarkMode
-                                  ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50 hover:bg-gray-700/50'
-                                  : 'border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50'
+                                ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
                             }`}
                           >
                             {uploadingDoc === docConfig.id ? (
                               <div className="flex items-center space-x-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                  Uploading...
-                                </span>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span>Uploading...</span>
                               </div>
                             ) : (
-                              <div className="flex items-center space-x-2">
-                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                  Choose files or drag & drop
-                                </span>
-                              </div>
+                              'Save Document'
                             )}
-                          </label>
+                          </button>
+
+                          {uploadSuccess[docConfig.id] && (
+                            <div className="flex items-center space-x-2 text-green-600">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm font-medium">Upload successful!</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      )}
 
                       {/* Uploaded Files */}
                       {doc?.files && doc.files.length > 0 && (
@@ -713,48 +859,6 @@ export default function ComplianceDocuments({ doctorId }) {
                           </div>
                         </div>
                       )}
-
-                      {/* Date Fields */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Issue Date
-                          </label>
-                          <input
-                            type="date"
-                            value={doc?.issueDate || ''}
-                            onChange={(e) => handleDateChange(docConfig.id, 'issueDate', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm rounded border ${
-                              isDarkMode 
-                                ? 'bg-gray-800 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Expiry Date
-                            {docConfig.autoExpiry && (
-                              <span className={`ml-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                (Auto-calculated)
-                              </span>
-                            )}
-                          </label>
-                          <input
-                            type="date"
-                            value={doc?.expiryDate || ''}
-                            onChange={(e) => handleDateChange(docConfig.id, 'expiryDate', e.target.value)}
-                            disabled={docConfig.autoExpiry}
-                            className={`w-full px-3 py-2 text-sm rounded border ${
-                              docConfig.autoExpiry ? 'opacity-50 cursor-not-allowed' : ''
-                            } ${
-                              isDarkMode 
-                                ? 'bg-gray-800 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          />
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>
