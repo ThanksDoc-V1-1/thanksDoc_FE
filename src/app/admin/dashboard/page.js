@@ -1004,6 +1004,7 @@ export default function AdminDashboard() {
   // View detail handlers
   const handleViewDoctorDetails = (doctor) => {
     console.log('👨‍⚕️ Viewing doctor details:', doctor);
+    console.log('🆔 Doctor ID for API call:', doctor.id);
     console.log('🔍 Current showDoctorDetails state:', showDoctorDetails);
     console.log('🔍 Current selectedDoctor state:', selectedDoctor);
     setSelectedDoctor(doctor);
@@ -1058,17 +1059,24 @@ export default function AdminDashboard() {
   // Load compliance documents for a doctor
   const loadComplianceDocuments = async (doctorId) => {
     try {
+      console.log('🔍 Loading compliance documents for doctor ID:', doctorId);
       setLoadingDocuments(true);
       const response = await fetch(`http://localhost:1337/api/compliance-documents/doctor/${doctorId}`);
+      console.log('📡 API Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setComplianceDocuments(data.data || []);
+        console.log('📦 API Response data:', data);
+        setComplianceDocuments(data.data?.documents || []);
+        console.log('✅ Compliance documents set:', data.data?.documents || []);
       } else {
-        console.error('Failed to load compliance documents');
+        console.error('❌ Failed to load compliance documents, status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
         setComplianceDocuments([]);
       }
     } catch (error) {
-      console.error('Error loading compliance documents:', error);
+      console.error('❌ Error loading compliance documents:', error);
       setComplianceDocuments([]);
     } finally {
       setLoadingDocuments(false);
