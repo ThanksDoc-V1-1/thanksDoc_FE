@@ -547,6 +547,17 @@ export default function ComplianceDocuments({ doctorId }) {
     return { uploaded, missing, expiring, expired, total: COMPLIANCE_DOCUMENTS.length };
   };
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-4 lg:p-6`}>
       <div className="flex items-center space-x-3 mb-6">
@@ -654,6 +665,18 @@ export default function ComplianceDocuments({ doctorId }) {
                           <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             {docConfig.note}
                           </p>
+                        )}
+                        {/* Display Issue and Expiry dates if available */}
+                        {doc && (doc.issueDate || doc.expiryDate) && (
+                          <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {doc.issueDate && (
+                              <span>Issue: {formatDate(doc.issueDate)}</span>
+                            )}
+                            {doc.issueDate && doc.expiryDate && <span className="mx-2">•</span>}
+                            {doc.expiryDate && (
+                              <span>Expiry: {formatDate(doc.expiryDate)}</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
