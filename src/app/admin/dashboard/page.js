@@ -4092,9 +4092,9 @@ export default function AdminDashboard() {
                               
                               {document && (
                                 <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} space-y-1`}>
-                                  <div>Uploaded: {new Date(document.uploadedAt).toLocaleDateString()}</div>
+                                  <div>Uploaded: {new Date(document.uploadedAt).toLocaleDateString('en-GB')}</div>
                                   {document.expiryDate && (
-                                    <div>Expires: {new Date(document.expiryDate).toLocaleDateString()}</div>
+                                    <div>Expires: {new Date(document.expiryDate).toLocaleDateString('en-GB')}</div>
                                   )}
                                   {document.verifiedBy && (
                                     <div>Verified by: {document.verifiedBy}</div>
@@ -4224,7 +4224,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Upload Date:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.uploadedAt).toLocaleDateString()}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.uploadedAt).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Size:</span>
@@ -4233,13 +4233,13 @@ export default function AdminDashboard() {
                     {selectedDocument.issueDate && (
                       <div className="flex justify-between">
                         <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Issue Date:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.issueDate).toLocaleDateString()}</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.issueDate).toLocaleDateString('en-GB')}</span>
                       </div>
                     )}
                     {selectedDocument.expiryDate && (
                       <div className="flex justify-between">
                         <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Expiry Date:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.expiryDate).toLocaleDateString()}</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.expiryDate).toLocaleDateString('en-GB')}</span>
                       </div>
                     )}
                   </div>
@@ -4264,7 +4264,7 @@ export default function AdminDashboard() {
                     {selectedDocument.verifiedAt && (
                       <div className="flex justify-between">
                         <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verified Date:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.verifiedAt).toLocaleString()}</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.verifiedAt).toLocaleString('en-GB')}</span>
                       </div>
                     )}
                     {selectedDocument.notes && (
@@ -4294,7 +4294,7 @@ export default function AdminDashboard() {
                       className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center mx-auto"
                     >
                       <Eye className="h-5 w-5 mr-2" />
-                      Download & Review Document
+                      Review Document
                     </button>
                   </div>
                 </div>
