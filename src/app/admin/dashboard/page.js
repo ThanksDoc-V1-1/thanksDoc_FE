@@ -3545,16 +3545,6 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={async () => {
-                      console.log('🔧 Debug: Manual loadDocumentTypes called');
-                      await loadDocumentTypes(0); // Reset retry count for manual calls
-                      console.log('🔧 Debug: After manual call, documentTypes length:', documentTypes.length);
-                    }}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm"
-                  >
-                    Debug Load
-                  </button>
-                  <button
                     onClick={() => {
                       setEditingDocumentType(null);
                       setDocumentTypeFormData({
