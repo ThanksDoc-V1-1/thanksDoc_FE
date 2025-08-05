@@ -345,6 +345,17 @@ export default function AdminDashboard() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [updatingVerification, setUpdatingVerification] = useState(false);
+  
+  // Compliance document types management
+  const [documentTypes, setDocumentTypes] = useState({});
+  const [showDocumentTypeForm, setShowDocumentTypeForm] = useState(false);
+  const [editingDocumentType, setEditingDocumentType] = useState(null);
+  const [documentTypeFormData, setDocumentTypeFormData] = useState({
+    key: '',
+    name: '',
+    required: true,
+    description: ''
+  });
   const [doctorFormData, setDoctorFormData] = useState({
     name: '',
     email: '',
@@ -538,6 +549,9 @@ export default function AdminDashboard() {
       setBusinesses(businessesRes.data?.data || []);
       setServices(servicesRes.data?.data || []);
       setBusinessTypes(businessTypesRes.data?.data || []);
+      
+      // Load document types
+      await loadDocumentTypes();
       
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
@@ -1024,31 +1038,159 @@ export default function AdminDashboard() {
     setComplianceDocuments([]);
   };
 
-  // Compliance Documents Configuration
-  const documentTypes = {
-    gmc_registration: { name: 'GMC Registration', required: true },
-    current_performers_list: { name: 'Current Performers List', required: true },
-    cct_certificate: { name: 'CCT Certificate', required: true },
-    medical_indemnity: { name: 'Medical Indemnity', required: true },
-    dbs_check: { name: 'DBS Check', required: true },
-    right_to_work: { name: 'Right to Work', required: true },
-    photo_id: { name: 'Photo ID', required: true },
-    gp_cv: { name: 'GP CV', required: true },
-    occupational_health: { name: 'Occupational Health', required: true },
-    professional_references: { name: 'Professional References', required: true },
-    appraisal_revalidation: { name: 'Appraisal & Revalidation', required: true },
-    basic_life_support: { name: 'Basic Life Support', required: true },
-    level3_adult_safeguarding: { name: 'Level 3 Adult Safeguarding', required: true },
-    level3_child_safeguarding: { name: 'Level 3 Child Safeguarding', required: true },
-    information_governance: { name: 'Information Governance', required: true },
-    autism_learning_disability: { name: 'Autism & Learning Disability', required: true },
-    equality_diversity: { name: 'Equality & Diversity', required: true },
-    health_safety_welfare: { name: 'Health, Safety & Welfare', required: true },
-    conflict_resolution: { name: 'Conflict Resolution', required: true },
-    fire_safety: { name: 'Fire Safety', required: true },
-    infection_prevention: { name: 'Infection Prevention', required: true },
-    moving_handling: { name: 'Moving & Handling', required: true },
-    preventing_radicalisation: { name: 'Preventing Radicalisation', required: true }
+  // Compliance Documents Configuration - Now loaded from API
+  // Document types will be loaded from the backend
+  
+  // Load compliance document types from API
+  const loadDocumentTypes = async () => {
+    try {
+      const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
+      if (response.ok) {
+        const data = await response.json();
+        // Convert array to object format for easier lookup
+        const typesObject = {};
+        (data.data || []).forEach(type => {
+          typesObject[type.key || type.documentType] = {
+            name: type.name,
+            required: type.required,
+            description: type.description || ''
+          };
+        });
+        setDocumentTypes(typesObject);
+      } else {
+        console.error('Failed to load document types');
+        // Fallback to default types if API fails
+        setDocumentTypes({
+          gmc_registration: { name: 'GMC Registration', required: true },
+          medical_indemnity: { name: 'Medical Indemnity', required: true },
+          dbs_check: { name: 'DBS Check', required: true },
+          right_to_work: { name: 'Right to Work', required: true },
+          photo_id: { name: 'Photo ID', required: true }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading document types:', error);
+      // Fallback to default types
+      setDocumentTypes({
+        gmc_registration: { name: 'GMC Registration', required: true },
+        medical_indemnity: { name: 'Medical Indemnity', required: true },
+        dbs_check: { name: 'DBS Check', required: true },
+        right_to_work: { name: 'Right to Work', required: true },
+        photo_id: { name: 'Photo ID', required: true }
+      });
+    }
+  };
+
+  // Handle document type form changes
+  const handleDocumentTypeFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setDocumentTypeFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Handle document type submission
+  const handleDocumentTypeSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      let response;
+      if (editingDocumentType) {
+        // Update existing document type
+        response = await fetch(`http://localhost:1337/api/compliance-document-types/${editingDocumentType.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              key: documentTypeFormData.key,
+              name: documentTypeFormData.name,
+              required: documentTypeFormData.required,
+              description: documentTypeFormData.description
+            }
+          })
+        });
+      } else {
+        // Create new document type
+        response = await fetch(`http://localhost:1337/api/compliance-document-types`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              key: documentTypeFormData.key,
+              name: documentTypeFormData.name,
+              required: documentTypeFormData.required,
+              description: documentTypeFormData.description
+            }
+          })
+        });
+      }
+
+      if (response.ok) {
+        alert(editingDocumentType ? 'Document type updated successfully!' : 'Document type created successfully!');
+        setShowDocumentTypeForm(false);
+        setEditingDocumentType(null);
+        setDocumentTypeFormData({
+          key: '',
+          name: '',
+          required: true,
+          description: ''
+        });
+        await loadDocumentTypes(); // Reload document types
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to save document type');
+      }
+    } catch (error) {
+      console.error('Error saving document type:', error);
+      alert(`Failed to save document type: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Handle edit document type
+  const handleEditDocumentType = (key, type) => {
+    setEditingDocumentType({ key, ...type, id: key });
+    setDocumentTypeFormData({
+      key: key,
+      name: type.name,
+      required: type.required,
+      description: type.description || ''
+    });
+    setShowDocumentTypeForm(true);
+  };
+
+  // Handle delete document type
+  const handleDeleteDocumentType = async (key) => {
+    if (!confirm(`Are you sure you want to delete the document type "${documentTypes[key]?.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDataLoading(true);
+      const response = await fetch(`http://localhost:1337/api/compliance-document-types/${key}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Document type deleted successfully!');
+        await loadDocumentTypes(); // Reload document types
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to delete document type');
+      }
+    } catch (error) {
+      console.error('Error deleting document type:', error);
+      alert(`Failed to delete document type: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   // Load compliance documents for a doctor
@@ -1330,6 +1472,7 @@ export default function AdminDashboard() {
                   activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
                   activeTab === 'transactions' ? "Search transactions by payment ID, doctor ID..." :
                   activeTab === 'earnings' ? "Search by doctor name..." :
+                  activeTab === 'compliance-documents' ? "Search document types by name..." :
                   "Search..."
                 }
                 value={searchTerm}
@@ -1350,6 +1493,7 @@ export default function AdminDashboard() {
               { id: 'requests', name: 'Service Requests', icon: Calendar },
               { id: 'transactions', name: 'Transactions', icon: CreditCard },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
+              { id: 'compliance-documents', name: 'Compliance Documents', icon: FileText },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -3268,7 +3412,251 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Compliance Document Types Management Tab */}
+        {activeTab === 'compliance-documents' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-purple-900/30' : 'bg-purple-100'} p-2 rounded-lg`}>
+                    <FileText className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Compliance Document Types</h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage required document types for doctor compliance</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingDocumentType(null);
+                    setDocumentTypeFormData({
+                      key: '',
+                      name: '',
+                      required: true,
+                      description: ''
+                    });
+                    setShowDocumentTypeForm(true);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Document Type</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {Object.keys(documentTypes).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(documentTypes).map(([key, type]) => (
+                    <div
+                      key={key}
+                      className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg p-4 border hover:shadow-md transition-shadow`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <FileText className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{type.name}</h3>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            type.required 
+                              ? isDarkMode 
+                                ? 'bg-red-900/30 text-red-400' 
+                                : 'bg-red-100 text-red-700'
+                              : isDarkMode 
+                                ? 'bg-green-900/30 text-green-400' 
+                                : 'bg-green-100 text-green-700'
+                          }`}>
+                            {type.required ? 'Required' : 'Optional'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-4">
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <span className="font-medium">Key:</span> {key}
+                        </p>
+                        {type.description && (
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {type.description}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditDocumentType(key, type)}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' 
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDocumentType(key)}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <FileText className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No document types found</h3>
+                    <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      No compliance document types have been created yet. Click the "Add Document Type" button to create one.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setEditingDocumentType(null);
+                        setDocumentTypeFormData({
+                          key: '',
+                          name: '',
+                          required: true,
+                          description: ''
+                        });
+                        setShowDocumentTypeForm(true);
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors mx-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Document Type</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Document Type Form Modal */}
+      {showDocumentTypeForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <FileText className="h-5 w-5 text-purple-600 dark:text-purple-500 mr-2" />
+                {editingDocumentType ? 'Edit Document Type' : 'Add Document Type'}
+              </h2>
+              <button
+                onClick={() => setShowDocumentTypeForm(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleDocumentTypeSubmit} className="p-6 space-y-6">
+              <div>
+                <label htmlFor="documentTypeKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Document Type Key *
+                </label>
+                <input
+                  type="text"
+                  id="documentTypeKey"
+                  name="key"
+                  value={documentTypeFormData.key}
+                  onChange={handleDocumentTypeFormChange}
+                  required
+                  disabled={!!editingDocumentType}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  placeholder="e.g., gmc_registration, medical_indemnity"
+                  pattern="[a-z_]+"
+                  title="Only lowercase letters and underscores allowed"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Use lowercase letters and underscores only. Cannot be changed after creation.
+                </p>
+              </div>
+              
+              <div>
+                <label htmlFor="documentTypeName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Display Name *
+                </label>
+                <input
+                  type="text"
+                  id="documentTypeName"
+                  name="name"
+                  value={documentTypeFormData.name}
+                  onChange={handleDocumentTypeFormChange}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                  placeholder="e.g., GMC Registration, Medical Indemnity"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="documentTypeDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="documentTypeDescription"
+                  name="description"
+                  value={documentTypeFormData.description}
+                  onChange={handleDocumentTypeFormChange}
+                  rows="3"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                  placeholder="Optional description of what this document is for..."
+                />
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="documentTypeRequired"
+                  name="required"
+                  checked={documentTypeFormData.required}
+                  onChange={handleDocumentTypeFormChange}
+                  className="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 dark:focus:ring-purple-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <label htmlFor="documentTypeRequired" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  This document is required for compliance
+                </label>
+              </div>
+              
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDocumentTypeForm(false)}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors flex items-center"
+                >
+                  {dataLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      {editingDocumentType ? 'Update Document Type' : 'Create Document Type'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Doctor Registration Form Modal */}
       {showDoctorForm && (
