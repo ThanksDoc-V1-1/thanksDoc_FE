@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../../lib/api';
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -1671,6 +1671,31 @@ export default function DoctorDashboard() {
                     <TrendingUp className={`h-4 w-4 lg:h-6 lg:w-6 ${
                       isDarkMode ? 'text-white' : 'text-white'
                     }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                  </div>
+                </div>
+              </button>
+              <button 
+                onClick={() => router.push('/doctor/compliance')}
+                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs lg:text-sm text-red-400 font-medium">Compliance Docs</p>
+                    <p className={`text-xs lg:text-sm ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Manage Documents</p>
+                  </div>
+                  <div className={`p-2 lg:p-3 rounded-lg ${
+                    isDarkMode 
+                      ? 'bg-red-900/30' 
+                      : 'bg-red-600'
+                  }`}>
+                    <FileText className={`h-4 w-4 lg:h-6 lg:w-6 ${
+                      isDarkMode ? 'text-red-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </button>
