@@ -348,6 +348,7 @@ export default function AdminDashboard() {
   
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
+  const [documentTypesLoading, setDocumentTypesLoading] = useState(true);
   const [showDocumentTypeForm, setShowDocumentTypeForm] = useState(false);
   const [editingDocumentType, setEditingDocumentType] = useState(null);
   const [documentTypeFormData, setDocumentTypeFormData] = useState({
@@ -550,9 +551,6 @@ export default function AdminDashboard() {
       setServices(servicesRes.data?.data || []);
       setBusinessTypes(businessTypesRes.data?.data || []);
       
-      // Load document types
-      await loadDocumentTypes();
-      
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
       
@@ -593,6 +591,72 @@ export default function AdminDashboard() {
     // Clean up the interval when the component unmounts
     return () => clearInterval(refreshInterval);
   }, []);
+
+  // Separate useEffect for document types with extended delay and retry logic
+  useEffect(() => {
+    const loadDocumentTypesWithDelay = async () => {
+      console.log('📋 Starting document types loading with delay...');
+      setDocumentTypesLoading(true);
+      
+      // Wait 3 seconds to ensure backend is ready
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Try loading document types with aggressive retry logic
+      let attempts = 0;
+      const maxAttempts = 5;
+      const baseDelay = 2000; // Start with 2 seconds
+      
+      while (attempts < maxAttempts) {
+        try {
+          console.log(`📋 Document types loading attempt ${attempts + 1}/${maxAttempts}`);
+          
+          const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
+          console.log('📡 Document types API Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('📦 Document types received:', data.data?.length || 0);
+            
+            if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+              console.log('✅ Successfully loaded document types:', data.data.length);
+              setDocumentTypes(data.data);
+              setDocumentTypesLoading(false);
+              return; // Success, exit the retry loop
+            } else {
+              console.log('⚠️ API returned empty data, retrying...');
+              throw new Error('Empty data received');
+            }
+          } else {
+            throw new Error(`API request failed with status: ${response.status}`);
+          }
+        } catch (error) {
+          attempts++;
+          console.error(`❌ Document types loading attempt ${attempts} failed:`, error.message);
+          
+          if (attempts >= maxAttempts) {
+            console.log('❌ All document types loading attempts failed, using fallback');
+            const fallbackTypes = [
+              { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
+              { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
+              { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
+              { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
+              { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
+            ];
+            setDocumentTypes(fallbackTypes);
+            setDocumentTypesLoading(false);
+            return;
+          }
+          
+          // Exponential backoff: wait longer each time
+          const delay = baseDelay * Math.pow(2, attempts - 1);
+          console.log(`⏳ Waiting ${delay}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    };
+    
+    loadDocumentTypesWithDelay();
+  }, []); // Run once on component mount
 
   // Debug effect to track documentTypes changes
   useEffect(() => {
@@ -1049,7 +1113,14 @@ export default function AdminDashboard() {
   // Document types will be loaded from the backend
   
   // Load compliance document types from API
-  const loadDocumentTypes = async () => {
+  const loadDocumentTypes = async (retryCount = 0) => {
+    console.log('🚀 loadDocumentTypes function called, retry:', retryCount);
+    
+    // Set loading to true when starting manual load
+    if (retryCount === 0) {
+      setDocumentTypesLoading(true);
+    }
+    
     try {
       console.log('🔄 Loading document types from API...');
       const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
@@ -1060,30 +1131,68 @@ export default function AdminDashboard() {
         console.log('📦 Document types received:', data.data?.length || 0);
         console.log('📋 Document types data:', data.data);
         
-        // Store the raw array for admin management
-        setDocumentTypes(data.data || []);
+        // Check if data.data exists and is an array
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+          console.log('✅ Setting document types from API:', data.data.length);
+          setDocumentTypes(data.data);
+          setDocumentTypesLoading(false);
+        } else {
+          console.log('⚠️ API returned empty data, using fallback');
+          const fallbackTypes = [
+            { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
+            { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
+            { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
+            { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
+            { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
+          ];
+          setDocumentTypes(fallbackTypes);
+          setDocumentTypesLoading(false);
+        }
       } else {
-        console.error('Failed to load document types');
-        // Fallback to default types if API fails
-        setDocumentTypes([
+        console.error('❌ API request failed with status:', response.status);
+        
+        // Retry up to 3 times for failed requests during initial load
+        if (retryCount < 3) {
+          console.log(`🔄 Retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
+          setTimeout(() => loadDocumentTypes(retryCount + 1), 2000);
+          return;
+        }
+        
+        // Fallback to default types if API fails after retries
+        const fallbackTypes = [
           { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
           { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
           { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
           { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
           { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
-        ]);
+        ];
+        setDocumentTypes(fallbackTypes);
+        setDocumentTypesLoading(false);
       }
     } catch (error) {
-      console.error('Error loading document types:', error);
+      console.error('❌ Error loading document types:', error);
+      
+      // Retry up to 3 times for network errors during initial load
+      if (retryCount < 3) {
+        console.log(`🔄 Retrying in 2 seconds due to error... (attempt ${retryCount + 1}/3)`);
+        setTimeout(() => loadDocumentTypes(retryCount + 1), 2000);
+        return;
+      }
+      
       // Fallback to default types
-      setDocumentTypes([
+      const fallbackTypes = [
         { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
         { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
         { key: 'dbs_check', name: 'DBS Check', required: true, description: '' },
         { key: 'right_to_work', name: 'Right to Work', required: true, description: '' },
         { key: 'photo_id', name: 'Photo ID', required: true, description: '' }
-      ]);
+      ];
+      setDocumentTypes(fallbackTypes);
+      setDocumentTypesLoading(false);
     }
+    
+    // Force a re-render to see current state
+    console.log('🔍 Function complete, checking documentTypes state...');
   };
 
   // Handle document type form changes
@@ -3434,27 +3543,51 @@ export default function AdminDashboard() {
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage required document types for doctor compliance</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingDocumentType(null);
-                    setDocumentTypeFormData({
-                      key: '',
-                      name: '',
-                      required: true,
-                      description: ''
-                    });
-                    setShowDocumentTypeForm(true);
-                  }}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Document Type</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={async () => {
+                      console.log('🔧 Debug: Manual loadDocumentTypes called');
+                      await loadDocumentTypes(0); // Reset retry count for manual calls
+                      console.log('🔧 Debug: After manual call, documentTypes length:', documentTypes.length);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm"
+                  >
+                    Debug Load
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingDocumentType(null);
+                      setDocumentTypeFormData({
+                        key: '',
+                        name: '',
+                        required: true,
+                        description: ''
+                      });
+                      setShowDocumentTypeForm(true);
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Document Type</span>
+                  </button>
+                </div>
               </div>
             </div>
             
             <div className="p-6">
-              {documentTypes.length > 0 ? (
+              {documentTypesLoading ? (
+                <div className="text-center py-12">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                    </div>
+                    <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Loading Document Types</h3>
+                    <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Please wait while we load the compliance document types...
+                    </p>
+                  </div>
+                </div>
+              ) : documentTypes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {documentTypes.map((docType) => (
                     <div
@@ -3522,7 +3655,7 @@ export default function AdminDashboard() {
                   <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
                     <FileText className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
                     <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No document types found</h3>
-                    <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       No compliance document types have been created yet. Click the "Add Document Type" button to create one.
                     </p>
                     <button
