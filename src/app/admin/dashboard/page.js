@@ -1210,10 +1210,16 @@ export default function AdminDashboard() {
     setDataLoading(true);
 
     try {
+      console.log('📝 Document type form submission started');
+      console.log('📝 Form data:', documentTypeFormData);
+      console.log('✏️ Editing document type:', editingDocumentType);
+
       let response;
       if (editingDocumentType) {
-        // Update existing document type
-        const documentId = editingDocumentType.documentId || editingDocumentType.id;
+        // Update existing document type - use numeric ID for Strapi v5
+        const documentId = editingDocumentType.id; // Use numeric ID, not documentId
+        console.log('📝 Updating document type with numeric ID:', documentId);
+        
         response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
           method: 'PUT',
           headers: {
@@ -1228,8 +1234,12 @@ export default function AdminDashboard() {
             }
           })
         });
+        
+        console.log('📡 Update response status:', response.status);
       } else {
         // Create new document type
+        console.log('🆕 Creating new document type');
+        
         response = await fetch(`http://localhost:1337/api/compliance-document-types`, {
           method: 'POST',
           headers: {
@@ -1244,9 +1254,15 @@ export default function AdminDashboard() {
             }
           })
         });
+        
+        console.log('📡 Create response status:', response.status);
       }
 
+      const responseData = await response.json();
+      console.log('📦 Response data:', responseData);
+
       if (response.ok) {
+        console.log('✅ Document type operation successful');
         alert(editingDocumentType ? 'Document type updated successfully!' : 'Document type created successfully!');
         setShowDocumentTypeForm(false);
         setEditingDocumentType(null);
@@ -1256,13 +1272,16 @@ export default function AdminDashboard() {
           required: true,
           description: ''
         });
-        await loadDocumentTypes(); // Reload document types
+        
+        // Reload document types to reflect changes
+        console.log('🔄 Reloading document types...');
+        await loadDocumentTypes(0); // Reset retry count
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to save document type');
+        console.error('❌ API request failed:', response.status, responseData);
+        throw new Error(responseData.error?.message || responseData.message || 'Failed to save document type');
       }
     } catch (error) {
-      console.error('Error saving document type:', error);
+      console.error('❌ Error saving document type:', error);
       alert(`Failed to save document type: ${error.message}`);
     } finally {
       setDataLoading(false);
@@ -1283,26 +1302,43 @@ export default function AdminDashboard() {
 
   // Handle delete document type
   const handleDeleteDocumentType = async (documentType) => {
+    console.log('🗑️ Delete document type requested:', documentType);
+    
     if (!confirm(`Are you sure you want to delete the document type "${documentType.name}"? This action cannot be undone.`)) {
       return;
     }
 
     try {
       setDataLoading(true);
-      const documentId = documentType.documentId || documentType.id;
+      const documentId = documentType.id; // Use numeric ID, not documentId
+      console.log('🗑️ Deleting document type with numeric ID:', documentId);
+      
       const response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
         method: 'DELETE'
       });
 
+      console.log('📡 Delete response status:', response.status);
+
       if (response.ok) {
+        console.log('✅ Document type deleted successfully');
         alert('Document type deleted successfully!');
-        await loadDocumentTypes(); // Reload document types
+        
+        // Reload document types to reflect changes
+        console.log('🔄 Reloading document types after deletion...');
+        await loadDocumentTypes(0); // Reset retry count
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to delete document type');
+        // Try to get error details
+        let responseData;
+        try {
+          responseData = await response.json();
+        } catch (e) {
+          responseData = { message: 'Unknown error' };
+        }
+        console.error('❌ Delete request failed:', response.status, responseData);
+        throw new Error(responseData.error?.message || responseData.message || 'Failed to delete document type');
       }
     } catch (error) {
-      console.error('Error deleting document type:', error);
+      console.error('❌ Error deleting document type:', error);
       alert(`Failed to delete document type: ${error.message}`);
     } finally {
       setDataLoading(false);
