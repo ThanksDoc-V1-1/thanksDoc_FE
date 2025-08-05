@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Upload, Calendar, AlertTriangle, CheckCircle, X, Download, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import DateDropdowns from './DateSliders';
 
 // Compliance documents configuration with automatic expiry dates for training certificates
 const COMPLIANCE_DOCUMENTS = [
@@ -737,56 +738,31 @@ export default function ComplianceDocuments({ doctorId }) {
                       </div>
 
                       {/* Date Fields */}
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Issue Date
-                          </label>
-                          <input
-                            type="date"
-                            value={doc?.issueDate || ''}
-                            onChange={(e) => handleDateChange(docConfig.id, 'issueDate', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm rounded border ${
-                              isDarkMode 
-                                ? 'bg-gray-800 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Expiry Date
-                            {docConfig.autoExpiry && (
-                              <span className={`ml-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                (Auto-calculated)
-                              </span>
-                            )}
-                          </label>
-                          <input
-                            type="date"
-                            value={doc?.expiryDate || ''}
-                            onChange={(e) => {
-                              if (pendingUploads[docConfig.id]) {
-                                setPendingUploads(prev => ({
-                                  ...prev,
-                                  [docConfig.id]: {
-                                    ...prev[docConfig.id],
-                                    expiryDate: e.target.value
-                                  }
-                                }));
-                              }
-                              handleDateChange(docConfig.id, 'expiryDate', e.target.value);
-                            }}
-                            disabled={docConfig.autoExpiry}
-                            className={`w-full px-3 py-2 text-sm rounded border ${
-                              docConfig.autoExpiry ? 'opacity-50 cursor-not-allowed' : ''
-                            } ${
-                              isDarkMode 
-                                ? 'bg-gray-800 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                          />
-                        </div>
+                      <div className="space-y-4 mb-4">
+                        <DateDropdowns
+                          label="Issue Date"
+                          value={doc?.issueDate || ''}
+                          onChange={(dateString) => handleDateChange(docConfig.id, 'issueDate', dateString)}
+                        />
+                        
+                        <DateDropdowns
+                          label="Expiry Date"
+                          value={doc?.expiryDate || ''}
+                          onChange={(dateString) => {
+                            if (pendingUploads[docConfig.id]) {
+                              setPendingUploads(prev => ({
+                                ...prev,
+                                [docConfig.id]: {
+                                  ...prev[docConfig.id],
+                                  expiryDate: dateString
+                                }
+                              }));
+                            }
+                            handleDateChange(docConfig.id, 'expiryDate', dateString);
+                          }}
+                          disabled={docConfig.autoExpiry}
+                          autoCalculated={docConfig.autoExpiry}
+                        />
                       </div>
 
                       {/* Save Button */}
