@@ -338,6 +338,13 @@ export default function AdminDashboard() {
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  
+  // Compliance documents state
+  const [complianceDocuments, setComplianceDocuments] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [updatingVerification, setUpdatingVerification] = useState(false);
   const [doctorFormData, setDoctorFormData] = useState({
     name: '',
     email: '',
@@ -1001,6 +1008,8 @@ export default function AdminDashboard() {
     console.log('🔍 Current selectedDoctor state:', selectedDoctor);
     setSelectedDoctor(doctor);
     setShowDoctorDetails(true);
+    // Load compliance documents for this doctor
+    loadComplianceDocuments(doctor.id);
     console.log('✅ Modal states updated - showDoctorDetails: true, selectedDoctor:', doctor);
   };
 
@@ -1016,6 +1025,126 @@ export default function AdminDashboard() {
   const handleCloseDoctorDetails = () => {
     setShowDoctorDetails(false);
     setSelectedDoctor(null);
+    setComplianceDocuments([]);
+  };
+
+  // Compliance Documents Configuration
+  const documentTypes = {
+    gmc_registration: { name: 'GMC Registration', required: true },
+    current_performers_list: { name: 'Current Performers List', required: true },
+    cct_certificate: { name: 'CCT Certificate', required: true },
+    medical_indemnity: { name: 'Medical Indemnity', required: true },
+    dbs_check: { name: 'DBS Check', required: true },
+    right_to_work: { name: 'Right to Work', required: true },
+    photo_id: { name: 'Photo ID', required: true },
+    gp_cv: { name: 'GP CV', required: true },
+    occupational_health: { name: 'Occupational Health', required: true },
+    professional_references: { name: 'Professional References', required: true },
+    appraisal_revalidation: { name: 'Appraisal & Revalidation', required: true },
+    basic_life_support: { name: 'Basic Life Support', required: true },
+    level3_adult_safeguarding: { name: 'Level 3 Adult Safeguarding', required: true },
+    level3_child_safeguarding: { name: 'Level 3 Child Safeguarding', required: true },
+    information_governance: { name: 'Information Governance', required: true },
+    autism_learning_disability: { name: 'Autism & Learning Disability', required: true },
+    equality_diversity: { name: 'Equality & Diversity', required: true },
+    health_safety_welfare: { name: 'Health, Safety & Welfare', required: true },
+    conflict_resolution: { name: 'Conflict Resolution', required: true },
+    fire_safety: { name: 'Fire Safety', required: true },
+    infection_prevention: { name: 'Infection Prevention', required: true },
+    moving_handling: { name: 'Moving & Handling', required: true },
+    preventing_radicalisation: { name: 'Preventing Radicalisation', required: true }
+  };
+
+  // Load compliance documents for a doctor
+  const loadComplianceDocuments = async (doctorId) => {
+    try {
+      setLoadingDocuments(true);
+      const response = await fetch(`http://localhost:1337/api/compliance-documents/doctor/${doctorId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setComplianceDocuments(data.data || []);
+      } else {
+        console.error('Failed to load compliance documents');
+        setComplianceDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading compliance documents:', error);
+      setComplianceDocuments([]);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
+  // Handle document verification
+  const handleDocumentVerification = async (documentId, verificationStatus) => {
+    try {
+      setUpdatingVerification(true);
+      const response = await fetch(`http://localhost:1337/api/compliance-documents/${documentId}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verificationStatus,
+          notes: `${verificationStatus === 'verified' ? 'Approved' : 'Rejected'} by admin via dashboard`
+        })
+      });
+
+      if (response.ok) {
+        // Refresh documents
+        if (selectedDoctor) {
+          await loadComplianceDocuments(selectedDoctor.id);
+        }
+        setShowDocumentModal(false);
+        setSelectedDocument(null);
+      } else {
+        console.error('Failed to update verification status');
+        alert('Failed to update verification status');
+      }
+    } catch (error) {
+      console.error('Error updating verification status:', error);
+      alert('Error updating verification status');
+    } finally {
+      setUpdatingVerification(false);
+    }
+  };
+
+  // Get document status info
+  const getDocumentStatus = (status, verificationStatus) => {
+    if (status === 'missing') {
+      return { variant: 'danger', text: 'Missing', color: 'bg-red-100 text-red-800 border-red-200' };
+    }
+    
+    if (status === 'uploaded') {
+      switch (verificationStatus) {
+        case 'verified':
+          return { variant: 'success', text: 'Verified', color: 'bg-green-100 text-green-800 border-green-200' };
+        case 'rejected':
+          return { variant: 'danger', text: 'Rejected', color: 'bg-red-100 text-red-800 border-red-200' };
+        case 'pending':
+        default:
+          return { variant: 'warning', text: 'Pending Review', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+      }
+    }
+    
+    return { variant: 'neutral', text: status, color: 'bg-gray-100 text-gray-800 border-gray-200' };
+  };
+
+  // Get all documents with their statuses
+  const getAllDocumentsWithStatus = () => {
+    // Ensure complianceDocuments is always an array
+    const documents = Array.isArray(complianceDocuments) ? complianceDocuments : [];
+    
+    return Object.entries(documentTypes).map(([type, config]) => {
+      const uploadedDoc = documents.find(doc => doc.documentType === type);
+      return {
+        type,
+        config,
+        document: uploadedDoc,
+        status: uploadedDoc ? uploadedDoc.status : 'missing',
+        verificationStatus: uploadedDoc?.verificationStatus || 'pending'
+      };
+    });
   };
 
   const handleCloseBusinessDetails = () => {
@@ -3854,10 +3983,357 @@ export default function AdminDashboard() {
                 )}
               </div>
 
+              {/* Compliance Documents Section */}
+              <div className="mt-8">
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Compliance Documents
+                    </h3>
+                    {loadingDocuments && (
+                      <div className="flex items-center">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!loadingDocuments && Array.isArray(complianceDocuments) && (
+                    <>
+                      {/* Documents Summary */}
+                      <div className="grid grid-cols-4 gap-4 mb-6">
+                        {(() => {
+                          try {
+                            const allDocs = getAllDocumentsWithStatus();
+                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded').length;
+                            const verifiedCount = allDocs.filter(doc => doc.verificationStatus === 'verified').length;
+                            const pendingCount = allDocs.filter(doc => doc.verificationStatus === 'pending' && doc.status === 'uploaded').length;
+                            const missingCount = allDocs.filter(doc => doc.status === 'missing').length;
+
+                            return (
+                              <>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                    {uploadedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Uploaded</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {verifiedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verified</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                    {pendingCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Pending</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                    {missingCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Missing</div>
+                                </div>
+                              </>
+                            );
+                          } catch (error) {
+                            console.error('Error calculating document stats:', error);
+                            return (
+                              <div className="col-span-4 text-center">
+                                <span className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                  Error loading document statistics
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+
+                      {/* Documents Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {(() => {
+                          try {
+                            return getAllDocumentsWithStatus().map(({ type, config, document, status, verificationStatus }) => {
+                              const statusInfo = getDocumentStatus(status, verificationStatus);
+                              
+                              return (
+                                <div
+                                  key={type}
+                                  className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-4 transition-all duration-200 ${
+                                    document ? 'cursor-pointer hover:shadow-md' : 'opacity-60'
+                                  }`}
+                                  onClick={() => document && setSelectedDocument(document) && setShowDocumentModal(true)}
+                                >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <h4 className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
+                                    {config.name}
+                                  </h4>
+                                  {config.required && (
+                                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>
+                                      Required
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full border ${statusInfo.color}`}>
+                                  {statusInfo.text}
+                                </span>
+                              </div>
+                              
+                              {document && (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} space-y-1`}>
+                                  <div>Uploaded: {new Date(document.uploadedAt).toLocaleDateString()}</div>
+                                  {document.expiryDate && (
+                                    <div>Expires: {new Date(document.expiryDate).toLocaleDateString()}</div>
+                                  )}
+                                  {document.verifiedBy && (
+                                    <div>Verified by: {document.verifiedBy}</div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {document && (
+                                <div className="mt-3 flex justify-between items-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDocument(document);
+                                      setShowDocumentModal(true);
+                                    }}
+                                    className={`text-xs px-3 py-1 rounded ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-100 hover:bg-blue-200 text-blue-800'} transition-colors`}
+                                  >
+                                    <Eye className="h-3 w-3 inline mr-1" />
+                                    View
+                                  </button>
+                                  
+                                  {verificationStatus === 'pending' && (
+                                    <div className="flex space-x-1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDocumentVerification(document.id, 'verified');
+                                        }}
+                                        disabled={updatingVerification}
+                                        className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50"
+                                      >
+                                        <Check className="h-3 w-3" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDocumentVerification(document.id, 'rejected');
+                                        }}
+                                        disabled={updatingVerification}
+                                        className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        });
+                          } catch (error) {
+                            console.error('Error rendering documents grid:', error);
+                            return (
+                              <div className="col-span-3 text-center p-8">
+                                <span className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                  Error loading documents. Please try again.
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-end pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleCloseDoctorDetails}
                   className={`px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {showDocumentModal && selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-600'} p-2 rounded-lg`}>
+                    <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-white'}`} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Document Review
+                    </h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'} font-medium`}>
+                      {documentTypes[selectedDocument.documentType]?.name || selectedDocument.documentType}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDocumentModal(false);
+                    setSelectedDocument(null);
+                  }}
+                  className={`p-2 rounded-lg hover:bg-opacity-80 transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto modal-scrollable flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Document Information */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Document Information</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Document Name:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>{selectedDocument.documentName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Name:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>{selectedDocument.originalFileName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Upload Date:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.uploadedAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Size:</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{(selectedDocument.fileSize / 1024).toFixed(1)} KB</span>
+                    </div>
+                    {selectedDocument.issueDate && (
+                      <div className="flex justify-between">
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Issue Date:</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.issueDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {selectedDocument.expiryDate && (
+                      <div className="flex justify-between">
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Expiry Date:</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.expiryDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Current Status */}
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Verification Status</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Current Status:</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getDocumentStatus(selectedDocument.status, selectedDocument.verificationStatus).color}`}>
+                        {getDocumentStatus(selectedDocument.status, selectedDocument.verificationStatus).text}
+                      </span>
+                    </div>
+                    {selectedDocument.verifiedBy && (
+                      <div className="flex justify-between">
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verified By:</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDocument.verifiedBy}</span>
+                      </div>
+                    )}
+                    {selectedDocument.verifiedAt && (
+                      <div className="flex justify-between">
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verified Date:</span>
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.verifiedAt).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedDocument.notes && (
+                      <div>
+                        <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Notes:</span>
+                        <p className={`${isDarkMode ? 'text-white' : 'text-gray-900'} mt-1`}>{selectedDocument.notes}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Preview */}
+              <div className="mt-6">
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Document Preview</h3>
+                  <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-8 text-center`}>
+                    <FileText className={`h-16 w-16 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
+                    <h4 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                      {selectedDocument.originalFileName}
+                    </h4>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+                      Click the button below to download and review this document
+                    </p>
+                    <button
+                      onClick={() => window.open(selectedDocument.s3Url, '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center mx-auto"
+                    >
+                      <Eye className="h-5 w-5 mr-2" />
+                      Download & Review Document
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Verification Actions */}
+              <div className="mt-6 flex justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex space-x-3">
+                  {selectedDocument.verificationStatus !== 'verified' && (
+                    <button
+                      onClick={() => handleDocumentVerification(selectedDocument.id, 'verified')}
+                      disabled={updatingVerification}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50"
+                    >
+                      <Check className="h-5 w-5 mr-2" />
+                      {updatingVerification ? 'Updating...' : 'Verify Document'}
+                    </button>
+                  )}
+                  {selectedDocument.verificationStatus !== 'rejected' && (
+                    <button
+                      onClick={() => handleDocumentVerification(selectedDocument.id, 'rejected')}
+                      disabled={updatingVerification}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50"
+                    >
+                      <X className="h-5 w-5 mr-2" />
+                      {updatingVerification ? 'Updating...' : 'Reject Document'}
+                    </button>
+                  )}
+                  {selectedDocument.verificationStatus !== 'pending' && (
+                    <button
+                      onClick={() => handleDocumentVerification(selectedDocument.id, 'pending')}
+                      disabled={updatingVerification}
+                      className={`px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50 ${
+                        isDarkMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                      }`}
+                    >
+                      <AlertTriangle className="h-5 w-5 mr-2" />
+                      {updatingVerification ? 'Updating...' : 'Reset to Pending'}
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDocumentModal(false);
+                    setSelectedDocument(null);
+                  }}
+                  className={`px-6 py-3 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-lg transition-colors font-medium`}
                 >
                   Close
                 </button>
