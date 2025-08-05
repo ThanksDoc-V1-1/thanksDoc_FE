@@ -5,210 +5,66 @@ import { FileText, Upload, Calendar, AlertTriangle, CheckCircle, X, Download, Ey
 import { useTheme } from '../contexts/ThemeContext';
 import DateDropdowns from './DateSliders';
 
-// Compliance documents configuration with automatic expiry dates for training certificates
-const COMPLIANCE_DOCUMENTS = [
-  {
-    id: 'gmc_registration',
-    name: 'GMC Registration Certificate',
-    type: 'certificate',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'current_performers_list',
-    name: 'Current Performers List',
-    type: 'document',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'cct_certificate',
-    name: 'Certificate for completion of training (CCT)',
-    type: 'certificate',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'medical_indemnity',
-    name: 'Medical Indemnity Insurance',
-    type: 'insurance',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'dbs_check',
-    name: 'Enhanced DBS (Disclosure and Barring Service) Check',
-    type: 'check',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'right_to_work',
-    name: 'Right to Work in the UK (Passport/Visa if applicable)',
-    type: 'identity',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'photo_id',
-    name: 'Photo ID (Passport or UK Driving Licence)',
-    type: 'identity',
-    required: true,
-    autoExpiry: false,
-    note: 'For identity verification'
-  },
-  {
-    id: 'gp_cv',
-    name: 'GP CV',
-    type: 'document',
-    required: true,
-    autoExpiry: false
-  },
-  {
-    id: 'occupational_health',
-    name: 'Occupational Health Clearance',
-    type: 'clearance',
-    required: true,
-    autoExpiry: false,
-    note: 'Proof of immunisations'
-  },
-  {
-    id: 'professional_references',
-    name: 'Professional References',
-    type: 'document',
-    required: true,
-    autoExpiry: false,
-    note: '2 references (including 1 clinical) from the past two years'
-  },
-  {
-    id: 'appraisal_revalidation',
-    name: 'Appraisal & Revalidation Evidence',
-    type: 'document',
-    required: true,
-    autoExpiry: false
-  },
-  // Mandatory Training Certificates with automatic expiry
-  {
-    id: 'basic_life_support',
-    name: 'Basic Life Support (BLS) + Anaphylaxis',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'level3_adult_safeguarding',
-    name: 'Level 3 Adult Safeguarding',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  },
-  {
-    id: 'level3_child_safeguarding',
-    name: 'Level 3 Child Safeguarding',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  },
-  {
-    id: 'information_governance',
-    name: 'Information Governance (IG) & GDPR',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'autism_learning_disability',
-    name: 'Autism and Learning Disability (Oliver McGowen)',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  },
-  {
-    id: 'equality_diversity',
-    name: 'Equality, Diversity and Human Rights',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  },
-  {
-    id: 'health_safety_welfare',
-    name: 'Health, Safety and Welfare',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'conflict_resolution',
-    name: 'Conflict Resolution and Handling Complaints',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  },
-  {
-    id: 'fire_safety',
-    name: 'Fire Safety',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'infection_prevention',
-    name: 'Infection Prevention and Control',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'moving_handling',
-    name: 'Moving and Handling',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 1,
-    note: 'Annual renewal required'
-  },
-  {
-    id: 'preventing_radicalisation',
-    name: 'Preventing Radicalisation',
-    type: 'training',
-    required: true,
-    autoExpiry: true,
-    validityYears: 3,
-    note: 'Valid for 3 years'
-  }
-];
+// Document types will be loaded dynamically from the backend
+// This replaces the hardcoded COMPLIANCE_DOCUMENTS array
 
 export default function ComplianceDocuments({ doctorId }) {
   const { isDarkMode } = useTheme();
   const [documents, setDocuments] = useState({});
+  const [documentTypes, setDocumentTypes] = useState([]); // Dynamic document types from API
   const [loading, setLoading] = useState(false);
+  const [loadingDocumentTypes, setLoadingDocumentTypes] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [expandedDocuments, setExpandedDocuments] = useState({});
   const [pendingUploads, setPendingUploads] = useState({}); // Store files before upload
   const [uploadSuccess, setUploadSuccess] = useState({}); // Track upload success states
 
+  // Load document types from API
+  const loadDocumentTypes = async () => {
+    setLoadingDocumentTypes(true);
+    try {
+      console.log('🔍 Loading document types from API...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-document-types`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Document types loaded:', result);
+        
+        if (result.data && Array.isArray(result.data)) {
+          // Transform the API response to match the expected format
+          const transformedTypes = result.data.map(type => ({
+            id: type.key,
+            name: type.name,
+            type: type.category || 'document',
+            required: type.required,
+            autoExpiry: type.autoExpiry || false,
+            validityYears: type.validityYears || null,
+            note: type.description || null
+          }));
+          
+          setDocumentTypes(transformedTypes);
+          console.log('✅ Document types set:', transformedTypes);
+        } else {
+          console.error('❌ Invalid document types response format:', result);
+          setDocumentTypes([]);
+        }
+      } else {
+        console.error('❌ Failed to load document types, status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        setDocumentTypes([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading document types:', error);
+      setDocumentTypes([]);
+    } finally {
+      setLoadingDocumentTypes(false);
+    }
+  };
+
   // Initialize documents state
   useEffect(() => {
+    loadDocumentTypes(); // Load document types from API first
     loadDocuments();
   }, [doctorId]);
 
@@ -380,7 +236,7 @@ export default function ComplianceDocuments({ doctorId }) {
   };
 
   const handleDateChange = async (documentId, field, value) => {
-    const docConfig = COMPLIANCE_DOCUMENTS.find(d => d.id === documentId);
+    const docConfig = documentTypes.find(d => d.id === documentId);
     const newDocuments = { ...documents };
     
     if (!newDocuments[documentId]) {
@@ -458,7 +314,7 @@ export default function ComplianceDocuments({ doctorId }) {
 
   const getDocumentStatus = (documentId) => {
     const doc = documents[documentId];
-    const config = COMPLIANCE_DOCUMENTS.find(d => d.id === documentId);
+    const config = documentTypes.find(d => d.id === documentId);
     
     if (!doc || !doc.files || doc.files.length === 0) {
       return 'missing';
@@ -603,7 +459,7 @@ export default function ComplianceDocuments({ doctorId }) {
     let expiring = 0;
     let expired = 0;
 
-    COMPLIANCE_DOCUMENTS.forEach(docConfig => {
+    documentTypes.forEach(docConfig => {
       const status = getDocumentStatus(docConfig.id);
       switch (status) {
         case 'uploaded':
@@ -621,7 +477,7 @@ export default function ComplianceDocuments({ doctorId }) {
       }
     });
 
-    return { uploaded, missing, expiring, expired, total: COMPLIANCE_DOCUMENTS.length };
+    return { uploaded, missing, expiring, expired, total: documentTypes.length };
   };
 
   // Format date for display
@@ -646,11 +502,18 @@ export default function ComplianceDocuments({ doctorId }) {
         </h3>
       </div>
 
-      {loading ? (
+      {loading || loadingDocumentTypes ? (
         <div className="text-center py-6">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
           <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Loading documents...
+            Loading {loadingDocumentTypes ? 'document types' : 'documents'}...
+          </p>
+        </div>
+      ) : documentTypes.length === 0 ? (
+        <div className="text-center py-6">
+          <AlertTriangle className={`h-8 w-8 mx-auto mb-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`} />
+          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            No document types found. Please contact administrator.
           </p>
         </div>
       ) : (
@@ -709,7 +572,7 @@ export default function ComplianceDocuments({ doctorId }) {
           </div>
 
           <div className="space-y-4">
-            {COMPLIANCE_DOCUMENTS.map((docConfig) => {
+            {documentTypes.map((docConfig) => {
               const doc = documents[docConfig.id];
               const status = getDocumentStatus(docConfig.id);
               const isExpanded = expandedDocuments[docConfig.id];
