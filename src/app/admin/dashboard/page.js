@@ -355,8 +355,8 @@ export default function AdminDashboard() {
     name: '',
     required: true,
     description: '',
-    autoExpiry: false,
-    validityYears: 1,
+    autoExpiry: true, // Enable auto-expiry by default for all documents
+    validityYears: 3, // Default to 3 years validity
     expiryWarningDays: 30
   });
   const [doctorFormData, setDoctorFormData] = useState({
@@ -1374,6 +1374,46 @@ export default function AdminDashboard() {
     }
   };
 
+  // Handle enabling auto-expiry for all documents
+  const handleEnableAutoExpiryForAll = async () => {
+    if (!confirm('This will enable auto-expiry tracking for ALL compliance documents. This action will update existing document types and calculate expiry dates for existing documents. Do you want to continue?')) {
+      return;
+    }
+
+    try {
+      setDataLoading(true);
+      console.log('🚀 Starting auto-expiry migration...');
+      
+      const response = await fetch('http://localhost:1337/api/compliance-document-types/enable-auto-expiry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Auto-expiry migration completed:', result);
+        
+        alert(`Auto-expiry tracking enabled successfully!\n\n` +
+              `Document Types Updated: ${result.result?.documentTypesUpdated || 0}\n` +
+              `Documents Updated: ${result.result?.documentsUpdated || 0}\n\n` +
+              `All documents now have automatic expiry tracking enabled.`);
+        
+        // Reload document types to reflect changes
+        await loadDocumentTypes(0);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to enable auto-expiry');
+      }
+    } catch (error) {
+      console.error('❌ Error enabling auto-expiry:', error);
+      alert(`Failed to enable auto-expiry: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   // Load compliance documents for a doctor
   const loadComplianceDocuments = async (doctorId) => {
     try {
@@ -1463,11 +1503,33 @@ export default function AdminDashboard() {
     
     return documentTypes.map(docType => {
       const uploadedDoc = documents.find(doc => doc.documentType === docType.key);
+      let status = uploadedDoc ? uploadedDoc.status : 'missing';
+      let expiryStatus = null;
+      let daysUntilExpiry = null;
+      
+      // Calculate expiry status for documents with auto-expiry enabled
+      if (uploadedDoc && docType.autoExpiry && uploadedDoc.expiryDate) {
+        const today = new Date();
+        const expiryDate = new Date(uploadedDoc.expiryDate);
+        daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry < 0) {
+          expiryStatus = 'expired';
+          status = 'expired'; // Override status if document is expired
+        } else if (daysUntilExpiry <= (docType.expiryWarningDays || 30)) {
+          expiryStatus = 'expiring';
+        } else {
+          expiryStatus = 'valid';
+        }
+      }
+      
       return {
         type: docType.key,
         config: docType,
         document: uploadedDoc,
-        status: uploadedDoc ? uploadedDoc.status : 'missing',
+        status: status,
+        expiryStatus: expiryStatus,
+        daysUntilExpiry: daysUntilExpiry,
         verificationStatus: uploadedDoc?.verificationStatus || 'pending'
       };
     });
@@ -3610,14 +3672,22 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
+                    onClick={handleEnableAutoExpiryForAll}
+                    disabled={dataLoading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
+                    <Clock className="h-4 w-4" />
+                    <span>Enable Auto-Expiry for All</span>
+                  </button>
+                  <button
                     onClick={() => {
                       setEditingDocumentType(null);
                       setDocumentTypeFormData({
                         name: '',
                         required: true,
                         description: '',
-                        autoExpiry: false,
-                        validityYears: 1,
+                        autoExpiry: true, // Default to auto-expiry enabled
+                        validityYears: 3, // Default to 3 years
                         expiryWarningDays: 30
                       });
                       setShowDocumentTypeForm(true);
@@ -4624,14 +4694,16 @@ export default function AdminDashboard() {
                   {!loadingDocuments && Array.isArray(complianceDocuments) && (
                     <>
                       {/* Documents Summary */}
-                      <div className="grid grid-cols-4 gap-4 mb-6">
+                      <div className="grid grid-cols-5 gap-4 mb-6">
                         {(() => {
                           try {
                             const allDocs = getAllDocumentsWithStatus();
-                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded').length;
+                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
                             const verifiedCount = allDocs.filter(doc => doc.verificationStatus === 'verified').length;
                             const pendingCount = allDocs.filter(doc => doc.verificationStatus === 'pending' && doc.status === 'uploaded').length;
                             const missingCount = allDocs.filter(doc => doc.status === 'missing').length;
+                            const expiredCount = allDocs.filter(doc => doc.expiryStatus === 'expired' || doc.status === 'expired').length;
+                            const expiringCount = allDocs.filter(doc => doc.expiryStatus === 'expiring').length;
 
                             return (
                               <>
@@ -4654,10 +4726,18 @@ export default function AdminDashboard() {
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Pending</div>
                                 </div>
                                 <div className="text-center">
-                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-                                    {missingCount}
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                                    {expiringCount}
                                   </div>
-                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Missing</div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expiring</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                    {expiredCount > 0 ? expiredCount : missingCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {expiredCount > 0 ? 'Expired' : 'Missing'}
+                                  </div>
                                 </div>
                               </>
                             );
@@ -4678,8 +4758,33 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {(() => {
                           try {
-                            return getAllDocumentsWithStatus().map(({ type, config, document, status, verificationStatus }) => {
-                              const statusInfo = getDocumentStatus(status, verificationStatus);
+                            return getAllDocumentsWithStatus().map(({ type, config, document, status, expiryStatus, daysUntilExpiry, verificationStatus }) => {
+                              // Determine the display status - prioritize expiry status over verification status
+                              let displayStatus = status;
+                              let statusText = status;
+                              let statusColor = '';
+                              
+                              if (expiryStatus === 'expired') {
+                                displayStatus = 'expired';
+                                statusText = 'Expired';
+                                statusColor = isDarkMode ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-700 border-red-200';
+                              } else if (expiryStatus === 'expiring') {
+                                displayStatus = 'expiring';
+                                statusText = `Expires in ${daysUntilExpiry} days`;
+                                statusColor = isDarkMode ? 'bg-orange-900/30 text-orange-400 border-orange-800' : 'bg-orange-50 text-orange-700 border-orange-200';
+                              } else if (verificationStatus === 'verified') {
+                                statusText = 'Verified';
+                                statusColor = isDarkMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-700 border-green-200';
+                              } else if (verificationStatus === 'pending' && status === 'uploaded') {
+                                statusText = 'Pending Review';
+                                statusColor = isDarkMode ? 'bg-yellow-900/30 text-yellow-400 border-yellow-800' : 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                              } else if (status === 'missing') {
+                                statusText = 'Missing';
+                                statusColor = isDarkMode ? 'bg-gray-900/30 text-gray-400 border-gray-800' : 'bg-gray-50 text-gray-700 border-gray-200';
+                              } else {
+                                statusText = status.charAt(0).toUpperCase() + status.slice(1);
+                                statusColor = isDarkMode ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200';
+                              }
                               
                               return (
                                 <div
@@ -4700,8 +4805,8 @@ export default function AdminDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={`text-xs px-2 py-1 rounded-full border ${statusInfo.color}`}>
-                                  {statusInfo.text}
+                                <span className={`text-xs px-2 py-1 rounded-full border ${statusColor}`}>
+                                  {statusText}
                                 </span>
                               </div>
                               
@@ -4709,10 +4814,22 @@ export default function AdminDashboard() {
                                 <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} space-y-1`}>
                                   <div>Uploaded: {new Date(document.uploadedAt).toLocaleDateString('en-GB')}</div>
                                   {document.expiryDate && (
-                                    <div>Expires: {new Date(document.expiryDate).toLocaleDateString('en-GB')}</div>
+                                    <div className={expiryStatus === 'expired' ? 'text-red-500 font-medium' : expiryStatus === 'expiring' ? 'text-orange-500 font-medium' : ''}>
+                                      Expires: {new Date(document.expiryDate).toLocaleDateString('en-GB')}
+                                      {daysUntilExpiry !== null && (
+                                        <span className="ml-1">
+                                          ({daysUntilExpiry < 0 ? `${Math.abs(daysUntilExpiry)} days ago` : `${daysUntilExpiry} days left`})
+                                        </span>
+                                      )}
+                                    </div>
                                   )}
                                   {document.verifiedBy && (
                                     <div>Verified by: {document.verifiedBy}</div>
+                                  )}
+                                  {config.autoExpiry && (
+                                    <div className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                      Auto-expiry: {config.validityYears} year{config.validityYears > 1 ? 's' : ''}
+                                    </div>
                                   )}
                                 </div>
                               )}
@@ -4731,7 +4848,7 @@ export default function AdminDashboard() {
                                     View
                                   </button>
                                   
-                                  {verificationStatus === 'pending' && (
+                                  {verificationStatus === 'pending' && expiryStatus !== 'expired' && (
                                     <div className="flex space-x-1">
                                       <button
                                         onClick={(e) => {
@@ -4753,6 +4870,12 @@ export default function AdminDashboard() {
                                       >
                                         <X className="h-3 w-3" />
                                       </button>
+                                    </div>
+                                  )}
+                                  
+                                  {expiryStatus === 'expired' && (
+                                    <div className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-red-900/50 text-red-300' : 'bg-red-100 text-red-700'}`}>
+                                      Document Expired - Requires Renewal
                                     </div>
                                   )}
                                 </div>

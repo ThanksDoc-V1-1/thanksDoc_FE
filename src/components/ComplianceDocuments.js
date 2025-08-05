@@ -121,8 +121,7 @@ export default function ComplianceDocuments({ doctorId }) {
     setPendingUploads(prev => ({
       ...prev,
       [documentId]: {
-        file,
-        expiryDate: documents[documentId]?.expiryDate || null
+        file
       }
     }));
     
@@ -187,9 +186,6 @@ export default function ComplianceDocuments({ doctorId }) {
       if (existingDoc?.issueDate) {
         formData.append('issueDate', existingDoc.issueDate);
       }
-      if (pendingUpload.expiryDate || existingDoc?.expiryDate) {
-        formData.append('expiryDate', pendingUpload.expiryDate || existingDoc.expiryDate);
-      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/upload`, {
         method: 'POST',
@@ -244,37 +240,30 @@ export default function ComplianceDocuments({ doctorId }) {
       newDocuments[documentId] = {};
     }
 
-    newDocuments[documentId][field] = value;
+    // Only handle issue date - expiry is calculated automatically
+    if (field === 'issueDate') {
+      newDocuments[documentId][field] = value;
+      saveDocuments(newDocuments);
 
-    // Auto-calculate expiry date for training certificates
-    if (field === 'issueDate' && docConfig.autoExpiry && docConfig.validityYears && value) {
-      const issueDate = new Date(value);
-      const expiryDate = new Date(issueDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + docConfig.validityYears);
-      newDocuments[documentId].expiryDate = expiryDate.toISOString().split('T')[0];
-    }
+      // If document exists in database, update it via API
+      if (newDocuments[documentId].id) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${newDocuments[documentId].id}/dates`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              issueDate: newDocuments[documentId].issueDate
+            })
+          });
 
-    saveDocuments(newDocuments);
-
-    // If document exists in database, update it via API
-    if (newDocuments[documentId].id) {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${newDocuments[documentId].id}/dates`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            issueDate: newDocuments[documentId].issueDate,
-            expiryDate: newDocuments[documentId].expiryDate
-          })
-        });
-
-        if (!response.ok) {
-          console.error('Failed to update dates on server');
+          if (!response.ok) {
+            console.error('Failed to update dates on server');
+          }
+        } catch (error) {
+          console.error('Error updating dates:', error);
         }
-      } catch (error) {
-        console.error('Error updating dates:', error);
       }
     }
   };
@@ -321,8 +310,8 @@ export default function ComplianceDocuments({ doctorId }) {
       return 'missing';
     }
 
-    if (config && config.autoExpiry && doc.expiryDate) {
-      const expiryDate = new Date(doc.expiryDate);
+    if (config && config.autoExpiry && config.validityYears && doc.issueDate) {
+      const expiryDate = new Date(calculateExpiryDate(doc.issueDate, config.validityYears));
       const today = new Date();
       const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
       
@@ -378,14 +367,17 @@ export default function ComplianceDocuments({ doctorId }) {
 
   const getStatusText = (status, documentId) => {
     const doc = documents[documentId];
+    const config = documentTypes.find(d => d.id === documentId);
+    
     switch (status) {
       case 'uploaded':
         return 'Uploaded';
       case 'missing':
         return 'Missing';
       case 'expiring':
-        if (doc?.expiryDate) {
-          const daysUntilExpiry = Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+        if (config && config.autoExpiry && config.validityYears && doc?.issueDate) {
+          const expiryDate = new Date(calculateExpiryDate(doc.issueDate, config.validityYears));
+          const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
           return `Expires in ${daysUntilExpiry} days`;
         }
         return 'Expiring Soon';
@@ -490,6 +482,14 @@ export default function ComplianceDocuments({ doctorId }) {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  // Calculate expiry date from issue date and validity years
+  const calculateExpiryDate = (issueDate, validityYears) => {
+    if (!issueDate || !validityYears) return null;
+    const expiryDate = new Date(issueDate);
+    expiryDate.setFullYear(expiryDate.getFullYear() + validityYears);
+    return expiryDate.toISOString().split('T')[0]; // Return in YYYY-MM-DD format
   };
 
   return (
@@ -617,15 +617,15 @@ export default function ComplianceDocuments({ doctorId }) {
                             )}
                           </p>
                         )}
-                        {/* Display Issue and Expiry dates if available */}
-                        {doc && (doc.issueDate || doc.expiryDate) && (
+                        {/* Display Issue date and calculated expiry date if available */}
+                        {doc && doc.issueDate && (
                           <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            {doc.issueDate && (
-                              <span>Issue: {formatDate(doc.issueDate)}</span>
-                            )}
-                            {doc.issueDate && doc.expiryDate && <span className="mx-2">•</span>}
-                            {doc.expiryDate && (
-                              <span>Expiry: {formatDate(doc.expiryDate)}</span>
+                            <span>Issue: {formatDate(doc.issueDate)}</span>
+                            {docConfig.autoExpiry && docConfig.validityYears && doc.issueDate && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <span>Expires: {formatDate(calculateExpiryDate(doc.issueDate, docConfig.validityYears))}</span>
+                              </>
                             )}
                           </div>
                         )}
@@ -729,36 +729,19 @@ export default function ComplianceDocuments({ doctorId }) {
                           value={doc?.issueDate || ''}
                           onChange={(dateString) => handleDateChange(docConfig.id, 'issueDate', dateString)}
                         />
-                        
-                        <DateDropdowns
-                          label="Expiry Date"
-                          value={doc?.expiryDate || ''}
-                          onChange={(dateString) => {
-                            if (pendingUploads[docConfig.id]) {
-                              setPendingUploads(prev => ({
-                                ...prev,
-                                [docConfig.id]: {
-                                  ...prev[docConfig.id],
-                                  expiryDate: dateString
-                                }
-                              }));
-                            }
-                            handleDateChange(docConfig.id, 'expiryDate', dateString);
-                          }}
-                          disabled={docConfig.autoExpiry}
-                          autoCalculated={docConfig.autoExpiry}
-                        />
                       </div>
                       
                       {/* Auto-expiry explanation */}
-                      {docConfig.autoExpiry && (
-                        <div className={`mt-2 p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'}`}>
-                          <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} flex items-center`}>
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Expiry date will be automatically calculated as {docConfig.validityYears} year{docConfig.validityYears > 1 ? 's' : ''} from the issue date.
-                          </p>
-                        </div>
-                      )}
+                      <div className={`mt-2 p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'}`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} flex items-center`}>
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {docConfig.autoExpiry ? (
+                            <>Expiry date will be automatically calculated as {docConfig.validityYears} year{docConfig.validityYears > 1 ? 's' : ''} from the issue date.</>
+                          ) : (
+                            <>This document does not have automatic expiry tracking.</>
+                          )}
+                        </p>
+                      </div>
 
                       {/* Save Button */}
                       {pendingUploads[docConfig.id]?.file && (
