@@ -352,7 +352,6 @@ export default function AdminDashboard() {
   const [showDocumentTypeForm, setShowDocumentTypeForm] = useState(false);
   const [editingDocumentType, setEditingDocumentType] = useState(null);
   const [documentTypeFormData, setDocumentTypeFormData] = useState({
-    key: '',
     name: '',
     required: true,
     description: ''
@@ -1204,6 +1203,16 @@ export default function AdminDashboard() {
     }));
   };
 
+  // Generate document key from display name
+  const generateDocumentKey = (name) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special characters except spaces
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/_+/g, '_') // Replace multiple underscores with single
+      .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+  };
+
   // Handle document type submission
   const handleDocumentTypeSubmit = async (e) => {
     e.preventDefault();
@@ -1213,6 +1222,13 @@ export default function AdminDashboard() {
       console.log('📝 Document type form submission started');
       console.log('📝 Form data:', documentTypeFormData);
       console.log('✏️ Editing document type:', editingDocumentType);
+
+      // Auto-generate key from name if creating new document type
+      const documentKey = editingDocumentType 
+        ? editingDocumentType.key // Keep existing key when editing
+        : generateDocumentKey(documentTypeFormData.name);
+
+      console.log('🔑 Using document key:', documentKey);
 
       let response;
       if (editingDocumentType) {
@@ -1227,7 +1243,7 @@ export default function AdminDashboard() {
           },
           body: JSON.stringify({
             data: {
-              key: documentTypeFormData.key,
+              key: documentKey,
               name: documentTypeFormData.name,
               required: documentTypeFormData.required,
               description: documentTypeFormData.description
@@ -1247,7 +1263,7 @@ export default function AdminDashboard() {
           },
           body: JSON.stringify({
             data: {
-              key: documentTypeFormData.key,
+              key: documentKey,
               name: documentTypeFormData.name,
               required: documentTypeFormData.required,
               description: documentTypeFormData.description
@@ -1267,7 +1283,6 @@ export default function AdminDashboard() {
         setShowDocumentTypeForm(false);
         setEditingDocumentType(null);
         setDocumentTypeFormData({
-          key: '',
           name: '',
           required: true,
           description: ''
@@ -1292,7 +1307,6 @@ export default function AdminDashboard() {
   const handleEditDocumentType = (documentType) => {
     setEditingDocumentType(documentType);
     setDocumentTypeFormData({
-      key: documentType.key,
       name: documentType.name,
       required: documentType.required,
       description: documentType.description || ''
@@ -3584,7 +3598,6 @@ export default function AdminDashboard() {
                     onClick={() => {
                       setEditingDocumentType(null);
                       setDocumentTypeFormData({
-                        key: '',
                         name: '',
                         required: true,
                         description: ''
@@ -3688,7 +3701,6 @@ export default function AdminDashboard() {
                       onClick={() => {
                         setEditingDocumentType(null);
                         setDocumentTypeFormData({
-                          key: '',
                           name: '',
                           required: true,
                           description: ''
@@ -3727,28 +3739,6 @@ export default function AdminDashboard() {
             
             <form onSubmit={handleDocumentTypeSubmit} className="p-6 space-y-6">
               <div>
-                <label htmlFor="documentTypeKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Document Type Key *
-                </label>
-                <input
-                  type="text"
-                  id="documentTypeKey"
-                  name="key"
-                  value={documentTypeFormData.key}
-                  onChange={handleDocumentTypeFormChange}
-                  required
-                  disabled={!!editingDocumentType}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  placeholder="e.g., gmc_registration, medical_indemnity"
-                  pattern="[a-z_]+"
-                  title="Only lowercase letters and underscores allowed"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Use lowercase letters and underscores only. Cannot be changed after creation.
-                </p>
-              </div>
-              
-              <div>
                 <label htmlFor="documentTypeName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Display Name *
                 </label>
@@ -3762,6 +3752,9 @@ export default function AdminDashboard() {
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
                   placeholder="e.g., GMC Registration, Medical Indemnity"
                 />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  A unique key will be automatically generated from this name.
+                </p>
               </div>
               
               <div>
