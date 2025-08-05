@@ -232,7 +232,7 @@ export default function DoctorDashboard() {
       console.log('🔍 [DOCTOR] Fetching available services from backend');
       
       // Use the same endpoint as business dashboard - fetch subcategory services
-      const response = await fetch('http://localhost:1337/api/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc`);
       const data = await response.json();
       console.log('📊 [DOCTOR] Raw API response:', data);
       console.log('📊 [DOCTOR] Response status:', response.status);

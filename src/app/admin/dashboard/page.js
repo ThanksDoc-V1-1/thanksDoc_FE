@@ -616,7 +616,7 @@ export default function AdminDashboard() {
         try {
           console.log(`📋 Document types loading attempt ${attempts + 1}/${maxAttempts}`);
           
-          const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
           console.log('📡 Document types API Response status:', response.status);
           
           if (response.ok) {
@@ -1131,7 +1131,7 @@ export default function AdminDashboard() {
     
     try {
       console.log('🔄 Loading document types from API...');
-      const response = await fetch(`http://localhost:1337/api/compliance-document-types`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
       console.log('📡 API Response status:', response.status);
       
       if (response.ok) {
@@ -1245,7 +1245,7 @@ export default function AdminDashboard() {
         const documentId = editingDocumentType.id; // Use numeric ID, not documentId
         console.log('📝 Updating document type with numeric ID:', documentId);
         
-        response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/${documentId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1268,7 +1268,7 @@ export default function AdminDashboard() {
         // Create new document type
         console.log('🆕 Creating new document type');
         
-        response = await fetch(`http://localhost:1337/api/compliance-document-types`, {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1348,7 +1348,7 @@ export default function AdminDashboard() {
       const documentId = documentType.id; // Use numeric ID, not documentId
       console.log('🗑️ Deleting document type with numeric ID:', documentId);
       
-      const response = await fetch(`http://localhost:1337/api/compliance-document-types/${documentId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/${documentId}`, {
         method: 'DELETE'
       });
 
@@ -1390,7 +1390,7 @@ export default function AdminDashboard() {
       setDataLoading(true);
       console.log('🚀 Starting auto-expiry migration...');
       
-      const response = await fetch('http://localhost:1337/api/compliance-document-types/enable-auto-expiry', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/enable-auto-expiry`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1425,7 +1425,7 @@ export default function AdminDashboard() {
     try {
       console.log('🔍 Loading compliance documents for doctor ID:', doctorId);
       setLoadingDocuments(true);
-      const response = await fetch(`http://localhost:1337/api/compliance-documents/doctor/${doctorId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}`);
       console.log('📡 API Response status:', response.status);
       
       if (response.ok) {
@@ -1452,7 +1452,7 @@ export default function AdminDashboard() {
     try {
       console.log('🔍 Loading professional references for doctor ID:', doctorId);
       setLoadingReferences(true);
-      const response = await fetch(`http://localhost:1337/api/professional-references/doctor/${doctorId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/doctor/${doctorId}`);
       console.log('📡 Professional References API Response status:', response.status);
       
       if (response.ok) {
@@ -1478,7 +1478,7 @@ export default function AdminDashboard() {
   const handleDocumentVerification = async (documentId, verificationStatus) => {
     try {
       setUpdatingVerification(true);
-      const response = await fetch(`http://localhost:1337/api/compliance-documents/${documentId}/verify`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/${documentId}/verify`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

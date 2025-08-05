@@ -28,7 +28,7 @@ export default function ComplianceDocuments({ doctorId }) {
     setLoadingDocumentTypes(true);
     try {
       console.log('🔍 Loading document types from API...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-document-types`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
       
       if (response.ok) {
         const result = await response.json();
@@ -79,7 +79,7 @@ export default function ComplianceDocuments({ doctorId }) {
     
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/doctor/${doctorId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -141,7 +141,7 @@ export default function ComplianceDocuments({ doctorId }) {
     try {
       setUploadingDoc(documentId);
       
-      const response = await fetch(`http://localhost:1337/api/compliance-documents/${documentId}/verify`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/${documentId}/verify`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ export default function ComplianceDocuments({ doctorId }) {
         formData.append('issueDate', existingDoc.issueDate);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/upload`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/upload`, {
         method: 'POST',
         body: formData
       });
@@ -253,7 +253,7 @@ export default function ComplianceDocuments({ doctorId }) {
       // If document exists in database, update it via API
       if (newDocuments[documentId].id) {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${newDocuments[documentId].id}/dates`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/${newDocuments[documentId].id}/dates`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -278,7 +278,7 @@ export default function ComplianceDocuments({ doctorId }) {
       const doc = documents[documentId];
       if (doc && doc.id) {
         // Delete from server
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/compliance-documents/${doc.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/${doc.id}`, {
           method: 'DELETE'
         });
 
@@ -312,7 +312,7 @@ export default function ComplianceDocuments({ doctorId }) {
     if (!doctorId) return;
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/professional-references/doctor/${doctorId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/doctor/${doctorId}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -400,7 +400,7 @@ export default function ComplianceDocuments({ doctorId }) {
     setUploadingDoc(documentId);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/professional-references/save`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

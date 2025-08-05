@@ -1,7 +1,7 @@
 // Compliance Documents API Client for Frontend
 // Usage: import this file in your React components
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 class ComplianceDocumentsAPI {
   constructor() {
