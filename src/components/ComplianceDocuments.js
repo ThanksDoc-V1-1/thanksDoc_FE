@@ -18,6 +18,10 @@ export default function ComplianceDocuments({ doctorId }) {
   const [expandedDocuments, setExpandedDocuments] = useState({});
   const [pendingUploads, setPendingUploads] = useState({}); // Store files before upload
   const [uploadSuccess, setUploadSuccess] = useState({}); // Track upload success states
+  
+  // Professional References state
+  const [references, setReferences] = useState({}); // Store references by doctor ID
+  const [pendingReferences, setPendingReferences] = useState({}); // Store unsaved references
 
   // Load document types from API
   const loadDocumentTypes = async () => {
@@ -67,6 +71,7 @@ export default function ComplianceDocuments({ doctorId }) {
   useEffect(() => {
     loadDocumentTypes(); // Load document types from API first
     loadDocuments();
+    loadReferences(); // Load professional references
   }, [doctorId]);
 
   const loadDocuments = async () => {
@@ -302,9 +307,171 @@ export default function ComplianceDocuments({ doctorId }) {
     }
   };
 
+  // Professional References functions
+  const loadReferences = async () => {
+    if (!doctorId) return;
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/professional-references/doctor/${doctorId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setReferences({
+            [doctorId]: result.data.references || []
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading references:', error);
+      // Fallback to localStorage for development
+      const savedRefs = localStorage.getItem(`professional_references_${doctorId}`);
+      if (savedRefs) {
+        setReferences({ [doctorId]: JSON.parse(savedRefs) });
+      } else {
+        setReferences({ [doctorId]: [] });
+      }
+    }
+    
+    // Initialize pending references for Professional References if they don't exist
+    const professionalRefsDoc = documentTypes.find(type => type.name === 'Professional References');
+    if (professionalRefsDoc && (!references[doctorId] || references[doctorId].length === 0)) {
+      // Don't auto-add a reference, let user click "Add Reference" button
+      setPendingReferences(prev => ({
+        ...prev,
+        [professionalRefsDoc.id]: []
+      }));
+    }
+  };
+
+  const addReference = (documentId) => {
+    const newReference = {
+      id: Date.now().toString(),
+      firstName: '',
+      lastName: '',
+      position: '',
+      organisation: '',
+      email: ''
+    };
+    
+    setPendingReferences(prev => ({
+      ...prev,
+      [documentId]: [...(prev[documentId] || []), newReference]
+    }));
+  };
+
+  const updateReference = (documentId, referenceId, field, value) => {
+    setPendingReferences(prev => ({
+      ...prev,
+      [documentId]: (prev[documentId] || []).map(ref =>
+        ref.id === referenceId ? { ...ref, [field]: value } : ref
+      )
+    }));
+  };
+
+  const removeReference = (documentId, referenceId) => {
+    setPendingReferences(prev => ({
+      ...prev,
+      [documentId]: (prev[documentId] || []).filter(ref => ref.id !== referenceId)
+    }));
+  };
+
+  const saveReferences = async (documentId) => {
+    const referencesToSave = pendingReferences[documentId] || [];
+    
+    // Validate all references
+    for (const ref of referencesToSave) {
+      if (!ref.firstName || !ref.lastName || !ref.position || !ref.organisation || !ref.email) {
+        alert('Please fill in all fields for each reference.');
+        return;
+      }
+      
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(ref.email)) {
+        alert('Please enter a valid email address for all references.');
+        return;
+      }
+    }
+
+    setUploadingDoc(documentId);
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1337/api'}/professional-references/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          doctorId,
+          documentType: documentId,
+          references: referencesToSave
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Update the main references state
+          setReferences(prev => ({
+            ...prev,
+            [doctorId]: referencesToSave
+          }));
+
+          // Clear pending references
+          setPendingReferences(prev => {
+            const newPending = { ...prev };
+            delete newPending[documentId];
+            return newPending;
+          });
+
+          // Save to localStorage as backup
+          localStorage.setItem(`professional_references_${doctorId}`, JSON.stringify(referencesToSave));
+
+          // Show success state
+          setUploadSuccess(prev => ({
+            ...prev,
+            [documentId]: true
+          }));
+
+          // Hide success message after 3 seconds
+          setTimeout(() => {
+            setUploadSuccess(prev => ({
+              ...prev,
+              [documentId]: false
+            }));
+          }, 3000);
+
+          alert('References saved successfully!');
+        } else {
+          throw new Error(result.message || 'Save failed');
+        }
+      } else {
+        throw new Error('Save failed');
+      }
+    } catch (error) {
+      console.error('Error saving references:', error);
+      // Save to localStorage as fallback
+      localStorage.setItem(`professional_references_${doctorId}`, JSON.stringify(referencesToSave));
+      alert('References saved locally. Please try again later to sync with server.');
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
   const getDocumentStatus = (documentId) => {
-    const doc = documents[documentId];
     const config = documentTypes.find(d => d.id === documentId);
+    
+    // Special handling for Professional References
+    if (config && config.name === 'Professional References') {
+      const doctorRefs = references[doctorId];
+      if (!doctorRefs || doctorRefs.length === 0) {
+        return 'missing';
+      }
+      return 'uploaded';
+    }
+    
+    // Regular document handling
+    const doc = documents[documentId];
     
     if (!doc || !doc.files || doc.files.length === 0) {
       return 'missing';
@@ -368,6 +535,14 @@ export default function ComplianceDocuments({ doctorId }) {
   const getStatusText = (status, documentId) => {
     const doc = documents[documentId];
     const config = documentTypes.find(d => d.id === documentId);
+    
+    // Special handling for Professional References
+    if (config && config.name === 'Professional References') {
+      const doctorRefs = references[doctorId];
+      if (status === 'uploaded' && doctorRefs && doctorRefs.length > 0) {
+        return `${doctorRefs.length} Reference${doctorRefs.length > 1 ? 's' : ''}`;
+      }
+    }
     
     switch (status) {
       case 'uploaded':
@@ -651,7 +826,210 @@ export default function ComplianceDocuments({ doctorId }) {
                   {/* Collapsible Content */}
                   {isExpanded && (
                     <div className={`border-t p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                      {/* File Upload */}
+                      
+                      {/* Professional References Section */}
+                      {docConfig.name === 'Professional References' ? (
+                        <div className="space-y-4">
+                          <div className="mb-4">
+                            <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Professional References
+                            </label>
+                            <p className={`text-xs mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              Add references from previous employers or professional contacts who can verify your work experience.
+                            </p>
+                          </div>
+
+                          {/* Existing References */}
+                          {references[doctorId] && references[doctorId].length > 0 && (
+                            <div className="mb-4">
+                              <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Saved References ({references[doctorId].length})
+                              </h5>
+                              <div className="space-y-2">
+                                {references[doctorId].map((ref, index) => (
+                                  <div key={index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50'}`}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                      <div><strong>Name:</strong> {ref.firstName} {ref.lastName}</div>
+                                      <div><strong>Position:</strong> {ref.position}</div>
+                                      <div><strong>Organisation:</strong> {ref.organisation}</div>
+                                      <div><strong>Email:</strong> {ref.email}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* No References Message */}
+                          {(!references[doctorId] || references[doctorId].length === 0) && (!pendingReferences[docConfig.id] || pendingReferences[docConfig.id].length === 0) && (
+                            <div className={`mb-4 p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-200 bg-gray-50'}`}>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                You haven't added any professional references yet. Click "Add Reference" below to get started.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Pending References Form */}
+                          {pendingReferences[docConfig.id] && pendingReferences[docConfig.id].length > 0 && (
+                            <div className="space-y-3">
+                              <h5 className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                New References
+                              </h5>
+                              {pendingReferences[docConfig.id].map((ref) => (
+                                <div key={ref.id} className={`p-4 border rounded-lg ${isDarkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-200 bg-white'}`}>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        First Name *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={ref.firstName}
+                                        onChange={(e) => updateReference(docConfig.id, ref.id, 'firstName', e.target.value)}
+                                        className={`w-full px-3 py-2 text-sm border rounded ${
+                                          isDarkMode 
+                                            ? 'bg-gray-800 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                        placeholder="Enter first name"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Last Name *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={ref.lastName}
+                                        onChange={(e) => updateReference(docConfig.id, ref.id, 'lastName', e.target.value)}
+                                        className={`w-full px-3 py-2 text-sm border rounded ${
+                                          isDarkMode 
+                                            ? 'bg-gray-800 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                        placeholder="Enter last name"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Position *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={ref.position}
+                                        onChange={(e) => updateReference(docConfig.id, ref.id, 'position', e.target.value)}
+                                        className={`w-full px-3 py-2 text-sm border rounded ${
+                                          isDarkMode 
+                                            ? 'bg-gray-800 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                        placeholder="Job title or position"
+                                      />
+                                    </div>
+                                    
+                                    <div>
+                                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Organisation *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        value={ref.organisation}
+                                        onChange={(e) => updateReference(docConfig.id, ref.id, 'organisation', e.target.value)}
+                                        className={`w-full px-3 py-2 text-sm border rounded ${
+                                          isDarkMode 
+                                            ? 'bg-gray-800 border-gray-600 text-white' 
+                                            : 'bg-white border-gray-300 text-gray-900'
+                                        }`}
+                                        placeholder="Company or organisation"
+                                      />
+                                    </div>
+                                    
+                                    <div className="md:col-span-2">
+                                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        Email Address *
+                                      </label>
+                                      <div className="flex space-x-2">
+                                        <input
+                                          type="email"
+                                          value={ref.email}
+                                          onChange={(e) => updateReference(docConfig.id, ref.id, 'email', e.target.value)}
+                                          className={`flex-1 px-3 py-2 text-sm border rounded ${
+                                            isDarkMode 
+                                              ? 'bg-gray-800 border-gray-600 text-white' 
+                                              : 'bg-white border-gray-300 text-gray-900'
+                                          }`}
+                                          placeholder="professional.email@company.com"
+                                        />
+                                        <button
+                                          onClick={() => removeReference(docConfig.id, ref.id)}
+                                          className={`px-3 py-2 text-xs font-medium rounded transition-colors ${
+                                            isDarkMode 
+                                              ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
+                                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                          }`}
+                                          title="Remove this reference"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add Reference Button */}
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => addReference(docConfig.id)}
+                              className={`px-4 py-2 text-xs font-medium rounded transition-colors ${
+                                isDarkMode 
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                            >
+                              Add Reference
+                            </button>
+
+                            {/* Save References Button */}
+                            {pendingReferences[docConfig.id] && pendingReferences[docConfig.id].length > 0 && (
+                              <button
+                                onClick={() => saveReferences(docConfig.id)}
+                                disabled={uploadingDoc === docConfig.id}
+                                className={`px-4 py-2 text-xs font-medium rounded transition-colors ${
+                                  uploadingDoc === docConfig.id
+                                    ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500'
+                                    : isDarkMode 
+                                      ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                      : 'bg-green-600 hover:bg-green-700 text-white'
+                                }`}
+                              >
+                                {uploadingDoc === docConfig.id ? 'Saving...' : 'Save References'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Success Message */}
+                          {uploadSuccess[docConfig.id] && (
+                            <div className={`mt-3 p-2 rounded text-xs ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                              ✓ References saved successfully!
+                            </div>
+                          )}
+
+                          {/* Information Note */}
+                          <div className={`mt-4 p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800/30' : 'bg-blue-50 border border-blue-200'}`}>
+                            <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                              💡 Your references should be professional contacts who can verify your work experience, qualifications, and character. Include managers, colleagues, or clinical supervisors from previous positions.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        // Regular Document Upload Section
+                        <>
+                          {/* File Upload */}
                       <div className="mb-4">
                         <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Upload Documents
@@ -812,6 +1190,8 @@ export default function ComplianceDocuments({ doctorId }) {
                             ))}
                           </div>
                         </div>
+                      )}
+                        </>
                       )}
                     </div>
                   )}
