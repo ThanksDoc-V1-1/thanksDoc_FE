@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, getCurrentLocation } from '../../../lib/uti
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import TransactionHistory from '../../../components/TransactionHistory';
+import AdminNotificationCenter from '../../../components/AdminNotificationCenter';
 
 export default function AdminDashboard() {
   const { logout, user, isAuthenticated, loading } = useAuth();
@@ -1677,6 +1678,9 @@ export default function AdminDashboard() {
             
             {/* Desktop controls */}
             <div className="hidden md:flex items-center space-x-3">
+              {/* Admin Notification Center */}
+              <AdminNotificationCenter />
+              
               <button 
                 onClick={fetchAllData}
                 className={`px-4 py-2 ${isDarkMode ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : 'bg-blue-600 text-white hover:bg-blue-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
