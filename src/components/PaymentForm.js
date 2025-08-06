@@ -6,7 +6,69 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import SavedPaymentMethods from './SavedPaymentMethods';
 
+// Load Stripe once and cache it
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
+// Enhanced loading component with progress steps
+function LoadingProgress({ currentStep = 1, steps }) {
+  return (
+    <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-800">
+      <div className="flex flex-col items-center justify-center py-12">
+        {/* Animated loading spinner */}
+        <div className="relative mb-6">
+          <div className="w-16 h-16 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-ping opacity-20"></div>
+        </div>
+        
+        {/* Loading text */}
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-white mb-2">Preparing Your Payment</h3>
+          <p className="text-gray-400 text-sm mb-4">Setting up secure payment options...</p>
+          
+          {/* Progress steps */}
+          <div className="space-y-2">
+            {steps.map((step, index) => {
+              const stepNumber = index + 1;
+              const isActive = stepNumber === currentStep;
+              const isCompleted = stepNumber < currentStep;
+              
+              return (
+                <div key={index} className="flex items-center justify-center space-x-2 text-xs">
+                  <div className={`w-2 h-2 rounded-full ${
+                    isCompleted ? 'bg-green-500' : 
+                    isActive ? 'bg-blue-500 animate-pulse' : 
+                    'bg-gray-500'
+                  }`}></div>
+                  <span className={`${
+                    isCompleted ? 'text-green-300' :
+                    isActive ? 'text-gray-300' : 
+                    'text-gray-500'
+                  }`}>
+                    {isCompleted ? '✓' : ''} {step}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Security indicators */}
+        <div className="flex items-center justify-center mt-6 space-x-4 text-xs text-gray-500">
+          <div className="flex items-center space-x-1">
+            <Lock className="h-3 w-3 text-green-400" />
+            <span>SSL Encrypted</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <div className="w-3 h-3 bg-indigo-600 rounded flex items-center justify-center">
+              <span className="text-white text-[8px] font-bold">S</span>
+            </div>
+            <span>Stripe Secure</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Payment Form Component that uses Stripe Elements
 function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
@@ -22,10 +84,20 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState(null);
   const [showAddCard, setShowAddCard] = useState(false);
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
-  const [customerLoading, setCustomerLoading] = useState(true);
+  
+  // Enhanced loading states
+  const [initializationStep, setInitializationStep] = useState(1);
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
   
   // Ref to access SavedPaymentMethods component
   const savedPaymentMethodsRef = useRef();
+
+  const initializationSteps = [
+    'Initializing customer account',
+    'Loading saved payment methods',
+    'Preparing secure checkout',
+    'Ready for payment'
+  ];
 
   useEffect(() => {
     // Initialize customer when component mounts
@@ -36,14 +108,15 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
   useEffect(() => {
     // Only create PaymentIntent once we have all necessary info
-    if (!paymentIntentCreated && serviceRequest && customerId) {
+    if (!paymentIntentCreated && serviceRequest && customerId && isFullyLoaded) {
       createPaymentIntent();
     }
-  }, [serviceRequest, customerId]); // Removed selectedPaymentMethodId and paymentIntentCreated to prevent loops
+  }, [serviceRequest, customerId, isFullyLoaded]); // Removed selectedPaymentMethodId and paymentIntentCreated to prevent loops
 
   const initializeCustomer = async () => {
     try {
-      setCustomerLoading(true);
+      setInitializationStep(1);
+      
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: {
@@ -61,15 +134,27 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       if (response.ok) {
         console.log('✅ Customer initialized successfully:', data.customerId);
         setCustomerId(data.customerId);
+        setInitializationStep(2);
+        
+        // Add small delay to show step progression
+        setTimeout(() => {
+          setInitializationStep(3);
+          setTimeout(() => {
+            setInitializationStep(4);
+            setTimeout(() => {
+              setIsFullyLoaded(true);
+            }, 300);
+          }, 500);
+        }, 300);
       } else {
         console.error('Failed to initialize customer:', data.error);
         setPaymentError('Failed to initialize payment system');
+        setIsFullyLoaded(true);
       }
     } catch (error) {
       console.error('Error initializing customer:', error);
       setPaymentError('Failed to initialize payment system');
-    } finally {
-      setCustomerLoading(false);
+      setIsFullyLoaded(true);
     }
   };
 
@@ -101,14 +186,20 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
         requestBody.paymentMethodId = selectedPaymentMethodId;
       }
       
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
       const response = await fetch('/api/create-payment-intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
       
       if (data.error) {
@@ -124,8 +215,13 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
         onPaymentSuccess?.({ id: data.paymentIntentId });
       }
     } catch (error) {
-      console.error('Error creating payment intent:', error);
-      setPaymentError('Failed to initialize payment. Please try again.');
+      if (error.name === 'AbortError') {
+        console.error('Payment intent creation timed out');
+        setPaymentError('Payment initialization timed out. Please try again.');
+      } else {
+        console.error('Error creating payment intent:', error);
+        setPaymentError('Failed to initialize payment. Please try again.');
+      }
       setPaymentIntentCreated(false); // Reset on error
     }
   };
@@ -327,53 +423,12 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
     }
   };
 
-  if (customerLoading) {
+  if (!isFullyLoaded) {
     return (
-      <div className="max-w-xl mx-auto bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-800">
-        <div className="flex flex-col items-center justify-center py-12">
-          {/* Animated loading spinner */}
-          <div className="relative mb-6">
-            <div className="w-16 h-16 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-r-blue-400 rounded-full animate-ping opacity-20"></div>
-          </div>
-          
-          {/* Loading text */}
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-white mb-2">Preparing Your Payment</h3>
-            <p className="text-gray-400 text-sm mb-4">Setting up secure payment options...</p>
-            
-            {/* Progress steps */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-center space-x-2 text-xs">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-gray-300">Initializing customer account</span>
-              </div>
-              <div className="flex items-center justify-center space-x-2 text-xs">
-                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                <span className="text-gray-500">Loading saved payment methods</span>
-              </div>
-              <div className="flex items-center justify-center space-x-2 text-xs">
-                <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                <span className="text-gray-500">Preparing secure checkout</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Security indicators */}
-          <div className="flex items-center justify-center mt-6 space-x-4 text-xs text-gray-500">
-            <div className="flex items-center space-x-1">
-              <Lock className="h-3 w-3 text-green-400" />
-              <span>SSL Encrypted</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-indigo-600 rounded flex items-center justify-center">
-                <span className="text-white text-[8px] font-bold">S</span>
-              </div>
-              <span>Stripe Secure</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LoadingProgress 
+        currentStep={initializationStep} 
+        steps={initializationSteps} 
+      />
     );
   }
 
@@ -463,7 +518,15 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
             <label className="block text-sm font-medium text-gray-300 mb-3">
               Card Information
             </label>
-            <div className="border border-gray-600 rounded-lg bg-gray-700 p-4">
+            <div className="border border-gray-600 rounded-lg bg-gray-700 p-4 relative">
+              {!stripe && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-700 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-gray-400 text-sm">Loading card form...</span>
+                  </div>
+                </div>
+              )}
               <CardElement
                 options={{
                   hidePostalCode: true,
@@ -581,8 +644,41 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
 // Main PaymentForm component that wraps CheckoutForm with Stripe Elements
 export default function PaymentForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
+  const [stripeLoading, setStripeLoading] = useState(true);
+  
+  useEffect(() => {
+    // Preload Stripe to improve performance
+    stripePromise.then(() => {
+      setStripeLoading(false);
+    }).catch((error) => {
+      console.error('Failed to load Stripe:', error);
+      setStripeLoading(false);
+    });
+  }, []);
+
+  if (stripeLoading) {
+    return (
+      <LoadingProgress 
+        currentStep={1} 
+        steps={['Loading payment system', 'Initializing Stripe', 'Setting up security', 'Ready for payment']} 
+      />
+    );
+  }
+
   return (
-    <Elements stripe={stripePromise}>
+    <Elements 
+      stripe={stripePromise}
+      options={{
+        // Add options to improve loading performance
+        appearance: {
+          theme: 'night',
+          variables: {
+            colorPrimary: '#3b82f6',
+          },
+        },
+        loader: 'auto', // Show Stripe's own loading indicator
+      }}
+    >
       <CheckoutForm 
         serviceRequest={serviceRequest} 
         onPaymentSuccess={onPaymentSuccess}

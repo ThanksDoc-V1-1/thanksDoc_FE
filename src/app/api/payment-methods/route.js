@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+// Simple in-memory cache for payment methods (you can replace with Redis in production)
+const paymentMethodsCache = new Map();
+const CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+
 // GET - Retrieve saved payment methods for a customer
 export async function GET(request) {
   try {
@@ -17,21 +21,26 @@ export async function GET(request) {
 
     console.log('Fetching payment methods for customer:', customerId);
 
-    // List payment methods for the customer
+    // Check cache first
+    const cacheKey = `payment_methods_${customerId}`;
+    const cached = paymentMethodsCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      console.log('Using cached payment methods:', cached.methods.length);
+      return NextResponse.json({
+        paymentMethods: cached.methods,
+      });
+    }
+
+    // List payment methods for the customer with expanded details
     const paymentMethods = await stripe.paymentMethods.list({
       customer: customerId,
       type: 'card',
+      limit: 10, // Limit to reduce response size
     });
 
     console.log('Raw payment methods from Stripe:', paymentMethods.data.length);
-    console.log('Payment methods data:', paymentMethods.data.map(pm => ({
-      id: pm.id,
-      brand: pm.card?.brand,
-      last4: pm.card?.last4,
-      customer: pm.customer
-    })));
 
-    // Format the payment methods for frontend
+    // Format the payment methods for frontend (optimized)
     const formattedMethods = paymentMethods.data.map(pm => ({
       id: pm.id,
       card: {
@@ -42,6 +51,12 @@ export async function GET(request) {
       },
       created: pm.created,
     }));
+
+    // Cache the results
+    paymentMethodsCache.set(cacheKey, {
+      methods: formattedMethods,
+      timestamp: Date.now()
+    });
 
     return NextResponse.json({
       paymentMethods: formattedMethods,
@@ -105,6 +120,10 @@ export async function POST(request) {
       });
     }
 
+    // Invalidate cache for this customer
+    const cacheKey = `payment_methods_${customerId}`;
+    paymentMethodsCache.delete(cacheKey);
+
     return NextResponse.json({
       success: true,
       message: 'Payment method saved successfully',
@@ -123,6 +142,7 @@ export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
     const paymentMethodId = searchParams.get('paymentMethodId');
+    const customerId = searchParams.get('customerId'); // Add this to invalidate cache
     
     if (!paymentMethodId) {
       return NextResponse.json(
@@ -135,6 +155,12 @@ export async function DELETE(request) {
 
     // Detach payment method from customer
     await stripe.paymentMethods.detach(paymentMethodId);
+
+    // Invalidate cache if customerId is provided
+    if (customerId) {
+      const cacheKey = `payment_methods_${customerId}`;
+      paymentMethodsCache.delete(cacheKey);
+    }
 
     return NextResponse.json({
       success: true,

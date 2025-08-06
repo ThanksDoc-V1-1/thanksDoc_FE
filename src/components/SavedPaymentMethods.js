@@ -28,7 +28,19 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
     try {
       setLoading(true);
       console.log('🔍 Fetching payment methods for customer:', customerId);
-      const response = await fetch(`/api/payment-methods?customerId=${customerId}`);
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(`/api/payment-methods?customerId=${customerId}`, {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache', // Ensure fresh data
+        }
+      });
+      
+      clearTimeout(timeoutId);
       const data = await response.json();
       
       console.log('🔍 Payment methods response:', data);
@@ -38,9 +50,16 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
         console.log('✅ Payment methods loaded:', data.paymentMethods?.length || 0);
       } else {
         console.error('Failed to fetch payment methods:', data.error);
+        setPaymentMethods([]); // Clear methods on error
       }
     } catch (error) {
-      console.error('Error fetching payment methods:', error);
+      if (error.name === 'AbortError') {
+        console.error('Payment methods request timed out');
+        setPaymentMethods([]);
+      } else {
+        console.error('Error fetching payment methods:', error);
+        setPaymentMethods([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +72,7 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
 
     try {
       setDeletingId(paymentMethodId);
-      const response = await fetch(`/api/payment-methods?paymentMethodId=${paymentMethodId}`, {
+      const response = await fetch(`/api/payment-methods?paymentMethodId=${paymentMethodId}&customerId=${customerId}`, {
         method: 'DELETE',
       });
 
@@ -90,10 +109,34 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
 
   if (loading) {
     return (
-      <div className="space-y-3">
-        <div className="bg-gray-800 rounded-lg p-4 animate-pulse">
-          <div className="h-4 bg-gray-600 rounded w-1/2 mb-2"></div>
-          <div className="h-3 bg-gray-600 rounded w-1/3"></div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="h-6 bg-gray-600 rounded w-32 animate-pulse"></div>
+          <div className="h-4 bg-gray-600 rounded w-20 animate-pulse"></div>
+        </div>
+        
+        {/* Enhanced loading skeleton */}
+        <div className="space-y-3">
+          {[1, 2].map((i) => (
+            <div key={i} className="bg-gray-800 rounded-lg p-4 border-2 border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-6 bg-gray-600 rounded animate-pulse"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-600 rounded w-32 animate-pulse"></div>
+                    <div className="h-3 bg-gray-600 rounded w-20 animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="w-4 h-4 bg-gray-600 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Loading indicator */}
+        <div className="flex items-center justify-center py-3">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+          <span className="text-gray-400 text-sm">Loading saved cards...</span>
         </div>
       </div>
     );

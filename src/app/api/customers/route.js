@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
+// Simple in-memory cache for customer lookups (you can replace with Redis in production)
+const customerCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // POST - Create or retrieve a Stripe customer
 export async function POST(request) {
   try {
@@ -16,7 +20,19 @@ export async function POST(request) {
 
     console.log('Creating/retrieving customer for:', { email, businessId, businessName });
 
-    // Check if customer already exists
+    // Check cache first
+    const cacheKey = `customer_${email}`;
+    const cached = customerCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      console.log('Using cached customer:', cached.customer.id);
+      return NextResponse.json({
+        customerId: cached.customer.id,
+        email: cached.customer.email,
+        name: cached.customer.name,
+      });
+    }
+
+    // Check if customer already exists with optimization
     const existingCustomers = await stripe.customers.list({
       email: email,
       limit: 1,
@@ -31,17 +47,24 @@ export async function POST(request) {
       customer = existingCustomers.data[0];
       console.log('Found existing customer:', customer.id);
     } else {
-      // Create new customer
+      // Create new customer with optimized metadata
       customer = await stripe.customers.create({
         email: email,
         name: businessName,
         metadata: {
           businessId: businessId.toString(),
           businessName: businessName || '',
+          createdAt: new Date().toISOString(),
         },
       });
       console.log('Created new customer:', customer.id);
     }
+
+    // Cache the result
+    customerCache.set(cacheKey, {
+      customer,
+      timestamp: Date.now()
+    });
 
     return NextResponse.json({
       customerId: customer.id,

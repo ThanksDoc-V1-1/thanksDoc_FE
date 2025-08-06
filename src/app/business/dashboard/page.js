@@ -2054,7 +2054,7 @@ Payment ID: ${paymentIntent.id}`;
                           })
                           .map((doctor) => (
                             <option key={doctor.id} value={doctor.id}>
-                              Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization} ({formatCurrency(doctor.hourlyRate)}/hr)
+                              Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
                             </option>
                           ))}
                       </select>
