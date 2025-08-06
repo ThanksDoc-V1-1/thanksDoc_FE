@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [focusedDoctorId, setFocusedDoctorId] = useState(null);
   
   // Pagination states
   const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
@@ -588,6 +589,26 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAllData();
+    
+    // Handle URL parameters for navigation from notifications
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    const search = urlParams.get('search');
+    const focus = urlParams.get('focus');
+    
+    if (tab) {
+      setActiveTab(tab);
+    }
+    
+    if (search) {
+      setSearchTerm(search);
+    }
+    
+    if (focus) {
+      setFocusedDoctorId(focus);
+      // Clear focus after 5 seconds
+      setTimeout(() => setFocusedDoctorId(null), 5000);
+    }
     
     // Set up automatic refresh every 30 seconds
     const refreshInterval = setInterval(() => {
@@ -2253,8 +2274,15 @@ export default function AdminDashboard() {
                     const city = doctor.city || doctor.attributes?.city;
                     const state = doctor.state || doctor.attributes?.state;
                     
+                    // Check if this doctor is focused from notification
+                    const isFocused = focusedDoctorId && (id.toString() === focusedDoctorId.toString());
+                    
                     return (
-                      <tr key={id} className={`transition-colors ${isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'}`}>
+                      <tr key={id} className={`transition-all duration-500 ${
+                        isFocused 
+                          ? (isDarkMode ? 'bg-blue-900/30 hover:bg-blue-800/40 ring-2 ring-blue-500/50' : 'bg-blue-50 hover:bg-blue-100 ring-2 ring-blue-400/50')
+                          : (isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50')
+                      }`}>
                         <td className="px-6 py-4">
                           <div className="flex items-center">
                             <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>
