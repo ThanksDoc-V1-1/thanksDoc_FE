@@ -7,6 +7,8 @@ import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../..
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import NotificationCenter from '../../../components/NotificationCenter';
+import NotificationBanner from '../../../components/NotificationBanner';
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -1482,6 +1484,14 @@ export default function DoctorDashboard() {
             
             {/* Desktop controls */}
             <div className="hidden md:flex items-center space-x-4">
+              {/* Notification Center */}
+              {user && (
+                <NotificationCenter 
+                  doctorId={user.id} 
+                  className="relative"
+                />
+              )}
+              
               {/* Auto-refresh indicator */}
               <div className="flex items-center space-x-2">
                 <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
@@ -1504,7 +1514,7 @@ export default function DoctorDashboard() {
                 </div>
               </div>
               
-              {/* Notification counter */}
+              {/* Service request notification counter */}
               {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
                 <div className="relative">
                   <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
@@ -1549,6 +1559,16 @@ export default function DoctorDashboard() {
           {/* Mobile menu */}
           <div id="mobile-menu-doctor" className="md:hidden mt-4 hidden">
             <div className="space-y-3 py-3">
+              {/* Mobile Notification Center */}
+              {user && (
+                <div className="flex justify-center">
+                  <NotificationCenter 
+                    doctorId={user.id} 
+                    className="relative"
+                  />
+                </div>
+              )}
+              
               {/* Auto-refresh control */}
               <div className="flex items-center px-2 py-1 bg-gray-800 rounded-md">
                 <div className={`flex items-center mr-2`} style={{color: autoRefresh ? '#0F9297' : '#6B7280'}}>
@@ -1584,7 +1604,7 @@ export default function DoctorDashboard() {
                 <span>Logout</span>
               </button>
               
-              {/* Notification indicator */}
+              {/* Service request notification indicator */}
               {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
                 <div className="bg-red-900/30 text-red-300 rounded-md px-3 py-2 text-center">
                   <span className="font-medium">
@@ -1598,6 +1618,14 @@ export default function DoctorDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Urgent Notification Banner */}
+        {user && (
+          <NotificationBanner 
+            doctorId={user.id} 
+            className="mb-6"
+          />
+        )}
+        
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
