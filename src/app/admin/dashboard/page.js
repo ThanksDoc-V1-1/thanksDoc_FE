@@ -528,11 +528,16 @@ export default function AdminDashboard() {
   const fetchAllData = async () => {
     setDataLoading(true);
     try {
+      // Use direct fetch for services to avoid doctor populate filters
+      const servicesPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`)
+        .then(res => res.json())
+        .then(data => ({ data }));
+        
       const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
-        serviceAPI.getAll(),
+        servicesPromise,
         businessAPI.getBusinessTypes()
       ]);
 
