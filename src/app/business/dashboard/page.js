@@ -75,6 +75,11 @@ export default function BusinessDashboard() {
     doctorSelectionType: 'any', // 'any' or 'previous'
     serviceDate: '',
     serviceTime: '',
+    // Patient information fields for online consultations
+    patientFirstName: '',
+    patientLastName: '',
+    patientPhone: '',
+    patientEmail: '',
   });
   const [previousDoctors, setPreviousDoctors] = useState([]);
   const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
@@ -875,8 +880,28 @@ export default function BusinessDashboard() {
         return;
       }
 
-      // Calculate total cost including booking fee
+      // Validation: For online consultations, patient information is required
       const selectedService = availableServices.find(service => service.id.toString() === formData.serviceId.toString());
+      const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
+                                    selectedService?.category === 'online';
+      
+      if (isOnlineConsultation) {
+        if (!formData.patientFirstName || !formData.patientLastName || !formData.patientPhone) {
+          alert('For online consultations, please provide the patient\'s first name, last name, and phone number.');
+          setLoading(false);
+          return;
+        }
+        
+        // Basic phone number validation
+        const phoneRegex = /^[\+]?[1-9][\d]{7,14}$/;
+        if (!phoneRegex.test(formData.patientPhone.replace(/\s/g, ''))) {
+          alert('Please provide a valid phone number for the patient (including country code if international).');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Calculate total cost including booking fee
       const baseServiceCost = parseFloat(selectedService?.price || 0);
       const totalCost = baseServiceCost + SERVICE_CHARGE;
 
@@ -985,6 +1010,11 @@ Payment ID: ${paymentIntent.id}`);
           const formDataFromTemp = paymentRequest._formData;
           const serviceDateTime = paymentRequest._serviceDateTime;
           
+          // Find the selected service to check if it's an online consultation
+          const selectedService = availableServices.find(s => s.id.toString() === formDataFromTemp.serviceId.toString());
+          const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
+                                       selectedService?.category === 'online';
+          
           const requestData = {
             businessId: user.id,
             ...formDataFromTemp,
@@ -1001,6 +1031,14 @@ Payment ID: ${paymentIntent.id}`);
             paidAt: new Date().toISOString(),
             totalAmount: paymentRequest.totalAmount
           };
+
+          // Add patient information for online consultations
+          if (isOnlineConsultation) {
+            requestData.patientFirstName = formDataFromTemp.patientFirstName;
+            requestData.patientLastName = formDataFromTemp.patientLastName;
+            requestData.patientPhone = formDataFromTemp.patientPhone;
+            requestData.patientEmail = formDataFromTemp.patientEmail;
+          }
 
           // Create the service request with payment information
           const response = await serviceRequestAPI.createServiceRequest(requestData);
@@ -1030,6 +1068,11 @@ Payment ID: ${paymentIntent.id}`;
               doctorSelectionType: 'any',
               serviceDate: '',
               serviceTime: '',
+              // Reset patient information fields
+              patientFirstName: '',
+              patientLastName: '',
+              patientPhone: '',
+              patientEmail: '',
             });
             // Reset service-related states
             setSelectedServiceId('');
@@ -2004,6 +2047,90 @@ Payment ID: ${paymentIntent.id}`;
                 })()}
               </div>
 
+              {/* Patient Information Fields - Show only for online consultations */}
+              {(() => {
+                const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
+                                              selectedService?.category === 'online';
+                
+                if (!isOnlineConsultation) return null;
+                
+                return (
+                  <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-orange-600 bg-orange-900/20' : 'border-orange-200 bg-orange-50'}`}>
+                    <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>
+                      👤 Patient Information *
+                    </h3>
+                    <p className={`text-xs mb-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                      Please provide the patient's details who will be participating in the online consultation.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="patientFirstName"
+                          value={formData.patientFirstName}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="Patient's first name"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="patientLastName"
+                          value={formData.patientLastName}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="Patient's last name"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4 mt-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          name="patientPhone"
+                          value={formData.patientPhone}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="Patient's phone number (for video call link)"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          WhatsApp video call link will be sent to this number
+                        </p>
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Email Address (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          name="patientEmail"
+                          value={formData.patientEmail}
+                          onChange={handleInputChange}
+                          placeholder="Patient's email address"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Doctor Selection *
@@ -2220,6 +2347,11 @@ Payment ID: ${paymentIntent.id}`;
                       doctorSelectionType: 'any',
                       serviceDate: '',
                       serviceTime: '',
+                      // Reset patient information fields
+                      patientFirstName: '',
+                      patientLastName: '',
+                      patientPhone: '',
+                      patientEmail: '',
                     });
                   }}
                   className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
