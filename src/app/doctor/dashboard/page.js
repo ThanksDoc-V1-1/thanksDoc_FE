@@ -113,8 +113,20 @@ export default function DoctorDashboard() {
       fetchDoctorData();
       fetchNearbyRequests();
       fetchServices(); // Fetch services for pricing calculations
+      loadAllServices(); // Load all services for manage services section
     }
   }, [user]);
+
+  // Debug useEffect to monitor allServices state changes
+  useEffect(() => {
+    console.log('🔍 AllServices state changed:', {
+      inPerson: allServices.inPerson.length,
+      online: allServices.online.length,
+      nhs: allServices.nhs.length
+    });
+    console.log('📋 Online services:', allServices.online.map(s => s.name));
+    console.log('🏛️ NHS services:', allServices.nhs.map(s => s.name));
+  }, [allServices]);
 
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
@@ -249,8 +261,8 @@ export default function DoctorDashboard() {
     try {
       console.log('🔍 [DOCTOR] Fetching available services from backend');
       
-      // Use the same endpoint as business dashboard - fetch subcategory services
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc`);
+      // Fetch all services sorted by category and display order, then filter active ones on frontend
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const data = await response.json();
       console.log('📊 [DOCTOR] Raw API response:', data);
       console.log('📊 [DOCTOR] Response status:', response.status);
@@ -267,14 +279,12 @@ export default function DoctorDashboard() {
       }
       
       if (services.length > 0) {
-        console.log('✅ [DOCTOR] Successfully fetched services:', services.map(s => ({ 
-          id: s.id, 
-          name: s.name || s.attributes?.name, 
-          price: s.price || s.attributes?.price 
-        })));
+        // Filter only active services
+        const activeServices = services.filter(service => service.isActive === true);
+        console.log('✅ [DOCTOR] Successfully fetched services:', activeServices.length, 'active out of', services.length, 'total');
         
         // Map services to expected format
-        const formattedServices = services.map(service => ({
+        const formattedServices = activeServices.map(service => ({
           id: service.id,
           name: service.name || service.attributes?.name,
           price: service.price || service.attributes?.price,
@@ -684,27 +694,37 @@ export default function DoctorDashboard() {
     try {
       console.log('🔄 Loading all services...');
       
-      // Use the general services endpoint (public access) instead of filtered ones
-      const response = await serviceAPI.getAll();
-      console.log('📊 All services response:', response.data);
+      // Use direct fetch to get all services without populate filters
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
+      const responseData = await response.json();
+      console.log('📊 All services response:', responseData);
       
-      const allServicesData = response.data.data || [];
+      const allServicesData = responseData.data || [];
       console.log('📋 All services data:', allServicesData);
       
-      // Filter on frontend instead of backend
-      const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
-      const onlineServices = allServicesData.filter(service => service.category === 'online');
-      const nhsServices = allServicesData.filter(service => service.category === 'nhs');
+      // Filter active services and group by category
+      const activeServices = allServicesData.filter(service => service.isActive === true);
+      console.log('📋 Active services data:', activeServices.length, 'out of', allServicesData.length);
+      
+      const inPersonServices = activeServices.filter(service => service.category === 'in-person');
+      const onlineServices = activeServices.filter(service => service.category === 'online');
+      const nhsServices = activeServices.filter(service => service.category === 'nhs');
       
       console.log('📍 In-person services:', inPersonServices.length);
       console.log('💻 Online services:', onlineServices.length);
       console.log('🏛️ NHS services:', nhsServices.length);
       
+      // Debug: log online service names
+      console.log('💻 Online service names:', onlineServices.map(s => s.name));
+      console.log('🏛️ NHS service names:', nhsServices.map(s => s.name));
+      
+      console.log('🔄 Setting allServices state...');
       setAllServices({
         inPerson: inPersonServices,
         online: onlineServices,
         nhs: nhsServices
       });
+      console.log('✅ AllServices state set successfully');
     } catch (error) {
       console.error('Error loading all services:', error);
       // Fallback: try without authentication in case JWT is the issue
@@ -713,12 +733,15 @@ export default function DoctorDashboard() {
         const token = localStorage.getItem('jwt');
         localStorage.removeItem('jwt');
         
-        const response = await serviceAPI.getAll();
-        const allServicesData = response.data.data || [];
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
+        const responseData = await response.json();
+        const allServicesData = responseData.data || [];
         
-        const inPersonServices = allServicesData.filter(service => service.category === 'in-person');
-        const onlineServices = allServicesData.filter(service => service.category === 'online');
-        const nhsServices = allServicesData.filter(service => service.category === 'nhs');
+        // Filter active services and group by category
+        const activeServices = allServicesData.filter(service => service.isActive === true);
+        const inPersonServices = activeServices.filter(service => service.category === 'in-person');
+        const onlineServices = activeServices.filter(service => service.category === 'online');
+        const nhsServices = activeServices.filter(service => service.category === 'nhs');
         
         setAllServices({
           inPerson: inPersonServices,
@@ -1336,8 +1359,17 @@ export default function DoctorDashboard() {
                     Online Services
                   </h5>
                   <div className="grid gap-3">
-                    {allServices.online
-                      .filter(service => !doctorServices.find(ds => ds.id === service.id))
+                    {(() => {
+                      const filteredOnlineServices = allServices.online
+                        .filter(service => !doctorServices.find(ds => ds.id === service.id));
+                      console.log('🔍 Online Services Filtering Debug:');
+                      console.log('  Total online services:', allServices.online.length);
+                      console.log('  Doctor services count:', doctorServices.length);
+                      console.log('  Filtered online services:', filteredOnlineServices.length);
+                      console.log('  Doctor service IDs:', doctorServices.map(ds => ds.id));
+                      console.log('  Online service IDs:', allServices.online.map(s => s.id));
+                      return filteredOnlineServices;
+                    })()
                       .map((service) => (
                         <div 
                           key={service.id} 
@@ -1385,8 +1417,15 @@ export default function DoctorDashboard() {
                     NHS Services
                   </h5>
                   <div className="grid gap-3">
-                    {allServices.nhs
-                      .filter(service => !doctorServices.find(ds => ds.id === service.id))
+                    {(() => {
+                      const filteredNhsServices = allServices.nhs
+                        .filter(service => !doctorServices.find(ds => ds.id === service.id));
+                      console.log('🔍 NHS Services Filtering Debug:');
+                      console.log('  Total NHS services:', allServices.nhs.length);
+                      console.log('  Filtered NHS services:', filteredNhsServices.length);
+                      console.log('  NHS service IDs:', allServices.nhs.map(s => s.id));
+                      return filteredNhsServices;
+                    })()
                       .map((service) => (
                         <div 
                           key={service.id} 

@@ -471,8 +471,8 @@ export default function BusinessDashboard() {
       // Add a small delay to see the loading state
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Fetch only subcategory services (the actual selectable services)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[serviceType][$eq]=subcategory&sort=category:asc,displayOrder:asc&pagination[limit]=100`);
+      // Fetch all active services sorted by category and display order
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[isActive][$eq]=true&sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const data = await response.json();
       console.log('📊 Raw API response:', data);
       console.log('📊 Response status:', response.status);
@@ -488,12 +488,10 @@ export default function BusinessDashboard() {
         console.log('❌ Unexpected response structure:', data);
       }
       
-      // Filter out any non-subcategory services as backup
-      const filteredServices = services.filter(service => service.serviceType === 'subcategory');
-      console.log('✅ Filtered subcategory services:', filteredServices.length, 'services');
-      console.log('✅ Service categories found:', [...new Set(filteredServices.map(s => s.category))]);
+      console.log('✅ Fetched services:', services.length, 'services');
+      console.log('✅ Service categories found:', [...new Set(services.map(s => s.category))]);
       
-      setAvailableServices(filteredServices);
+      setAvailableServices(services);
     } catch (error) {
       console.error('❌ Error fetching available services:', error);
       setAvailableServices([]);

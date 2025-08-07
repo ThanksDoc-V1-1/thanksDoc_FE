@@ -37,12 +37,10 @@ export default function AdminDashboard() {
     name: '',
     description: '',
     category: 'in-person',
-    serviceType: 'subcategory', // main or subcategory
     price: '',
     duration: '',
     isActive: true,
-    displayOrder: 0,
-    parentService: null // For subcategory services
+    displayOrder: 0
   });
 
   // Business Type form states and handlers
@@ -79,12 +77,10 @@ export default function AdminDashboard() {
         name: serviceFormData.name.trim(),
         description: serviceFormData.description.trim(),
         category: serviceFormData.category,
-        serviceType: serviceFormData.serviceType,
         price: parseFloat(serviceFormData.price) || 0,
         duration: parseInt(serviceFormData.duration) || 0,
         isActive: serviceFormData.isActive,
-        displayOrder: parseInt(serviceFormData.displayOrder) || 0,
-        parentService: serviceFormData.parentService || null
+        displayOrder: parseInt(serviceFormData.displayOrder) || 0
       };
 
       console.log('📝 Processed service data:', serviceData);
@@ -132,12 +128,10 @@ export default function AdminDashboard() {
         name: '',
         description: '',
         category: 'in-person',
-        serviceType: 'subcategory',
         price: '',
         duration: '',
         isActive: true,
-        displayOrder: 0,
-        parentService: null
+        displayOrder: 0
       });
 
       // Refresh all data
@@ -182,12 +176,10 @@ export default function AdminDashboard() {
       name: serviceData.name || '',
       description: serviceData.description || '',
       category: serviceData.category || 'in-person',
-      serviceType: serviceData.serviceType || 'subcategory',
       price: serviceData.price?.toString() || '',
       duration: serviceData.duration?.toString() || '',
       isActive: serviceData.isActive !== undefined ? serviceData.isActive : true,
-      displayOrder: serviceData.displayOrder || 0,
-      parentService: serviceData.parentService?.id || serviceData.parentService || null
+      displayOrder: serviceData.displayOrder || 0
     };
     
     console.log('✏️ Setting form data:', formData);
@@ -3036,26 +3028,6 @@ export default function AdminDashboard() {
                             </select>
                           </div>
 
-                          <div>
-                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                              Service Type *
-                            </label>
-                            <select
-                              name="serviceType"
-                              value={serviceFormData.serviceType}
-                              onChange={handleServiceFormChange}
-                              required
-                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                isDarkMode 
-                                  ? 'bg-gray-800 border-gray-700 text-white' 
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
-                            >
-                              <option value="main">Parent Service</option>
-                              <option value="subcategory">Subcategory Service</option>
-                            </select>
-                          </div>
-
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -3097,31 +3069,6 @@ export default function AdminDashboard() {
                               />
                             </div>
                           </div>
-
-                          {serviceFormData.serviceType === 'subcategory' && (
-                            <div>
-                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Parent Service
-                              </label>
-                              <select
-                                name="parentService"
-                                value={serviceFormData.parentService || ''}
-                                onChange={handleServiceFormChange}
-                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                  isDarkMode 
-                                    ? 'bg-gray-800 border-gray-700 text-white' 
-                                    : 'bg-white border-gray-300 text-gray-900'
-                                }`}
-                              >
-                                <option value="">No parent service</option>
-                                {services.filter(s => s.serviceType === 'main').map(service => (
-                                  <option key={service.id} value={service.id}>
-                                    {service.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
 
                           <div>
                             <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>

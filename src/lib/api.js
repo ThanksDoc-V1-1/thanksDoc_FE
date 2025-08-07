@@ -461,7 +461,7 @@ export const serviceRequestAPI = {
 export const serviceAPI = {
   getAll: () => {
     console.log('🔍 Fetching all services...');
-    return api.get('/services?populate[parentService][fields][0]=id&populate[parentService][fields][1]=name&populate[subServices][fields][0]=id&populate[subServices][fields][1]=name&populate[subServices][fields][2]=price&populate[subServices][fields][3]=duration&populate[subServices][sort][0]=displayOrder:asc&populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName&sort=displayOrder:asc,name:asc');
+    return api.get('/services?populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName&sort=category:asc,displayOrder:asc,name:asc');
   },
   getById: (id) => {
     console.log('🔍 Fetching service by ID:', id);
