@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Video, Phone, User, Clock, X, Mic, MicOff, VideoOff } from 'lucide-react';
+import { Video, Phone, User, Clock, X, Mic, MicOff, VideoOff, Minimize2, Maximize2 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { serviceRequestAPI } from '../../../lib/api';
 
@@ -21,6 +21,7 @@ export default function VideoConsultationPage({ params }) {
   const [callStarted, setCallStarted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
   const [error, setError] = useState(null);
+  const [isDetailsMinimized, setIsDetailsMinimized] = useState(false);
 
   // Handle async params
   useEffect(() => {
@@ -245,49 +246,74 @@ export default function VideoConsultationPage({ params }) {
         </div>
 
         {/* Info Panel */}
-        <div className="absolute top-4 right-4 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm">
-          <div className="flex items-center space-x-3 mb-3">
-            <User className="h-5 w-5 text-blue-400" />
-            <h3 className="font-medium text-white">
-              Consultation Details
-            </h3>
-          </div>
-          
-          <div className="space-y-2 text-sm text-gray-300">
-            <div>
-              <span className="font-medium">Service:</span> {serviceRequest?.serviceType}
-            </div>
-            
-            {userType === 'doctor' && (
-              <>
-                <div>
-                  <span className="font-medium">Patient:</span> {serviceRequest?.patientFirstName} {serviceRequest?.patientLastName}
+        <div className={`absolute top-4 right-4 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-300 ${
+          isDetailsMinimized ? 'w-12 h-12' : 'p-4 max-w-sm'
+        }`}>
+          {isDetailsMinimized ? (
+            // Minimized state - just the toggle button
+            <button
+              onClick={() => setIsDetailsMinimized(false)}
+              className="w-full h-full flex items-center justify-center text-blue-400 hover:text-blue-300 transition-colors"
+              title="Show consultation details"
+            >
+              <Maximize2 className="h-5 w-5" />
+            </button>
+          ) : (
+            // Expanded state - full details
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <User className="h-5 w-5 text-blue-400" />
+                  <h3 className="font-medium text-white">
+                    Consultation Details
+                  </h3>
                 </div>
-                {serviceRequest?.patientEmail && (
+                <button
+                  onClick={() => setIsDetailsMinimized(true)}
+                  className="text-gray-400 hover:text-gray-300 transition-colors"
+                  title="Minimize consultation details"
+                >
+                  <Minimize2 className="h-4 w-4" />
+                </button>
+              </div>
+              
+              <div className="space-y-2 text-sm text-gray-300">
+                <div>
+                  <span className="font-medium">Service:</span> {serviceRequest?.serviceType}
+                </div>
+                
+                {userType === 'doctor' && (
+                  <>
+                    <div>
+                      <span className="font-medium">Patient:</span> {serviceRequest?.patientFirstName} {serviceRequest?.patientLastName}
+                    </div>
+                    {serviceRequest?.patientEmail && (
+                      <div>
+                        <span className="font-medium">Email:</span> {serviceRequest?.patientEmail}
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                {userType === 'patient' && serviceRequest?.doctor && (
                   <div>
-                    <span className="font-medium">Email:</span> {serviceRequest?.patientEmail}
+                    <span className="font-medium">Doctor:</span> Dr. {serviceRequest.doctor.firstName} {serviceRequest.doctor.lastName}
                   </div>
                 )}
-              </>
-            )}
-            
-            {userType === 'patient' && serviceRequest?.doctor && (
-              <div>
-                <span className="font-medium">Doctor:</span> Dr. {serviceRequest.doctor.firstName} {serviceRequest.doctor.lastName}
+                
+                <div>
+                  <span className="font-medium">Duration:</span> {serviceRequest?.estimatedDuration || 1} hour(s)
+                </div>
+                
+                {serviceRequest?.requestedServiceDateTime && (
+                  <div>
+                    <span className="font-medium">Scheduled:</span>{' '}
+                    {new Date(serviceRequest.requestedServiceDateTime).toLocaleString('en-GB')}
+                  </div>
+                )}
               </div>
-            )}
-            
-            <div>
-              <span className="font-medium">Duration:</span> {serviceRequest?.estimatedDuration || 1} hour(s)
-            </div>
-            
-            {serviceRequest?.requestedServiceDateTime && (
-              <div>
-                <span className="font-medium">Scheduled:</span>{' '}
-                {new Date(serviceRequest.requestedServiceDateTime).toLocaleString('en-GB')}
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
