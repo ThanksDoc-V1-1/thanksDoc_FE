@@ -161,8 +161,24 @@ export default function DoctorDashboard() {
         request.serviceType?.toLowerCase().includes(s.name?.toLowerCase())
       );
       console.log('🎯 Found service (partial match):', service);
+    }
+    
+    // Fifth priority: Special handling for common service types
+    if (!service && request.serviceType?.toLowerCase().includes('online consultation')) {
+      service = availableServices.find(s => 
+        s.name?.toLowerCase().includes('online') || 
+        s.name?.toLowerCase().includes('consultation') ||
+        s.category?.toLowerCase().includes('online')
+      );
+      console.log('🎯 Found service (online consultation fallback):', service);
     }    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found - should rely on stored servicePrice
     console.log('💵 Final calculated price:', servicePrice);
+    
+    // Fallback: If still no price found and it's an online consultation, use a default price
+    if (servicePrice === 0 && request.serviceType?.toLowerCase().includes('online consultation')) {
+      console.log('🚨 Using fallback price for online consultation: £25.00');
+      return 25.00; // Default price for online consultations
+    }
     
     if (!service) {
       console.log('⚠️ WARNING: No service match found, returning 0!');
