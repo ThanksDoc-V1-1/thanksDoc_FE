@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Video, Phone, User, Clock, X } from 'lucide-react';
+import { Video, Phone, User, Clock, X, Mic, MicOff, VideoOff } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { serviceRequestAPI } from '../../../lib/api';
 
@@ -227,7 +227,7 @@ export default function VideoConsultationPage({ params }) {
               userType === 'doctor' 
                 ? `Dr. ${serviceRequest?.doctor?.firstName} ${serviceRequest?.doctor?.lastName}` 
                 : `${serviceRequest?.patientFirstName} ${serviceRequest?.patientLastName}`
-            )}&background=dark&floatSelf=off&people=off&leaveButton=off&screenshare=on&chat=on&logo=off`}
+            )}&background=dark&floatSelf=off&people=off&leaveButton=on&screenshare=on&chat=on&logo=off`}
             className="w-full h-full border-0"
             title="ThanksDoc Video Consultation"
             allow="camera; microphone; fullscreen; speaker; display-capture"
