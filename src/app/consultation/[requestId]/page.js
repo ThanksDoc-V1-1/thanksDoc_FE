@@ -12,7 +12,7 @@ export default function VideoConsultationPage({ params }) {
   const { isDarkMode } = useTheme();
 
   // URL parameters
-  const requestId = params?.requestId || searchParams.get('requestId');
+  const [requestId, setRequestId] = useState(null);
   const userType = searchParams.get('type'); // 'doctor' or 'patient'
   const roomUrl = searchParams.get('roomUrl');
 
@@ -22,8 +22,19 @@ export default function VideoConsultationPage({ params }) {
   const [callEnded, setCallEnded] = useState(false);
   const [error, setError] = useState(null);
 
+  // Handle async params
   useEffect(() => {
-    if (!requestId || !userType || !roomUrl) {
+    const getParams = async () => {
+      const resolvedParams = await params;
+      setRequestId(resolvedParams.requestId);
+    };
+    
+    getParams();
+  }, [params]);
+
+  useEffect(() => {
+    if (!requestId || !userType) {
+      if (requestId === null) return; // Still loading params
       setError('Missing required parameters');
       setLoading(false);
       return;
