@@ -745,6 +745,11 @@ export default function BusinessDashboard() {
       [name]: value
     }));
 
+    // If estimated duration changes, recalculate service cost
+    if (name === 'estimatedDuration' && formData.serviceId) {
+      calculateServiceCost(formData.serviceId, parseFloat(value));
+    }
+
     // If doctor selection type changes, reset preferred doctor and fetch previous doctors if needed
     if (name === 'doctorSelectionType') {
       setFormData(prev => ({
@@ -774,6 +779,16 @@ export default function BusinessDashboard() {
       // Find the selected service to get its name for serviceType
       const selectedService = availableServices.find(service => service.id.toString() === value);
       
+      // Calculate the correct duration in hours
+      const serviceDurationInHours = selectedService?.duration ? (selectedService.duration / 60) : 1;
+      console.log('🕒 Service selection debug:', {
+        serviceId: value,
+        serviceName: selectedService?.name,
+        serviceDurationMinutes: selectedService?.duration,
+        serviceDurationHours: serviceDurationInHours,
+        currentFormDuration: formData.estimatedDuration
+      });
+      
       // Check if currently selected doctor still offers the new service (for previous doctor selection)
       let shouldResetDoctor = false;
       if (formData.preferredDoctorId && formData.doctorSelectionType === 'previous' && value) {
@@ -787,14 +802,15 @@ export default function BusinessDashboard() {
       setFormData(prev => ({
         ...prev,
         serviceType: selectedService ? selectedService.name : '', // Update serviceType when service changes
+        estimatedDuration: serviceDurationInHours, // Set duration from service (convert minutes to hours, default to 1 hour)
         preferredDoctorId: shouldResetDoctor || !value ? null : prev.preferredDoctorId // Reset selected doctor when service changes or doctor doesn't offer service
       }));
       
       // Fetch doctors for the selected service for any selection type
       if (value) {
         fetchDoctorsForService(value);
-        // Calculate service cost
-        calculateServiceCost(value);
+        // Calculate service cost with the service's default duration
+        calculateServiceCost(value, serviceDurationInHours);
       } else {
         // Clear service cost when no service is selected
         setServiceCost(null);
@@ -803,7 +819,7 @@ export default function BusinessDashboard() {
   };
 
   // Calculate service cost
-  const calculateServiceCost = async (serviceId) => {
+  const calculateServiceCost = async (serviceId, duration = null) => {
     if (!serviceId) {
       setServiceCost(null);
       return;
@@ -811,12 +827,46 @@ export default function BusinessDashboard() {
 
     try {
       setLoadingCost(true);
-      console.log('💰 Calculating cost for service:', serviceId);
+      console.log('💰 Calculating cost for service:', serviceId, 'with duration:', duration);
       
-      const response = await serviceRequestAPI.calculateServiceCost(serviceId);
-      console.log('💰 Service cost response:', response.data);
+      // Find the selected service to get base price and duration
+      const selectedService = availableServices.find(service => service.id.toString() === serviceId.toString());
       
-      setServiceCost(response.data);
+      if (!selectedService) {
+        console.error('❌ Service not found in available services');
+        setServiceCost(null);
+        return;
+      }
+      
+      const basePrice = parseFloat(selectedService.price || 0);
+      const serviceDuration = selectedService.duration ? (selectedService.duration / 60) : 1; // Convert minutes to hours
+      const requestedDuration = duration || parseFloat(formData.estimatedDuration) || 1;
+      
+      console.log('🔍 Debug duration calculation:');
+      console.log('  - Service duration (minutes):', selectedService.duration);
+      console.log('  - Service duration (hours):', serviceDuration);
+      console.log('  - Requested duration (hours):', requestedDuration);
+      console.log('  - Base price:', basePrice);
+      
+      // Scale the price based on duration
+      const scalingFactor = requestedDuration / serviceDuration;
+      const scaledPrice = basePrice * scalingFactor;
+      const totalCost = scaledPrice + SERVICE_CHARGE;
+      
+      console.log('  - Scaling factor:', scalingFactor);
+      console.log('  - Scaled price:', scaledPrice);
+      
+      const costData = {
+        servicePrice: scaledPrice,
+        serviceCharge: SERVICE_CHARGE,
+        totalAmount: totalCost,
+        baseDuration: serviceDuration,
+        requestedDuration: requestedDuration,
+        scalingFactor: scalingFactor
+      };
+      
+      console.log('💰 Calculated service cost:', costData);
+      setServiceCost(costData);
     } catch (error) {
       console.error('❌ Error calculating service cost:', error);
       setServiceCost(null);
@@ -904,9 +954,14 @@ export default function BusinessDashboard() {
         }
       }
 
-      // Calculate total cost including booking fee
+      // Calculate total cost including booking fee and duration scaling
       const baseServiceCost = parseFloat(selectedService?.price || 0);
-      const totalCost = baseServiceCost + SERVICE_CHARGE;
+      const serviceDuration = selectedService?.duration ? (selectedService.duration / 60) : 1; // Convert minutes to hours, default to 1 hour
+      const requestedDuration = parseFloat(formData.estimatedDuration);
+      
+      // Scale the price based on duration (proportional scaling)
+      const scaledServiceCost = baseServiceCost * (requestedDuration / serviceDuration);
+      const totalCost = scaledServiceCost + SERVICE_CHARGE;
 
       // Create a temporary request object for payment
       const tempRequest = {
@@ -916,7 +971,7 @@ export default function BusinessDashboard() {
         description: formData.description,
         estimatedDuration: parseInt(formData.estimatedDuration),
         serviceCharge: SERVICE_CHARGE,
-        servicePrice: parseFloat(selectedService?.price || 0), // Store the service price
+        servicePrice: scaledServiceCost, // Store the scaled service price based on duration
         serviceDateTime: serviceDateTime.toISOString(),
         totalAmount: totalCost,
         // Store the complete form data for later use
@@ -2010,7 +2065,8 @@ Payment ID: ${paymentIntent.id}`;
                 {formData.serviceId && (() => {
                   const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
                   if (selectedService && (serviceCost || selectedService.serviceType === 'subcategory')) {
-                    const pricing = serviceCost?.pricing || {
+                    // Use serviceCost data if available, otherwise calculate from base service
+                    const pricing = serviceCost || {
                       servicePrice: parseFloat(selectedService.price),
                       serviceCharge: 3.00,
                       totalAmount: parseFloat(selectedService.price) + 3.00
@@ -2023,20 +2079,28 @@ Payment ID: ${paymentIntent.id}`;
                             Service: {selectedService.name}
                           </span>
                           <span className={`text-sm font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                            £{pricing.servicePrice}
+                            £{pricing.servicePrice.toFixed(2)}
                           </span>
                         </div>
                         <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} space-y-1`}>
-                          <div>Duration: {selectedService.duration} minutes</div>
+                          <div>Base Duration: {selectedService.duration} minutes</div>
+                          {serviceCost && serviceCost.requestedDuration !== serviceCost.baseDuration && (
+                            <div>Requested Duration: {(serviceCost.requestedDuration * 60).toFixed(0)} minutes (×{serviceCost.scalingFactor.toFixed(2)})</div>
+                          )}
                           <div>Category: {selectedService.category === 'in-person' ? 'In-Person' : selectedService.category === 'online' ? 'Online' : 'NHS'}</div>
+                          {serviceCost && serviceCost.requestedDuration !== serviceCost.baseDuration && (
+                            <div className={`text-xs italic ${isDarkMode ? 'text-yellow-400' : 'text-orange-600'} mt-1`}>
+                              Price adjusted for extended duration
+                            </div>
+                          )}
                           <div className={`pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'} space-y-1`}>
                             <div className="flex justify-between">
                               <span>Service fee:</span>
-                              <span>£{pricing.servicePrice}</span>
+                              <span>£{pricing.servicePrice.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span>Booking fee:</span>
-                              <span>£{pricing.serviceCharge}</span>
+                              <span>£{pricing.serviceCharge.toFixed(2)}</span>
                             </div>
                             <div className={`flex justify-between font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} pt-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'}`}>
                               <span>Total:</span>
