@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Video, Phone, PhoneOff, Mic, MicOff, Camera, CameraOff, MessageCircle, User, Clock, X } from 'lucide-react';
+import { Video, Phone, User, Clock, X } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { serviceRequestAPI } from '../../../lib/api';
 
-export default function VideoConsultationPage() {
+export default function VideoConsultationPage({ params }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isDarkMode } = useTheme();
 
   // URL parameters
-  const requestId = searchParams.get('requestId');
+  const requestId = params?.requestId || searchParams.get('requestId');
   const userType = searchParams.get('type'); // 'doctor' or 'patient'
   const roomUrl = searchParams.get('roomUrl');
 
@@ -21,11 +21,6 @@ export default function VideoConsultationPage() {
   const [callStarted, setCallStarted] = useState(false);
   const [callEnded, setCallEnded] = useState(false);
   const [error, setError] = useState(null);
-
-  // Call controls state
-  const [isMuted, setIsMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     if (!requestId || !userType || !roomUrl) {
@@ -54,20 +49,22 @@ export default function VideoConsultationPage() {
           return;
         }
 
-        // Validate room URL matches
-        if (request.wherebyRoomUrl !== decodeURIComponent(roomUrl)) {
-          setError('Invalid video call link');
+        // If no roomUrl provided in URL params, use the one from the service request
+        const currentRoomUrl = roomUrl || request.wherebyRoomUrl;
+        
+        if (!currentRoomUrl) {
+          setError('No video call link available for this consultation');
           return;
         }
 
-        // Check if consultation is scheduled for the right time (within 1 hour window)
+        // Check if consultation is scheduled for the right time (within 2 hour window)
         if (request.requestedServiceDateTime) {
           const scheduledTime = new Date(request.requestedServiceDateTime);
           const now = new Date();
           const timeDiff = Math.abs(now.getTime() - scheduledTime.getTime());
           const hoursDiff = timeDiff / (1000 * 60 * 60);
           
-          if (hoursDiff > 1) {
+          if (hoursDiff > 2) {
             console.warn('Consultation is not within the scheduled time window');
           }
         }
@@ -171,7 +168,7 @@ export default function VideoConsultationPage() {
             <Video className={`h-6 w-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
             <div>
               <h1 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Online Consultation
+                ThanksDoc - Online Consultation
               </h1>
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {userType === 'doctor' ? (
@@ -202,60 +199,39 @@ export default function VideoConsultationPage() {
       {/* Main Content */}
       <div className="flex-1 relative">
         {/* Whereby Embed */}
-        <div className="h-screen w-full">
+        <div className="h-screen w-full relative">
+          {/* Custom CSS to hide Whereby branding */}
+          <style jsx>{`
+            iframe {
+              border: none !important;
+            }
+            /* Hide Whereby logo and branding elements */
+            .whereby-embed iframe {
+              border: none;
+            }
+          `}</style>
+          
           <iframe
-            src={decodeURIComponent(roomUrl)}
+            src={`${decodeURIComponent(roomUrl || serviceRequest?.wherebyRoomUrl)}?embed&displayName=${encodeURIComponent(
+              userType === 'doctor' 
+                ? `Dr. ${serviceRequest?.doctor?.firstName} ${serviceRequest?.doctor?.lastName}` 
+                : `${serviceRequest?.patientFirstName} ${serviceRequest?.patientLastName}`
+            )}&background=off&floatSelf=off&people=off&leaveButton=off&screenshare=on&chat=on&logo=off`}
             className="w-full h-full border-0"
-            title="Video Consultation"
+            title="ThanksDoc Video Consultation"
             allow="camera; microphone; fullscreen; speaker; display-capture"
+            allowFullScreen
             onLoad={handleCallStart}
           />
-        </div>
 
-        {/* Floating Controls */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-          <div className={`flex items-center space-x-3 px-6 py-3 rounded-full shadow-lg backdrop-blur-sm ${
-            isDarkMode ? 'bg-gray-800/80 border-gray-700' : 'bg-white/80 border-gray-200'
-          } border`}>
-            
-            {/* Mute Button */}
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className={`p-3 rounded-full transition-colors ${
-                isMuted 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : isDarkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </button>
-
-            {/* Video Button */}
-            <button
-              onClick={() => setIsVideoOff(!isVideoOff)}
-              className={`p-3 rounded-full transition-colors ${
-                isVideoOff 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : isDarkMode 
-                    ? 'bg-gray-700 hover:bg-gray-600 text-white' 
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-              title={isVideoOff ? 'Turn on camera' : 'Turn off camera'}
-            >
-              {isVideoOff ? <CameraOff className="h-5 w-5" /> : <Camera className="h-5 w-5" />}
-            </button>
-
-            {/* End Call Button */}
-            <button
-              onClick={handleCallEnd}
-              className="p-3 rounded-full bg-red-600 hover:bg-red-700 text-white transition-colors"
-              title="End call"
-            >
-              <PhoneOff className="h-5 w-5" />
-            </button>
+          {/* ThanksDoc Branding Overlay */}
+          <div className="absolute top-4 left-4 z-10">
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg backdrop-blur-sm ${
+              isDarkMode ? 'bg-gray-900/80 text-white' : 'bg-white/80 text-gray-900'
+            } shadow-lg`}>
+              <Video className="h-5 w-5 text-blue-600" />
+              <span className="font-medium text-sm">ThanksDoc</span>
+            </div>
           </div>
         </div>
 
