@@ -171,17 +171,17 @@ export default function VideoConsultationPage({ params }) {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-gray-900">
       {/* Header */}
-      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-4 py-3`}>
+      <div className="bg-gray-800 border-gray-700 border-b px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Video className={`h-6 w-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+            <Video className="h-6 w-6 text-blue-400" />
             <div>
-              <h1 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className="text-lg font-semibold text-white">
                 ThanksDoc - Online Consultation
               </h1>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <p className="text-sm text-gray-400">
                 {userType === 'doctor' ? (
                   `Patient: ${serviceRequest?.patientFirstName} ${serviceRequest?.patientLastName}`
                 ) : (
@@ -193,7 +193,7 @@ export default function VideoConsultationPage({ params }) {
           
           <div className="flex items-center space-x-2">
             {serviceRequest?.requestedServiceDateTime && (
-              <div className={`flex items-center space-x-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className="flex items-center space-x-1 text-sm text-gray-400">
                 <Clock className="h-4 w-4" />
                 <span>
                   {new Date(serviceRequest.requestedServiceDateTime).toLocaleTimeString('en-GB', {
@@ -208,9 +208,9 @@ export default function VideoConsultationPage({ params }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative bg-gray-900">
         {/* Whereby Embed */}
-        <div className="h-screen w-full relative">
+        <div className="h-screen w-full relative bg-gray-900">
           {/* Custom CSS to hide Whereby branding */}
           <style jsx>{`
             iframe {
@@ -227,7 +227,7 @@ export default function VideoConsultationPage({ params }) {
               userType === 'doctor' 
                 ? `Dr. ${serviceRequest?.doctor?.firstName} ${serviceRequest?.doctor?.lastName}` 
                 : `${serviceRequest?.patientFirstName} ${serviceRequest?.patientLastName}`
-            )}&background=off&floatSelf=off&people=off&leaveButton=off&screenshare=on&chat=on&logo=off`}
+            )}&background=dark&floatSelf=off&people=off&leaveButton=off&screenshare=on&chat=on&logo=off`}
             className="w-full h-full border-0"
             title="ThanksDoc Video Consultation"
             allow="camera; microphone; fullscreen; speaker; display-capture"
@@ -237,9 +237,7 @@ export default function VideoConsultationPage({ params }) {
 
           {/* ThanksDoc Branding Overlay */}
           <div className="absolute top-4 left-4 z-10">
-            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg backdrop-blur-sm ${
-              isDarkMode ? 'bg-gray-900/80 text-white' : 'bg-white/80 text-gray-900'
-            } shadow-lg`}>
+            <div className="flex items-center space-x-2 px-3 py-2 rounded-lg backdrop-blur-sm bg-gray-900/80 text-white shadow-lg">
               <Video className="h-5 w-5 text-blue-600" />
               <span className="font-medium text-sm">ThanksDoc</span>
             </div>
@@ -247,15 +245,15 @@ export default function VideoConsultationPage({ params }) {
         </div>
 
         {/* Info Panel */}
-        <div className={`absolute top-4 right-4 ${isDarkMode ? 'bg-gray-800/90' : 'bg-white/90'} backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm`}>
+        <div className="absolute top-4 right-4 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg p-4 max-w-sm">
           <div className="flex items-center space-x-3 mb-3">
-            <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-            <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <User className="h-5 w-5 text-blue-400" />
+            <h3 className="font-medium text-white">
               Consultation Details
             </h3>
           </div>
           
-          <div className={`space-y-2 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <div className="space-y-2 text-sm text-gray-300">
             <div>
               <span className="font-medium">Service:</span> {serviceRequest?.serviceType}
             </div>
