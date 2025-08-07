@@ -9,6 +9,7 @@ import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../.
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import PaymentForm from '../../../components/PaymentForm';
+import CountryCodePicker from '../../../components/CountryCodePicker';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -79,6 +80,7 @@ export default function BusinessDashboard() {
     patientFirstName: '',
     patientLastName: '',
     patientPhone: '',
+    patientCountryCode: '+44', // Default to UK
     patientEmail: '',
   });
   const [previousDoctors, setPreviousDoctors] = useState([]);
@@ -893,9 +895,10 @@ export default function BusinessDashboard() {
         }
         
         // Basic phone number validation
+        const fullPhoneNumber = formData.patientCountryCode + formData.patientPhone.replace(/\s/g, '');
         const phoneRegex = /^[\+]?[1-9][\d]{7,14}$/;
-        if (!phoneRegex.test(formData.patientPhone.replace(/\s/g, ''))) {
-          alert('Please provide a valid phone number for the patient (including country code if international).');
+        if (!phoneRegex.test(fullPhoneNumber.replace(/\s/g, ''))) {
+          alert('Please provide a valid phone number for the patient.');
           setLoading(false);
           return;
         }
@@ -1036,7 +1039,7 @@ Payment ID: ${paymentIntent.id}`);
           if (isOnlineConsultation) {
             requestData.patientFirstName = formDataFromTemp.patientFirstName;
             requestData.patientLastName = formDataFromTemp.patientLastName;
-            requestData.patientPhone = formDataFromTemp.patientPhone;
+            requestData.patientPhone = formDataFromTemp.patientCountryCode + formDataFromTemp.patientPhone.replace(/\s/g, '');
             requestData.patientEmail = formDataFromTemp.patientEmail;
           }
 
@@ -1072,6 +1075,7 @@ Payment ID: ${paymentIntent.id}`;
               patientFirstName: '',
               patientLastName: '',
               patientPhone: '',
+              patientCountryCode: '+44', // Default to UK
               patientEmail: '',
             });
             // Reset service-related states
@@ -2100,14 +2104,15 @@ Payment ID: ${paymentIntent.id}`;
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                           Phone Number *
                         </label>
-                        <input
-                          type="tel"
-                          name="patientPhone"
-                          value={formData.patientPhone}
-                          onChange={handleInputChange}
-                          required
+                        <CountryCodePicker
+                          selectedCode={formData.patientCountryCode}
+                          onCodeChange={(code) => setFormData({ ...formData, patientCountryCode: code })}
+                          phoneNumber={formData.patientPhone}
+                          onPhoneChange={(phone) => setFormData({ ...formData, patientPhone: phone })}
                           placeholder="Patient's phone number (for video call link)"
-                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                          isDarkMode={isDarkMode}
+                          required={true}
+                          className="w-full"
                         />
                         <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           WhatsApp video call link will be sent to this number
@@ -2351,6 +2356,7 @@ Payment ID: ${paymentIntent.id}`;
                       patientFirstName: '',
                       patientLastName: '',
                       patientPhone: '',
+                      patientCountryCode: '+44', // Default to UK
                       patientEmail: '',
                     });
                   }}
