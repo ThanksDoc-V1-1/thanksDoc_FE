@@ -332,9 +332,13 @@ export const authAPI = {
     } catch (error) {
       console.error('🚨 Login error:', error);
       
-      // Check if it's a verification error (HTTP 403)
-      if (error.response?.status === 403) {
-        throw new Error(error.response?.data?.message || 'Account not verified. Please wait for admin approval.');
+      // Check if it's a verification error (HTTP 400 or 403)
+      if (error.response?.status === 400 || error.response?.status === 403) {
+        // Check if the error message is about email verification
+        const errorMessage = String(error.response?.data?.message || error.response?.data || '');
+        if (errorMessage.includes('verify') || errorMessage.includes('verification')) {
+          throw new Error(errorMessage);
+        }
       }
       
       throw new Error(error.response?.data?.message || 'Invalid credentials');

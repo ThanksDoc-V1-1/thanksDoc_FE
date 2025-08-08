@@ -66,7 +66,9 @@ export default function LoginForm() {
       console.error('📄 Error details:', err.response?.data || err.message);
       
       // Display a specific message if the account is not verified
-      if (err.message && err.message.includes('not verified')) {
+      if (err.message && (err.message.includes('verify') || err.message.includes('verification'))) {
+        setError(err.message);
+      } else if (err.message && err.message.includes('not verified')) {
         setError('Your account is pending verification. Please wait for admin approval before logging in.');
       } else {
         setError(err.message || 'Login failed. Please try again.');
