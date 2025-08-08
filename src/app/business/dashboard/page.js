@@ -1962,9 +1962,9 @@ Payment ID: ${paymentIntent.id}`;
                           <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                             NHS Work *
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-2 pr-6">
                             {nhsServices.map(service => (
-                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                                 <input
                                   type="radio"
                                   name="serviceId"
@@ -1976,7 +1976,7 @@ Payment ID: ${paymentIntent.id}`;
                                 <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                   {service.name}
                                 </span>
-                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded mr-3`}>
                                   £{service.price}
                                 </span>
                               </label>
@@ -1995,9 +1995,9 @@ Payment ID: ${paymentIntent.id}`;
                           <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                             Online Private Doctor *
                           </h3>
-                          <div className="space-y-2">
+                          <div className="space-y-2 pr-6">
                             {onlineServices.map(service => (
-                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                                 <input
                                   type="radio"
                                   name="serviceId"
@@ -2009,7 +2009,7 @@ Payment ID: ${paymentIntent.id}`;
                                 <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                   {service.name}
                                 </span>
-                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                   £{service.price}
                                 </span>
                               </label>
@@ -2028,9 +2028,9 @@ Payment ID: ${paymentIntent.id}`;
                           <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                             In Person Private Doctor *
                           </h3>
-                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                          <div className="space-y-2 max-h-48 overflow-y-auto pr-6">
                             {inPersonServices.map(service => (
-                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
+                              <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                                 <input
                                   type="radio"
                                   name="serviceId"
@@ -2042,7 +2042,7 @@ Payment ID: ${paymentIntent.id}`;
                                 <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                   {service.name}
                                 </span>
-                                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                   £{service.price}
                                 </span>
                               </label>
@@ -2462,7 +2462,7 @@ Payment ID: ${paymentIntent.id}`;
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Which service do you require? *
                 </label>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-4">
                   {/* NHS Services */}
                   {(() => {
                     const nhsServices = availableServices.filter(service => service.category === 'nhs');
@@ -2472,9 +2472,9 @@ Payment ID: ${paymentIntent.id}`;
                         <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           NHS Work
                         </h4>
-                        <div className="space-y-1">
+                        <div className="space-y-1 pr-4">
                           {nhsServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
@@ -2486,7 +2486,7 @@ Payment ID: ${paymentIntent.id}`;
                               <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} bg-opacity-10 px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-blue-400' : 'bg-blue-600'} mr-4`}>
                                 £{service.price}
                               </span>
                             </label>
@@ -2505,9 +2505,9 @@ Payment ID: ${paymentIntent.id}`;
                         <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Online Private Doctor
                         </h4>
-                        <div className="space-y-1">
+                        <div className="space-y-1 pr-4">
                           {onlineServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
@@ -2519,7 +2519,7 @@ Payment ID: ${paymentIntent.id}`;
                               <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded mr-4 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                 £{service.price}
                               </span>
                             </label>
@@ -2538,9 +2538,9 @@ Payment ID: ${paymentIntent.id}`;
                         <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           In Person Private Doctor
                         </h4>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                        <div className="space-y-1 max-h-32 overflow-y-auto pr-4">
                           {inPersonServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer">
+                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
@@ -2552,7 +2552,7 @@ Payment ID: ${paymentIntent.id}`;
                               <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded mr-4 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                 £{service.price}
                               </span>
                             </label>
