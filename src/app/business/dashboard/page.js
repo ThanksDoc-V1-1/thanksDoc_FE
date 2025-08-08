@@ -104,6 +104,14 @@ export default function BusinessDashboard() {
   const [quickRequestServiceId, setQuickRequestServiceId] = useState('');
   const [quickRequestServiceDate, setQuickRequestServiceDate] = useState('');
   const [quickRequestServiceTime, setQuickRequestServiceTime] = useState('');
+  
+  // Patient information for quick request (individual doctor form)
+  const [quickRequestPatientFirstName, setQuickRequestPatientFirstName] = useState('');
+  const [quickRequestPatientLastName, setQuickRequestPatientLastName] = useState('');
+  const [quickRequestPatientPhone, setQuickRequestPatientPhone] = useState('');
+  const [quickRequestPatientCountryCode, setQuickRequestPatientCountryCode] = useState('+44');
+  const [quickRequestPatientEmail, setQuickRequestPatientEmail] = useState('');
+  
   const [currentPage, setCurrentPage] = useState(1);
   
   // Fallback status tracking
@@ -602,11 +610,6 @@ export default function BusinessDashboard() {
       contactPersonName: '',
       email: '',
       phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      description: ''
     });
   };
 
@@ -628,6 +631,18 @@ export default function BusinessDashboard() {
       return;
     }
 
+    // Check if this is an online consultation and validate patient information
+    const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
+    const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
+                                  selectedService?.category === 'online';
+    
+    if (isOnlineConsultation) {
+      if (!quickRequestPatientFirstName || !quickRequestPatientLastName || !quickRequestPatientPhone) {
+        alert('Please provide patient information for online consultation.');
+        return;
+      }
+    }
+
     // Validation: Check if service date is not in the past
     const serviceDateTime = new Date(`${quickRequestServiceDate}T${quickRequestServiceTime}`);
     const now = new Date();
@@ -638,7 +653,6 @@ export default function BusinessDashboard() {
 
     try {
       // Find the selected service details
-      const selectedService = availableServices.find(service => service.id.toString() === quickRequestServiceId.toString());
       const serviceAmount = parseFloat(selectedService?.price || 0);
       const totalWithServiceCharge = serviceAmount + SERVICE_CHARGE;
       
@@ -650,7 +664,7 @@ export default function BusinessDashboard() {
         description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
-        servicePrice: baseServiceCost, // Store the service price
+        servicePrice: serviceAmount, // Store the service price
         serviceDateTime: serviceDateTime.toISOString(),
         totalAmount: totalWithServiceCharge,
         // Store the complete request data for later use
@@ -662,9 +676,16 @@ export default function BusinessDashboard() {
           description: `${selectedService?.name || 'Service'} request for ${requestHours} hour(s) with Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName}`,
           estimatedDuration: parseFloat(requestHours),
           serviceCharge: SERVICE_CHARGE,
-          servicePrice: baseServiceCost, // Store the service price
+          servicePrice: serviceAmount, // Store the service price
           estimatedCost: totalWithServiceCharge,
-          serviceDateTime: serviceDateTime.toISOString()
+          serviceDateTime: serviceDateTime.toISOString(),
+          // Add patient information for online consultations
+          ...(isOnlineConsultation && {
+            patientFirstName: quickRequestPatientFirstName,
+            patientLastName: quickRequestPatientLastName,
+            patientPhone: quickRequestPatientPhone,
+            patientEmail: quickRequestPatientEmail
+          })
         },
         _isQuickRequest: true,
         _selectedDoctor: selectedDoctor,
@@ -1499,11 +1520,33 @@ Payment ID: ${paymentIntent.id}`;
                             ? 'text-blue-400 bg-blue-900/20' 
                             : 'text-blue-600 bg-blue-50'
                         }`}>{doctor.specialisation}</p>
-                        <p className={`text-xs mt-2 ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                        }`}>
-                          💰 {formatCurrency(doctor.hourlyRate)}/hr • 🎓 {doctor.yearsOfExperience}y exp
-                        </p>
+                        
+                        {/* Show up to 3 services */}
+                        <div className="mt-2">
+                          <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                            Services:
+                          </p>
+                          <div className="space-y-1">
+                            {doctor.services && doctor.services.length > 0 ? (
+                              doctor.services.slice(0, 3).map((service, index) => (
+                                <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
+                                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {service.name}
+                                </div>
+                              ))
+                            ) : (
+                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Services loading...
+                              </div>
+                            )}
+                            {doctor.services && doctor.services.length > 3 && (
+                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                +{doctor.services.length - 3} more
+                              </div>
+                            )}
+                          </div>
+                        </div>
                         <button
                           onClick={() => handleQuickServiceRequest(doctor)}
                           className="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow"
@@ -1873,6 +1916,33 @@ Payment ID: ${paymentIntent.id}`;
                             Dr. {doctor.firstName} {doctor.lastName}
                           </h4>
                           <p className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium text-xs`}>{doctor.specialisation}</p>
+                          
+                          {/* Show up to 3 services */}
+                          <div className="mt-2">
+                            <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                              Services:
+                            </p>
+                            <div className="space-y-1">
+                              {doctor.services && doctor.services.length > 0 ? (
+                                doctor.services.slice(0, 3).map((service, index) => (
+                                  <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
+                                    isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {service.name}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Services loading...
+                                </div>
+                              )}
+                              {doctor.services && doctor.services.length > 3 && (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  +{doctor.services.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div className="flex flex-col space-y-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>
@@ -1882,14 +1952,6 @@ Payment ID: ${paymentIntent.id}`;
                             🔒 Verified
                           </span>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} text-xs`}>Experience:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-xs`}>{doctor.yearsOfExperience} years</span>
-                      </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} text-xs`}>Rate:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-xs`}>{formatCurrency(doctor.hourlyRate)}/hour</span>
                       </div>
                       <div className="flex justify-between items-center mb-2">
                         <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} text-xs`}>Location:</span>
@@ -2443,8 +2505,8 @@ Payment ID: ${paymentIntent.id}`;
       {/* Hours Input Popup */}
       {showHoursPopup && selectedDoctor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-md w-full border`}>
-            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
+            <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg flex-shrink-0`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                   <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
@@ -2457,36 +2519,36 @@ Payment ID: ${paymentIntent.id}`;
                 </div>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Which service do you require? *
                 </label>
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-4">
+                <div className="space-y-4">
                   {/* NHS Services */}
                   {(() => {
                     const nhsServices = availableServices.filter(service => service.category === 'nhs');
                     if (nhsServices.length === 0) return null;
                     return (
-                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          NHS Work
-                        </h4>
-                        <div className="space-y-1 pr-4">
+                      <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          NHS Work *
+                        </h3>
+                        <div className="space-y-2 pr-6">
                           {nhsServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
+                            <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
                                 value={service.id}
                                 checked={quickRequestServiceId === service.id.toString()}
                                 onChange={(e) => setQuickRequestServiceId(e.target.value)}
-                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                               />
-                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} bg-opacity-10 px-1.5 py-0.5 rounded ${isDarkMode ? 'bg-blue-400' : 'bg-blue-600'} mr-4`}>
+                              <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded mr-3`}>
                                 £{service.price}
                               </span>
                             </label>
@@ -2501,25 +2563,25 @@ Payment ID: ${paymentIntent.id}`;
                     const onlineServices = availableServices.filter(service => service.category === 'online');
                     if (onlineServices.length === 0) return null;
                     return (
-                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          Online Private Doctor
-                        </h4>
-                        <div className="space-y-1 pr-4">
+                      <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Online Private Doctor *
+                        </h3>
+                        <div className="space-y-2 pr-6">
                           {onlineServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
+                            <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
                                 value={service.id}
                                 checked={quickRequestServiceId === service.id.toString()}
                                 onChange={(e) => setQuickRequestServiceId(e.target.value)}
-                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                               />
-                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded mr-4 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
+                              <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                 £{service.price}
                               </span>
                             </label>
@@ -2534,25 +2596,25 @@ Payment ID: ${paymentIntent.id}`;
                     const inPersonServices = availableServices.filter(service => service.category === 'in-person');
                     if (inPersonServices.length === 0) return null;
                     return (
-                      <div className={`border rounded-lg p-3 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                        <h4 className={`font-medium text-xs mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                          In Person Private Doctor
-                        </h4>
-                        <div className="space-y-1 max-h-32 overflow-y-auto pr-4">
+                      <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
+                        <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          In Person Private Doctor *
+                        </h3>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-6">
                           {inPersonServices.map(service => (
-                            <label key={service.id} className="flex items-center space-x-2 cursor-pointer pr-6">
+                            <label key={service.id} className="flex items-center space-x-3 cursor-pointer pr-6">
                               <input
                                 type="radio"
                                 name="quickRequestServiceId"
                                 value={service.id}
                                 checked={quickRequestServiceId === service.id.toString()}
                                 onChange={(e) => setQuickRequestServiceId(e.target.value)}
-                                className="w-3 h-3 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                               />
-                              <span className={`text-xs flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                 {service.name}
                               </span>
-                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded mr-4 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
+                              <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
                                 £{service.price}
                               </span>
                             </label>
@@ -2562,13 +2624,95 @@ Payment ID: ${paymentIntent.id}`;
                     );
                   })()}
                 </div>
-              </div>
-              {quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId) && (
+                {quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId) && (
                   <p className={`mt-2 text-sm font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                     ⚠️ Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} does not offer this service
                   </p>
                 )}
               </div>
+
+              {/* Patient Information Fields - Show only for online consultations */}
+              {(() => {
+                const selectedService = availableServices.find(s => s.id.toString() === quickRequestServiceId);
+                const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
+                                              selectedService?.category === 'online';
+                
+                if (!isOnlineConsultation) return null;
+                
+                return (
+                  <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-orange-600 bg-orange-900/20' : 'border-orange-200 bg-orange-50'}`}>
+                    <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>
+                      👤 Patient Information *
+                    </h3>
+                    <p className={`text-xs mb-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                      Please provide the patient's details who will be participating in the online consultation.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={quickRequestPatientFirstName}
+                          onChange={(e) => setQuickRequestPatientFirstName(e.target.value)}
+                          required
+                          placeholder="Patient's first name"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={quickRequestPatientLastName}
+                          onChange={(e) => setQuickRequestPatientLastName(e.target.value)}
+                          required
+                          placeholder="Patient's last name"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4 mt-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Phone Number *
+                        </label>
+                        <CountryCodePicker
+                          selectedCode={quickRequestPatientCountryCode}
+                          onCodeChange={(code) => setQuickRequestPatientCountryCode(code)}
+                          phoneNumber={quickRequestPatientPhone}
+                          onPhoneChange={(phone) => setQuickRequestPatientPhone(phone)}
+                          placeholder="Patient's phone number (for video call link)"
+                          isDarkMode={isDarkMode}
+                          required={true}
+                          className="w-full"
+                        />
+                        <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          WhatsApp video call link will be sent to this number
+                        </p>
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                          Email Address (Optional)
+                        </label>
+                        <input
+                          type="email"
+                          value={quickRequestPatientEmail}
+                          onChange={(e) => setQuickRequestPatientEmail(e.target.value)}
+                          placeholder="Patient's email address"
+                          className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   How many hours of service do you need? *
@@ -2642,7 +2786,9 @@ Payment ID: ${paymentIntent.id}`;
                 })()}</p>
                 <p className={`text-xs ${isDarkMode ? 'text-orange-300' : 'text-orange-600'} font-medium`}>• Booking fee: {formatCurrency(SERVICE_CHARGE)}</p>
               </div>
-              <div className="flex space-x-3 pt-4">
+            </div>
+            <div className={`p-6 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} flex-shrink-0`}>
+              <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2653,14 +2799,24 @@ Payment ID: ${paymentIntent.id}`;
                     setQuickRequestServiceId('');
                     setQuickRequestServiceDate('');
                     setQuickRequestServiceTime('');
+                    // Reset patient information
+                    setQuickRequestPatientFirstName('');
+                    setQuickRequestPatientLastName('');
+                    setQuickRequestPatientPhone('');
+                    setQuickRequestPatientCountryCode('+44');
+                    setQuickRequestPatientEmail('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 rounded-md transition-colors font-medium"
+                  className={`flex-1 px-4 py-2 border ${isDarkMode ? 'border-gray-700 text-gray-300 hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'} rounded-md transition-colors font-medium`}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmitQuickRequest}
-                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceId || !quickRequestServiceDate || !quickRequestServiceTime || (quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId))}
+                  disabled={loading || !requestHours || parseFloat(requestHours) <= 0 || !quickRequestServiceId || !quickRequestServiceDate || !quickRequestServiceTime || (quickRequestServiceId && !doctorOffersService(selectedDoctor, quickRequestServiceId)) || (() => {
+                    const selectedService = availableServices.find(s => s.id.toString() === quickRequestServiceId);
+                    const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || selectedService?.category === 'online';
+                    return isOnlineConsultation && (!quickRequestPatientFirstName || !quickRequestPatientLastName || !quickRequestPatientPhone);
+                  })()}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
                   {loading ? 'Processing...' : 'Pay & Send Request'}
@@ -2668,7 +2824,7 @@ Payment ID: ${paymentIntent.id}`;
               </div>
             </div>
           </div>
-        
+        </div>
       )}
 
       {/* Payment Modal */}
