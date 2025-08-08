@@ -331,17 +331,41 @@ export const authAPI = {
       
     } catch (error) {
       console.error('🚨 Login error:', error);
+      console.error('🔍 Error response status:', error.response?.status);
+      console.error('🔍 Error response data:', error.response?.data);
+      console.error('🔍 Error response data type:', typeof error.response?.data);
+      console.error('🔍 Error response data message:', error.response?.data?.message);
+      console.error('🔍 Error response data message type:', typeof error.response?.data?.message);
+      console.error('🔍 Error response data.error:', error.response?.data?.error);
+      console.error('🔍 Error response data.error.message:', error.response?.data?.error?.message);
       
       // Check if it's a verification error (HTTP 400 or 403)
       if (error.response?.status === 400 || error.response?.status === 403) {
         // Check if the error message is about email verification
-        const errorMessage = String(error.response?.data?.message || error.response?.data || '');
+        const errorMessage = String(error.response?.data?.error?.message || error.response?.data?.message || error.response?.data || '');
+        console.error('🔍 Checking error message for verification:', errorMessage);
         if (errorMessage.includes('verify') || errorMessage.includes('verification')) {
+          console.error('✅ Verification error detected, throwing specific message');
           throw new Error(errorMessage);
         }
       }
       
-      throw new Error(error.response?.data?.message || 'Invalid credentials');
+      // For all other errors, check if we have a specific message from the backend
+      const backendMessage = error.response?.data?.error?.message || error.response?.data?.message || error.response?.data;
+      console.error('🔍 Backend message:', backendMessage, typeof backendMessage);
+      if (backendMessage && typeof backendMessage === 'string') {
+        console.error('✅ Using backend message:', backendMessage);
+        throw new Error(backendMessage);
+      }
+      
+      // Only show "Invalid credentials" for actual 401 Unauthorized errors
+      if (error.response?.status === 401) {
+        throw new Error('Invalid email or password');
+      }
+      
+      // For other errors, show a generic message
+      console.error('❌ Using generic fallback message');
+      throw new Error('Login failed. Please try again.');
     }
   },
 

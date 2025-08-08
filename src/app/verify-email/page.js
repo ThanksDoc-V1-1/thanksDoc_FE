@@ -47,10 +47,8 @@ export default function VerifyEmailPage() {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
         
-        // Redirect to dashboard after 3 seconds
-        setTimeout(() => {
-          router.push(`/${userType}/dashboard`);
-        }, 3000);
+        // Redirect to dashboard immediately since they're now authenticated
+        router.push(`/${userType}/dashboard`);
       } else {
         if (data.message && data.message.includes('expired')) {
           setStatus('expired');
@@ -135,7 +133,7 @@ export default function VerifyEmailPage() {
               </div>
               <h3 className="mt-4 text-lg font-medium text-gray-900">Email Verified!</h3>
               <p className="mt-2 text-sm text-gray-600">{message}</p>
-              <p className="mt-4 text-sm text-blue-600">Redirecting to your dashboard...</p>
+              <p className="mt-4 text-sm text-blue-700 font-medium">Redirecting to your dashboard...</p>
             </div>
           )}
 
@@ -186,7 +184,7 @@ export default function VerifyEmailPage() {
           <div className="mt-6">
             <button
               onClick={() => router.push('/')}
-              className="w-full text-center text-sm text-gray-500 hover:text-gray-700"
+              className="w-full text-center text-sm text-gray-600 hover:text-gray-800 font-medium transition-colors"
             >
               ← Back to Home
             </button>
