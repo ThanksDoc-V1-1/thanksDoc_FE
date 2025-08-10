@@ -2310,7 +2310,7 @@ Payment ID: ${paymentIntent.id}`;
                           })
                           .map((doctor) => (
                             <option key={doctor.id} value={doctor.id}>
-                              Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                              Dr. {doctor.firstName} {doctor.lastName}
                             </option>
                           ))}
                       </select>
@@ -2345,7 +2345,7 @@ Payment ID: ${paymentIntent.id}`;
                               .slice(0, 3)
                               .map((doctor) => (
                                 <li key={doctor.id}>
-                                  • Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization}
+                                  • Dr. {doctor.firstName} {doctor.lastName}
                                   {!doctor.isAvailable ? ' (unavailable)' : formData.serviceId && !doctorOffersService(doctor, formData.serviceId) ? ' (doesn\'t offer this service)' : ''}
                                 </li>
                               ))}
@@ -2381,7 +2381,7 @@ Payment ID: ${paymentIntent.id}`;
                     </select>
                   )}
                   <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                    We will assign the best available doctor for your request based on location and specialization.
+                    We will assign the best available doctor for your request based on location and availability.
                   </p>
                 </div>
               )}
@@ -2514,7 +2514,7 @@ Payment ID: ${paymentIntent.id}`;
                 <div>
                   <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Request Service</h2>
                   <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                    Dr. {selectedDoctor.firstName} {selectedDoctor.lastName} - {selectedDoctor.specialisation}
+                    Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}
                   </p>
                 </div>
               </div>
