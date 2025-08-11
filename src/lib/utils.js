@@ -155,3 +155,84 @@ export function getTimeElapsed(date) {
 export function cn(...classes) {
   return classes.filter(Boolean).join(' ');
 }
+
+// Filter doctors by distance from business location
+export function filterDoctorsByDistance(doctors, businessLocation, maxDistanceKm) {
+  if (!businessLocation || !businessLocation.latitude || !businessLocation.longitude || maxDistanceKm === -1) {
+    return doctors; // Return all doctors if no location or no distance limit
+  }
+
+  return doctors.filter(doctor => {
+    if (!doctor.latitude || !doctor.longitude) {
+      return false; // Exclude doctors without location data
+    }
+
+    const distance = calculateDistance(
+      businessLocation.latitude,
+      businessLocation.longitude,
+      doctor.latitude,
+      doctor.longitude
+    );
+
+    return distance <= maxDistanceKm;
+  });
+}
+
+// Sort doctors by distance from business location
+export function sortDoctorsByDistance(doctors, businessLocation) {
+  if (!businessLocation || !businessLocation.latitude || !businessLocation.longitude) {
+    return doctors; // Return original order if no location
+  }
+
+  return [...doctors].sort((a, b) => {
+    // Doctors without location go to the end
+    if (!a.latitude || !a.longitude) return 1;
+    if (!b.latitude || !b.longitude) return -1;
+
+    const distanceA = calculateDistance(
+      businessLocation.latitude,
+      businessLocation.longitude,
+      a.latitude,
+      a.longitude
+    );
+
+    const distanceB = calculateDistance(
+      businessLocation.latitude,
+      businessLocation.longitude,
+      b.latitude,
+      b.longitude
+    );
+
+    return distanceA - distanceB;
+  });
+}
+
+// Get doctor distance from business
+export function getDoctorDistance(doctor, businessLocation) {
+  if (!businessLocation || !businessLocation.latitude || !businessLocation.longitude ||
+      !doctor.latitude || !doctor.longitude) {
+    return null;
+  }
+
+  return calculateDistance(
+    businessLocation.latitude,
+    businessLocation.longitude,
+    doctor.latitude,
+    doctor.longitude
+  );
+}
+
+// Format distance for display
+export function formatDistance(distanceKm) {
+  if (distanceKm === null || distanceKm === undefined) {
+    return 'Distance unknown';
+  }
+  
+  if (distanceKm < 1) {
+    return `${Math.round(distanceKm * 1000)}m away`;
+  } else if (distanceKm < 10) {
+    return `${distanceKm.toFixed(1)}km away`;
+  } else {
+    return `${Math.round(distanceKm)}km away`;
+  }
+}

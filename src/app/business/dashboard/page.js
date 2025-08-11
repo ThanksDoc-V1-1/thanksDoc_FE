@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
 import api from '../../../lib/api';
-import { formatCurrency, formatDate, getStatusColor, getTimeElapsed } from '../../../lib/utils';
+import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, filterDoctorsByDistance, sortDoctorsByDistance, getDoctorDistance, formatDistance } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import PaymentForm from '../../../components/PaymentForm';
 import CountryCodePicker from '../../../components/CountryCodePicker';
+import DistanceSlider from '../../../components/DistanceSlider';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -117,6 +118,11 @@ export default function BusinessDashboard() {
   // Fallback status tracking
   const [fallbackStatuses, setFallbackStatuses] = useState({});
   const requestsPerPage = 5;
+  
+  // Distance filtering states
+  const [distanceFilter, setDistanceFilter] = useState(10); // Default to 10km
+  const [businessLocation, setBusinessLocation] = useState(null);
+  const [filteredDoctorsByDistance, setFilteredDoctorsByDistance] = useState([]);
 
   // Business profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -137,6 +143,45 @@ export default function BusinessDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds refresh rate
+
+  // Distance filtering functions
+  const applyDistanceFilter = (distance = distanceFilter) => {
+    if (!businessLocation) {
+      console.log('📍 No business location available, showing all doctors');
+      setFilteredDoctorsByDistance(nearbyDoctors);
+      return;
+    }
+
+    console.log('🔍 Applying distance filter:', {
+      distance,
+      businessLocation,
+      totalDoctors: nearbyDoctors.length
+    });
+
+    let filtered = distance === -1 
+      ? nearbyDoctors 
+      : filterDoctorsByDistance(nearbyDoctors, businessLocation, distance);
+    
+    // Sort by distance regardless of filter
+    filtered = sortDoctorsByDistance(filtered, businessLocation);
+    
+    console.log('✅ Filtered doctors:', {
+      originalCount: nearbyDoctors.length,
+      filteredCount: filtered.length,
+      distances: filtered.slice(0, 5).map(d => ({
+        name: `${d.firstName} ${d.lastName}`,
+        distance: getDoctorDistance(d, businessLocation)?.toFixed(1) + 'km'
+      }))
+    });
+
+    setFilteredDoctorsByDistance(filtered);
+  };
+
+  const handleDistanceFilterChange = (newDistance) => {
+    console.log('📏 Distance filter changed to:', newDistance);
+    setDistanceFilter(newDistance);
+    applyDistanceFilter(newDistance);
+  };
 
   // Authentication check - redirect if not authenticated or not business
   useEffect(() => {
@@ -244,6 +289,26 @@ export default function BusinessDashboard() {
       console.log('✅ Requests with isPaid:', serviceRequests.filter(req => req.isPaid).length);
     }
   }, [serviceRequests]);
+
+  // Handle business location and distance filtering
+  useEffect(() => {
+    // Only set business location if the business has actual coordinates stored
+    if (businessData && businessData.latitude && businessData.longitude && !businessLocation) {
+      const location = {
+        latitude: parseFloat(businessData.latitude),
+        longitude: parseFloat(businessData.longitude)
+      };
+      console.log('📍 Setting business location from profile:', location);
+      setBusinessLocation(location);
+    } else if (!businessData?.latitude || !businessData?.longitude) {
+      // If business doesn't have coordinates, clear the location
+      console.log('📍 No business coordinates available, location-based filtering disabled');
+      setBusinessLocation(null);
+    }
+
+    // Apply distance filter when location, doctors, or filter changes
+    applyDistanceFilter();
+  }, [businessData, businessLocation, nearbyDoctors, distanceFilter]);
 
   // Show loading screen while authentication is being checked
   if (authLoading) {
@@ -733,6 +798,38 @@ export default function BusinessDashboard() {
     
     console.log('✅ Doctor offers service result:', hasService);
     return hasService;
+  };
+
+  // Distance filtering functions
+  const handleBusinessLocationUpdate = async (location) => {
+    try {
+      console.log('📍 Updating business location:', location);
+      setBusinessLocation(location);
+      
+      // Update the business profile with the new location
+      const response = await businessAPI.updateProfile(user.id, {
+        latitude: location.latitude,
+        longitude: location.longitude
+      });
+      
+      if (response.data) {
+        console.log('✅ Business location updated successfully');
+        // Update local business data
+        setBusinessData(prev => ({
+          ...prev,
+          latitude: location.latitude,
+          longitude: location.longitude
+        }));
+        
+        // Re-filter doctors with new location
+        applyDistanceFilter();
+      }
+    } catch (error) {
+      console.error('❌ Error updating business location:', error);
+      // Still set the local state for immediate UI feedback
+      setBusinessLocation(location);
+      applyDistanceFilter();
+    }
   };
 
   const handleCancelRequest = async (requestId) => {
@@ -1488,80 +1585,101 @@ Payment ID: ${paymentIntent.id}`;
                   }`}>Verified Available Doctors</h2>
                   <p className={`text-sm font-medium ${
                     isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                  }`}>({nearbyDoctors.length}) verified professionals</p>
+                  }`}>({filteredDoctorsByDistance.length}) verified professionals
+                    {businessLocation && distanceFilter !== -1 
+                      ? ` within ${distanceFilter}km` 
+                      : businessLocation 
+                        ? ' (no distance limit)' 
+                        : ' (location not set)'
+                    }
+                  </p>
                 </div>
               </div>
               <p className={`text-sm mb-4 ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-600'
               }`}>Choose from our network of verified healthcare professionals</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nearbyDoctors.slice(0, 6).map((doctor) => (
-                  <div key={doctor.id} className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-lg ${
-                    isDarkMode 
-                      ? 'bg-gray-900 border-gray-800 hover:border-gray-700' 
-                      : 'bg-white border-gray-200 hover:border-gray-300'
-                  }`}>
-                    <div className="flex items-start space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'
-                      }`}>
-                        <User className={`h-5 w-5 ${
-                          isDarkMode ? 'text-blue-400' : 'text-white'
-                        }`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className={`font-semibold text-sm ${
-                          isDarkMode ? 'text-white' : 'text-gray-900'
+                {filteredDoctorsByDistance.slice(0, 6).map((doctor) => {
+                  const distance = getDoctorDistance(doctor, businessLocation);
+                  return (
+                    <div key={doctor.id} className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-lg ${
+                      isDarkMode 
+                        ? 'bg-gray-900 border-gray-800 hover:border-gray-700' 
+                        : 'bg-white border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'
                         }`}>
-                          Dr. {doctor.firstName} {doctor.lastName}
-                        </h4>
-                        <p className={`text-xs font-medium px-2 py-1 rounded-md inline-block mt-1 ${
-                          isDarkMode 
-                            ? 'text-blue-400 bg-blue-900/20' 
-                            : 'text-blue-600 bg-blue-50'
-                        }`}>{doctor.specialisation}</p>
-                        
-                        {/* Show up to 3 services */}
-                        <div className="mt-2">
-                          <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
-                            Services:
-                          </p>
-                          <div className="space-y-1">
-                            {doctor.services && doctor.services.length > 0 ? (
-                              doctor.services.slice(0, 3).map((service, index) => (
-                                <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
-                                  isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {service.name}
-                                </div>
-                              ))
-                            ) : (
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Services loading...
-                              </div>
-                            )}
-                            {doctor.services && doctor.services.length > 3 && (
-                              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                +{doctor.services.length - 3} more
-                              </div>
+                          <User className={`h-5 w-5 ${
+                            isDarkMode ? 'text-blue-400' : 'text-white'
+                          }`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h4 className={`font-semibold text-sm ${
+                              isDarkMode ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              Dr. {doctor.firstName} {doctor.lastName}
+                            </h4>
+                            {distance && (
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                isDarkMode 
+                                  ? 'bg-green-900/20 text-green-400 border border-green-700' 
+                                  : 'bg-green-100 text-green-700 border border-green-200'
+                              }`}>
+                                📍 {formatDistance(distance)}
+                              </span>
                             )}
                           </div>
+                          <p className={`text-xs font-medium px-2 py-1 rounded-md inline-block mt-1 ${
+                            isDarkMode 
+                              ? 'text-blue-400 bg-blue-900/20' 
+                              : 'text-blue-600 bg-blue-50'
+                          }`}>{doctor.specialisation}</p>
+                          
+                          {/* Show up to 3 services */}
+                          <div className="mt-2">
+                            <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                              Services:
+                            </p>
+                            <div className="space-y-1">
+                              {doctor.services && doctor.services.length > 0 ? (
+                                doctor.services.slice(0, 3).map((service, index) => (
+                                  <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
+                                    isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {service.name}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Services loading...
+                                </div>
+                              )}
+                              {doctor.services && doctor.services.length > 3 && (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  +{doctor.services.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleQuickServiceRequest(doctor)}
+                            className="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow"
+                          >
+                            Request Service
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleQuickServiceRequest(doctor)}
-                          className="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow"
-                        >
-                          Request Service
-                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              {nearbyDoctors.length > 6 && (
+              {filteredDoctorsByDistance.length > 6 && (
                 <div className="mt-4 text-center">
                   <p className="text-sm text-gray-300">
-                    {nearbyDoctors.length - 6} more doctors available in the sidebar →
+                    {filteredDoctorsByDistance.length - 6} more doctors available in the sidebar →
                   </p>
                 </div>
               )}
@@ -1904,84 +2022,120 @@ Payment ID: ${paymentIntent.id}`;
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                   <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
                 </div>
-                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Verified Available Doctors</h3>
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Verified Available Doctors
+                  {businessLocation && distanceFilter !== -1 && (
+                    <span className={`text-sm font-normal ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ml-2`}>
+                      (within {distanceFilter}km)
+                    </span>
+                  )}
+                  {!businessLocation && (
+                    <span className={`text-sm font-normal ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} ml-2`}>
+                      (location not set)
+                    </span>
+                  )}
+                </h3>
               </div>
               <div className="space-y-3 text-sm max-h-96 overflow-y-auto pr-2">
-                {nearbyDoctors.length > 0 ? (
-                  nearbyDoctors.map((doctor) => (
-                    <div key={doctor.id} className={`py-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} last:border-b-0`}>
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>
-                            Dr. {doctor.firstName} {doctor.lastName}
-                          </h4>
-                          <p className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium text-xs`}>{doctor.specialisation}</p>
-                          
-                          {/* Show up to 3 services */}
-                          <div className="mt-2">
-                            <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
-                              Services:
-                            </p>
-                            <div className="space-y-1">
-                              {doctor.services && doctor.services.length > 0 ? (
-                                doctor.services.slice(0, 3).map((service, index) => (
-                                  <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
-                                    isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {service.name}
-                                  </div>
-                                ))
-                              ) : (
-                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  Services loading...
-                                </div>
-                              )}
-                              {doctor.services && doctor.services.length > 3 && (
-                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  +{doctor.services.length - 3} more
-                                </div>
+                {filteredDoctorsByDistance.length > 0 ? (
+                  filteredDoctorsByDistance.map((doctor) => {
+                    const distance = getDoctorDistance(doctor, businessLocation);
+                    return (
+                      <div key={doctor.id} className={`py-3 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} last:border-b-0`}>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>
+                                Dr. {doctor.firstName} {doctor.lastName}
+                              </h4>
+                              {distance && (
+                                <span className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                                  isDarkMode 
+                                    ? 'bg-green-900/20 text-green-400 border border-green-700' 
+                                    : 'bg-green-100 text-green-700 border border-green-200'
+                                }`}>
+                                  📍 {formatDistance(distance)}
+                                </span>
                               )}
                             </div>
+                            <p className={`${isDarkMode ? 'text-blue-300' : 'text-blue-600'} font-medium text-xs`}>{doctor.specialisation}</p>
+                            
+                            {/* Show up to 3 services */}
+                            <div className="mt-2">
+                              <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+                                Services:
+                              </p>
+                              <div className="space-y-1">
+                                {doctor.services && doctor.services.length > 0 ? (
+                                  doctor.services.slice(0, 3).map((service, index) => (
+                                    <div key={service.id || index} className={`text-xs px-2 py-1 rounded ${
+                                      isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                                    }`}>
+                                      {service.name}
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Services loading...
+                                  </div>
+                                )}
+                                {doctor.services && doctor.services.length > 3 && (
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    +{doctor.services.length - 3} more
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col space-y-1">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                              ✅ Available
+                            </span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
+                              🔒 Verified
+                            </span>
                           </div>
                         </div>
-                        <div className="flex flex-col space-y-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'}`}>
-                            ✅ Available
-                          </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'}`}>
-                            🔒 Verified
-                          </span>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} text-xs`}>Location:</span>
+                          <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-xs text-right`}>{doctor.city}, {doctor.state}</span>
                         </div>
+                        {doctor.bio && (
+                          <div className={`${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} px-3 py-2 rounded-lg mt-2`}>
+                            <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} italic`}>"{doctor.bio}"</p>
+                          </div>
+                        )}
+                        {doctor.languages && doctor.languages.length > 0 && (
+                          <div className={`${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 py-2 rounded-lg mt-2`}>
+                            <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'} text-xs`}>Languages:</span>
+                            <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-semibold text-xs ml-2`}>{doctor.languages.join(', ')}</span>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleQuickServiceRequest(doctor)}
+                          className="w-full mt-3 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow"
+                        >
+                          Request Service
+                        </button>
                       </div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} text-xs`}>Location:</span>
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-xs text-right`}>{doctor.city}, {doctor.state}</span>
-                      </div>
-                      {doctor.bio && (
-                        <div className={`${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'} px-3 py-2 rounded-lg mt-2`}>
-                          <p className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} italic`}>"{doctor.bio}"</p>
-                        </div>
-                      )}
-                      {doctor.languages && doctor.languages.length > 0 && (
-                        <div className={`${isDarkMode ? 'bg-green-900/20' : 'bg-green-50'} px-3 py-2 rounded-lg mt-2`}>
-                          <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-700'} text-xs`}>Languages:</span>
-                          <span className={`${isDarkMode ? 'text-green-300' : 'text-green-700'} font-semibold text-xs ml-2`}>{doctor.languages.join(', ')}</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleQuickServiceRequest(doctor)}
-                        className="w-full mt-3 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md transition-all duration-200 font-medium shadow-sm hover:shadow"
-                      >
-                        Request Service
-                      </button>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8">
                     <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
                       <User className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
-                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No verified doctors available</p>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Our doctors are currently busy or under verification. Please check back later.</p>
+                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {businessLocation && distanceFilter !== -1 
+                          ? `No verified doctors within ${distanceFilter}km`
+                          : 'No verified doctors available'
+                        }
+                      </p>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {businessLocation && distanceFilter !== -1 
+                          ? 'Try increasing the distance range or selecting "Anywhere"'
+                          : 'Our doctors are currently busy or under verification. Please check back later.'
+                        }
+                      </p>
                     </div>
                   </div>
                 )}
@@ -2260,6 +2414,16 @@ Payment ID: ${paymentIntent.id}`;
                 );
               })()}
 
+              {/* Distance Filter */}
+              <DistanceSlider
+                value={distanceFilter}
+                onChange={handleDistanceFilterChange}
+                isDarkMode={isDarkMode}
+                businessLocation={businessLocation}
+                onLocationUpdate={handleBusinessLocationUpdate}
+                disabled={loading}
+              />
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Doctor Selection *
@@ -2371,14 +2535,43 @@ Payment ID: ${paymentIntent.id}`;
                       Loading doctors for this service...
                     </div>
                   ) : (
-                    <select
-                      name="preferredDoctorId"
-                      value={formData.preferredDoctorId || ''}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    >
-                      <option value="">Any available doctor</option>
-                    </select>
+                    <>
+                      <select
+                        name="preferredDoctorId"
+                        value={formData.preferredDoctorId || ''}
+                        onChange={handleInputChange}
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      >
+                        <option value="">Any available doctor</option>
+                        {filteredDoctorsByDistance
+                          .filter(doctor => !formData.serviceId || doctorOffersService(doctor, formData.serviceId))
+                          .map((doctor) => {
+                            const distance = getDoctorDistance(doctor, businessLocation);
+                            const distanceText = distance ? ` (${formatDistance(distance)})` : '';
+                            return (
+                              <option key={doctor.id} value={doctor.id}>
+                                Dr. {doctor.firstName} {doctor.lastName}{distanceText}
+                              </option>
+                            );
+                          })}
+                      </select>
+                      {businessLocation && filteredDoctorsByDistance.length > 0 && (
+                        <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                          <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                            📍 Showing {filteredDoctorsByDistance.filter(doctor => !formData.serviceId || doctorOffersService(doctor, formData.serviceId)).length} doctor(s) 
+                            {distanceFilter === -1 ? ' (no distance limit)' : ` within ${distanceFilter}km`}
+                            {formData.serviceId ? ' who offer the selected service' : ''}
+                          </p>
+                        </div>
+                      )}
+                      {businessLocation && filteredDoctorsByDistance.length === 0 && distanceFilter !== -1 && (
+                        <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
+                          <p className={`text-xs ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                            ⚠️ No doctors found within {distanceFilter}km. Try increasing the distance or select "Anywhere".
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                   <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
                     We will assign the best available doctor for your request based on location and availability.
