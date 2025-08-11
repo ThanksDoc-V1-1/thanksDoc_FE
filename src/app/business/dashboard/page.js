@@ -2527,55 +2527,22 @@ Payment ID: ${paymentIntent.id}`;
               {formData.doctorSelectionType === 'any' && (
                 <div>
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    Preferred Doctor (Optional)
+                    Doctor Assignment
                   </label>
-                  {(formData.serviceId && loadingServiceDoctors) ? (
-                    <div className={`flex items-center justify-center py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                      Loading doctors for this service...
-                    </div>
-                  ) : (
-                    <>
-                      <select
-                        name="preferredDoctorId"
-                        value={formData.preferredDoctorId || ''}
-                        onChange={handleInputChange}
-                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                      >
-                        <option value="">Any available doctor</option>
-                        {filteredDoctorsByDistance
-                          .filter(doctor => !formData.serviceId || doctorOffersService(doctor, formData.serviceId))
-                          .map((doctor) => {
-                            const distance = getDoctorDistance(doctor, businessLocation);
-                            const distanceText = distance ? ` (${formatDistance(distance)})` : '';
-                            return (
-                              <option key={doctor.id} value={doctor.id}>
-                                Dr. {doctor.firstName} {doctor.lastName}{distanceText}
-                              </option>
-                            );
-                          })}
-                      </select>
-                      {businessLocation && filteredDoctorsByDistance.length > 0 && (
-                        <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
-                          <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                            📍 Showing {filteredDoctorsByDistance.filter(doctor => !formData.serviceId || doctorOffersService(doctor, formData.serviceId)).length} doctor(s) 
-                            {distanceFilter === -1 ? ' (no distance limit)' : ` within ${distanceFilter}km`}
-                            {formData.serviceId ? ' who offer the selected service' : ''}
-                          </p>
-                        </div>
-                      )}
-                      {businessLocation && filteredDoctorsByDistance.length === 0 && distanceFilter !== -1 && (
-                        <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
-                          <p className={`text-xs ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                            ⚠️ No doctors found within {distanceFilter}km. Try increasing the distance or select "Anywhere".
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-                    We will assign the best available doctor for your request based on location and availability.
-                  </p>
+                  <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      📍 Your request will be sent to all available doctors
+                      {businessLocation && distanceFilter !== -1 
+                        ? ` within ${distanceFilter}km of your location` 
+                        : businessLocation 
+                          ? ' (no distance limit)' 
+                          : ' in your area'
+                      }.
+                    </p>
+                    <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-1`}>
+                      The first available doctor will be automatically assigned to your request.
+                    </p>
+                  </div>
                 </div>
               )}
 
