@@ -54,6 +54,7 @@ export default function DoctorDashboard() {
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [doctorLocationName, setDoctorLocationName] = useState('');
 
   // Service management states
   const [doctorServices, setDoctorServices] = useState([]);
@@ -134,6 +135,15 @@ export default function DoctorDashboard() {
     console.log('📋 Online services:', allServices.online.map(s => s.name));
     console.log('🏛️ NHS services:', allServices.nhs.map(s => s.name));
   }, [allServices]);
+
+  // Handle doctor location reverse geocoding
+  useEffect(() => {
+    if (doctorData && doctorData.latitude && doctorData.longitude && !doctorLocationName) {
+      reverseGeocode(parseFloat(doctorData.latitude), parseFloat(doctorData.longitude));
+    } else if (!doctorData?.latitude || !doctorData?.longitude) {
+      setDoctorLocationName('');
+    }
+  }, [doctorData, doctorLocationName]);
 
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
@@ -741,6 +751,16 @@ export default function DoctorDashboard() {
       const data = await response.json();
       
       if (data) {
+        // Create a readable location name
+        const locationParts = [];
+        if (data.locality) locationParts.push(data.locality);
+        if (data.city && data.city !== data.locality) locationParts.push(data.city);
+        if (data.principalSubdivision) locationParts.push(data.principalSubdivision);
+        if (data.countryName) locationParts.push(data.countryName);
+        
+        const locationName = locationParts.join(', ');
+        setDoctorLocationName(locationName);
+
         setEditProfileData(prev => ({
           ...prev,
           address: data.locality || '',
@@ -1753,13 +1773,23 @@ export default function DoctorDashboard() {
                     Medical Professional
                   </p>
                   {/* Current Location Display */}
-                  {(doctor?.latitude && doctor?.longitude) && (
+                  {(doctor?.latitude && doctor?.longitude) && doctorLocationName && (
                     <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
                       isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
                     }`}>
                       <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                       <span className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                        {doctor?.city || 'Location set'}
+                        {doctorLocationName}
+                      </span>
+                    </div>
+                  )}
+                  {(doctor?.latitude && doctor?.longitude) && !doctorLocationName && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        Detecting location...
                       </span>
                     </div>
                   )}
@@ -2428,23 +2458,39 @@ export default function DoctorDashboard() {
                 )}
                 
                 {/* Location Information */}
-                {(doctor?.address || doctor?.city || doctor?.state || doctor?.zipCode) && (
+                {(doctor?.latitude && doctor?.longitude) ? (
                   <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Location:</span>
-                    <div className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm space-y-1`}>
-                      {doctor.address && (
-                        <div>{doctor.address}</div>
-                      )}
-                      {(doctor.city || doctor.state || doctor.zipCode) && (
-                        <div>
-                          {[doctor.city, doctor.state, doctor.zipCode].filter(Boolean).join(', ')}
-                        </div>
-                      )}
-                      {doctor.latitude && doctor.longitude && (
-                        <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          📍 Coordinates: {doctor.latitude}, {doctor.longitude}
-                        </div>
-                      )}
+                    <div className="flex items-center space-x-2 mb-2">
+                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
+                    </div>
+                    
+                    {/* Place Name from Coordinates */}
+                    {doctorLocationName ? (
+                      <div className="mb-2">
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
+                          {doctorLocationName}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mb-2">
+                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-sm`}>
+                          Detecting location...
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Coordinates */}
+                    <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      📍 Coordinates: {parseFloat(doctor.latitude).toFixed(6)}, {parseFloat(doctor.longitude).toFixed(6)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
+                      <span className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} text-sm`}>Coordinates not set</span>
                     </div>
                   </div>
                 )}
