@@ -187,6 +187,7 @@ export default function BusinessDashboard() {
   const [distanceFilter, setDistanceFilter] = useState(10); // Default to 10km
   const [businessLocation, setBusinessLocation] = useState(null);
   const [businessLocationName, setBusinessLocationName] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
   const [filteredDoctorsByDistance, setFilteredDoctorsByDistance] = useState([]);
   const [filteredPreviousDoctorsByDistance, setFilteredPreviousDoctorsByDistance] = useState([]);
 
@@ -364,6 +365,7 @@ export default function BusinessDashboard() {
 
   // Handle business location and distance filtering
   useEffect(() => {
+    console.log('🏢 Business location useEffect:', { businessData, businessLocation });
     // Only set business location if the business has actual coordinates stored
     if (businessData && businessData.latitude && businessData.longitude && !businessLocation) {
       const location = {
@@ -371,6 +373,7 @@ export default function BusinessDashboard() {
         longitude: parseFloat(businessData.longitude)
       };
       setBusinessLocation(location);
+      console.log('📍 Calling reverse geocode for business:', location);
       // Get the place name for these coordinates
       reverseGeocode(location.latitude, location.longitude);
     } else if (!businessData?.latitude || !businessData?.longitude) {
@@ -777,9 +780,37 @@ export default function BusinessDashboard() {
 
   // Reverse geocode to get place name from coordinates
   const reverseGeocode = async (lat, lng) => {
+    console.log('🌍 Starting reverse geocode:', { lat, lng });
+    setLocationLoading(true);
     try {
+      // Try Google Maps API first (more reliable in production)
+      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      console.log('🗝️ Google API key available:', !!googleApiKey);
+      
+      if (googleApiKey) {
+        console.log('📡 Calling Google Maps API...');
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${googleApiKey}`
+        );
+        const data = await response.json();
+        console.log('🗺️ Google Maps response:', data);
+        
+        if (data.status === 'OK' && data.results && data.results[0]) {
+          const result = data.results[0];
+          const locationName = result.formatted_address || result.address_components[0]?.long_name;
+          if (locationName) {
+            console.log('✅ Google Maps location found:', locationName);
+            setBusinessLocationName(locationName);
+            return;
+          }
+        }
+      }
+      
+      // Fallback to BigDataCloud API
+      console.log('📡 Calling BigDataCloud API fallback...');
       const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
       const data = await response.json();
+      console.log('🌐 BigDataCloud response:', data);
       
       if (data) {
         // Create a readable location name
@@ -790,11 +821,19 @@ export default function BusinessDashboard() {
         if (data.countryName) locationParts.push(data.countryName);
         
         const locationName = locationParts.join(', ');
+        console.log('✅ BigDataCloud location found:', locationName);
         setBusinessLocationName(locationName);
       }
     } catch (error) {
-      console.error('Error reverse geocoding:', error);
-      // Don't show error to user as this is optional
+      console.error('❌ Error reverse geocoding:', error);
+      // Set a fallback location name if available
+      if (businessData?.city) {
+        const fallbackName = [businessData.city, businessData.state, businessData.country].filter(Boolean).join(', ');
+        console.log('🔄 Using fallback location:', fallbackName);
+        setBusinessLocationName(fallbackName);
+      }
+    } finally {
+      setLocationLoading(false);
     }
   };
 
@@ -1545,13 +1584,13 @@ Payment ID: ${paymentIntent.id}`;
                       </span>
                     </div>
                   )}
-                  {businessLocation && !businessLocationName && (
+                  {businessLocation && (!businessLocationName || locationLoading) && (
                     <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
                       isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100/50'
                     }`}>
-                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ${locationLoading ? 'animate-pulse' : ''}`} />
                       <span className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                        Detecting location...
+                        {locationLoading ? 'Loading...' : 'Detecting location...'}
                       </span>
                     </div>
                   )}

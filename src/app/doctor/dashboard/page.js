@@ -746,7 +746,45 @@ export default function DoctorDashboard() {
   // Reverse geocode to get address from coordinates
   const reverseGeocode = async (lat, lng) => {
     try {
-      // Using a free geocoding service (you might want to use Google Maps API or similar)
+      // Try Google Maps API first (more reliable in production)
+      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+      if (googleApiKey) {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${googleApiKey}`
+        );
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.results && data.results[0]) {
+          const result = data.results[0];
+          const locationName = result.formatted_address || result.address_components[0]?.long_name;
+          if (locationName) {
+            setDoctorLocationName(locationName);
+          }
+          
+          // Also update the form fields with detailed address components
+          const components = result.address_components;
+          const addressData = {};
+          
+          components.forEach(component => {
+            const types = component.types;
+            if (types.includes('locality')) addressData.city = component.long_name;
+            if (types.includes('administrative_area_level_1')) addressData.state = component.long_name;
+            if (types.includes('postal_code')) addressData.zipCode = component.long_name;
+            if (types.includes('route')) addressData.address = component.long_name;
+          });
+          
+          setEditProfileData(prev => ({
+            ...prev,
+            address: addressData.address || prev.address,
+            city: addressData.city || prev.city,
+            state: addressData.state || prev.state,
+            zipCode: addressData.zipCode || prev.zipCode
+          }));
+          return;
+        }
+      }
+      
+      // Fallback to BigDataCloud API
       const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
       const data = await response.json();
       
@@ -771,7 +809,11 @@ export default function DoctorDashboard() {
       }
     } catch (error) {
       console.error('Error reverse geocoding:', error);
-      // Don't show error to user as this is optional
+      // Set a fallback location name if available
+      if (doctorData?.city) {
+        const fallbackName = [doctorData.city, doctorData.state, doctorData.country].filter(Boolean).join(', ');
+        setDoctorLocationName(fallbackName);
+      }
     }
   };
 
