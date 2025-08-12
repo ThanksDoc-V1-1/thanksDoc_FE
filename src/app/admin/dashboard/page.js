@@ -1816,11 +1816,11 @@ export default function AdminDashboard() {
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
               { id: 'businesses', name: 'Businesses', icon: Building2 },
               { id: 'services', name: 'Services', icon: Package },
-              { id: 'settings', name: 'System Settings', icon: Settings },
               { id: 'requests', name: 'Service Requests', icon: Calendar },
               { id: 'transactions', name: 'Transactions', icon: CreditCard },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
               { id: 'compliance-documents', name: 'Compliance Documents', icon: FileText },
+              { id: 'settings', name: 'System Settings', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -1851,7 +1851,6 @@ export default function AdminDashboard() {
 
         {/* Admin Notification Center - Moved to sidebar */}
         <div className="px-4 pb-4">
-          <AdminNotificationCenter />
         </div>
 
         {/* User Info and Actions */}
@@ -1927,6 +1926,9 @@ export default function AdminDashboard() {
             </div>
             
             <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+              {/* Admin Notification Center */}
+              <AdminNotificationCenter />
+              
               {dataLoading && (
                 <div className="flex items-center space-x-2">
                   <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${isDarkMode ? 'border-blue-400' : 'border-blue-600'}`}></div>
