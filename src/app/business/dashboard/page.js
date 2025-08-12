@@ -186,7 +186,7 @@ export default function BusinessDashboard() {
   const requestsPerPage = 5;
   
   // Distance filtering states
-  const [distanceFilter, setDistanceFilter] = useState(10); // Default to 10km
+  const [distanceFilter, setDistanceFilter] = useState(6); // Default to 6 miles (roughly equivalent to 10km)
   const [businessLocation, setBusinessLocation] = useState(null);
   const [businessLocationName, setBusinessLocationName] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
@@ -1218,7 +1218,7 @@ export default function BusinessDashboard() {
       // Validation: Check if there are any doctors available within the selected distance range
       if (formData.doctorSelectionType === 'any' && filteredDoctorsByDistance.length === 0) {
         const distanceText = businessLocation && distanceFilter !== -1 
-          ? `within ${distanceFilter}km of your location` 
+          ? `within ${distanceFilter} miles of your location` 
           : 'in your area';
         alert(`No doctors are available ${distanceText}. Please try increasing the distance range or contact support for assistance.`);
         setLoading(false);
@@ -1827,7 +1827,7 @@ Payment ID: ${paymentIntent.id}`;
                     isDarkMode ? 'text-blue-400' : 'text-blue-600'
                   }`}>({filteredDoctorsByDistance.length}) verified professionals
                     {businessLocation && distanceFilter !== -1 
-                      ? ` within ${distanceFilter}km` 
+                      ? ` within ${distanceFilter} miles` 
                       : businessLocation 
                         ? ' (no distance limit)' 
                         : ' (location not set)'
@@ -1849,9 +1849,9 @@ Payment ID: ${paymentIntent.id}`;
                     </p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleDistanceFilterChange(10)}
+                        onClick={() => handleDistanceFilterChange(6)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          distanceFilter === 10
+                          distanceFilter === 6
                             ? isDarkMode
                               ? 'bg-blue-600 text-white'
                               : 'bg-blue-600 text-white'
@@ -1860,12 +1860,12 @@ Payment ID: ${paymentIntent.id}`;
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                       >
-                        10km
+                        6 miles
                       </button>
                       <button
-                        onClick={() => handleDistanceFilterChange(20)}
+                        onClick={() => handleDistanceFilterChange(12)}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                          distanceFilter === 20
+                          distanceFilter === 12
                             ? isDarkMode
                               ? 'bg-blue-600 text-white'
                               : 'bg-blue-600 text-white'
@@ -1874,7 +1874,7 @@ Payment ID: ${paymentIntent.id}`;
                               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                       >
-                        20km
+                        12 miles
                       </button>
                       <button
                         onClick={() => handleDistanceFilterChange(-1)}
@@ -2400,7 +2400,7 @@ Payment ID: ${paymentIntent.id}`;
                     Verified Available Doctors
                     {businessLocation && distanceFilter !== -1 && (
                       <span className={`text-sm font-normal ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ml-2`}>
-                        (within {distanceFilter}km)
+                        (within {distanceFilter} miles)
                       </span>
                     )}
                     {!businessLocation && (
@@ -2412,7 +2412,7 @@ Payment ID: ${paymentIntent.id}`;
                   <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
                     ({filteredDoctorsByDistance.length}) verified professionals
                     {businessLocation && distanceFilter !== -1 
-                      ? ` within ${distanceFilter}km` 
+                      ? ` within ${distanceFilter} miles` 
                       : businessLocation 
                         ? ' (no distance limit)' 
                         : ' (location not set)'
@@ -2430,9 +2430,9 @@ Payment ID: ${paymentIntent.id}`;
                 <div className="mb-4">
                   <div className="flex flex-wrap gap-2">
                     <button
-                      onClick={() => handleDistanceFilterChange(10)}
+                      onClick={() => handleDistanceFilterChange(6)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        distanceFilter === 10
+                        distanceFilter === 6
                           ? isDarkMode
                             ? 'bg-blue-600 text-white'
                             : 'bg-blue-600 text-white'
@@ -2441,12 +2441,12 @@ Payment ID: ${paymentIntent.id}`;
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      10km
+                      6 miles
                     </button>
                     <button
-                      onClick={() => handleDistanceFilterChange(20)}
+                      onClick={() => handleDistanceFilterChange(12)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        distanceFilter === 20
+                        distanceFilter === 12
                           ? isDarkMode
                             ? 'bg-blue-600 text-white'
                             : 'bg-blue-600 text-white'
@@ -2455,7 +2455,7 @@ Payment ID: ${paymentIntent.id}`;
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      20km
+                      12 miles
                     </button>
                     <button
                       onClick={() => handleDistanceFilterChange(-1)}
@@ -2473,7 +2473,7 @@ Payment ID: ${paymentIntent.id}`;
                     </button>
                   </div>
                   <div className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    💡 Default view shows doctors within 10km. Use buttons above to change range.
+                    💡 Default view shows doctors within 6 miles. Use buttons above to change range.
                   </div>
                   {formData.serviceId && (() => {
                     const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
@@ -2599,13 +2599,13 @@ Payment ID: ${paymentIntent.id}`;
                       <User className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
                       <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         {businessLocation && distanceFilter !== -1 
-                          ? `No doctors available within ${distanceFilter}km`
+                          ? `No doctors available within ${distanceFilter} miles`
                           : 'No doctors currently available'
                         }
                       </p>
                       <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {businessLocation && distanceFilter !== -1 
-                          ? `Try increasing your distance range to 20km or select "Anywhere" to see more doctors in your area.`
+                          ? `Try increasing your distance range to 12 miles or select "Anywhere" to see more doctors in your area.`
                           : 'Our doctors are currently busy or under verification. Please check back later.'
                         }
                       </p>
@@ -2909,7 +2909,7 @@ Payment ID: ${paymentIntent.id}`;
                       : 'bg-orange-50 border border-orange-200 text-orange-700'
                 }`}>
                   📍 {filteredDoctorsByDistance.length} doctor{filteredDoctorsByDistance.length !== 1 ? 's' : ''} available 
-                  {distanceFilter !== -1 ? ` within ${distanceFilter}km` : ' (no distance limit)'} 
+                  {distanceFilter !== -1 ? ` within ${distanceFilter} miles` : ' (no distance limit)'} 
                   of your location
                   {filteredDoctorsByDistance.length === 0 && distanceFilter !== -1 && (
                     <span className="block mt-1 text-xs">
@@ -3029,7 +3029,7 @@ Payment ID: ${paymentIntent.id}`;
                       <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
                         📍 Your request will be sent to {filteredDoctorsByDistance.length} available doctor{filteredDoctorsByDistance.length > 1 ? 's' : ''}
                         {businessLocation && distanceFilter !== -1 
-                          ? ` within ${distanceFilter}km of your location` 
+                          ? ` within ${distanceFilter} miles of your location` 
                           : businessLocation 
                             ? ' (no distance limit)' 
                             : ' in your area'
@@ -3044,7 +3044,7 @@ Payment ID: ${paymentIntent.id}`;
                       <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
                         ⚠️ No doctors available
                         {businessLocation && distanceFilter !== -1 
-                          ? ` within ${distanceFilter}km of your location` 
+                          ? ` within ${distanceFilter} miles of your location` 
                           : ' in your area'
                         }.
                       </p>

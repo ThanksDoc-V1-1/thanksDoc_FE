@@ -1,5 +1,5 @@
 export function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the Earth in kilometers
+  const R = 3959; // Radius of the Earth in miles (was 6371 km)
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -7,7 +7,7 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c; // Distance in kilometers
+  const distance = R * c; // Distance in miles
   return distance;
 }
 
@@ -157,8 +157,8 @@ export function cn(...classes) {
 }
 
 // Filter doctors by distance from business location
-export function filterDoctorsByDistance(doctors, businessLocation, maxDistanceKm) {
-  if (!businessLocation || !businessLocation.latitude || !businessLocation.longitude || maxDistanceKm === -1) {
+export function filterDoctorsByDistance(doctors, businessLocation, maxDistanceMiles) {
+  if (!businessLocation || !businessLocation.latitude || !businessLocation.longitude || maxDistanceMiles === -1) {
     return doctors; // Return all doctors if no location or no distance limit
   }
 
@@ -174,7 +174,7 @@ export function filterDoctorsByDistance(doctors, businessLocation, maxDistanceKm
       doctor.longitude
     );
 
-    return distance <= maxDistanceKm;
+    return distance <= maxDistanceMiles;
   });
 }
 
@@ -223,16 +223,17 @@ export function getDoctorDistance(doctor, businessLocation) {
 }
 
 // Format distance for display
-export function formatDistance(distanceKm) {
-  if (distanceKm === null || distanceKm === undefined) {
+export function formatDistance(distanceMiles) {
+  if (distanceMiles === null || distanceMiles === undefined) {
     return 'Distance unknown';
   }
   
-  if (distanceKm < 1) {
-    return `${Math.round(distanceKm * 1000)}m away`;
-  } else if (distanceKm < 10) {
-    return `${distanceKm.toFixed(1)}km away`;
+  if (distanceMiles < 0.1) {
+    // Convert to feet for very short distances (1 mile = 5280 feet)
+    return `${Math.round(distanceMiles * 5280)}ft away`;
+  } else if (distanceMiles < 10) {
+    return `${distanceMiles.toFixed(1)} miles away`;
   } else {
-    return `${Math.round(distanceKm)}km away`;
+    return `${Math.round(distanceMiles)} miles away`;
   }
 }

@@ -96,9 +96,9 @@ const DistanceSlider = ({
   }, [businessLocation]);
 
   const distanceOptions = [
-    { value: 5, label: '5km', description: 'Very close nearby' },
-    { value: 10, label: '10km', description: 'Close vicinity' },
-    { value: 20, label: '20km', description: 'Wider area' },
+    { value: 3, label: '3 miles', description: 'Very close nearby' },
+    { value: 6, label: '6 miles', description: 'Close vicinity' },
+    { value: 12, label: '12 miles', description: 'Wider area' },
     { value: -1, label: 'Anywhere', description: 'No distance limit' }
   ];
 
@@ -213,13 +213,6 @@ const DistanceSlider = ({
                 <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   {option.label}
                 </span>
-                {option.value !== -1 && (
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    ~{Math.round(option.value * 0.621)} miles
-                  </span>
-                )}
               </div>
               <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {option.description}

@@ -78,7 +78,7 @@ function HomeContent() {
             isDarkMode ? 'text-gray-300' : 'text-gray-600'
           }`}>
             Connecting businesses with verified doctors instantly. 
-            Request medical consultations within 10km radius with just a few clicks.
+            Request medical consultations within 6 mile radius with just a few clicks.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
