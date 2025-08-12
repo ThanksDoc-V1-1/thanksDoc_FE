@@ -615,4 +615,15 @@ export const earningsAPI = {
     api.post('/doctor-earnings', { doctorId, ...paymentDetails }),
 };
 
+// System Settings API calls
+export const systemSettingsAPI = {
+  getAll: () => api.get('/system-settings'),
+  getPublicSettings: () => publicAPI.get('/system-settings/public'),
+  getByKey: (key) => publicAPI.get(`/system-settings/key/${key}`),
+  create: (data) => api.post('/system-settings', { data }),
+  update: (id, data) => api.put(`/system-settings/${id}`, { data }),
+  updateByKey: (key, data) => api.put(`/system-settings/key/${key}`, data),
+  delete: (id) => api.delete(`/system-settings/${id}`),
+};
+
 export default api;

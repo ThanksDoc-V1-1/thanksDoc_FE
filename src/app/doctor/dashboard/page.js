@@ -7,6 +7,7 @@ import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../..
 import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import NotificationCenter from '../../../components/NotificationCenter';
 import NotificationBanner from '../../../components/NotificationBanner';
 
@@ -14,6 +15,7 @@ export default function DoctorDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, authLoading } = useAuth();
   const { isDarkMode } = useTheme();
+  const { getBookingFee } = useSystemSettings();
   const [doctorData, setDoctorData] = useState(null);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
@@ -215,13 +217,13 @@ export default function DoctorDashboard() {
       console.log('🔍 Looking for service type:', request.serviceType);
     }
     
-    return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
+    return servicePrice; // Doctor earns the service price (excluding dynamic booking fee)
   };
 
   // Helper function to calculate total amount including booking fee (for display purposes)
   const calculateTotalAmount = (request) => {
     const servicePrice = calculateDoctorEarnings(request);
-    return servicePrice + 3.00; // Service price + £3 booking fee
+    return servicePrice + getBookingFee(); // Service price + dynamic booking fee
   };
   
   // Fetch completed requests after getting available requests to ensure proper stats calculation

@@ -8,6 +8,7 @@ import api from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, filterDoctorsByDistance, sortDoctorsByDistance, getDoctorDistance, formatDistance } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import PaymentForm from '../../../components/PaymentForm';
 import CountryCodePicker from '../../../components/CountryCodePicker';
 import DistanceSlider from '../../../components/DistanceSlider';
@@ -91,9 +92,10 @@ export default function BusinessDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
   const { isDarkMode } = useTheme();
+  const { getBookingFee } = useSystemSettings();
   
-  // Booking fee constant
-  const SERVICE_CHARGE = 3.00; // £3 booking fee for all requests
+  // Dynamic booking fee from system settings
+  const SERVICE_CHARGE = getBookingFee(); // Dynamic booking fee for all requests
   
   // Helper function to calculate total amount including booking fee
   const calculateTotalAmount = (request) => {

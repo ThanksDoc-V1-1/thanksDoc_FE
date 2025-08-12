@@ -20,11 +20,13 @@ import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
 import { formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 
 export default function DoctorEarnings() {
   const router = useRouter();
   const { user, isAuthenticated, authLoading } = useAuth();
   const { isDarkMode } = useTheme();
+  const { getBookingFee } = useSystemSettings();
   
   // State management
   const [earnings, setEarnings] = useState([]);
@@ -77,7 +79,7 @@ export default function DoctorEarnings() {
       console.log('⚠️ [EARNINGS] WARNING: No service match found, returning 0!');
     }
     
-    return servicePrice; // Doctor earns the service price (excluding £3 booking fee)
+    return servicePrice; // Doctor earns the service price (excluding dynamic booking fee)
   };
   
   // Filter states
