@@ -146,30 +146,37 @@ export default function BusinessDashboard() {
   const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds refresh rate
 
   // Distance filtering functions
-  const applyDistanceFilter = (distance = distanceFilter) => {
+  const applyDistanceFilter = (distance = distanceFilter, selectedServiceId = null) => {
     if (!businessLocation) {
       setFilteredDoctorsByDistance(nearbyDoctors);
       setFilteredPreviousDoctorsByDistance(previousDoctors);
       return;
     }
 
-    // Filter main doctors list
+    // Filter main doctors list by distance
     let filtered = distance === -1 
       ? nearbyDoctors 
       : filterDoctorsByDistance(nearbyDoctors, businessLocation, distance);
     
-    // Filter previous doctors list
+    // Filter previous doctors list by distance
     let filteredPrevious = distance === -1 
       ? previousDoctors 
       : filterDoctorsByDistance(previousDoctors, businessLocation, distance);
+    
+    // Apply service filtering if a service is selected
+    if (selectedServiceId) {
+      filtered = filtered.filter(doctor => doctorOffersService(doctor, selectedServiceId));
+      filteredPrevious = filteredPrevious.filter(doctor => doctorOffersService(doctor, selectedServiceId));
+    }
     
     // Sort both lists by distance regardless of filter
     filtered = sortDoctorsByDistance(filtered, businessLocation);
     filteredPrevious = sortDoctorsByDistance(filteredPrevious, businessLocation);
     
     // Only log when there's a mismatch or for debugging
-    console.log('📍 Distance Filter Result:', {
+    console.log('📍 Distance & Service Filter Result:', {
       range: distance === -1 ? 'Anywhere' : `${distance}km`,
+      selectedService: selectedServiceId ? `Service ID: ${selectedServiceId}` : 'No service filter',
       totalDoctors: nearbyDoctors.length,
       filteredCount: filtered.length,
       totalPreviousDoctors: previousDoctors.length,
@@ -183,7 +190,8 @@ export default function BusinessDashboard() {
 
   const handleDistanceFilterChange = (newDistance) => {
     setDistanceFilter(newDistance);
-    applyDistanceFilter(newDistance);
+    // Apply both distance and service filter (if a service is selected in the form)
+    applyDistanceFilter(newDistance, formData.serviceId);
   };
 
   // Authentication check - redirect if not authenticated or not business
@@ -301,8 +309,8 @@ export default function BusinessDashboard() {
     }
 
     // Apply distance filter when location, doctors, or filter changes
-    applyDistanceFilter();
-  }, [businessData, businessLocation, nearbyDoctors, previousDoctors, distanceFilter]);
+    applyDistanceFilter(distanceFilter, formData.serviceId);
+  }, [businessData, businessLocation, nearbyDoctors, previousDoctors, distanceFilter, formData.serviceId]);
 
   // Show loading screen while authentication is being checked
   if (authLoading) {
@@ -935,9 +943,13 @@ export default function BusinessDashboard() {
         fetchDoctorsForService(value);
         // Calculate service cost with the service's default duration
         calculateServiceCost(value, serviceDurationInHours);
+        // Re-apply distance and service filters when service selection changes
+        applyDistanceFilter(distanceFilter, value);
       } else {
         // Clear service cost when no service is selected
         setServiceCost(null);
+        // Re-apply distance filter without service filter when no service is selected
+        applyDistanceFilter(distanceFilter, null);
       }
     }
   };
@@ -1611,7 +1623,7 @@ Payment ID: ${paymentIntent.id}`;
                     isDarkMode ? 'text-blue-400' : 'text-white'
                   }`} />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h2 className={`text-xl font-semibold ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>Verified Available Doctors</h2>
@@ -1624,12 +1636,108 @@ Payment ID: ${paymentIntent.id}`;
                         ? ' (no distance limit)' 
                         : ' (location not set)'
                     }
+                    {formData.serviceId && (() => {
+                      const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                      return selectedService ? ` offering "${selectedService.name}"` : '';
+                    })()}
                   </p>
                 </div>
               </div>
-              <p className={`text-sm mb-4 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-600'
-              }`}>Choose from our network of verified healthcare professionals</p>
+
+              {/* Distance Filter Controls */}
+              {businessLocation && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Choose from our network of verified healthcare professionals
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDistanceFilterChange(10)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          distanceFilter === 10
+                            ? isDarkMode
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-600 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        10km
+                      </button>
+                      <button
+                        onClick={() => handleDistanceFilterChange(20)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          distanceFilter === 20
+                            ? isDarkMode
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-600 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        20km
+                      </button>
+                      <button
+                        onClick={() => handleDistanceFilterChange(-1)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          distanceFilter === -1
+                            ? isDarkMode
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-blue-600 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        Anywhere
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!businessLocation && (
+                <div className="mb-4">
+                  <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Choose from our network of verified healthcare professionals
+                  </p>
+                  <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
+                    <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                      📍 Set your business location to filter doctors by distance
+                    </p>
+                    <button
+                      onClick={handleBusinessLocationUpdate}
+                      className={`mt-2 px-3 py-1 rounded text-xs font-medium ${
+                        isDarkMode
+                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                          : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                      }`}
+                    >
+                      Update Location
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Service Filter Indicator */}
+              {formData.serviceId && (() => {
+                const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                return selectedService ? (
+                  <div className={`mb-4 p-3 rounded-lg text-sm ${
+                    isDarkMode 
+                      ? 'bg-green-900/20 border border-green-800 text-green-300' 
+                      : 'bg-green-50 border border-green-200 text-green-700'
+                  }`}>
+                    🔍 Also filtering by service: <strong>"{selectedService.name}"</strong>
+                    <br />
+                    <span className="text-xs opacity-75">Change service selection in the form below to update this filter</span>
+                  </div>
+                ) : null;
+              })()}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredDoctorsByDistance.slice(0, 6).map((doctor) => {
                   const distance = getDoctorDistance(doctor, businessLocation);
@@ -2054,20 +2162,120 @@ Payment ID: ${paymentIntent.id}`;
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                   <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
                 </div>
-                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Verified Available Doctors
-                  {businessLocation && distanceFilter !== -1 && (
-                    <span className={`text-sm font-normal ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ml-2`}>
-                      (within {distanceFilter}km)
-                    </span>
-                  )}
-                  {!businessLocation && (
-                    <span className={`text-sm font-normal ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} ml-2`}>
-                      (location not set)
-                    </span>
-                  )}
-                </h3>
+                <div className="flex-1">
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Verified Available Doctors
+                    {businessLocation && distanceFilter !== -1 && (
+                      <span className={`text-sm font-normal ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ml-2`}>
+                        (within {distanceFilter}km)
+                      </span>
+                    )}
+                    {!businessLocation && (
+                      <span className={`text-sm font-normal ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} ml-2`}>
+                        (location not set)
+                      </span>
+                    )}
+                  </h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                    ({filteredDoctorsByDistance.length}) verified professionals
+                    {businessLocation && distanceFilter !== -1 
+                      ? ` within ${distanceFilter}km` 
+                      : businessLocation 
+                        ? ' (no distance limit)' 
+                        : ' (location not set)'
+                    }
+                    {formData.serviceId && (() => {
+                      const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                      return selectedService ? ` offering "${selectedService.name}"` : '';
+                    })()}
+                  </p>
+                </div>
               </div>
+
+              {/* Distance Filter Controls for Verified Doctors */}
+              {businessLocation && (
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleDistanceFilterChange(10)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        distanceFilter === 10
+                          ? isDarkMode
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-600 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      10km
+                    </button>
+                    <button
+                      onClick={() => handleDistanceFilterChange(20)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        distanceFilter === 20
+                          ? isDarkMode
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-600 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      20km
+                    </button>
+                    <button
+                      onClick={() => handleDistanceFilterChange(-1)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        distanceFilter === -1
+                          ? isDarkMode
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-blue-600 text-white'
+                          : isDarkMode
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Anywhere
+                    </button>
+                  </div>
+                  <div className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    💡 Default view shows doctors within 10km. Use buttons above to change range.
+                  </div>
+                  {formData.serviceId && (() => {
+                    const selectedService = availableServices.find(s => s.id.toString() === formData.serviceId);
+                    return selectedService ? (
+                      <div className={`mt-2 p-2 rounded-lg text-xs ${
+                        isDarkMode 
+                          ? 'bg-green-900/20 border border-green-800 text-green-300' 
+                          : 'bg-green-50 border border-green-200 text-green-700'
+                      }`}>
+                        🔍 Also filtering by service: <strong>"{selectedService.name}"</strong>
+                        <br />
+                        <span className="text-xs opacity-75">Change service selection in the form to update this filter</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+
+              {!businessLocation && (
+                <div className={`mb-4 p-3 rounded-lg ${isDarkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'}`}>
+                  <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                    📍 Set your business location to filter doctors by distance
+                  </p>
+                  <button
+                    onClick={handleBusinessLocationUpdate}
+                    className={`mt-2 px-3 py-1 rounded text-xs font-medium ${
+                      isDarkMode
+                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                        : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                    }`}
+                  >
+                    Update Location
+                  </button>
+                </div>
+              )}
               <div className="space-y-3 text-sm max-h-96 overflow-y-auto pr-2">
                 {filteredDoctorsByDistance.length > 0 ? (
                   filteredDoctorsByDistance.map((doctor) => {
