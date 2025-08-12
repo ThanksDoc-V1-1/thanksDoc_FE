@@ -1748,9 +1748,32 @@ export default function DoctorDashboard() {
                 }`}>
                   Dr. {doctorName}
                 </h1>
-                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  Medical Professional
-                </p>
+                <div className="flex items-center space-x-4">
+                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    Medical Professional
+                  </p>
+                  {/* Current Location Display */}
+                  {(doctor?.latitude && doctor?.longitude) && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                        {doctor?.city || 'Location set'}
+                      </span>
+                    </div>
+                  )}
+                  {!(doctor?.latitude && doctor?.longitude) && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        Location not set
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

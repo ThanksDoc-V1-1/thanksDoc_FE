@@ -23,6 +23,70 @@ const checkFallbackStatus = async (requestId) => {
   }
 };
 
+// LocationDisplay component for reverse geocoding
+const LocationDisplay = ({ latitude, longitude, isDarkMode }) => {
+  const [locationName, setLocationName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getLocationName = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY&limit=1&no_annotations=1`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            // Extract meaningful place name
+            const placeName = result.formatted || 
+                            `${result.components.suburb || result.components.neighbourhood || ''} ${result.components.city || result.components.town || ''}`.trim() ||
+                            `${result.components.city || result.components.state || 'Unknown Location'}`;
+            setLocationName(placeName);
+          } else {
+            setLocationName('Location unavailable');
+          }
+        } else {
+          // Fallback to a simpler display if API fails
+          setLocationName(`${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}`);
+        }
+      } catch (error) {
+        console.error('Error fetching location name:', error);
+        // Fallback to coordinates
+        setLocationName(`${parseFloat(latitude).toFixed(4)}, ${parseFloat(longitude).toFixed(4)}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (latitude && longitude) {
+      getLocationName();
+    }
+  }, [latitude, longitude]);
+
+  if (loading) {
+    return (
+      <div className="mb-2">
+        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Place:</span>
+        <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} text-sm mt-1 italic`}>
+          Loading location name...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-2">
+      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-500'} text-sm`}>Place:</span>
+      <div className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm mt-1 font-medium`}>
+        {locationName}
+      </div>
+    </div>
+  );
+};
+
 export default function BusinessDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth();
@@ -122,6 +186,7 @@ export default function BusinessDashboard() {
   // Distance filtering states
   const [distanceFilter, setDistanceFilter] = useState(10); // Default to 10km
   const [businessLocation, setBusinessLocation] = useState(null);
+  const [businessLocationName, setBusinessLocationName] = useState('');
   const [filteredDoctorsByDistance, setFilteredDoctorsByDistance] = useState([]);
   const [filteredPreviousDoctorsByDistance, setFilteredPreviousDoctorsByDistance] = useState([]);
 
@@ -136,9 +201,12 @@ export default function BusinessDashboard() {
     city: '',
     state: '',
     zipCode: '',
-    description: ''
+    description: '',
+    latitude: '',
+    longitude: ''
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
+  const [businessLocationLoading, setBusinessLocationLoading] = useState(false);
 
   // Auto-refresh functionality
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -303,9 +371,12 @@ export default function BusinessDashboard() {
         longitude: parseFloat(businessData.longitude)
       };
       setBusinessLocation(location);
+      // Get the place name for these coordinates
+      reverseGeocode(location.latitude, location.longitude);
     } else if (!businessData?.latitude || !businessData?.longitude) {
       // If business doesn't have coordinates, clear the location
       setBusinessLocation(null);
+      setBusinessLocationName('');
     }
 
     // Apply distance filter when location, doctors, or filter changes
@@ -627,7 +698,9 @@ export default function BusinessDashboard() {
       city: business?.city || '',
       state: business?.state || '',
       zipCode: business?.zipCode || '',
-      description: business?.description || ''
+      description: business?.description || '',
+      latitude: business?.latitude || '',
+      longitude: business?.longitude || ''
     });
     setShowEditProfile(true);
   };
@@ -673,7 +746,56 @@ export default function BusinessDashboard() {
       contactPersonName: '',
       email: '',
       phone: '',
+      latitude: '',
+      longitude: '',
     });
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          setEditProfileData(prev => ({
+            ...prev,
+            latitude: latitude.toString(),
+            longitude: longitude.toString(),
+          }));
+          // Optionally, reverse geocode to get place name
+          reverseGeocode(latitude, longitude);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert('Unable to get current location. Please enter manually.');
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+    }
+  };
+
+  // Reverse geocode to get place name from coordinates
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const data = await response.json();
+      
+      if (data) {
+        // Create a readable location name
+        const locationParts = [];
+        if (data.locality) locationParts.push(data.locality);
+        if (data.city && data.city !== data.locality) locationParts.push(data.city);
+        if (data.principalSubdivision) locationParts.push(data.principalSubdivision);
+        if (data.countryName) locationParts.push(data.countryName);
+        
+        const locationName = locationParts.join(', ');
+        setBusinessLocationName(locationName);
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+      // Don't show error to user as this is optional
+    }
   };
 
   const handleSubmitQuickRequest = async () => {
@@ -1408,9 +1530,32 @@ Payment ID: ${paymentIntent.id}`;
                     <Edit className="h-4 w-4" />
                   </button>
                 </div>
-                <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                  Welcome back, {contactName}
-                </p>
+                <div className="flex items-center space-x-4">
+                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    Welcome back, {contactName}
+                  </p>
+                  {/* Current Location Display */}
+                  {businessLocation && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                        {business?.city || 'Location set'}
+                      </span>
+                    </div>
+                  )}
+                  {!businessLocation && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                        Location not set
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -2147,6 +2292,45 @@ Payment ID: ${paymentIntent.id}`;
                   <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Description:</span>
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{business.description}</span>
+                  </div>
+                )}
+                {/* Location Information */}
+                {(business?.latitude && business?.longitude) ? (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
+                    </div>
+                    
+                    {/* Place Name from Coordinates */}
+                    {businessLocationName ? (
+                      <div className="mb-2">
+                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
+                          {businessLocationName}
+                        </span>
+                      </div>
+                    ) : (
+                      business?.city && (
+                        <div className="mb-2">
+                          <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
+                            {[business.city, business.state, business.zipCode].filter(Boolean).join(', ')}
+                          </span>
+                        </div>
+                      )
+                    )}
+                    
+                    {/* Coordinates */}
+                    <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      📍 Coordinates: {parseFloat(business.latitude).toFixed(6)}, {parseFloat(business.longitude).toFixed(6)}
+                    </div>
+                  </div>
+                ) : (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
+                      <span className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} text-sm`}>Coordinates not set</span>
+                    </div>
                   </div>
                 )}
                 <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
@@ -3438,6 +3622,46 @@ Payment ID: ${paymentIntent.id}`;
                     className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     placeholder="Enter postal code"
                   />
+                </div>
+
+                {/* Location Coordinates */}
+                <div className="md:col-span-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Location Coordinates
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
+                    >
+                      📍 Get Current Location
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        type="number"
+                        name="latitude"
+                        value={editProfileData.latitude}
+                        onChange={handleProfileInputChange}
+                        step="any"
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        placeholder="Latitude"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        name="longitude"
+                        value={editProfileData.longitude}
+                        onChange={handleProfileInputChange}
+                        step="any"
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        placeholder="Longitude"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
