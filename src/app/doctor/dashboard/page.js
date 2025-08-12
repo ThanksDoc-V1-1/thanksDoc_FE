@@ -44,9 +44,16 @@ export default function DoctorDashboard() {
     phone: '',
     licenceNumber: '',
     qualifications: '',
-    bio: ''
+    bio: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    latitude: '',
+    longitude: ''
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   // Service management states
   const [doctorServices, setDoctorServices] = useState([]);
@@ -583,7 +590,13 @@ export default function DoctorDashboard() {
       phone: doctorInfo?.phone || '',
       licenceNumber: doctorInfo?.licenceNumber || '',
       qualifications: doctorInfo?.qualifications || '',
-      bio: doctorInfo?.bio || ''
+      bio: doctorInfo?.bio || '',
+      address: doctorInfo?.address || '',
+      city: doctorInfo?.city || '',
+      state: doctorInfo?.state || '',
+      zipCode: doctorInfo?.zipCode || '',
+      latitude: doctorInfo?.latitude || '',
+      longitude: doctorInfo?.longitude || ''
     });
     setShowEditProfile(true);
   };
@@ -612,7 +625,13 @@ export default function DoctorDashboard() {
         phone: editProfileData.phone,
         licenceNumber: editProfileData.licenceNumber,
         qualifications: editProfileData.qualifications,
-        bio: editProfileData.bio
+        bio: editProfileData.bio,
+        address: editProfileData.address,
+        city: editProfileData.city,
+        state: editProfileData.state,
+        zipCode: editProfileData.zipCode,
+        latitude: editProfileData.latitude ? parseFloat(editProfileData.latitude) : null,
+        longitude: editProfileData.longitude ? parseFloat(editProfileData.longitude) : null
       };
       
       console.log('📝 Transformed profile data being sent:', transformedData);
@@ -668,8 +687,72 @@ export default function DoctorDashboard() {
       phone: '',
       licenceNumber: '',
       qualifications: '',
-      bio: ''
+      bio: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      latitude: '',
+      longitude: ''
     });
+  };
+
+  // Get current location for doctor profile
+  const handleGetCurrentLocation = () => {
+    setLocationLoading(true);
+    
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by this browser.');
+      setLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setEditProfileData(prev => ({
+          ...prev,
+          latitude: latitude.toString(),
+          longitude: longitude.toString()
+        }));
+        
+        // Optionally, reverse geocode to get address
+        reverseGeocode(latitude, longitude);
+        setLocationLoading(false);
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Unable to get your current location. Please enter coordinates manually.');
+        setLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
+  // Reverse geocode to get address from coordinates
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      // Using a free geocoding service (you might want to use Google Maps API or similar)
+      const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+      const data = await response.json();
+      
+      if (data) {
+        setEditProfileData(prev => ({
+          ...prev,
+          address: data.locality || '',
+          city: data.city || '',
+          state: data.principalSubdivision || '',
+          zipCode: data.postcode || ''
+        }));
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+      // Don't show error to user as this is optional
+    }
   };
 
   // Service Management Functions
@@ -1174,6 +1257,166 @@ export default function DoctorDashboard() {
                   } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   placeholder="Tell us about yourself, your approach to medicine, and what makes you unique..."
                 ></textarea>
+              </div>
+
+              {/* Location Information Section */}
+              <div className={`border-t pt-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Location Information
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    disabled={locationLoading}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      locationLoading
+                        ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                        : isDarkMode
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>{locationLoading ? 'Getting Location...' : 'Use Current Location'}</span>
+                  </button>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Address
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={editProfileData.address}
+                    onChange={handleProfileInputChange}
+                    className={`w-full rounded-lg p-3 transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    placeholder="Enter your practice address"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={editProfileData.city}
+                      onChange={handleProfileInputChange}
+                      className={`w-full rounded-lg p-3 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                      } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      State/County
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={editProfileData.state}
+                      onChange={handleProfileInputChange}
+                      className={`w-full rounded-lg p-3 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                      } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      placeholder="State/County"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      name="zipCode"
+                      value={editProfileData.zipCode}
+                      onChange={handleProfileInputChange}
+                      className={`w-full rounded-lg p-3 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                      } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      placeholder="Postal Code"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      name="latitude"
+                      value={editProfileData.latitude}
+                      onChange={handleProfileInputChange}
+                      className={`w-full rounded-lg p-3 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                      } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      placeholder="Latitude (e.g., 51.5074)"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      name="longitude"
+                      value={editProfileData.longitude}
+                      onChange={handleProfileInputChange}
+                      className={`w-full rounded-lg p-3 transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
+                          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
+                      } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      placeholder="Longitude (e.g., -0.1278)"
+                    />
+                  </div>
+                </div>
+
+                <div className={`mt-3 p-3 rounded-lg text-sm ${
+                  isDarkMode 
+                    ? 'bg-blue-900/20 border border-blue-800 text-blue-300' 
+                    : 'bg-blue-50 border border-blue-200 text-blue-700'
+                }`}>
+                  <p className="font-medium mb-1">💡 Location Tips:</p>
+                  <ul className="text-xs space-y-1">
+                    <li>• Click "Use Current Location" to automatically fill coordinates</li>
+                    <li>• Accurate location helps businesses find you for service requests</li>
+                    <li>• Your location is used for distance-based filtering and routing</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
@@ -2158,6 +2401,28 @@ export default function DoctorDashboard() {
                   <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Bio:</span>
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{doctor.bio}</span>
+                  </div>
+                )}
+                
+                {/* Location Information */}
+                {(doctor?.address || doctor?.city || doctor?.state || doctor?.zipCode) && (
+                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Location:</span>
+                    <div className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm space-y-1`}>
+                      {doctor.address && (
+                        <div>{doctor.address}</div>
+                      )}
+                      {(doctor.city || doctor.state || doctor.zipCode) && (
+                        <div>
+                          {[doctor.city, doctor.state, doctor.zipCode].filter(Boolean).join(', ')}
+                        </div>
+                      )}
+                      {doctor.latitude && doctor.longitude && (
+                        <div className={`text-xs mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          📍 Coordinates: {doctor.latitude}, {doctor.longitude}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
