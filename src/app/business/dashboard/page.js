@@ -1535,13 +1535,23 @@ Payment ID: ${paymentIntent.id}`;
                     Welcome back, {contactName}
                   </p>
                   {/* Current Location Display */}
-                  {businessLocation && (
+                  {businessLocation && businessLocationName && (
                     <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
                       isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
                     }`}>
                       <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
                       <span className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                        {business?.city || 'Location set'}
+                        {businessLocationName}
+                      </span>
+                    </div>
+                  )}
+                  {businessLocation && !businessLocationName && (
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
+                      isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100/50'
+                    }`}>
+                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        Detecting location...
                       </span>
                     </div>
                   )}
@@ -2310,13 +2320,11 @@ Payment ID: ${paymentIntent.id}`;
                         </span>
                       </div>
                     ) : (
-                      business?.city && (
-                        <div className="mb-2">
-                          <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
-                            {[business.city, business.state, business.zipCode].filter(Boolean).join(', ')}
-                          </span>
-                        </div>
-                      )
+                      <div className="mb-2">
+                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-sm`}>
+                          Detecting location...
+                        </span>
+                      </div>
                     )}
                     
                     {/* Coordinates */}
