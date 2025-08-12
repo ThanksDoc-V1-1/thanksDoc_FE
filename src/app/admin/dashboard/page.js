@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -1792,116 +1792,25 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Header */}
-      <header className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} shadow-md border-b`}>
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-2.5 rounded-lg shadow-lg">
-                <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
-              </div>
-              <div>
-                <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} tracking-tight`}>
-                  {user?.name || user?.email || 'Admin Dashboard'}
-                </h1>
-                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Manage doctors, businesses, and service requests</p>
-              </div>
+    <div className={`min-h-screen flex ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+      {/* Side Navigation */}
+      <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-r flex flex-col shadow-lg`}>
+        {/* Logo/Header */}
+        <div className="p-6 border-b border-gray-800">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg shadow-lg">
+              <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
             </div>
-            
-            {/* Desktop controls */}
-            <div className="hidden md:flex items-center space-x-3">
-              {/* Admin Notification Center */}
-              <AdminNotificationCenter />
-              
-              <button 
-                onClick={fetchAllData}
-                className={`px-4 py-2 ${isDarkMode ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : 'bg-blue-600 text-white hover:bg-blue-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                <span>Refresh Data</span>
-              </button>
-              <button 
-                onClick={logout}
-                className={`px-4 py-2 ${isDarkMode ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' : 'bg-red-600 text-white hover:bg-red-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                <span>Logout</span>
-              </button>
-            </div>
-            
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <button 
-                onClick={() => {
-                  const mobileMenu = document.getElementById('mobile-menu-admin');
-                  if (mobileMenu) {
-                    mobileMenu.classList.toggle('hidden');
-                  }
-                }}
-                className={`p-2 rounded-md ${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-          
-          {/* Mobile menu */}
-          <div id="mobile-menu-admin" className="md:hidden mt-4 hidden">
-            <div className="space-y-3 py-3">
-              <button 
-                onClick={fetchAllData}
-                className={`w-full px-4 py-2 ${isDarkMode ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' : 'bg-blue-600 text-white hover:bg-blue-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow`}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                <span>Refresh Data</span>
-              </button>
-              <button 
-                onClick={logout}
-                className={`w-full px-4 py-2 ${isDarkMode ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' : 'bg-red-600 text-white hover:bg-red-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center justify-center space-x-2 shadow-sm hover:shadow`}
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                <span>Logout</span>
-              </button>
+            <div>
+              <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h1>
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Management Dashboard</p>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        {/* Search Bar - Only show on non-overview tabs */}
-        {activeTab !== 'overview' && (
-          <div className="mb-6">
-            <div className="relative max-w-md mx-auto">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              </div>
-              <input
-                type="text"
-                className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
-                placeholder={
-                  activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
-                  activeTab === 'businesses' ? "Search businesses by name, type, email..." :
-                  activeTab === 'services' ? "Search services by name, category..." :
-                  activeTab === 'settings' ? "Search settings by key, category, description..." :
-                  activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
-                  activeTab === 'transactions' ? "Search transactions by payment ID, doctor ID..." :
-                  activeTab === 'earnings' ? "Search by doctor name..." :
-                  activeTab === 'compliance-documents' ? "Search document types by name..." :
-                  "Search..."
-                }
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Tabs */}
-        <div className={`mb-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} p-1.5 rounded-xl shadow border`}>
-          <nav className="grid grid-cols-2 sm:flex gap-1.5">
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
             {[
               { id: 'overview', name: 'Overview', icon: Shield },
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
@@ -1919,25 +1828,150 @@ export default function AdminDashboard() {
                   key={tab.id}
                   onClick={() => {
                     setActiveTab(tab.id);
-                    setSearchTerm(''); // Reset search when switching tabs
                     setCurrentPage(1); // Reset pagination when switching tabs
+                    setSearchTerm(''); // Reset search when switching tabs
                   }}
-                  className={`flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                      : isDarkMode 
-                        ? 'text-gray-300 hover:bg-gray-800 hover:text-blue-400'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
+                      ? isDarkMode 
+                        ? 'bg-blue-900 text-blue-100 border border-blue-800 shadow-lg' 
+                        : 'bg-blue-600 text-white shadow-md'
+                      : isDarkMode
+                        ? 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span>{tab.name}</span>
+                  <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
+                  <span className="truncate">{tab.name}</span>
                 </button>
               );
             })}
-          </nav>
+          </div>
+        </nav>
+
+        {/* Admin Notification Center - Moved to sidebar */}
+        <div className="px-4 pb-4">
+          <AdminNotificationCenter />
         </div>
-        
+
+        {/* User Info and Actions */}
+        <div className={`p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+                <User className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {user?.name || user?.firstName || 'Admin'}
+                </p>
+                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <button
+              onClick={fetchAllData}
+              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh Data
+            </button>
+            
+            <button
+              onClick={logout}
+              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isDarkMode 
+                  ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' 
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-b px-6 py-4 shadow-sm`}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} capitalize`}>
+                {activeTab === 'settings' ? 'System Settings' : 
+                 activeTab === 'earnings' ? 'Doctor Earnings' : 
+                 activeTab === 'compliance-documents' ? 'Compliance Documents' : 
+                 activeTab}
+              </h2>
+              <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                {activeTab === 'overview' ? 'Dashboard overview and statistics' :
+                 activeTab === 'doctors' ? 'Manage registered doctors and their verification status' :
+                 activeTab === 'businesses' ? 'Manage registered businesses and their profiles' :
+                 activeTab === 'services' ? 'Configure available medical services' :
+                 activeTab === 'settings' ? 'System-wide configuration settings' :
+                 activeTab === 'requests' ? 'Monitor and manage service requests' :
+                 activeTab === 'transactions' ? 'View payment transactions and financial data' :
+                 activeTab === 'earnings' ? 'Track doctor earnings and payments' :
+                 activeTab === 'compliance-documents' ? 'Manage compliance document types and verification' :
+                 'Manage your platform'}
+              </p>
+            </div>
+            
+            <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+              {dataLoading && (
+                <div className="flex items-center space-x-2">
+                  <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${isDarkMode ? 'border-blue-400' : 'border-blue-600'}`}></div>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                </div>
+              )}
+              
+              <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Last updated: {new Date().toLocaleTimeString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area with Search */}
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+            {/* Search Bar - Only show on non-overview tabs */}
+            {activeTab !== 'overview' && (
+              <div className="mb-6">
+                <div className="relative max-w-md">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                  </div>
+                  <input
+                    type="text"
+                    className={`block w-full pl-10 pr-3 py-2.5 border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100 focus:ring-blue-400 focus:border-blue-400' : 'border-gray-300 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500'} rounded-lg focus:outline-none shadow-sm`}
+                    placeholder={
+                      activeTab === 'doctors' ? "Search doctors by name, specialty, email..." :
+                      activeTab === 'businesses' ? "Search businesses by name, type, email..." :
+                      activeTab === 'services' ? "Search services by name, category..." :
+                      activeTab === 'settings' ? "Search settings by key, category, description..." :
+                      activeTab === 'requests' ? "Search requests by service type, business, doctor..." :
+                      activeTab === 'transactions' ? "Search transactions by payment ID, doctor ID..." :
+                      activeTab === 'earnings' ? "Search by doctor name..." :
+                      activeTab === 'compliance-documents' ? "Search document types by name..." :
+                      "Search..."
+                    }
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+        {/* Tab Content */}
         {dataLoading && (
           <div className="flex justify-center items-center p-8">
             <div className="animate-spin rounded-full h-14 w-14 border-2 border-gray-700 border-t-blue-400"></div>
@@ -5713,6 +5747,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
