@@ -81,6 +81,11 @@ export default function DoctorEarnings() {
     
     return servicePrice; // Doctor earns the service price (excluding dynamic booking fee)
   };
+
+  // Helper function to calculate doctor take-home amount after 10% ThanksDoc commission
+  const calculateDoctorTakeHome = (servicePrice) => {
+    return servicePrice * 0.9; // Doctor keeps 90%, ThanksDoc takes 10%
+  };
   
   // Filter states
   const [dateFrom, setDateFrom] = useState('');
@@ -200,11 +205,12 @@ export default function DoctorEarnings() {
       const earningsData = completedRequests.map(request => {
         const requestData = request.attributes || request;
         const doctorEarnings = calculateDoctorEarnings(request);
+        const doctorTakeHome = calculateDoctorTakeHome(doctorEarnings);
         
         return {
           id: request.id,
           date: requestData.completedAt,
-          amount: doctorEarnings,
+          amount: doctorTakeHome, // Use take-home amount instead of full earnings
           serviceType: requestData.serviceType,
           duration: requestData.estimatedDuration,
           business: {

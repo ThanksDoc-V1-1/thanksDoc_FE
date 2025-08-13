@@ -225,6 +225,11 @@ export default function DoctorDashboard() {
     const servicePrice = calculateDoctorEarnings(request);
     return servicePrice + getBookingFee(); // Service price + dynamic booking fee
   };
+
+  // Helper function to calculate doctor take-home amount after 10% ThanksDoc commission
+  const calculateDoctorTakeHome = (servicePrice) => {
+    return servicePrice * 0.9; // Doctor keeps 90%, ThanksDoc takes 10%
+  };
   
   // Fetch completed requests after getting available requests to ensure proper stats calculation
   useEffect(() => {
@@ -431,7 +436,7 @@ export default function DoctorDashboard() {
       } catch (statsError) {
         console.error('Error fetching stats from backend:', statsError);
         // Fallback to calculating stats from available and completed requests
-        const totalEarnings = completedRequests.reduce((sum, req) => sum + calculateDoctorEarnings(req), 0);
+        const totalEarnings = completedRequests.reduce((sum, req) => sum + calculateDoctorTakeHome(calculateDoctorEarnings(req)), 0);
         
         // We'll count accepted requests from serviceRequests
         const acceptedRequests = serviceRequests.filter(req => req.status === 'accepted' && req.doctor?.id === user.id);
@@ -2725,7 +2730,7 @@ export default function DoctorDashboard() {
                           </div>
                           {request.status === 'completed' && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{calculateDoctorEarnings(request).toFixed(2)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{calculateDoctorTakeHome(calculateDoctorEarnings(request)).toFixed(2)}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
                                 COMPLETED
                               </div>
@@ -2984,15 +2989,20 @@ export default function DoctorDashboard() {
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2 mt-2 sm:mt-0">
-                                <span className={`text-sm font-semibold ${
-                                  service.category === 'in-person'
-                                    ? isDarkMode ? 'text-green-400' : 'text-green-600'
-                                    : service.category === 'online'
-                                      ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                                      : isDarkMode ? 'text-purple-400' : 'text-purple-600'
-                                }`}>
-                                  £{service.price || 0}
-                                </span>
+                                <div className="text-right">
+                                  <span className={`text-sm font-semibold block ${
+                                    service.category === 'in-person'
+                                      ? isDarkMode ? 'text-green-400' : 'text-green-600'
+                                      : service.category === 'online'
+                                        ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                                        : isDarkMode ? 'text-purple-400' : 'text-purple-600'
+                                  }`}>
+                                    £{calculateDoctorTakeHome(parseFloat(service.price || 0)).toFixed(2)}
+                                  </span>
+                                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} line-through`}>
+                                    £{service.price || 0}
+                                  </span>
+                                </div>
                                 <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                   • {service.duration || 30} min
                                 </span>
