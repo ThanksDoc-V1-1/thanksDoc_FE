@@ -159,13 +159,12 @@ export default function DoctorDashboard() {
     });
     
     // First priority: Check if request already has service price stored
-    if (request.servicePrice) {
+    if (request.servicePrice && parseFloat(request.servicePrice) > 0) {
       console.log('💰 Using stored servicePrice:', request.servicePrice);
       return parseFloat(request.servicePrice);
     } else {
       console.log('❌ NO servicePrice found in request! Will attempt service lookup...');
     }
-    
     
     // If services haven't loaded yet, return 0 and let it recalculate when services load
     if (availableServices.length === 0) {
@@ -202,13 +201,15 @@ export default function DoctorDashboard() {
         s.category?.toLowerCase().includes('online')
       );
       console.log('🎯 Found service (online consultation fallback):', service);
-    }    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found - should rely on stored servicePrice
+    }
+    
+    const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found - should rely on stored servicePrice
     console.log('💵 Final calculated price:', servicePrice);
     
-    // Fallback: If still no price found and it's an online consultation, use a default price
+    // Fallback: If still no price found and it's an online consultation, use a realistic default price
     if (servicePrice === 0 && request.serviceType?.toLowerCase().includes('online consultation')) {
-      console.log('🚨 Using fallback price for online consultation: £25.00');
-      return 25.00; // Default price for online consultations
+      console.log('🚨 Using realistic fallback price for online consultation: £7.00');
+      return 7.00; // Realistic price for online consultations (£6.30 take-home = 90% of £7.00)
     }
     
     if (!service) {
