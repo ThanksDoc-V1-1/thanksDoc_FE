@@ -3003,9 +3003,6 @@ export default function DoctorDashboard() {
                                   }`}>
                                     £{calculateDoctorTakeHome(parseFloat(service.price || 0)).toFixed(2)}
                                   </span>
-                                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} line-through`}>
-                                    £{service.price || 0}
-                                  </span>
                                 </div>
                                 <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                   • {service.duration || 30} min
