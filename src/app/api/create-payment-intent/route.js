@@ -39,21 +39,23 @@ export async function POST(request) {
       amount: Math.round(amount * 100), // Stripe expects amount in pence for GBP
       currency: currency,
       metadata: metadata,
-      automatic_payment_methods: {
-        enabled: true,
-      },
     };
 
-    // Add customer and payment method if provided
+    // Add customer if provided
     if (customerId) {
       paymentIntentData.customer = customerId;
     }
 
     if (paymentMethodId) {
-      // For saved payment methods, don't auto-confirm - let the frontend handle confirmation
+      // For saved payment methods, use manual confirmation and specific payment method
       paymentIntentData.payment_method = paymentMethodId;
       paymentIntentData.confirmation_method = 'manual';
-      // Don't set confirm: true - let the frontend confirm it
+      // Don't use automatic_payment_methods when we have a specific payment method
+    } else {
+      // For new payment methods, enable automatic payment methods
+      paymentIntentData.automatic_payment_methods = {
+        enabled: true,
+      };
     }
 
     // Setup future usage if saving payment method

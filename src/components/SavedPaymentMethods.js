@@ -24,14 +24,16 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
     }
   }, [customerId]);
 
-  const fetchPaymentMethods = async () => {
+  const fetchPaymentMethods = async (retryCount = 0) => {
+    const maxRetries = 2;
+    
     try {
       setLoading(true);
-      console.log('🔍 Fetching payment methods for customer:', customerId);
+      console.log('🔍 Fetching payment methods for customer:', customerId, retryCount > 0 ? `(retry ${retryCount})` : '');
       
-      // Add timeout to prevent hanging requests
+      // Increase timeout and add retry logic
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Increased to 15 second timeout
       
       const response = await fetch(`/api/payment-methods?customerId=${customerId}`, {
         signal: controller.signal,
@@ -55,7 +57,19 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
     } catch (error) {
       if (error.name === 'AbortError') {
         console.error('Payment methods request timed out');
+        
+        // Retry logic for timeout errors
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Retrying payment methods fetch (${retryCount + 1}/${maxRetries})...`);
+          setTimeout(() => {
+            fetchPaymentMethods(retryCount + 1);
+          }, 1000); // Wait 1 second before retry
+          return; // Don't set loading to false yet
+        }
+        
         setPaymentMethods([]);
+        // Show user-friendly message for persistent timeouts
+        console.log('💡 Consider using "Add New Card" if saved methods don\'t load');
       } else {
         console.error('Error fetching payment methods:', error);
         setPaymentMethods([]);

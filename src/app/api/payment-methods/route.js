@@ -31,12 +31,19 @@ export async function GET(request) {
       });
     }
 
-    // List payment methods for the customer with expanded details
-    const paymentMethods = await stripe.paymentMethods.list({
+    // Add timeout to Stripe API call to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Stripe API timeout')), 8000); // 8 second timeout for Stripe API
+    });
+
+    const stripePromise = stripe.paymentMethods.list({
       customer: customerId,
       type: 'card',
       limit: 10, // Limit to reduce response size
     });
+
+    // Race between the Stripe call and timeout
+    const paymentMethods = await Promise.race([stripePromise, timeoutPromise]);
 
     console.log('Raw payment methods from Stripe:', paymentMethods.data.length);
 
@@ -63,8 +70,33 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Error fetching payment methods:', error);
+    
+    // Return different error messages based on error type
+    if (error.message === 'Stripe API timeout') {
+      return NextResponse.json(
+        { 
+          error: 'Payment methods loading timeout - please try again',
+          code: 'TIMEOUT_ERROR'
+        },
+        { status: 408 }
+      );
+    }
+    
+    if (error.type === 'StripeInvalidRequestError') {
+      return NextResponse.json(
+        { 
+          error: 'Invalid customer ID or Stripe configuration error',
+          code: 'STRIPE_ERROR'
+        },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch payment methods' },
+      { 
+        error: 'Failed to fetch payment methods',
+        code: 'GENERAL_ERROR'
+      },
       { status: 500 }
     );
   }

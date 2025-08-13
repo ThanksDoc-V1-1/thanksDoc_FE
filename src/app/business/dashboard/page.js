@@ -1344,6 +1344,8 @@ export default function BusinessDashboard() {
           const selectedDoctor = paymentRequest._selectedDoctor;
           const requestHours = paymentRequest._requestHours;
           
+          const charge = paymentIntent.charges?.data?.[0];
+
           const requestData = {
             ...quickRequestData,
             businessId: user.id,
@@ -1355,9 +1357,11 @@ export default function BusinessDashboard() {
             isPaid: true,
             paymentMethod: 'card',
             paymentIntentId: paymentIntent.id,
-            paymentStatus: paymentIntent.status,
+            paymentStatus: paymentIntent.status === 'succeeded' ? 'paid' : 'pending',
             paidAt: new Date().toISOString(),
-            totalAmount: paymentRequest.totalAmount
+            totalAmount: paymentRequest.totalAmount,
+            chargeId: charge?.id,
+            currency: paymentIntent.currency || 'gbp'
           };
 
           // Create the direct service request with payment information
@@ -1392,9 +1396,18 @@ Payment ID: ${paymentIntent.id}`);
           const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
                                        selectedService?.category === 'online';
           
+          const charge = paymentIntent.charges?.data?.[0];
+
           const requestData = {
             businessId: user.id,
-            ...formDataFromTemp,
+            // Explicitly include only the fields we need from formDataFromTemp
+            serviceType: formDataFromTemp.serviceType,
+            serviceId: formDataFromTemp.serviceId,
+            description: formDataFromTemp.description,
+            scheduledAt: formDataFromTemp.scheduledAt,
+            preferredDoctorId: formDataFromTemp.preferredDoctorId,
+            doctorSelectionType: formDataFromTemp.doctorSelectionType,
+            // Set explicit values for other fields
             urgencyLevel: 'medium', // Default urgency level since we removed it from UI
             estimatedDuration: parseInt(formDataFromTemp.estimatedDuration),
             serviceCharge: SERVICE_CHARGE,
@@ -1408,9 +1421,11 @@ Payment ID: ${paymentIntent.id}`);
             isPaid: true,
             paymentMethod: 'card',
             paymentIntentId: paymentIntent.id,
-            paymentStatus: paymentIntent.status,
+            paymentStatus: paymentIntent.status === 'succeeded' ? 'paid' : 'pending',
             paidAt: new Date().toISOString(),
-            totalAmount: paymentRequest.totalAmount
+            totalAmount: paymentRequest.totalAmount,
+            chargeId: charge?.id,
+            currency: paymentIntent.currency || 'gbp'
           };
 
           // Add patient information for online consultations
@@ -1501,7 +1516,7 @@ Payment ID: ${paymentIntent.id}`;
                 paymentMethod: 'card',
                 paymentIntentId: paymentIntent.id,
                 chargeId: charge?.id,
-                paymentStatus: paymentIntent.status,
+                paymentStatus: paymentIntent.status === 'succeeded' ? 'paid' : 'pending',
                 paidAt: new Date().toISOString(),
                 currency: paymentIntent.currency || 'gbp',
                 totalAmount: calculateTotalAmount(paymentRequest)
@@ -1516,7 +1531,30 @@ Payment ID: ${paymentIntent.id}`;
       }
     } catch (error) {
       console.error('Error processing payment/creating service request:', error);
-      alert('Payment processed but service request creation failed. Please contact support.');
+      
+      // Provide more specific error messages based on the error type
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        alert(`⏰ Service request is taking longer than expected to process. This usually happens when sending WhatsApp notifications to doctors.
+
+✅ Your payment was successful: ${paymentIntent.id}
+🔄 The service request is likely being created - please check your requests list in a moment.
+
+If you don't see your request after 2 minutes, please contact support.`);
+      } else if (error.response?.status >= 500) {
+        alert(`❌ Server error occurred while creating your service request.
+
+✅ Your payment was successful: ${paymentIntent.id}
+🔄 Please check your requests list - the request might have been created despite the error.
+
+If you don't see your request, please contact support with payment ID: ${paymentIntent.id}`);
+      } else {
+        alert(`❌ Service request creation failed.
+
+✅ Your payment was successful: ${paymentIntent.id}
+🔄 Please refresh the page and check your requests list.
+
+If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
+      }
     } finally {
       setLoading(false);
       setPaymentRequest(null); // Clear payment request
