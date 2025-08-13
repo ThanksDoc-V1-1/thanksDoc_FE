@@ -194,19 +194,31 @@ export default function DoctorEarnings() {
     if (!authLoading && isAuthenticated && user?.role === 'doctor' && user?.id) {
       console.log('✅ Fetching data for authenticated doctor:', user.id);
       
-      // First load services, then fetch earnings once services are loaded
-      const loadData = async () => {
-        try {
-          await fetchDoctorData();
-          await fetchServices();
-          // Services should be loaded by now, fetch earnings
-          await fetchEarnings();
-        } catch (error) {
-          console.error('❌ Error loading data:', error);
-        }
-      };
+      // Add a small delay to ensure authentication context is fully settled
+      const timer = setTimeout(() => {
+        // First load services, then fetch earnings once services are loaded
+        const loadData = async () => {
+          try {
+            await fetchDoctorData();
+            await fetchServices();
+            // Services should be loaded by now, fetch earnings
+            await fetchEarnings();
+          } catch (error) {
+            console.error('❌ Error loading data:', error);
+          }
+        };
+        
+        loadData();
+      }, 300); // Small delay to ensure auth context is fully ready
       
-      loadData();
+      return () => clearTimeout(timer);
+    } else {
+      console.log('⏳ Waiting for authentication to complete...', {
+        authLoading,
+        isAuthenticated,
+        userRole: user?.role,
+        hasUserId: !!user?.id
+      });
     }
   }, [isAuthenticated, authLoading, user]);
 
@@ -379,23 +391,34 @@ export default function DoctorEarnings() {
       
       // Try to get backend stats first (like dashboard does)
       try {
+        console.log('📊 [BACKEND] Attempting to get stats for user ID:', user?.id);
+        if (!user?.id) {
+          throw new Error('User ID is not available for stats API call');
+        }
+        
         const statsResponse = await doctorAPI.getStats(user.id);
         console.log('📊 [BACKEND] Stats response:', statsResponse);
         if (statsResponse.data?.data) {
           console.log('📊 [BACKEND] Using backend stats:', statsResponse.data.data);
           
-          // Calculate monthly stats and average from frontend data for consistency
+          // Calculate monthly stats from frontend data for breakdown  
           const frontendStats = calculateStatsReturn(earningsData);
           
-          setStats({
-            // Use backend total (more reliable)
-            totalEarnings: statsResponse.data.data.totalEarnings || 0,
-            // Use frontend calculations for monthly breakdown and average
-            totalRequests: earningsData.length,
-            averageEarning: earningsData.length > 0 ? (statsResponse.data.data.totalEarnings || 0) / earningsData.length : 0,
+          console.log('📊 [COMPARISON] Backend total earnings:', statsResponse.data.data.totalEarnings);
+          console.log('📊 [COMPARISON] Frontend total from earnings data:', earningsData.reduce((sum, e) => sum + e.amount, 0));
+          console.log('📊 [COMPARISON] This month calculated:', frontendStats.thisMonth);
+          console.log('📊 [COMPARISON] Number of earnings entries:', earningsData.length);
+          
+          // Use backend stats as primary source (like dashboard does) 
+          setStats(prev => ({
+            ...prev,
+            ...statsResponse.data.data,
+            // Override with frontend calculations for monthly breakdown since backend doesn't provide these
             thisMonth: frontendStats.thisMonth,
-            lastMonth: frontendStats.lastMonth
-          });
+            lastMonth: frontendStats.lastMonth,
+            totalRequests: earningsData.length,
+            averageEarning: earningsData.length > 0 ? (statsResponse.data.data.totalEarnings || 0) / earningsData.length : 0
+          }));
         } else {
           console.log('📊 [FRONTEND] Backend stats not available, using frontend calculation');
           calculateStats(earningsData);
