@@ -51,11 +51,38 @@ export default function TransactionHistory() {
       
         // Transform the data
         const transactions = (data.data || []).map(item => {
-          // The backend returns flattened data, not wrapped in attributes
-          // Fee structure: Doctor gets their hourly rate, Service charge is £3
-          const doctorFee = item.doctor?.hourlyRate || 12; // Use actual hourly rate
-          const serviceCharge = 3;
-          const totalAmount = doctorFee + serviceCharge;
+          // Parse payment details to get actual service price and booking fee
+          let servicePrice = 0;
+          let bookingFee = 0;
+          let actualTotalAmount = item.totalAmount || 0;
+          
+          if (item.paymentDetails) {
+            try {
+              const paymentDetails = JSON.parse(item.paymentDetails);
+              servicePrice = parseFloat(paymentDetails.servicePrice) || 0;
+              bookingFee = parseFloat(paymentDetails.serviceCharge) || 0;
+              actualTotalAmount = parseFloat(paymentDetails.totalAmount) || actualTotalAmount;
+              
+              console.log('💰 Parsed payment details for transaction', item.id, ':', {
+                servicePrice,
+                bookingFee,
+                totalAmount: actualTotalAmount,
+                paymentDetails: paymentDetails
+              });
+            } catch (error) {
+              console.warn('⚠️ Failed to parse paymentDetails for transaction', item.id, ':', error);
+              // Fallback to legacy calculation if paymentDetails parsing fails
+              servicePrice = item.doctor?.hourlyRate || 12;
+              bookingFee = 3; // Old fixed booking fee
+              actualTotalAmount = servicePrice + bookingFee;
+            }
+          } else {
+            // Fallback for older records without paymentDetails
+            console.log('📝 No paymentDetails found for transaction', item.id, ', using fallback calculation');
+            servicePrice = item.doctor?.hourlyRate || 12;
+            bookingFee = 3; // Old fixed booking fee  
+            actualTotalAmount = servicePrice + bookingFee;
+          }
           
           console.log('🔍 Raw transaction data for ID', item.id, ':', {
             paymentStatus: item.paymentStatus,
@@ -72,9 +99,9 @@ export default function TransactionHistory() {
           doctorName: item.doctor?.firstName && item.doctor?.lastName
             ? `${item.doctor.firstName} ${item.doctor.lastName}`
             : item.doctor?.name || 'Unknown Doctor',
-          totalAmount: totalAmount,
-          doctorFee: doctorFee,
-          serviceCharge: serviceCharge,
+          totalAmount: actualTotalAmount,
+          doctorFee: servicePrice, // Now shows the actual service price paid for the service
+          serviceCharge: bookingFee, // Now shows the actual dynamic booking fee
           date: item.paidAt || item.createdAt,
           status: item.isPaid ? 'Paid' : 'Pending',
           currency: item.currency || 'GBP',
@@ -497,10 +524,10 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
                 Total Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Doctor Fee
+                Service Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                Service Charge
+                Booking Fee
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Date
@@ -522,10 +549,10 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
                   {formatCurrency(transaction.totalAmount)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-400 font-semibold">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-400 font-semibold">
                   {formatCurrency(transaction.doctorFee)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-400">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-400 font-semibold">
                   {formatCurrency(transaction.serviceCharge)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
