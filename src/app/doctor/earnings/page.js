@@ -376,7 +376,27 @@ export default function DoctorEarnings() {
       console.log('💰 Earnings data:', earningsData);
       setEarnings(earningsData);
       setFilteredEarnings(earningsData);
-      calculateStats(earningsData);
+      
+      // Try to get backend stats first (like dashboard does)
+      try {
+        const statsResponse = await doctorAPI.getStats(user.id);
+        console.log('📊 [BACKEND] Stats response:', statsResponse);
+        if (statsResponse.data?.data) {
+          console.log('📊 [BACKEND] Using backend stats:', statsResponse.data.data);
+          setStats(prev => ({
+            ...prev,
+            ...statsResponse.data.data,
+            totalRequests: earningsData.length, // Keep frontend count for requests
+            averageEarning: statsResponse.data.data.totalEarnings / earningsData.length || 0
+          }));
+        } else {
+          console.log('📊 [FRONTEND] Backend stats not available, using frontend calculation');
+          calculateStats(earningsData);
+        }
+      } catch (statsError) {
+        console.error('📊 [FRONTEND] Error fetching backend stats, falling back to frontend calculation:', statsError);
+        calculateStats(earningsData);
+      }
     } catch (error) {
       console.error('❌ Error fetching earnings:', error);
       
@@ -398,7 +418,12 @@ export default function DoctorEarnings() {
   };
 
   const calculateStats = (earningsData) => {
+    console.log('📊 [STATS] Calculating stats from earnings data:', earningsData.length, 'entries');
+    console.log('📊 [STATS] Earnings amounts:', earningsData.map(e => e.amount));
+    
     const total = earningsData.reduce((sum, earning) => sum + earning.amount, 0);
+    console.log('📊 [STATS] Frontend calculated total:', total);
+    
     const totalRequests = earningsData.length;
     const average = totalRequests > 0 ? total / totalRequests : 0;
     

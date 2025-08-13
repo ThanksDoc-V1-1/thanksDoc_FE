@@ -428,16 +428,19 @@ export default function DoctorDashboard() {
       // Also fetch stats from backend
       try {
         const statsResponse = await doctorAPI.getStats(user.id);
+        console.log('📊 [DASHBOARD] Backend stats response:', statsResponse);
         if (statsResponse.data?.data) {
+          console.log('📊 [DASHBOARD] Using backend stats:', statsResponse.data.data);
           setStats(prev => ({
             ...prev,
             ...statsResponse.data.data
           }));
         }
       } catch (statsError) {
-        console.error('Error fetching stats from backend:', statsError);
+        console.error('📊 [DASHBOARD] Error fetching stats from backend, using fallback calculation:', statsError);
         // Fallback to calculating stats from available and completed requests
         const totalEarnings = completedRequests.reduce((sum, req) => sum + calculateDoctorTakeHome(calculateDoctorEarnings(req)), 0);
+        console.log('📊 [DASHBOARD] Frontend calculated total earnings:', totalEarnings);
         
         // We'll count accepted requests from serviceRequests
         const acceptedRequests = serviceRequests.filter(req => req.status === 'accepted' && req.doctor?.id === user.id);
