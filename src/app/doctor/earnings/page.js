@@ -715,83 +715,9 @@ export default function DoctorEarnings() {
             </div>
           </button>
 
-          {/* This Month Card - Clickable to filter current month */}
-          <button
-            onClick={() => {
-              const now = new Date();
-              const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-              const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-              setDateFrom(firstDay.toISOString().split('T')[0]);
-              setDateTo(lastDay.toISOString().split('T')[0]);
-              setSortBy('date');
-              setSortOrder('desc');
-            }}
-            className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
-              isDarkMode 
-                ? 'bg-gray-900 border-gray-800 hover:border-amber-600' 
-                : 'bg-white border-gray-200 hover:border-amber-400'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-amber-400 font-medium">This Month</p>
-                <p className={`text-2xl font-bold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>£{stats.thisMonth.toFixed(2)}</p>
-                {stats.lastMonth > 0 && (
-                  <p className={`text-xs mt-1 ${
-                    stats.thisMonth >= stats.lastMonth 
-                      ? 'text-green-500' 
-                      : 'text-red-500'
-                  }`}>
-                    {stats.thisMonth >= stats.lastMonth ? '↗' : '↘'} vs last month
-                  </p>
-                )}
-                <p className="text-xs text-amber-400 mt-1">Click to filter month</p>
-              </div>
-              <div className={`p-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-amber-900/30' 
-                  : 'bg-amber-600'
-              }`}>
-                <Calendar className={`h-6 w-6 ${
-                  isDarkMode ? 'text-amber-400' : 'text-white'
-                }`} />
-              </div>
-            </div>
-          </button>
+          {/* This Month Card removed - showed frontend calculated data */}
 
-          {/* Average per Request Card - Clickable to sort by amount */}
-          <button
-            onClick={() => {
-              setSortBy('amount');
-              setSortOrder('desc');
-            }}
-            className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md hover:scale-105 text-left ${
-              isDarkMode 
-                ? 'bg-gray-900 border-gray-800 hover:border-purple-600' 
-                : 'bg-white border-gray-200 hover:border-purple-400'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-purple-400 font-medium">Average per Request</p>
-                <p className={`text-2xl font-bold ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>£{stats.averageEarning.toFixed(2)}</p>
-                <p className="text-xs text-purple-400 mt-1">Click to sort by amount</p>
-              </div>
-              <div className={`p-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-purple-900/30' 
-                  : 'bg-purple-600'
-              }`}>
-                <TrendingUp className={`h-6 w-6 ${
-                  isDarkMode ? 'text-purple-400' : 'text-white'
-                }`} />
-              </div>
-            </div>
-          </button>
+          {/* Average per Request Card removed - showed frontend calculated data */}
 
           {/* Total Earnings Card - Moved to last position */}
           <div className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md ${
