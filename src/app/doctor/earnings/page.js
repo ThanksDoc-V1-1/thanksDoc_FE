@@ -16,7 +16,7 @@ import {
   FileText,
   DollarSign
 } from 'lucide-react';
-import { serviceRequestAPI, doctorAPI } from '../../../lib/api';
+import { serviceRequestAPI, doctorAPI, serviceAPI } from '../../../lib/api';
 import { formatDate } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -37,68 +37,120 @@ export default function DoctorEarnings() {
   
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
-    const requestData = request.attributes || request;
+    // Handle both direct properties and attributes structure
+    const servicePrice = request.servicePrice || request.attributes?.servicePrice;
+    const serviceType = request.serviceType || request.attributes?.serviceType;
     
-    // Debug logging
     console.log('🔍 [EARNINGS] Calculating earnings for request:', {
       requestId: request.id,
-      serviceType: requestData.serviceType,
-      servicePrice: requestData.servicePrice,
-      totalAmount: requestData.totalAmount,
-      availableServicesCount: availableServices.length,
-      requestData: requestData
+      serviceType: serviceType,
+      directServicePrice: request.servicePrice,
+      attributesServicePrice: request.attributes?.servicePrice,
+      finalServicePrice: servicePrice,
+      hasDirectServicePrice: !!request.servicePrice,
+      hasAttributesServicePrice: !!request.attributes?.servicePrice,
+      availableServicesCount: availableServices.length
     });
     
-    // First priority: Check if request already has service price stored
-    if (requestData.servicePrice && parseFloat(requestData.servicePrice) > 0) {
-      console.log('💰 [EARNINGS] Using stored servicePrice:', requestData.servicePrice);
-      return parseFloat(requestData.servicePrice);
+    // First priority: Check if request already has service price stored (same as dashboard)
+    if (servicePrice && parseFloat(servicePrice) > 0) {
+      console.log('💰 [EARNINGS] Using stored servicePrice:', servicePrice);
+      return parseFloat(servicePrice);
+    } else {
+      console.log('❌ [EARNINGS] NO servicePrice found in request! Will attempt service lookup...');
     }
     
+    // If services haven't loaded yet, return 0 and let it recalculate when services load
+    if (availableServices.length === 0) {
+      console.log('⏳ [EARNINGS] Services not loaded yet, returning 0');
+      return 0;
+    }
+    
+    console.log('🔍 [EARNINGS] SEARCHING for service match for:', serviceType);
+
     // Second priority: Try exact service name match
-    let service = availableServices.find(s => s.name === requestData.serviceType);
+    let service = availableServices.find(s => s.name === serviceType);
     console.log('🎯 [EARNINGS] Found service (exact match):', service);
     
     // Third priority: Try case-insensitive match
     if (!service) {
-      service = availableServices.find(s => s.name?.toLowerCase() === requestData.serviceType?.toLowerCase());
+      service = availableServices.find(s => s.name?.toLowerCase() === serviceType?.toLowerCase());
       console.log('🎯 [EARNINGS] Found service (case-insensitive match):', service);
     }
     
     // Fourth priority: Try partial match (contains)
     if (!service) {
       service = availableServices.find(s => 
-        s.name?.toLowerCase().includes(requestData.serviceType?.toLowerCase()) ||
-        requestData.serviceType?.toLowerCase().includes(s.name?.toLowerCase())
+        s.name?.toLowerCase().includes(serviceType?.toLowerCase()) ||
+        serviceType?.toLowerCase().includes(s.name?.toLowerCase())
       );
       console.log('🎯 [EARNINGS] Found service (partial match):', service);
     }
     
-    // Fifth priority: Special handling for online consultations with realistic pricing
-    if (!service && requestData.serviceType?.toLowerCase().includes('online')) {
-      // First try to find an online consultation service
+    // Fifth priority: Special handling for common service types (same as dashboard)
+    if (!service && serviceType?.toLowerCase().includes('online consultation')) {
       service = availableServices.find(s => 
         s.name?.toLowerCase().includes('online') || 
         s.name?.toLowerCase().includes('consultation') ||
         s.category?.toLowerCase().includes('online')
       );
       console.log('🎯 [EARNINGS] Found service (online consultation fallback):', service);
+    }
+    
+    // Fourth priority: Try partial match (contains)
+    if (!service) {
+      service = availableServices.find(s => 
+        s.name?.toLowerCase().includes(serviceType?.toLowerCase()) ||
+        serviceType?.toLowerCase().includes(s.name?.toLowerCase())
+      );
+      console.log('🎯 [EARNINGS] Found service (partial match):', service);
+    }
+    
+    // Fifth priority: Try to find any service that might match the service type
+    if (!service && serviceType) {
+      const lowerServiceType = serviceType.toLowerCase();
       
-      // If still not found, use a realistic default price for online consultations
-      if (!service) {
-        console.log('🎯 [EARNINGS] Using realistic online consultation price: £7.00');
-        return 7.00; // Realistic price for online consultations (£6.30 take-home = 90% of £7.00)
+      if (lowerServiceType.includes('online')) {
+        service = availableServices.find(s => 
+          s.name?.toLowerCase().includes('online') || 
+          s.name?.toLowerCase().includes('consultation') ||
+          s.category?.toLowerCase().includes('online')
+        );
+        console.log('🎯 [EARNINGS] Found service (online consultation fallback):', service);
+      }
+      else if (lowerServiceType.includes('prescription')) {
+        service = availableServices.find(s => 
+          s.name?.toLowerCase().includes('prescription') || 
+          s.name?.toLowerCase().includes('private') ||
+          s.category?.toLowerCase().includes('prescription')
+        );
+        console.log('🎯 [EARNINGS] Found service (prescription fallback):', service);
+      }
+      else if (lowerServiceType.includes('consultation') || lowerServiceType.includes('appointment')) {
+        service = availableServices.find(s => 
+          s.name?.toLowerCase().includes('consultation') || 
+          s.name?.toLowerCase().includes('appointment')
+        );
+        console.log('🎯 [EARNINGS] Found service (consultation fallback):', service);
       }
     }
     
-    const servicePrice = service ? parseFloat(service.price) : 0;
-    console.log('💵 [EARNINGS] Final calculated price:', servicePrice);
+    const finalServicePrice = service ? parseFloat(service.price) : 0;
+    console.log('💵 [EARNINGS] Final calculated price:', finalServicePrice);
+    
+    // Fallback: If still no price found and it's an online consultation, use a realistic default price
+    if (finalServicePrice === 0 && serviceType?.toLowerCase().includes('online consultation')) {
+      console.log('🚨 [EARNINGS] Using realistic fallback price for online consultation: £7.00');
+      return 7.00; // Realistic price for online consultations (£6.30 take-home = 90% of £7.00)
+    }
     
     if (!service) {
       console.log('⚠️ [EARNINGS] WARNING: No service match found, returning 0!');
+      console.log('🔍 [EARNINGS] Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
+      console.log('🔍 [EARNINGS] Looking for service type:', serviceType);
     }
     
-    return servicePrice; // Doctor earns the service price (excluding dynamic booking fee)
+    return finalServicePrice; // Doctor earns the service price (excluding dynamic booking fee)
   };
 
   // Helper function to calculate doctor take-home amount after 10% ThanksDoc commission
@@ -141,9 +193,20 @@ export default function DoctorEarnings() {
     // Only fetch if we have a valid authenticated doctor user
     if (!authLoading && isAuthenticated && user?.role === 'doctor' && user?.id) {
       console.log('✅ Fetching data for authenticated doctor:', user.id);
-      fetchDoctorData();
-      fetchServices();
-      fetchEarnings();
+      
+      // First load services, then fetch earnings once services are loaded
+      const loadData = async () => {
+        try {
+          await fetchDoctorData();
+          await fetchServices();
+          // Services should be loaded by now, fetch earnings
+          await fetchEarnings();
+        } catch (error) {
+          console.error('❌ Error loading data:', error);
+        }
+      };
+      
+      loadData();
     }
   }, [isAuthenticated, authLoading, user]);
 
@@ -156,9 +219,42 @@ export default function DoctorEarnings() {
 
   const fetchServices = async () => {
     try {
-      const response = await serviceRequestAPI.getServices();
-      if (response.data) {
-        setAvailableServices(response.data);
+      console.log('🔍 [SERVICES] Starting to fetch services...');
+      const response = await serviceAPI.getAll();
+      console.log('🔍 [SERVICES] Raw services response:', response);
+      console.log('🔍 [SERVICES] Response.data:', response.data);
+      console.log('🔍 [SERVICES] Response.data.data:', response.data?.data);
+      
+      const servicesData = response.data?.data || response.data || [];
+      console.log('🔍 [SERVICES] Final services data:', servicesData);
+      console.log('🔍 [SERVICES] Services count:', servicesData.length);
+      
+      if (servicesData.length > 0) {
+        console.log('🔍 [SERVICES] First service example:', servicesData[0]);
+        
+        // Filter only active services and format them (same as dashboard)
+        const activeServices = servicesData.filter(service => service.isActive === true);
+        console.log('✅ [SERVICES] Active services:', activeServices.length, 'out of', servicesData.length, 'total');
+        
+        // Map services to expected format (same as dashboard)
+        const formattedServices = activeServices.map(service => ({
+          id: service.id,
+          name: service.name || service.attributes?.name,
+          price: service.price || service.attributes?.price,
+          category: service.category || service.attributes?.category,
+          duration: service.duration || service.attributes?.duration
+        }));
+        
+        console.log('🔍 [SERVICES] Formatted services with prices:', formattedServices.map(s => ({
+          name: s.name,
+          price: s.price,
+          category: s.category
+        })));
+        
+        setAvailableServices(formattedServices);
+      } else {
+        console.log('⚠️ [SERVICES] No services found in response');
+        setAvailableServices([]);
       }
     } catch (error) {
       console.error('❌ Error fetching services:', error);
@@ -201,18 +297,33 @@ export default function DoctorEarnings() {
       const allRequests = response.data || [];
       
       console.log('🔍 Doctor requests response:', allRequests);
+      console.log('🧪 DETAILED REQUEST ANALYSIS:');
+      allRequests.forEach((request, index) => {
+        console.log(`🧪 Request ${index + 1}:`, {
+          id: request.id,
+          directServicePrice: request.servicePrice,
+          attributesServicePrice: request.attributes?.servicePrice,
+          directServiceType: request.serviceType,
+          attributesServiceType: request.attributes?.serviceType,
+          directStatus: request.status,
+          attributesStatus: request.attributes?.status,
+          hasAttributes: !!request.attributes,
+          attributeKeys: request.attributes ? Object.keys(request.attributes) : 'none'
+        });
+      });
       
       // Filter for completed requests only
       const completedRequests = allRequests.filter(request => {
-        const requestData = request.attributes || request;
-        const status = requestData.status;
-        const completedAt = requestData.completedAt;
+        const status = request.status || request.attributes?.status;
+        const completedAt = request.completedAt || request.attributes?.completedAt;
         
         console.log('📊 Request details:', {
           requestId: request.id,
           status,
           completedAt,
-          isCompleted: status === 'completed' && completedAt
+          isCompleted: status === 'completed' && completedAt,
+          hasDirectProperties: !!(request.status && request.servicePrice),
+          hasAttributeProperties: !!(request.attributes?.status && request.attributes?.servicePrice)
         });
         
         return status === 'completed' && completedAt;
@@ -222,26 +333,43 @@ export default function DoctorEarnings() {
 
       // Transform the data for earnings display
       const earningsData = completedRequests.map(request => {
-        const requestData = request.attributes || request;
+        // Use the same structure handling as the calculation function
+        const serviceType = request.serviceType || request.attributes?.serviceType;
+        const completedAt = request.completedAt || request.attributes?.completedAt;
+        const estimatedDuration = request.estimatedDuration || request.attributes?.estimatedDuration;
+        const description = request.description || request.attributes?.description;
+        const requestedAt = request.requestedAt || request.attributes?.requestedAt;
+        const business = request.business || request.attributes?.business;
+        
         const doctorEarnings = calculateDoctorEarnings(request);
         const doctorTakeHome = calculateDoctorTakeHome(doctorEarnings);
         
+        console.log('📊 [EARNINGS] Processing request:', {
+          id: request.id,
+          serviceType: serviceType,
+          doctorEarnings,
+          doctorTakeHome,
+          directServicePrice: request.servicePrice,
+          attributesServicePrice: request.attributes?.servicePrice,
+          availableServicesCount: availableServices.length
+        });
+        
         return {
           id: request.id,
-          date: requestData.completedAt,
+          date: completedAt,
           amount: doctorTakeHome, // Use take-home amount instead of full earnings
-          serviceType: requestData.serviceType,
-          duration: requestData.estimatedDuration,
+          serviceType: serviceType,
+          duration: estimatedDuration,
           business: {
-            name: requestData.business?.data?.attributes?.businessName || 
-                  requestData.business?.businessName || 
+            name: business?.data?.attributes?.businessName || 
+                  business?.businessName || 
                   'Unknown Business',
-            contact: requestData.business?.data?.attributes?.contactPersonName || 
-                    requestData.business?.contactPersonName || 
+            contact: business?.data?.attributes?.contactPersonName || 
+                    business?.contactPersonName || 
                     'Unknown Contact'
           },
-          requestedAt: requestData.requestedAt,
-          description: requestData.description
+          requestedAt: requestedAt,
+          description: description
         };
       });
 

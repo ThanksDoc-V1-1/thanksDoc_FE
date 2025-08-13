@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earnings Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .json { background: #f5f5f5; padding: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Earnings Debug Test</h1>
+    <button onclick="testEarningsData()">Test Earnings Data</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testEarningsData() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                // Test API endpoints directly
+                const baseURL = 'http://localhost:1337/api';
+                
+                // Get JWT token from localStorage
+                const token = localStorage.getItem('jwt');
+                if (!token) {
+                    resultsDiv.innerHTML = '<p style="color: red;">No JWT token found. Please login first.</p>';
+                    return;
+                }
+                
+                const headers = {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                };
+                
+                let html = '';
+                
+                // Test services API
+                html += '<div class="debug-section"><h2>Services API Response</h2>';
+                try {
+                    const servicesResponse = await fetch(`${baseURL}/services?populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName&sort=category:asc,displayOrder:asc,name:asc`, { headers });
+                    const servicesData = await servicesResponse.json();
+                    html += `<div class="json">${JSON.stringify(servicesData, null, 2)}</div>`;
+                } catch (error) {
+                    html += `<p style="color: red;">Error: ${error.message}</p>`;
+                }
+                html += '</div>';
+                
+                // Test doctor requests API
+                html += '<div class="debug-section"><h2>Doctor Requests API Response</h2>';
+                try {
+                    // Get user info
+                    const userResponse = await fetch(`${baseURL}/users/me`, { headers });
+                    const userData = await userResponse.json();
+                    const userId = userData.id;
+                    
+                    const requestsResponse = await fetch(`${baseURL}/service-requests?filters[doctor][id][$eq]=${userId}&populate=*&sort=updatedAt:desc`, { headers });
+                    const requestsData = await requestsResponse.json();
+                    html += `<div class="json">${JSON.stringify(requestsData, null, 2)}</div>`;
+                } catch (error) {
+                    html += `<p style="color: red;">Error: ${error.message}</p>`;
+                }
+                html += '</div>';
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;">General Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
