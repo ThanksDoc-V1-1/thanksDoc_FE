@@ -28,8 +28,12 @@ export default function AdminDashboard() {
   // Pagination states
   const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
   const [businessTypesCurrentPage, setBusinessTypesCurrentPage] = useState(1);
+  const [doctorsCurrentPage, setDoctorsCurrentPage] = useState(1);
+  const [businessesCurrentPage, setBusinessesCurrentPage] = useState(1);
   const servicesPerPage = 5;
   const businessTypesPerPage = 5;
+  const doctorsPerPage = 5;
+  const businessesPerPage = 5;
   
   // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -1183,6 +1187,18 @@ export default function AdminDashboard() {
   const businessTypesStartIndex = (businessTypesCurrentPage - 1) * businessTypesPerPage;
   const businessTypesEndIndex = businessTypesStartIndex + businessTypesPerPage;
   const paginatedBusinessTypes = filteredBusinessTypes.slice(businessTypesStartIndex, businessTypesEndIndex);
+
+  // Pagination calculations for doctors
+  const totalDoctorsPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
+  const doctorsStartIndex = (doctorsCurrentPage - 1) * doctorsPerPage;
+  const doctorsEndIndex = doctorsStartIndex + doctorsPerPage;
+  const paginatedDoctors = filteredDoctors.slice(doctorsStartIndex, doctorsEndIndex);
+
+  // Pagination calculations for businesses
+  const totalBusinessesPages = Math.ceil(filteredBusinesses.length / businessesPerPage);
+  const businessesStartIndex = (businessesCurrentPage - 1) * businessesPerPage;
+  const businessesEndIndex = businessesStartIndex + businessesPerPage;
+  const paginatedBusinesses = filteredBusinesses.slice(businessesStartIndex, businessesEndIndex);
 
   const filteredRequests = serviceRequests.filter(request => {
     // Handle both direct properties and nested attributes structure
@@ -2408,7 +2424,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                  {filteredDoctors.length > 0 ? filteredDoctors.map((doctor) => {
+                  {paginatedDoctors.length > 0 ? paginatedDoctors.map((doctor) => {
                     // Access data considering both direct properties and nested attributes structure
                     const id = doctor.id;
                     const firstName = doctor.firstName || doctor.attributes?.firstName;
@@ -2530,9 +2546,42 @@ export default function AdminDashboard() {
               </table>
             </div>
             
+            {/* Doctors Pagination */}
             {filteredDoctors.length > 0 && (
-              <div className={`px-6 py-4 border-t text-sm ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
-                Showing {filteredDoctors.length} {filteredDoctors.length === 1 ? 'doctor' : 'doctors'} of {doctors.length} total
+              <div className={`px-6 py-4 border-t flex items-center justify-between ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Showing {((doctorsCurrentPage - 1) * doctorsPerPage) + 1} to {Math.min(doctorsCurrentPage * doctorsPerPage, filteredDoctors.length)} of {filteredDoctors.length} doctors
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setDoctorsCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={doctorsCurrentPage === 1}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      doctorsCurrentPage === 1
+                        ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  
+                  <span className={`px-3 py-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Page {doctorsCurrentPage} of {totalDoctorsPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setDoctorsCurrentPage(prev => Math.min(prev + 1, totalDoctorsPages))}
+                    disabled={doctorsCurrentPage === totalDoctorsPages}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      doctorsCurrentPage === totalDoctorsPages
+                        ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -2593,7 +2642,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-                  {filteredBusinesses.length > 0 ? filteredBusinesses.map((business) => {
+                  {paginatedBusinesses.length > 0 ? paginatedBusinesses.map((business) => {
                     // Access data considering both direct properties and nested attributes structure
                     const id = business.id;
                     const businessName = business.businessName || business.attributes?.businessName;
@@ -2728,9 +2777,42 @@ export default function AdminDashboard() {
               </table>
             </div>
             
+            {/* Businesses Pagination */}
             {filteredBusinesses.length > 0 && (
-              <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-600'} border-t text-sm`}>
-                Showing {filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'business' : 'businesses'} of {businesses.length} total
+              <div className={`px-6 py-4 border-t flex items-center justify-between ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Showing {((businessesCurrentPage - 1) * businessesPerPage) + 1} to {Math.min(businessesCurrentPage * businessesPerPage, filteredBusinesses.length)} of {filteredBusinesses.length} businesses
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setBusinessesCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={businessesCurrentPage === 1}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      businessesCurrentPage === 1
+                        ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  
+                  <span className={`px-3 py-2 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Page {businessesCurrentPage} of {totalBusinessesPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setBusinessesCurrentPage(prev => Math.min(prev + 1, totalBusinessesPages))}
+                    disabled={businessesCurrentPage === totalBusinessesPages}
+                    className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      businessesCurrentPage === totalBusinessesPages
+                        ? isDarkMode ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50 border'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>
