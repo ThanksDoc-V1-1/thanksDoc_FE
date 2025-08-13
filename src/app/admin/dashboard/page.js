@@ -1794,7 +1794,7 @@ export default function AdminDashboard() {
   return (
     <div className={`min-h-screen flex ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
       {/* Side Navigation */}
-      <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-r flex flex-col shadow-lg`}>
+      <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-r flex flex-col shadow-lg h-screen fixed`}>
         {/* Logo/Header */}
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center space-x-3">
@@ -1809,7 +1809,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-2">
             {[
               { id: 'overview', name: 'Overview', icon: Shield },
@@ -1849,28 +1849,24 @@ export default function AdminDashboard() {
           </div>
         </nav>
 
-        {/* Admin Notification Center - Moved to sidebar */}
-        <div className="px-4 pb-4">
-        </div>
-
-        {/* User Info and Actions */}
-        <div className={`p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
-                <User className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {user?.name || user?.firstName || 'Admin'}
-                </p>
-                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {user?.email}
-                </p>
-              </div>
+        {/* Fixed Bottom Section - User Info and Actions */}
+        <div className={`mt-auto p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} bg-inherit`}>
+          {/* User Profile Section */}
+          <div className="flex items-center space-x-3 mb-4">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
+              <User className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Admin User
+              </p>
+              <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                {user?.email || 'admin@gmail.com'}
+              </p>
             </div>
           </div>
           
+          {/* Action Buttons */}
           <div className="space-y-2">
             <button
               onClick={fetchAllData}
@@ -1900,7 +1896,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 ml-64">
         {/* Top Header */}
         <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-b px-6 py-4 shadow-sm`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
