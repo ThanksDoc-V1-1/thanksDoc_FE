@@ -549,6 +549,9 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
                 Doctor Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Business
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Total Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
@@ -573,6 +576,9 @@ function TransactionTable({ transactions, formatCurrency, formatDate }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                   {transaction.doctorName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {transaction.businessName}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white font-semibold">
                   {formatCurrency(transaction.totalAmount)}
