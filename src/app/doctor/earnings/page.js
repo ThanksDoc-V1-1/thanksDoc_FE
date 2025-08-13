@@ -383,12 +383,19 @@ export default function DoctorEarnings() {
         console.log('📊 [BACKEND] Stats response:', statsResponse);
         if (statsResponse.data?.data) {
           console.log('📊 [BACKEND] Using backend stats:', statsResponse.data.data);
-          setStats(prev => ({
-            ...prev,
-            ...statsResponse.data.data,
-            totalRequests: earningsData.length, // Keep frontend count for requests
-            averageEarning: statsResponse.data.data.totalEarnings / earningsData.length || 0
-          }));
+          
+          // Calculate monthly stats and average from frontend data for consistency
+          const frontendStats = calculateStatsReturn(earningsData);
+          
+          setStats({
+            // Use backend total (more reliable)
+            totalEarnings: statsResponse.data.data.totalEarnings || 0,
+            // Use frontend calculations for monthly breakdown and average
+            totalRequests: earningsData.length,
+            averageEarning: earningsData.length > 0 ? (statsResponse.data.data.totalEarnings || 0) / earningsData.length : 0,
+            thisMonth: frontendStats.thisMonth,
+            lastMonth: frontendStats.lastMonth
+          });
         } else {
           console.log('📊 [FRONTEND] Backend stats not available, using frontend calculation');
           calculateStats(earningsData);
@@ -451,6 +458,30 @@ export default function DoctorEarnings() {
       thisMonth: thisMonthEarnings,
       lastMonth: lastMonthEarnings
     });
+  };
+
+  // Helper function that returns calculated stats without setting them
+  const calculateStatsReturn = (earningsData) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    
+    const thisMonthEarnings = earningsData.filter(earning => {
+      const date = new Date(earning.date);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    }).reduce((sum, earning) => sum + earning.amount, 0);
+    
+    const lastMonthEarnings = earningsData.filter(earning => {
+      const date = new Date(earning.date);
+      return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear;
+    }).reduce((sum, earning) => sum + earning.amount, 0);
+    
+    return {
+      thisMonth: thisMonthEarnings,
+      lastMonth: lastMonthEarnings
+    };
   };
 
   // Filter and sort earnings
