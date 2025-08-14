@@ -1580,13 +1580,22 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
 
   return (
     <div className={`min-h-screen transition-colors ${
-      isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
+      isDarkMode 
+        ? 'bg-gray-950 text-gray-100' 
+        : 'relative overflow-hidden bg-gradient-to-b from-white via-blue-200/90 to-blue-300/80 text-gray-900'
     }`}>
+      {!isDarkMode && (
+        <>
+          <div className="pointer-events-none absolute -top-16 -left-16 w-96 h-96 bg-blue-400/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute top-40 -right-24 w-[28rem] h-[28rem] bg-indigo-300/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] bg-cyan-300/35 rounded-full blur-3xl" />
+        </>
+      )}
       {/* Header */}
       <header className={`shadow-md transition-colors ${
         isDarkMode 
           ? 'bg-gray-900 border-b border-gray-800' 
-          : 'bg-white border-b border-gray-200'
+          : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-b border-blue-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -1747,7 +1756,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+  <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -1758,7 +1767,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    : 'bg-white/90 border-blue-200 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -1781,7 +1790,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    : 'bg-white/90 border-blue-200 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -1804,7 +1813,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 className={`p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left w-full ${
                   isDarkMode 
                     ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    : 'bg-white/90 border-blue-200 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2060,7 +2069,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
             </div>
 
             {/* Service Requests */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
               <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -2318,7 +2327,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Business Info */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border p-6`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className={`${isDarkMode ? 'bg-indigo-900/30' : 'bg-indigo-600'} p-2 rounded-lg`}>
@@ -2428,7 +2437,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
             </div>
 
             {/* Available Doctors */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border p-6`}>
               <div className="flex items-center space-x-3 mb-4">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
                   <User className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
@@ -2659,7 +2668,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
       {/* Request Form Modal */}
       {showRequestForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg flex-shrink-0`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
@@ -3215,7 +3224,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
       {/* Hours Input Popup */}
       {showHoursPopup && selectedDoctor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg flex-shrink-0`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
@@ -3574,7 +3583,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
       {/* Edit Profile Modal */}
       {showEditProfile && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-2xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
