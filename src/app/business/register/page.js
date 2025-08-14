@@ -322,7 +322,7 @@ export default function BusinessRegister() {
 
   return (
     <div className={`min-h-screen py-12 transition-colors duration-200 ${
-      isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+      isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-b from-white via-blue-50/40 to-blue-100/40'
     }`}>
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
