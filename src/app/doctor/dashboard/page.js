@@ -1090,8 +1090,18 @@ export default function DoctorDashboard() {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${
-      isDarkMode ? 'bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'
+      isDarkMode 
+        ? 'bg-gray-950 text-gray-100' 
+        : 'relative overflow-hidden bg-gradient-to-b from-white via-blue-200/90 to-blue-300/80 text-gray-900'
     }`}>
+      {/* Light-mode decorative accents */}
+      {!isDarkMode && (
+        <>
+          <div className="pointer-events-none absolute -top-16 -left-16 w-96 h-96 bg-blue-400/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute top-40 -right-24 w-[28rem] h-[28rem] bg-indigo-300/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-1/2 -translate-x-1/2 w-[30rem] h-[30rem] bg-cyan-300/35 rounded-full blur-3xl" />
+        </>
+      )}
       {/* Completion Modal */}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -1632,7 +1642,7 @@ export default function DoctorDashboard() {
                         <div 
                           key={service.id} 
                           className={`flex items-center justify-between p-4 rounded-lg border ${
-                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/90 border-blue-100'
                           }`}
                         >
                           <div className="flex items-center space-x-3">
@@ -1690,7 +1700,7 @@ export default function DoctorDashboard() {
                         <div 
                           key={service.id} 
                           className={`flex items-center justify-between p-4 rounded-lg border ${
-                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/90 border-blue-100'
                           }`}
                         >
                           <div className="flex items-center space-x-3">
@@ -1746,7 +1756,7 @@ export default function DoctorDashboard() {
                         <div 
                           key={service.id} 
                           className={`flex items-center justify-between p-4 rounded-lg border ${
-                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/90 border-blue-100'
                           }`}
                         >
                           <div className="flex items-center space-x-3">
@@ -1807,7 +1817,7 @@ export default function DoctorDashboard() {
       <header className={`shadow-md transition-colors ${
         isDarkMode 
           ? 'bg-gray-900 border-b border-gray-800' 
-          : 'bg-white border-b border-gray-200'
+          : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-b border-blue-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -2021,7 +2031,7 @@ export default function DoctorDashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+  <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Urgent Notification Banner */}
         {user && (
           <NotificationBanner 
@@ -2035,12 +2045,12 @@ export default function DoctorDashboard() {
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards - Mobile responsive */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              <button 
+      <button 
                 onClick={handlePendingRequestsClick}
                 className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
-                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+        ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+        : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2060,12 +2070,12 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </button>
-              <button 
+      <button 
                 onClick={handleCompletedRequestsClick}
                 className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
-                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+        ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+        : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2085,12 +2095,12 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </button>
-              <button 
+      <button 
                 onClick={() => router.push('/doctor/earnings')}
                 className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
-                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+        ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+        : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2106,12 +2116,12 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </button>
-              <button 
+      <button 
                 onClick={() => router.push('/doctor/compliance')}
                 className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
-                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+        ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+        : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -2137,12 +2147,12 @@ export default function DoctorDashboard() {
             <div id="requests-section" className={`rounded-lg shadow border ${
               isDarkMode 
                 ? 'bg-gray-900 border-gray-800' 
-                : 'bg-white border-gray-200'
+                : 'bg-white/90 border-blue-200'
             }`}>
               <div className={`p-6 border-b rounded-t-lg ${
                 isDarkMode 
                   ? 'border-gray-800 bg-gray-900' 
-                  : 'border-gray-200 bg-gray-50'
+                  : 'border-blue-200 bg-blue-100/60'
               }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -2456,7 +2466,7 @@ export default function DoctorDashboard() {
           {/* Doctor Profile Sidebar */}
           <div className="space-y-6">
             {/* Doctor Profile */}
-            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-6`}>
+            <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border p-6`}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
@@ -2575,8 +2585,8 @@ export default function DoctorDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
             {/* Recent Service Requests - Takes 2 columns on desktop, full width on mobile */}
             <div className="lg:col-span-2 order-1 lg:order-1">
-              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
-            <div className={`p-4 lg:p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
+            <div className={`p-4 lg:p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-blue-200 bg-blue-100/60'} rounded-t-lg`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
                 <div className="flex items-center space-x-3">
                   <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
@@ -2924,7 +2934,7 @@ export default function DoctorDashboard() {
             
             {/* My Services Section - Mobile responsive order */}
             <div className="lg:col-span-1 order-2 lg:order-2">
-              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border p-4 lg:p-6`}>
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border p-4 lg:p-6`}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
                   <div className="flex items-center space-x-3">
                     <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
