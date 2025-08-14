@@ -1808,9 +1808,20 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className={`min-h-screen flex ${isDarkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen flex ${
+      isDarkMode 
+        ? 'bg-gray-950' 
+        : 'relative overflow-hidden bg-gradient-to-b from-white via-blue-200/90 to-blue-300/80'
+    }`}>
+      {!isDarkMode && (
+        <>
+          <div className="pointer-events-none absolute -top-16 -left-16 w-96 h-96 bg-blue-400/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute top-40 -right-24 w-[28rem] h-[28rem] bg-indigo-300/45 rounded-full blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 left-[45%] -translate-x-1/2 w-[30rem] h-[30rem] bg-cyan-300/35 rounded-full blur-3xl" />
+        </>
+      )}
       {/* Side Navigation */}
-      <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-r flex flex-col shadow-lg h-screen fixed`}>
+  <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} border-r flex flex-col shadow-lg h-screen fixed`}>
         {/* Logo/Header */}
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center space-x-3">
@@ -1912,9 +1923,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 ml-64">
+  <div className="relative z-10 flex-1 flex flex-col min-w-0 ml-64">
         {/* Top Header */}
-        <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-b px-6 py-4 shadow-sm`}>
+  <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} border-b px-6 py-4 shadow-sm`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} capitalize`}>
@@ -2003,7 +2014,7 @@ export default function AdminDashboard() {
                   setSearchTerm('');
                   setCurrentPage(1);
                 }}
-                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-blue-600' : 'bg-white border-gray-200 hover:border-blue-400'}`}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-blue-600' : 'bg-white/90 border-blue-200 hover:border-blue-400'}`}
               >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-blue-900/5 to-blue-900/10' : 'bg-gradient-to-r from-blue-50/80 to-blue-100/30'}`}></div>
                 <div className="relative z-10">
@@ -2050,7 +2061,7 @@ export default function AdminDashboard() {
                   setSearchTerm('');
                   setCurrentPage(1);
                 }}
-                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-purple-600' : 'bg-white border-gray-200 hover:border-purple-400'}`}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-purple-600' : 'bg-white/90 border-blue-200 hover:border-purple-400'}`}
               >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-purple-900/5 to-purple-900/10' : 'bg-gradient-to-r from-purple-50/80 to-purple-100/30'}`}></div>
                 <div className="relative z-10">
@@ -2097,7 +2108,7 @@ export default function AdminDashboard() {
                   setSearchTerm('');
                   setCurrentPage(1);
                 }}
-                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-green-600' : 'bg-white border-gray-200 hover:border-green-400'}`}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-green-600' : 'bg-white/90 border-blue-200 hover:border-green-400'}`}
               >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-green-900/5 to-green-900/10' : 'bg-gradient-to-r from-green-50/80 to-green-100/30'}`}></div>
                 <div className="relative z-10">
@@ -2140,7 +2151,7 @@ export default function AdminDashboard() {
                   setSearchTerm('');
                   setCurrentPage(1);
                 }}
-                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-amber-600' : 'bg-white border-gray-200 hover:border-amber-400'}`}
+                className={`p-6 rounded-2xl shadow-sm border hover:shadow-md transition-all duration-300 group relative overflow-hidden cursor-pointer text-left w-full ${isDarkMode ? 'bg-gray-900 border-gray-800 hover:border-amber-600' : 'bg-white/90 border-blue-200 hover:border-amber-400'}`}
               >
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDarkMode ? 'bg-gradient-to-r from-amber-900/5 to-amber-900/10' : 'bg-gradient-to-r from-amber-50/80 to-amber-100/30'}`}></div>
                 <div className="relative z-10">
@@ -2189,7 +2200,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Service Requests */}
-            <div className={`rounded-2xl shadow border overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+            <div className={`rounded-2xl shadow border overflow-hidden ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'}`}>
               <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-center">
                   <div>
@@ -2377,7 +2388,7 @@ export default function AdminDashboard() {
 
         {/* Doctors Tab */}
         {activeTab === 'doctors' && (
-          <div className={`rounded-2xl shadow border ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className={`rounded-2xl shadow border ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'}`}>
             <div className={`p-6 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
               <div>
                 <h2 className={`text-xl font-semibold flex items-center ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -2589,7 +2600,7 @@ export default function AdminDashboard() {
 
         {/* Businesses Tab */}
         {activeTab === 'businesses' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
@@ -2820,7 +2831,7 @@ export default function AdminDashboard() {
 
         {/* Services Tab */}
         {activeTab === 'services' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
@@ -3026,7 +3037,7 @@ export default function AdminDashboard() {
             </div>
             
             {filteredServices.length > 0 && <ServicesPagination />}
-          <div className={`mt-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+          <div className={`mt-8 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
@@ -3806,7 +3817,7 @@ export default function AdminDashboard() {
 
         {/* Doctor Earnings Tab */}
         {activeTab === 'earnings' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
               <div className="flex items-center space-x-3">
                 <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} p-2 rounded-lg`}>
@@ -3856,7 +3867,7 @@ export default function AdminDashboard() {
                               {earning.businesses.map((businessEarning) => {
                                 const business = businessEarning.business;
                                 return (
-                                  <div key={business.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'} rounded-lg p-4 border`}>
+                                  <div key={business.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white/90 border-blue-200'} rounded-lg p-4 border`}>
                                     <div className="flex items-center space-x-3 mb-2">
                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-indigo-900/30 to-indigo-800/30' : 'bg-gradient-to-br from-indigo-100 to-indigo-200'}`}>
                                         <Building2 className={`h-4 w-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
@@ -3909,7 +3920,7 @@ export default function AdminDashboard() {
 
         {/* Compliance Document Types Management Tab */}
         {activeTab === 'compliance-documents' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -4077,7 +4088,7 @@ export default function AdminDashboard() {
 
         {/* System Settings Tab */}
         {activeTab === 'settings' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
                 <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
@@ -4982,7 +4993,7 @@ export default function AdminDashboard() {
       {/* Doctor Details Modal */}
       {showDoctorDetails && selectedDoctor && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -5202,7 +5213,7 @@ export default function AdminDashboard() {
                               return (
                                 <div
                                   key={type}
-                                  className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-4 transition-all duration-200 ${
+                                  className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white/90 border-blue-200'} border rounded-lg p-4 transition-all duration-200 ${
                                     document ? 'cursor-pointer hover:shadow-md' : 'opacity-60'
                                   }`}
                                   onClick={() => document && setSelectedDocument(document) && setShowDocumentModal(true)}
@@ -5335,7 +5346,7 @@ export default function AdminDashboard() {
                           {professionalReferences.map((reference, index) => (
                             <div
                               key={reference.id || index}
-                              className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-4`}
+                              className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white/90 border-blue-200'} border rounded-lg p-4`}
                             >
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -5388,7 +5399,7 @@ export default function AdminDashboard() {
       {/* Document Viewer Modal */}
       {showDocumentModal && selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -5491,7 +5502,7 @@ export default function AdminDashboard() {
               <div className="mt-6">
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
                   <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Document Preview</h3>
-                  <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-8 text-center`}>
+                  <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white/90 border-blue-200'} border rounded-lg p-8 text-center`}>
                     <FileText className={`h-16 w-16 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
                     <h4 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
                       {selectedDocument.originalFileName}
@@ -5564,7 +5575,7 @@ export default function AdminDashboard() {
       {/* Business Details Modal */}
       {showBusinessDetails && selectedBusiness && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
