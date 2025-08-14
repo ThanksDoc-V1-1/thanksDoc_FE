@@ -22,8 +22,6 @@ export default function ComplianceDocuments({ doctorId }) {
   // Professional References state
   const [references, setReferences] = useState({}); // Store references by doctor ID
   const [pendingReferences, setPendingReferences] = useState({}); // Store unsaved references
-  const [referenceSubmissions, setReferenceSubmissions] = useState([]); // Store reference submissions
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
   // Load document types from API
   const loadDocumentTypes = async () => {
@@ -74,7 +72,6 @@ export default function ComplianceDocuments({ doctorId }) {
     loadDocumentTypes(); // Load document types from API first
     loadDocuments();
     loadReferences(); // Load professional references
-    loadReferenceSubmissions(); // Load reference submissions
   }, [doctorId]);
 
   const loadDocuments = async () => {
@@ -346,28 +343,6 @@ export default function ComplianceDocuments({ doctorId }) {
     }
   };
 
-  // Load reference submissions
-  const loadReferenceSubmissions = async () => {
-    if (!doctorId) return;
-    
-    try {
-      setLoadingSubmissions(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/doctor/${doctorId}/submissions`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setReferenceSubmissions(result.data.submissions || []);
-          console.log('✅ Reference submissions loaded:', result.data.submissions?.length || 0);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading reference submissions:', error);
-      setReferenceSubmissions([]);
-    } finally {
-      setLoadingSubmissions(false);
-    }
-  };
-
   const addReference = (documentId) => {
     const newReference = {
       id: Date.now().toString(),
@@ -398,6 +373,47 @@ export default function ComplianceDocuments({ doctorId }) {
       ...prev,
       [documentId]: (prev[documentId] || []).filter(ref => ref.id !== referenceId)
     }));
+  };
+
+  const removeSavedReference = async (referenceId, referenceName) => {
+    if (!confirm(`Are you sure you want to remove ${referenceName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Removing reference ID:', referenceId);
+
+      // Call the delete endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/${referenceId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('🌐 Response status:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('📊 Response result:', result);
+        
+        if (result.success) {
+          // Reload references to update the display
+          await loadReferences();
+          
+          alert('Reference removed successfully!');
+        } else {
+          throw new Error(result.message || 'Failed to remove reference');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Server error response:', errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('❌ Error removing reference:', error);
+      alert(`Failed to remove reference: ${error.message}`);
+    }
   };
 
   const saveReferences = async (documentId) => {
@@ -470,9 +486,6 @@ export default function ComplianceDocuments({ doctorId }) {
             }));
           }, 3000);
 
-          // Reload reference submissions to show updated status
-          loadReferenceSubmissions();
-
           alert('References saved successfully!');
         } else {
           throw new Error(result.message || 'Save failed');
@@ -500,17 +513,7 @@ export default function ComplianceDocuments({ doctorId }) {
         return 'missing';
       }
       
-      // Check if we have any reference submissions
-      const submittedCount = referenceSubmissions.filter(sub => sub.isSubmitted).length;
-      const emailsSentCount = referenceSubmissions.filter(sub => sub.isEmailSent).length;
-      
-      if (submittedCount > 0) {
-        return 'uploaded'; // Some references have been submitted
-      } else if (emailsSentCount > 0) {
-        return 'pending'; // Emails sent but no submissions yet
-      }
-      
-      return 'uploaded'; // References added but no emails sent yet
+      return 'uploaded'; // References added
     }
     
     // Regular document handling
@@ -588,20 +591,10 @@ export default function ComplianceDocuments({ doctorId }) {
     // Special handling for Professional References
     if (config && config.name === 'Professional References') {
       const doctorRefs = references[doctorId];
-      const submittedCount = referenceSubmissions.filter(sub => sub.isSubmitted).length;
-      const emailsSentCount = referenceSubmissions.filter(sub => sub.isEmailSent).length;
       const totalRefs = doctorRefs?.length || 0;
       
       if (totalRefs === 0) {
         return 'Not Added';
-      }
-      
-      if (status === 'pending') {
-        return `${submittedCount}/${totalRefs} Completed (${emailsSentCount} emails sent)`;
-      }
-      
-      if (submittedCount > 0) {
-        return `${submittedCount}/${totalRefs} Completed`;
       }
       
       return `${totalRefs} Added`;
@@ -912,58 +905,24 @@ export default function ComplianceDocuments({ doctorId }) {
                               </h5>
                               <div className="space-y-2">
                                 {references[doctorId].map((ref, index) => (
-                                  <div key={index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100'}`}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                      <div><strong>Name:</strong> {ref.firstName} {ref.lastName}</div>
-                                      <div><strong>Position:</strong> {ref.position}</div>
-                                      <div><strong>Organisation:</strong> {ref.organisation}</div>
-                                      <div><strong>Email:</strong> {ref.email}</div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Reference Submissions Status */}
-                          {referenceSubmissions && referenceSubmissions.length > 0 && (
-                            <div className="mb-4">
-                              <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Reference Status ({referenceSubmissions.length} requests sent)
-                              </h5>
-                              <div className="space-y-2">
-                                {referenceSubmissions.map((submission, index) => (
-                                  <div key={submission.id || index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100'}`}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                      <div><strong>Reference:</strong> {submission.professionalReference?.firstName} {submission.professionalReference?.lastName}</div>
-                                      <div><strong>Email:</strong> {submission.professionalReference?.email}</div>
-                                      <div>
-                                        <strong>Status:</strong> 
-                                        <span className={`ml-1 inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                                          submission.isSubmitted 
-                                            ? isDarkMode ? 'bg-green-900/20 text-green-400' : 'bg-green-50 text-green-600'
-                                            : submission.isEmailSent 
-                                            ? isDarkMode ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-50 text-blue-600'
-                                            : isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                          {submission.isSubmitted ? 'Completed' : submission.isEmailSent ? 'Email Sent' : 'Pending'}
-                                        </span>
+                                  <div key={ref.id || index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100'}`}>
+                                    <div className="flex justify-between items-start">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs flex-1">
+                                        <div><strong>Name:</strong> {ref.firstName} {ref.lastName}</div>
+                                        <div><strong>Position:</strong> {ref.position}</div>
+                                        <div><strong>Organisation:</strong> {ref.organisation}</div>
+                                        <div><strong>Email:</strong> {ref.email}</div>
                                       </div>
-                                      {submission.submittedAt && (
-                                        <div><strong>Submitted:</strong> {new Date(submission.submittedAt).toLocaleDateString()}</div>
-                                      )}
+                                      <button
+                                        onClick={() => removeSavedReference(ref.id, `${ref.firstName} ${ref.lastName}`)}
+                                        className={`ml-3 p-1 rounded transition-colors ${
+                                          isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
+                                        }`}
+                                        title="Remove this reference"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
                                     </div>
-                                    
-                                    {submission.isSubmitted && (
-                                      <div className="mt-2 pt-2 border-t border-gray-300">
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                          <div><strong>Clinical Knowledge:</strong> {submission.clinicalKnowledge}</div>
-                                          <div><strong>Diagnosis:</strong> {submission.diagnosis}</div>
-                                          <div><strong>Decision Making:</strong> {submission.clinicalDecisionMaking}</div>
-                                          <div><strong>Treatment:</strong> {submission.treatment}</div>
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 ))}
                               </div>
