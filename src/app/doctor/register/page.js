@@ -8,6 +8,7 @@ import { authAPI, serviceAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import PhoneInput from '../../../components/PhoneInput';
 
 export default function DoctorRegister() {
   const router = useRouter();
@@ -474,14 +475,13 @@ export default function DoctorRegister() {
                   <label className="form-label">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
+                    placeholder="Enter phone number"
                     required
                     className="form-input"
-                    placeholder="Enter phone number"
                   />
                 </div>
               </div>
