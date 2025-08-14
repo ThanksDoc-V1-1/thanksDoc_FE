@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Stethoscope, ArrowLeft, MapPin, Eye, EyeOff } from 'lucide-react';
-import { authAPI, serviceAPI } from '../../../lib/api';
+import { authAPI, serviceAPI, doctorAPI } from '../../../lib/api';
 import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -313,12 +313,48 @@ export default function DoctorRegister() {
       const response = await authAPI.register('doctor', dataToSend);
       
       if (response.user) {
+        // If doctor registration was successful and services were selected, assign services
+        if (formData.selectedServices.length > 0) {
+          try {
+            console.log('Assigning services to doctor:', formData.selectedServices);
+            
+            // Since registration doesn't return a JWT, we need to use the doctorAPI directly
+            // The backend should allow updating the doctor's services during registration
+            await doctorAPI.update(response.user.id, {
+              services: formData.selectedServices
+            });
+
+            console.log('✅ Services assigned successfully to doctor');
+          } catch (servicesError) {
+            console.error('❌ Error assigning services:', servicesError);
+            // Don't fail the registration just because services assignment failed
+            console.warn('⚠️ Doctor was created successfully but services assignment failed. Services can be added later from the profile.');
+          }
+        }
+        
         alert('Doctor profile registered successfully! Your information will be reviewed and you will receive a confirmation email once verified.');
         router.push('/?registered=doctor');
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      alert(error.response?.data?.error?.message || error.message || 'Registration failed. Please try again.');
+      console.error('❌ Registration error:', error);
+      console.error('❌ Error response data:', error.response?.data);
+      console.error('❌ Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      });
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.details) {
+        errorMessage = `Validation errors: ${JSON.stringify(error.response.data.details)}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
