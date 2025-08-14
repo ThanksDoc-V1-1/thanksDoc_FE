@@ -19,6 +19,84 @@ export default function DoctorRegister() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [services, setServices] = useState({ inPerson: [], online: [] });
   const [servicesLoading, setServicesLoading] = useState(true);
+  
+  // Town/City autocomplete states
+  const [townQuery, setTownQuery] = useState('');
+  const [showTownSuggestions, setShowTownSuggestions] = useState(false);
+  const [filteredTowns, setFilteredTowns] = useState([]);
+  const [selectedTownIndex, setSelectedTownIndex] = useState(-1);
+  
+  // UK Towns and Counties data
+  const ukTownsAndCounties = [
+    { town: 'London', county: 'Greater London' },
+    { town: 'Birmingham', county: 'West Midlands' },
+    { town: 'Manchester', county: 'Greater Manchester' },
+    { town: 'Liverpool', county: 'Merseyside' },
+    { town: 'Leeds', county: 'West Yorkshire' },
+    { town: 'Sheffield', county: 'South Yorkshire' },
+    { town: 'Bristol', county: 'Bristol' },
+    { town: 'Newcastle upon Tyne', county: 'Tyne and Wear' },
+    { town: 'Nottingham', county: 'Nottinghamshire' },
+    { town: 'Leicester', county: 'Leicestershire' },
+    { town: 'Coventry', county: 'West Midlands' },
+    { town: 'Bradford', county: 'West Yorkshire' },
+    { town: 'Stoke-on-Trent', county: 'Staffordshire' },
+    { town: 'Wolverhampton', county: 'West Midlands' },
+    { town: 'Plymouth', county: 'Devon' },
+    { town: 'Derby', county: 'Derbyshire' },
+    { town: 'Southampton', county: 'Hampshire' },
+    { town: 'Portsmouth', county: 'Hampshire' },
+    { town: 'Brighton', county: 'East Sussex' },
+    { town: 'Hull', county: 'East Yorkshire' },
+    { town: 'Reading', county: 'Berkshire' },
+    { town: 'Oxford', county: 'Oxfordshire' },
+    { town: 'Cambridge', county: 'Cambridgeshire' },
+    { town: 'York', county: 'North Yorkshire' },
+    { town: 'Canterbury', county: 'Kent' },
+    { town: 'Bath', county: 'Somerset' },
+    { town: 'Chester', county: 'Cheshire' },
+    { town: 'Durham', county: 'County Durham' },
+    { town: 'Exeter', county: 'Devon' },
+    { town: 'Gloucester', county: 'Gloucestershire' },
+    { town: 'Hereford', county: 'Herefordshire' },
+    { town: 'Ipswich', county: 'Suffolk' },
+    { town: 'Lancaster', county: 'Lancashire' },
+    { town: 'Lincoln', county: 'Lincolnshire' },
+    { town: 'Norwich', county: 'Norfolk' },
+    { town: 'Peterborough', county: 'Cambridgeshire' },
+    { town: 'Preston', county: 'Lancashire' },
+    { town: 'Salisbury', county: 'Wiltshire' },
+    { town: 'Truro', county: 'Cornwall' },
+    { town: 'Winchester', county: 'Hampshire' },
+    { town: 'Worcester', county: 'Worcestershire' },
+    { town: 'Carlisle', county: 'Cumbria' },
+    { town: 'Chichester', county: 'West Sussex' },
+    { town: 'Lichfield', county: 'Staffordshire' },
+    { town: 'Ripon', county: 'North Yorkshire' },
+    { town: 'St Albans', county: 'Hertfordshire' },
+    { town: 'St Davids', county: 'Pembrokeshire' },
+    { town: 'Wells', county: 'Somerset' },
+    { town: 'Armagh', county: 'County Armagh' },
+    { town: 'Bangor', county: 'County Down' },
+    { town: 'Belfast', county: 'County Antrim' },
+    { town: 'Lisburn', county: 'County Antrim' },
+    { town: 'Londonderry', county: 'County Londonderry' },
+    { town: 'Newry', county: 'County Down' },
+    { town: 'Aberdeen', county: 'Aberdeenshire' },
+    { town: 'Dundee', county: 'Angus' },
+    { town: 'Edinburgh', county: 'Midlothian' },
+    { town: 'Glasgow', county: 'Lanarkshire' },
+    { town: 'Inverness', county: 'Highland' },
+    { town: 'Perth', county: 'Perth and Kinross' },
+    { town: 'Stirling', county: 'Stirlingshire' },
+    { town: 'Cardiff', county: 'South Glamorgan' },
+    { town: 'Newport', county: 'Gwent' },
+    { town: 'Swansea', county: 'West Glamorgan' },
+    { town: 'Bangor', county: 'Gwynedd' },
+    { town: 'St Asaph', county: 'Denbighshire' },
+    { town: 'Wrexham', county: 'Wrexham' }
+  ];
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -27,9 +105,10 @@ export default function DoctorRegister() {
     confirmPassword: '',
     phone: '',
     licenceNumber: '',
-    address: '',
-    city: '',
-    state: '',
+    addressLine1: '',
+    addressLine2: '',
+    town: '',
+    county: '',
     postcode: '',
     bio: '',
     languages: ['English'],
@@ -45,6 +124,73 @@ export default function DoctorRegister() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Handle town/city search and autocomplete
+  const handleTownChange = (e) => {
+    const value = e.target.value;
+    setTownQuery(value);
+    
+    if (value.length > 0) {
+      const filtered = ukTownsAndCounties.filter(item =>
+        item.town.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredTowns(filtered.slice(0, 10)); // Limit to 10 results
+      setShowTownSuggestions(true);
+      setSelectedTownIndex(-1);
+    } else {
+      setFilteredTowns([]);
+      setShowTownSuggestions(false);
+      setFormData(prev => ({
+        ...prev,
+        town: '',
+        county: ''
+      }));
+    }
+  };
+
+  // Handle town selection from dropdown
+  const handleTownSelect = (townData) => {
+    setTownQuery(townData.town);
+    setFormData(prev => ({
+      ...prev,
+      town: townData.town,
+      county: townData.county
+    }));
+    setShowTownSuggestions(false);
+    setFilteredTowns([]);
+    setSelectedTownIndex(-1);
+  };
+
+  // Handle keyboard navigation for town suggestions
+  const handleTownKeyDown = (e) => {
+    if (!showTownSuggestions || filteredTowns.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedTownIndex(prev => 
+          prev < filteredTowns.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedTownIndex(prev => 
+          prev > 0 ? prev - 1 : filteredTowns.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedTownIndex >= 0 && selectedTownIndex < filteredTowns.length) {
+          handleTownSelect(filteredTowns[selectedTownIndex]);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setShowTownSuggestions(false);
+        setSelectedTownIndex(-1);
+        break;
+    }
   };
 
   // Load services on component mount
@@ -121,6 +267,18 @@ export default function DoctorRegister() {
       if (formData.password !== formData.confirmPassword) {
         throw new Error('Passwords do not match');
       }
+      if (!formData.addressLine1.trim()) {
+        throw new Error('Please enter your address line 1');
+      }
+      if (!formData.town.trim()) {
+        throw new Error('Please select a town or city');
+      }
+      if (!formData.county.trim()) {
+        throw new Error('Please ensure a county is selected');
+      }
+      if (!formData.postcode.trim()) {
+        throw new Error('Please enter your postcode');
+      }
       if (!formData.latitude || !formData.longitude) {
         throw new Error('Please provide your location coordinates');
       }
@@ -128,15 +286,28 @@ export default function DoctorRegister() {
         throw new Error('Please select at least one service you offer');
       }
 
-      const { confirmPassword, selectedServices, licenceNumber, postcode, ...dataToSend } = {
-        ...formData,
-        name: `${formData.firstName} ${formData.lastName}`, // Add combined name field
-        licenseNumber: formData.licenceNumber, // Map licenceNumber to licenseNumber
-        zipCode: formData.postcode, // Map postcode to zipCode
+      const dataToSend = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        licenseNumber: formData.licenceNumber,
+        // Map UK address format to backend expected format
+        address: `${formData.addressLine1}${formData.addressLine2 ? ', ' + formData.addressLine2 : ''}`,
+        city: formData.town,
+        state: formData.county,
+        zipCode: formData.postcode,
         latitude: parseFloat(formData.latitude),
         longitude: parseFloat(formData.longitude),
-        services: formData.selectedServices // Add services to the data
+        bio: formData.bio || '',
+        languages: formData.languages || ['English'],
+        certifications: formData.certifications || []
+        // Note: Services will be handled separately after registration
       };
+
+      console.log('Doctor registration data:', JSON.stringify(dataToSend, null, 2));
 
       // Use the new authentication API
       const response = await authAPI.register('doctor', dataToSend);
@@ -433,46 +604,108 @@ export default function DoctorRegister() {
                 
                 <div>
                   <label className="form-label">
-                    Address *
+                    Address Line 1 *
                   </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
+                  <input
+                    type="text"
+                    name="addressLine1"
+                    value={formData.addressLine1}
                     onChange={handleInputChange}
                     required
-                    rows={2}
                     className="form-input"
-                    placeholder="Enter complete address"
+                    placeholder="House number and street name"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">
+                    Address Line 2
+                  </label>
+                  <input
+                    type="text"
+                    name="addressLine2"
+                    value={formData.addressLine2}
+                    onChange={handleInputChange}
+                    className="form-input"
+                    placeholder="Apartment, suite, unit, building, floor, etc. (optional)"
                   />
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="form-label">
-                      City *
+                      Town/City *
                     </label>
                     <input
                       type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
+                      name="town"
+                      value={townQuery}
+                      onChange={handleTownChange}
+                      onKeyDown={handleTownKeyDown}
+                      onFocus={() => townQuery.length > 0 && setShowTownSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowTownSuggestions(false), 300)}
                       required
                       className="form-input"
-                      placeholder="City"
+                      placeholder="Start typing town or city..."
+                      autoComplete="off"
                     />
+                    {showTownSuggestions && filteredTowns.length > 0 && (
+                      <div className={`absolute z-10 w-full mt-1 rounded-md shadow-lg ${
+                        isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                      } max-h-60 overflow-auto`}>
+                        {filteredTowns.map((townData, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className={`w-full text-left px-4 py-2 text-sm first:rounded-t-md last:rounded-b-md transition-colors ${
+                              index === selectedTownIndex
+                                ? isDarkMode 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-blue-500 text-white'
+                                : isDarkMode 
+                                  ? 'text-gray-200 hover:text-white hover:bg-gray-700 active:bg-gray-600' 
+                                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200'
+                            }`}
+                            onClick={() => handleTownSelect(townData)}
+                            onMouseEnter={() => setSelectedTownIndex(index)}
+                            onTouchStart={() => setSelectedTownIndex(index)}
+                            onTouchEnd={(e) => {
+                              e.preventDefault();
+                              handleTownSelect(townData);
+                            }}
+                            style={{ 
+                              WebkitTapHighlightColor: 'transparent',
+                              touchAction: 'manipulation'
+                            }}
+                          >
+                            <div className="font-medium">{townData.town}</div>
+                            <div className={`text-xs ${
+                              index === selectedTownIndex
+                                ? 'text-blue-100'
+                                : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              {townData.county}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="form-label">
-                      State *
+                      County *
                     </label>
                     <input
                       type="text"
-                      name="state"
-                      value={formData.state}
+                      name="county"
+                      value={formData.county}
                       onChange={handleInputChange}
                       required
-                      className="form-input"
-                      placeholder="State"
+                      className={`form-input ${
+                        formData.county ? 'bg-gray-50 dark:bg-gray-700' : ''
+                      }`}
+                      placeholder="County (auto-filled)"
+                      readOnly={!!formData.county}
                     />
                   </div>
                   <div>
@@ -486,7 +719,7 @@ export default function DoctorRegister() {
                       onChange={handleInputChange}
                       required
                       className="form-input"
-                      placeholder="ZIP"
+                      placeholder="Enter postcode"
                     />
                   </div>
                 </div>
@@ -494,7 +727,7 @@ export default function DoctorRegister() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">
-                      Latitude *
+                      Latitude * (Auto-filled)
                     </label>
                     <input
                       type="number"
@@ -503,13 +736,18 @@ export default function DoctorRegister() {
                       value={formData.latitude}
                       onChange={handleInputChange}
                       required
-                      className="form-input"
-                      placeholder="Latitude"
+                      readOnly
+                      className={`form-input ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-gray-300 cursor-not-allowed' 
+                          : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                      }`}
+                      placeholder="Use 'Get Current Location' button"
                     />
                   </div>
                   <div>
                     <label className="form-label">
-                      Longitude *
+                      Longitude * (Auto-filled)
                     </label>
                     <input
                       type="number"
@@ -518,8 +756,13 @@ export default function DoctorRegister() {
                       value={formData.longitude}
                       onChange={handleInputChange}
                       required
-                      className="form-input"
-                      placeholder="Longitude"
+                      readOnly
+                      className={`form-input ${
+                        isDarkMode 
+                          ? 'bg-gray-700 text-gray-300 cursor-not-allowed' 
+                          : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+                      }`}
+                      placeholder="Use 'Get Current Location' button"
                     />
                   </div>
                 </div>
