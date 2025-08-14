@@ -22,6 +22,8 @@ export default function ComplianceDocuments({ doctorId }) {
   // Professional References state
   const [references, setReferences] = useState({}); // Store references by doctor ID
   const [pendingReferences, setPendingReferences] = useState({}); // Store unsaved references
+  const [referenceSubmissions, setReferenceSubmissions] = useState([]); // Store reference submissions
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
   // Load document types from API
   const loadDocumentTypes = async () => {
@@ -72,6 +74,7 @@ export default function ComplianceDocuments({ doctorId }) {
     loadDocumentTypes(); // Load document types from API first
     loadDocuments();
     loadReferences(); // Load professional references
+    loadReferenceSubmissions(); // Load reference submissions
   }, [doctorId]);
 
   const loadDocuments = async () => {
@@ -343,6 +346,28 @@ export default function ComplianceDocuments({ doctorId }) {
     }
   };
 
+  // Load reference submissions
+  const loadReferenceSubmissions = async () => {
+    if (!doctorId) return;
+    
+    try {
+      setLoadingSubmissions(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/doctor/${doctorId}/submissions`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setReferenceSubmissions(result.data.submissions || []);
+          console.log('✅ Reference submissions loaded:', result.data.submissions?.length || 0);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading reference submissions:', error);
+      setReferenceSubmissions([]);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
   const addReference = (documentId) => {
     const newReference = {
       id: Date.now().toString(),
@@ -445,6 +470,9 @@ export default function ComplianceDocuments({ doctorId }) {
             }));
           }, 3000);
 
+          // Reload reference submissions to show updated status
+          loadReferenceSubmissions();
+
           alert('References saved successfully!');
         } else {
           throw new Error(result.message || 'Save failed');
@@ -471,7 +499,18 @@ export default function ComplianceDocuments({ doctorId }) {
       if (!doctorRefs || doctorRefs.length === 0) {
         return 'missing';
       }
-      return 'uploaded';
+      
+      // Check if we have any reference submissions
+      const submittedCount = referenceSubmissions.filter(sub => sub.isSubmitted).length;
+      const emailsSentCount = referenceSubmissions.filter(sub => sub.isEmailSent).length;
+      
+      if (submittedCount > 0) {
+        return 'uploaded'; // Some references have been submitted
+      } else if (emailsSentCount > 0) {
+        return 'pending'; // Emails sent but no submissions yet
+      }
+      
+      return 'uploaded'; // References added but no emails sent yet
     }
     
     // Regular document handling
@@ -506,6 +545,10 @@ export default function ComplianceDocuments({ doctorId }) {
         return isDarkMode 
           ? 'text-red-400 bg-red-900/20 border-red-800' 
           : 'text-red-600 bg-red-50 border-red-200';
+      case 'pending':
+        return isDarkMode 
+          ? 'text-blue-400 bg-blue-900/20 border-blue-800' 
+          : 'text-blue-600 bg-blue-50 border-blue-200';
       case 'expiring':
         return isDarkMode 
           ? 'text-yellow-400 bg-yellow-900/20 border-yellow-800' 
@@ -527,6 +570,8 @@ export default function ComplianceDocuments({ doctorId }) {
         return <CheckCircle className="h-4 w-4" />;
       case 'missing':
         return <AlertTriangle className="h-4 w-4" />;
+      case 'pending':
+        return <Upload className="h-4 w-4" />;
       case 'expiring':
         return <AlertTriangle className="h-4 w-4" />;
       case 'expired':
@@ -543,9 +588,23 @@ export default function ComplianceDocuments({ doctorId }) {
     // Special handling for Professional References
     if (config && config.name === 'Professional References') {
       const doctorRefs = references[doctorId];
-      if (status === 'uploaded' && doctorRefs && doctorRefs.length > 0) {
-        return `${doctorRefs.length} Reference${doctorRefs.length > 1 ? 's' : ''}`;
+      const submittedCount = referenceSubmissions.filter(sub => sub.isSubmitted).length;
+      const emailsSentCount = referenceSubmissions.filter(sub => sub.isEmailSent).length;
+      const totalRefs = doctorRefs?.length || 0;
+      
+      if (totalRefs === 0) {
+        return 'Not Added';
       }
+      
+      if (status === 'pending') {
+        return `${submittedCount}/${totalRefs} Completed (${emailsSentCount} emails sent)`;
+      }
+      
+      if (submittedCount > 0) {
+        return `${submittedCount}/${totalRefs} Completed`;
+      }
+      
+      return `${totalRefs} Added`;
     }
     
     switch (status) {
@@ -553,6 +612,8 @@ export default function ComplianceDocuments({ doctorId }) {
         return 'Uploaded';
       case 'missing':
         return 'Missing';
+      case 'pending':
+        return 'Pending Response';
       case 'expiring':
         if (config && config.autoExpiry && config.validityYears && doc?.issueDate) {
           const expiryDate = new Date(calculateExpiryDate(doc.issueDate, config.validityYears));
@@ -858,6 +919,51 @@ export default function ComplianceDocuments({ doctorId }) {
                                       <div><strong>Organisation:</strong> {ref.organisation}</div>
                                       <div><strong>Email:</strong> {ref.email}</div>
                                     </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Reference Submissions Status */}
+                          {referenceSubmissions && referenceSubmissions.length > 0 && (
+                            <div className="mb-4">
+                              <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Reference Status ({referenceSubmissions.length} requests sent)
+                              </h5>
+                              <div className="space-y-2">
+                                {referenceSubmissions.map((submission, index) => (
+                                  <div key={submission.id || index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100'}`}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                      <div><strong>Reference:</strong> {submission.professionalReference?.firstName} {submission.professionalReference?.lastName}</div>
+                                      <div><strong>Email:</strong> {submission.professionalReference?.email}</div>
+                                      <div>
+                                        <strong>Status:</strong> 
+                                        <span className={`ml-1 inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                                          submission.isSubmitted 
+                                            ? isDarkMode ? 'bg-green-900/20 text-green-400' : 'bg-green-50 text-green-600'
+                                            : submission.isEmailSent 
+                                            ? isDarkMode ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-50 text-blue-600'
+                                            : isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'
+                                        }`}>
+                                          {submission.isSubmitted ? 'Completed' : submission.isEmailSent ? 'Email Sent' : 'Pending'}
+                                        </span>
+                                      </div>
+                                      {submission.submittedAt && (
+                                        <div><strong>Submitted:</strong> {new Date(submission.submittedAt).toLocaleDateString()}</div>
+                                      )}
+                                    </div>
+                                    
+                                    {submission.isSubmitted && (
+                                      <div className="mt-2 pt-2 border-t border-gray-300">
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                          <div><strong>Clinical Knowledge:</strong> {submission.clinicalKnowledge}</div>
+                                          <div><strong>Diagnosis:</strong> {submission.diagnosis}</div>
+                                          <div><strong>Decision Making:</strong> {submission.clinicalDecisionMaking}</div>
+                                          <div><strong>Treatment:</strong> {submission.treatment}</div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
