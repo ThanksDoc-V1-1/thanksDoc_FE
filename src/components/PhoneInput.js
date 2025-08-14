@@ -108,8 +108,8 @@ const PhoneInput = ({
     setSelectedCountry(country);
     setIsDropdownOpen(false);
     setSearchQuery('');
-    // Update the full phone number
-    const fullNumber = phoneNumber ? `${country.code} ${phoneNumber}` : country.code;
+    // Update the full phone number WITHOUT space for WhatsApp compatibility
+    const fullNumber = phoneNumber ? `${country.code}${phoneNumber.replace(/\s/g, '')}` : country.code;
     onChange({ target: { name, value: fullNumber } });
     // Focus back to input
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -118,8 +118,9 @@ const PhoneInput = ({
   const handlePhoneNumberChange = (e) => {
     const inputValue = e.target.value;
     setPhoneNumber(inputValue);
-    // Update the full phone number with country code
-    const fullNumber = inputValue ? `${selectedCountry.code} ${inputValue}` : selectedCountry.code;
+    // Update the full phone number with country code WITHOUT space for WhatsApp compatibility
+    const cleanNumber = inputValue.replace(/\s/g, ''); // Remove any spaces
+    const fullNumber = cleanNumber ? `${selectedCountry.code}${cleanNumber}` : selectedCountry.code;
     onChange({ target: { name, value: fullNumber } });
   };
 
@@ -217,6 +218,28 @@ const PhoneInput = ({
       </div>
     </div>
   );
+};
+
+// Utility function to format phone number for WhatsApp API
+export const formatPhoneForWhatsApp = (phoneNumber) => {
+  if (!phoneNumber) return '';
+  
+  // Remove all spaces, dashes, parentheses, and other non-digit characters except +
+  const cleaned = phoneNumber.replace(/[^\d+]/g, '');
+  
+  // Ensure it starts with + if it doesn't already
+  if (!cleaned.startsWith('+')) {
+    return `+${cleaned}`;
+  }
+  
+  return cleaned;
+};
+
+// Utility function to validate WhatsApp phone format
+export const isValidWhatsAppPhone = (phoneNumber) => {
+  const formatted = formatPhoneForWhatsApp(phoneNumber);
+  // WhatsApp numbers should be: + followed by country code (1-3 digits) and national number (4-15 digits)
+  return /^\+\d{5,18}$/.test(formatted);
 };
 
 export default PhoneInput;

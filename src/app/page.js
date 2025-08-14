@@ -47,8 +47,8 @@ function HomeContent() {
                 </h3>
                 <p className="text-sm text-green-300 mt-1">
                   {messageType === 'doctor' 
-                    ? 'Your doctor profile has been submitted for review. You will receive a confirmation email once verified.'
-                    : 'Your business profile has been submitted for review. You will receive a confirmation email once verified.'
+                    ? 'Registration successful! Please check your email and click the verification link to activate your account.'
+                    : 'Registration successful! Please check your email and click the verification link to activate your account.'
                   }
                 </p>
               </div>
