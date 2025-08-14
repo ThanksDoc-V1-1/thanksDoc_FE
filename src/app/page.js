@@ -16,6 +16,9 @@ function HomeContent() {
   const router = useRouter();
   const [showMessage, setShowMessage] = useState(false);
   const [messageType, setMessageType] = useState('');
+  // We render the hero on a dark surface (also in light mode),
+  // so prefer high-contrast text choices in this section.
+  const heroIsDark = true;
   
   // But if user is authenticated and lands on home page, redirect them
   useEffect(() => {
@@ -68,14 +71,14 @@ function HomeContent() {
         {/* Left Side - Marketing Content */}
         <div className="text-center lg:text-left">
           <h1 className={`text-5xl md:text-6xl font-bold mb-6 ${
-            isDarkMode ? 'text-white' : 'text-gray-900'
+            heroIsDark ? 'text-white' : 'text-gray-900'
           }`}>
             On-Demand <span className="text-blue-400">Healthcare</span>
             <br />
             for Your Business
           </h1>
           <p className={`text-xl mb-8 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            heroIsDark ? 'text-gray-200' : 'text-gray-600'
           }`}>
             Connecting businesses with verified doctors instantly. 
             Request medical consultations within 6 mile radius with just a few clicks.
@@ -84,14 +87,14 @@ function HomeContent() {
           <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
             <Link 
               href="/business/register" 
-              className="bg-blue-800 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/50"
+              className={`${heroIsDark ? 'bg-white text-blue-900 hover:bg-blue-50' : 'bg-blue-800 text-white hover:bg-blue-700'} px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center space-x-2 shadow-lg ${heroIsDark ? 'shadow-blue-900/20' : 'shadow-blue-900/50'}`}
             >
               <Building2 className="h-5 w-5" />
               <span>Register Your Business</span>
             </Link>
             <Link 
               href="/doctor/register" 
-              className="bg-gray-800 border border-blue-500 text-blue-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center space-x-2 shadow-lg"
+              className={`${heroIsDark ? 'bg-transparent border border-white/40 text-white hover:bg-white/10' : 'bg-gray-800 border border-blue-500 text-blue-400 hover:bg-gray-700'} px-8 py-4 rounded-lg text-lg font-semibold transition-colors flex items-center justify-center space-x-2 shadow-lg`}
             >
               <Stethoscope className="h-5 w-5" />
               <span>Join as Doctor</span>
@@ -248,19 +251,27 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
-        <Suspense fallback={<HomeLoadingFallback />}>
-          <HomeContent />
-        </Suspense>
+      <main className="pt-0">
+        {/* Full-bleed Hero: dark band spans entire width in light mode */}
+        <section className={`relative w-full ${isDarkMode ? 'bg-gray-800' : 'bg-gray-900 text-white'} py-10 md:py-14`}>
+          <div className="container mx-auto px-4">
+            <Suspense fallback={<HomeLoadingFallback />}>
+              <HomeContent />
+            </Suspense>
+          </div>
+        </section>
 
-        {/* Features Section */}
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
+        <div className="container mx-auto px-4">
+
+    {/* Features Section */}
+  <section className={`mt-12 md:mt-16 rounded-2xl ${isDarkMode ? '' : 'bg-gray-50'} p-6 md:p-8`}>
+        <div className="grid md:grid-cols-3 gap-8">
           <div className={`p-6 rounded-xl shadow-lg border transition-colors ${
             isDarkMode 
               ? 'bg-gray-800 border-gray-700' 
               : 'bg-white border-gray-200 shadow-gray-200/50'
           }`}>
-            <div className="bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Clock className="h-6 w-6 text-blue-400" />
             </div>
             <h3 className={`text-xl font-semibold mb-2 ${
@@ -276,7 +287,7 @@ export default function Home() {
               ? 'bg-gray-800 border-gray-700' 
               : 'bg-white border-gray-200 shadow-gray-200/50'
           }`}>
-            <div className="bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Shield className="h-6 w-6 text-blue-400" />
             </div>
             <h3 className={`text-xl font-semibold mb-2 ${
@@ -292,7 +303,7 @@ export default function Home() {
               ? 'bg-gray-800 border-gray-700' 
               : 'bg-white border-gray-200 shadow-gray-200/50'
           }`}>
-            <div className="bg-blue-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
+      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Building2 className="h-6 w-6 text-blue-400" />
             </div>
             <h3 className={`text-xl font-semibold mb-2 ${
@@ -303,15 +314,38 @@ export default function Home() {
             </p>
           </div>
         </div>
+        </section>
 
-        {/* How it Works */}
-        <div className="mt-20 text-center">
+    {/* How it Works */}
+  <section className={`relative mt-16 md:mt-20 text-center rounded-2xl overflow-hidden p-8 md:p-12 ${
+            isDarkMode
+              ? 'bg-gray-800/40 ring-1 ring-gray-700'
+              : 'bg-gradient-to-b from-white via-blue-50 to-blue-200/60 ring-1 ring-blue-100'
+          }`}>
+          {/* Gradient overlay to intensify the fade */}
+          {!isDarkMode && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-blue-100/70 to-blue-300/70" />
+          )}
+          {/* Decorative faded blobs (light and dark variants) */}
+          {!isDarkMode ? (
+            <>
+              <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-blue-400/25 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-indigo-400/25 blur-3xl" />
+            </>
+          ) : (
+            <>
+              <div aria-hidden className="pointer-events-none absolute -top-28 -left-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute -bottom-28 -right-24 h-80 w-80 rounded-full bg-cyan-400/10 blur-3xl" />
+            </>
+          )}
+          {/* Content wrapper to stay above decorative layers */}
+          <div className="relative z-10">
           <h2 className={`text-3xl font-bold mb-12 ${
             isDarkMode ? 'text-white' : 'text-gray-900'
           }`}>How ThanksDoc Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">1</div>
+        <div className="bg-gray-900 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">1</div>
               <h3 className={`text-lg font-semibold mb-2 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>Request a Doctor</h3>
@@ -320,7 +354,7 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">2</div>
+        <div className="bg-gray-900 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">2</div>
               <h3 className={`text-lg font-semibold mb-2 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>Doctor Responds</h3>
@@ -329,7 +363,7 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">3</div>
+        <div className="bg-gray-900 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">3</div>
               <h3 className={`text-lg font-semibold mb-2 ${
                 isDarkMode ? 'text-white' : 'text-gray-900'
               }`}>Service Delivered</h3>
@@ -338,6 +372,8 @@ export default function Home() {
               </p>
             </div>
           </div>
+          </div>
+  </section>
         </div>
       </main>
 
