@@ -47,8 +47,17 @@ function VerifyEmailContent() {
           localStorage.setItem('user', JSON.stringify(data.user));
         }
         
-        // Redirect to dashboard immediately since they're now authenticated
-        router.push(`/${userType}/dashboard`);
+        // Add a small delay to ensure localStorage is properly set before redirect
+        setTimeout(() => {
+          try {
+            // Redirect to dashboard after successful verification
+            router.push(`/${userType}/dashboard`);
+          } catch (redirectError) {
+            console.error('Error during redirect:', redirectError);
+            setStatus('error');
+            setMessage('Verification successful but there was an issue redirecting. Please try logging in manually.');
+          }
+        }, 500);
       } else {
         if (data.message && data.message.includes('expired')) {
           setStatus('expired');
