@@ -700,7 +700,7 @@ export default function ComplianceDocuments({ doctorId }) {
         <div>
           {/* Compliance Overview */}
           <div className={`mb-6 p-4 rounded-lg border ${
-            isDarkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-gray-50 border-gray-200'
+            isDarkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-gray-100 border-gray-300'
           }`}>
             <h4 className={`text-sm font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Compliance Overview
@@ -759,12 +759,12 @@ export default function ComplianceDocuments({ doctorId }) {
               
               return (
                 <div key={docConfig.id} className={`border rounded-lg ${
-                  isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'
+                  isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-100'
                 }`}>
                   {/* Document Header - Always Visible and Clickable */}
                   <div 
                     className={`flex items-center justify-between p-4 cursor-pointer hover:bg-opacity-80 transition-colors ${
-                      isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'
+                      isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-200'
                     }`}
                     onClick={() => toggleDocumentExpansion(docConfig.id)}
                   >
@@ -829,7 +829,7 @@ export default function ComplianceDocuments({ doctorId }) {
 
                   {/* Collapsible Content */}
                   {isExpanded && (
-                    <div className={`border-t p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <div className={`border-t p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
                       
                       {/* Professional References Section */}
                       {docConfig.name === 'Professional References' ? (
@@ -851,7 +851,7 @@ export default function ComplianceDocuments({ doctorId }) {
                               </h5>
                               <div className="space-y-2">
                                 {references[doctorId].map((ref, index) => (
-                                  <div key={index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-gray-50'}`}>
+                                  <div key={index} className={`p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-100'}`}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                                       <div><strong>Name:</strong> {ref.firstName} {ref.lastName}</div>
                                       <div><strong>Position:</strong> {ref.position}</div>
@@ -866,7 +866,7 @@ export default function ComplianceDocuments({ doctorId }) {
 
                           {/* No References Message */}
                           {(!references[doctorId] || references[doctorId].length === 0) && (!pendingReferences[docConfig.id] || pendingReferences[docConfig.id].length === 0) && (
-                            <div className={`mb-4 p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-200 bg-gray-50'}`}>
+                            <div className={`mb-4 p-3 rounded border ${isDarkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-300 bg-gray-100'}`}>
                               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 You haven't added any professional references yet. Click "Add Reference" below to get started.
                               </p>
@@ -1203,8 +1203,8 @@ export default function ComplianceDocuments({ doctorId }) {
               );
             })}
             
-            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-4 p-3 rounded-lg ${
-              isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100'
+            <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-4 p-3 rounded-lg ${
+              isDarkMode ? 'bg-gray-800/50' : 'bg-gray-200'
             }`}>
               <p className="mb-1">
                 <span className="text-red-500">*</span> Required documents for compliance
