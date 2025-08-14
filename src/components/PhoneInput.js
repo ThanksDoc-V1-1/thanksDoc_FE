@@ -15,8 +15,10 @@ const PhoneInput = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({ code: '+44', flag: '🇬🇧', name: 'United Kingdom' });
   const [phoneNumber, setPhoneNumber] = useState(value.replace(/^\+44\s?/, ''));
+  const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   // Common country codes
   const countryCodes = [
@@ -49,6 +51,7 @@ const PhoneInput = ({
     { code: '+27', flag: '🇿🇦', name: 'South Africa' },
     { code: '+234', flag: '🇳🇬', name: 'Nigeria' },
     { code: '+254', flag: '🇰🇪', name: 'Kenya' },
+    { code: '+256', flag: '🇺🇬', name: 'Uganda' },
     { code: '+971', flag: '🇦🇪', name: 'UAE' },
     { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
     { code: '+20', flag: '🇪🇬', name: 'Egypt' },
@@ -77,6 +80,7 @@ const PhoneInput = ({
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
+        setSearchQuery('');
       }
     };
 
@@ -84,9 +88,26 @@ const PhoneInput = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Filter countries based on search query
+  const filteredCountries = countryCodes.filter(country =>
+    country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    country.code.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen) {
+      // Focus search input when dropdown opens
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    } else {
+      setSearchQuery('');
+    }
+  };
+
   const handleCountrySelect = (country) => {
     setSelectedCountry(country);
     setIsDropdownOpen(false);
+    setSearchQuery('');
     // Update the full phone number
     const fullNumber = phoneNumber ? `${country.code} ${phoneNumber}` : country.code;
     onChange({ target: { name, value: fullNumber } });
@@ -124,7 +145,7 @@ const PhoneInput = ({
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onClick={handleDropdownToggle}
             className="flex items-center gap-2 px-3 py-2 border border-r-0 rounded-l-md transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer form-input !rounded-r-none !border-r-0"
             disabled={disabled}
           >
@@ -135,26 +156,48 @@ const PhoneInput = ({
 
           {/* Dropdown */}
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 z-50 w-72 max-h-60 overflow-y-auto border rounded-md shadow-lg form-input !p-0">
-              {countryCodes.map((country, index) => (
-                <button
-                  key={`${country.code}-${country.name}-${index}`}
-                  type="button"
-                  onClick={() => handleCountrySelect(country)}
-                  className={`
-                    w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors duration-200
-                    hover:bg-gray-100 dark:hover:bg-gray-600
-                    ${selectedCountry.code === country.code && selectedCountry.name === country.name 
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                      : 'text-gray-900 dark:text-gray-100'
-                    }
-                  `}
-                >
-                  <span className="text-lg">{country.flag}</span>
-                  <span className="font-medium min-w-12">{country.code}</span>
-                  <span className="truncate">{country.name}</span>
-                </button>
-              ))}
+            <div className="absolute top-full left-0 z-50 w-72 max-h-60 border rounded-md shadow-lg form-input !p-0 overflow-hidden">
+              {/* Search Input */}
+              <div className="p-2 border-b border-gray-200 dark:border-gray-600">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search country..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-2 py-1 text-sm border rounded form-input !text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              
+              {/* Countries List */}
+              <div className="max-h-48 overflow-y-auto">
+                {filteredCountries.length > 0 ? (
+                  filteredCountries.map((country, index) => (
+                    <button
+                      key={`${country.code}-${country.name}-${index}`}
+                      type="button"
+                      onClick={() => handleCountrySelect(country)}
+                      className={`
+                        w-full flex items-center gap-3 px-3 py-2 text-left text-sm transition-colors duration-200
+                        hover:bg-gray-100 dark:hover:bg-gray-600
+                        ${selectedCountry.code === country.code && selectedCountry.name === country.name 
+                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
+                          : 'text-gray-900 dark:text-gray-100'
+                        }
+                      `}
+                    >
+                      <span className="text-lg">{country.flag}</span>
+                      <span className="font-medium min-w-12">{country.code}</span>
+                      <span className="truncate">{country.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 text-center">
+                    No countries found
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
