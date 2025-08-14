@@ -266,52 +266,76 @@ export default function Home() {
     {/* Features Section */}
   <section className={`mt-12 md:mt-16 rounded-2xl ${isDarkMode ? '' : 'bg-gray-50'} p-6 md:p-8`}>
         <div className="grid md:grid-cols-3 gap-8">
-          <div className={`p-6 rounded-xl shadow-lg border transition-colors ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-700' 
-              : 'bg-white border-gray-200 shadow-gray-200/50'
-          }`}>
-      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Clock className="h-6 w-6 text-blue-400" />
+          {/* Card 1 */}
+          <div className="group relative">
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/20 via-indigo-400/20 to-cyan-400/20 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-blue-500/50 via-indigo-500/40 to-cyan-500/50">
+              <div className={`rounded-2xl p-6 border shadow-xl transition-all duration-200 will-change-transform group-hover:-translate-y-1 group-hover:shadow-2xl ${
+                isDarkMode
+                  ? 'bg-gray-800/90 border-gray-700 shadow-black/20'
+                  : 'bg-white border-gray-200 shadow-gray-900/10'
+              }`}>
+                <div className={`mx-auto mb-4 w-12 h-12 rounded-xl flex items-center justify-center ring-1 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 ring-white/10'
+                    : 'bg-gradient-to-br from-blue-100 to-indigo-100 ring-blue-200/60'
+                }`}>
+                  <Clock className="h-6 w-6 text-blue-500" />
+                </div>
+                <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Quick Response</h3>
+                <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                  Get connected with nearby doctors in minutes, not hours.
+                </p>
+              </div>
             </div>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>Quick Response</h3>
-            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
-              Get connected with nearby doctors in minutes, not hours.
-            </p>
           </div>
-          
-          <div className={`p-6 rounded-xl shadow-lg border transition-colors ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-700' 
-              : 'bg-white border-gray-200 shadow-gray-200/50'
-          }`}>
-      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Shield className="h-6 w-6 text-blue-400" />
+
+          {/* Card 2 */}
+          <div className="group relative">
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-400/20 via-blue-400/20 to-cyan-400/20 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-indigo-500/50 via-blue-500/40 to-cyan-500/50">
+              <div className={`rounded-2xl p-6 border shadow-xl transition-all duration-200 will-change-transform group-hover:-translate-y-1 group-hover:shadow-2xl ${
+                isDarkMode
+                  ? 'bg-gray-800/90 border-gray-700 shadow-black/20'
+                  : 'bg-white border-gray-200 shadow-gray-900/10'
+              }`}>
+                <div className={`mx-auto mb-4 w-12 h-12 rounded-xl flex items-center justify-center ring-1 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-br from-indigo-500/20 to-blue-500/20 ring-white/10'
+                    : 'bg-gradient-to-br from-indigo-100 to-blue-100 ring-blue-200/60'
+                }`}>
+                  <Shield className="h-6 w-6 text-blue-500" />
+                </div>
+                <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Verified Doctors</h3>
+                <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                  All doctors are vetted and verified by our admin team.
+                </p>
+              </div>
             </div>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>Verified Doctors</h3>
-            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
-              All doctors are vetted and verified by our admin team.
-            </p>
           </div>
-          
-          <div className={`p-6 rounded-xl shadow-lg border transition-colors ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-700' 
-              : 'bg-white border-gray-200 shadow-gray-200/50'
-          }`}>
-      <div className="bg-gray-900 w-12 h-12 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Building2 className="h-6 w-6 text-blue-400" />
+
+          {/* Card 3 */}
+          <div className="group relative">
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-cyan-400/20 via-blue-400/20 to-indigo-400/20 blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-br from-cyan-500/50 via-blue-500/40 to-indigo-500/50">
+              <div className={`rounded-2xl p-6 border shadow-xl transition-all duration-200 will-change-transform group-hover:-translate-y-1 group-hover:shadow-2xl ${
+                isDarkMode
+                  ? 'bg-gray-800/90 border-gray-700 shadow-black/20'
+                  : 'bg-white border-gray-200 shadow-gray-900/10'
+              }`}>
+                <div className={`mx-auto mb-4 w-12 h-12 rounded-xl flex items-center justify-center ring-1 ${
+                  isDarkMode
+                    ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20 ring-white/10'
+                    : 'bg-gradient-to-br from-cyan-100 to-blue-100 ring-blue-200/60'
+                }`}>
+                  <Building2 className="h-6 w-6 text-blue-500" />
+                </div>
+                <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>B2B Focused</h3>
+                <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                  Designed specifically for pharmacies and healthcare businesses.
+                </p>
+              </div>
             </div>
-            <h3 className={`text-xl font-semibold mb-2 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>B2B Focused</h3>
-            <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
-              Designed specifically for pharmacies and healthcare businesses.
-            </p>
           </div>
         </div>
         </section>
