@@ -73,8 +73,10 @@ export default function ReferenceFormPage() {
           
           setFormData(prev => ({
             ...prev,
-            refereeName: `${doctor.firstName} ${doctor.lastName}`,
-            refereeEmail: doctor.email
+            refereeName: `${reference.firstName} ${reference.lastName}`,
+            refereeEmail: reference.email,
+            refereePosition: reference.position,
+            refereeWorkPlace: reference.organisation
           }));
         }
       }
@@ -200,7 +202,7 @@ export default function ReferenceFormPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
               <h3 className="text-sm font-medium text-blue-900 mb-2">GMC Guidelines</h3>
               <p className="text-sm text-blue-700">
-                This form provides a tool for writing a reference letter required to work via the CHP platform. 
+                This form provides a tool for writing a reference letter required to work via the ThankDoc platform. 
                 Please follow the GMC Good Medical Practice guideline about writing references that can be accessed on{' '}
                 <a 
                   href="https://www.gmc-uk.org/ethical-guidance/ethical-guidance-for-doctors/writing-references/writing-references"
@@ -231,18 +233,18 @@ export default function ReferenceFormPage() {
                 </div>
               )}
 
-              {/* Clinician Information */}
+              {/* Doctor Information */}
               <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <div className="bg-blue-100 rounded-full p-2 mr-3">
                     <span className="text-blue-600 font-bold text-sm">1</span>
                   </div>
-                  Clinician Information
+                  Doctor Information (Person being referenced)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="clinicianName" className="block text-sm font-semibold text-gray-800 mb-2">
-                      Clinician's Name <span className="text-red-500">*</span>
+                      Doctor's Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -251,14 +253,14 @@ export default function ReferenceFormPage() {
                       value={formData.clinicianName}
                       onChange={handleInputChange}
                       required
-                      placeholder={referenceData?.reference?.firstName + ' ' + referenceData?.reference?.lastName}
+                      placeholder={referenceData?.doctor?.firstName + ' ' + referenceData?.doctor?.lastName}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
                   <div>
                     <label htmlFor="clinicianPosition" className="block text-sm font-semibold text-gray-800 mb-2">
-                      Clinician's Position <span className="text-red-500">*</span>
+                      Doctor's Position <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -267,14 +269,14 @@ export default function ReferenceFormPage() {
                       value={formData.clinicianPosition}
                       onChange={handleInputChange}
                       required
-                      placeholder={referenceData?.reference?.position}
+                      placeholder={referenceData?.doctor?.position}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
                   <div className="md:col-span-2">
                     <label htmlFor="clinicianEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                      Clinician's Email address *
+                      Doctor's Email address *
                     </label>
                     <input
                       type="email"
@@ -283,7 +285,7 @@ export default function ReferenceFormPage() {
                       value={formData.clinicianEmail}
                       onChange={handleInputChange}
                       required
-                      placeholder={referenceData?.reference?.email}
+                      placeholder={referenceData?.doctor?.email}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
@@ -296,7 +298,7 @@ export default function ReferenceFormPage() {
                   <div className="bg-green-100 rounded-full p-2 mr-3">
                     <span className="text-green-600 font-bold text-sm">2</span>
                   </div>
-                  Referee Information
+                  Referee Information (Person providing reference)
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -310,6 +312,7 @@ export default function ReferenceFormPage() {
                       value={formData.refereeName}
                       onChange={handleInputChange}
                       required
+                      placeholder={referenceData?.reference?.firstName + ' ' + referenceData?.reference?.lastName}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
@@ -325,6 +328,7 @@ export default function ReferenceFormPage() {
                       value={formData.refereePosition}
                       onChange={handleInputChange}
                       required
+                      placeholder={referenceData?.reference?.position}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
@@ -372,6 +376,7 @@ export default function ReferenceFormPage() {
                       value={formData.refereeEmail}
                       onChange={handleInputChange}
                       required
+                      placeholder={referenceData?.reference?.email}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
