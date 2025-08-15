@@ -27,7 +27,26 @@ export default function ReferenceFormPage() {
     clinicalKnowledge: '',
     diagnosis: '',
     clinicalDecisionMaking: '',
-    treatment: ''
+    treatment: '',
+    // Additional clinical competencies
+    prescribing: '',
+    medicalRecordKeeping: '',
+    recognisingLimitations: '',
+    keepingKnowledgeUpToDate: '',
+    reviewingPerformance: '',
+    teachingStudents: '',
+    supervisingColleagues: '',
+    commitmentToCare: '',
+    communicationWithPatients: '',
+    workingEffectivelyWithColleagues: '',
+    effectiveTimeManagement: '',
+    // Clinical statements
+    respectsPatientConfidentiality: '',
+    honestAndTrustworthy: '',
+    performanceNotImpaired: '',
+    // Fitness to practice
+    fitToPractice: '',
+    lastWorkedWith: ''
   });
 
   const clinicalSkillOptions = [
@@ -37,6 +56,19 @@ export default function ReferenceFormPage() {
     'Good',
     'Very good',
     'N/A'
+  ];
+
+  const clinicalStatementOptions = [
+    'Strongly disagree',
+    'Disagree',
+    'Agree',
+    'Strongly agree',
+    'N/A'
+  ];
+
+  const fitnessOptions = [
+    'Yes',
+    'No'
   ];
 
   useEffect(() => {
@@ -109,7 +141,13 @@ export default function ReferenceFormPage() {
       'clinicianName', 'clinicianPosition', 'clinicianEmail',
       'refereeName', 'refereePosition', 'refereeWorkPlace',
       'workDuration', 'refereeEmail', 'clinicalKnowledge',
-      'diagnosis', 'clinicalDecisionMaking', 'treatment'
+      'diagnosis', 'clinicalDecisionMaking', 'treatment',
+      'prescribing', 'medicalRecordKeeping', 'recognisingLimitations',
+      'keepingKnowledgeUpToDate', 'reviewingPerformance', 'teachingStudents',
+      'supervisingColleagues', 'commitmentToCare', 'communicationWithPatients',
+      'workingEffectivelyWithColleagues', 'effectiveTimeManagement',
+      'respectsPatientConfidentiality', 'honestAndTrustworthy', 'performanceNotImpaired',
+      'fitToPractice', 'lastWorkedWith'
     ];
 
     const emptyFields = requiredFields.filter(field => !formData[field]);
@@ -400,95 +438,343 @@ export default function ReferenceFormPage() {
                 </h2>
                 <div className="space-y-6">
                   
-                  {/* Clinical Knowledge */}
-                  <div>
-                    <label htmlFor="clinicalKnowledge" className="block text-sm font-medium text-gray-700 mb-1">
-                      Clinical knowledge *
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="clinicalKnowledge"
-                        name="clinicalKnowledge"
-                        value={formData.clinicalKnowledge}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
-                      >
-                        <option value="" className="text-gray-500">Select rating</option>
-                        {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option} className="text-gray-900">{option}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                  {/* Prescribing */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Prescribing</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="prescribing"
+                            value={option}
+                            checked={formData.prescribing === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Diagnosis */}
-                  <div>
-                    <label htmlFor="diagnosis" className="block text-sm font-medium text-gray-700 mb-1">
-                      Diagnosis *
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="diagnosis"
-                        name="diagnosis"
-                        value={formData.diagnosis}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
-                      >
-                        <option value="" className="text-gray-500">Select rating</option>
-                        {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option} className="text-gray-900">{option}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                  {/* Medical record keeping */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Medical record keeping</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="medicalRecordKeeping"
+                            value={option}
+                            checked={formData.medicalRecordKeeping === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Clinical Decision Making */}
-                  <div>
-                    <label htmlFor="clinicalDecisionMaking" className="block text-sm font-medium text-gray-700 mb-1">
-                      Clinical decision making *
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="clinicalDecisionMaking"
-                        name="clinicalDecisionMaking"
-                        value={formData.clinicalDecisionMaking}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
-                      >
-                        <option value="" className="text-gray-500">Select rating</option>
-                        {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option} className="text-gray-900">{option}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                  {/* Recognising and working within limitations */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Recognising and working within limitations</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="recognisingLimitations"
+                            value={option}
+                            checked={formData.recognisingLimitations === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Treatment */}
-                  <div>
-                    <label htmlFor="treatment" className="block text-sm font-medium text-gray-700 mb-1">
-                      Treatment *
-                    </label>
-                    <div className="relative">
-                      <select
-                        id="treatment"
-                        name="treatment"
-                        value={formData.treatment}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
-                      >
-                        <option value="" className="text-gray-500">Select rating</option>
-                        {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option} className="text-gray-900">{option}</option>
+                  {/* Keeping knowledge and skills up to date */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Keeping knowledge and skills up to date</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="keepingKnowledgeUpToDate"
+                            value={option}
+                            checked={formData.keepingKnowledgeUpToDate === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reviewing and reflecting on own performance */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Reviewing and reflecting on own performance</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="reviewingPerformance"
+                            value={option}
+                            checked={formData.reviewingPerformance === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Teaching (students, trainees, others) */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Teaching (students, trainees, others)</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="teachingStudents"
+                            value={option}
+                            checked={formData.teachingStudents === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Supervising colleagues */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Supervising colleagues</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="supervisingColleagues"
+                            value={option}
+                            checked={formData.supervisingColleagues === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Commitment to care and wellbeing of patients */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Commitment to care and wellbeing of patients</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="commitmentToCare"
+                            value={option}
+                            checked={formData.commitmentToCare === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Communication with patients and relatives */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Communication with patients and relatives</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="communicationWithPatients"
+                            value={option}
+                            checked={formData.communicationWithPatients === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Working effectively with colleagues */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Working effectively with colleagues</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="workingEffectivelyWithColleagues"
+                            value={option}
+                            checked={formData.workingEffectivelyWithColleagues === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Effective time management */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Effective time management</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="effectiveTimeManagement"
+                            value={option}
+                            checked={formData.effectiveTimeManagement === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-blue-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clinical Statement Section */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-green-600 text-center mb-6">Clinical Statement</h3>
+                    
+                    {/* This clinician respects patient confidentiality */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                      <h4 className="text-center font-medium text-gray-800 mb-4">This clinician respects patient confidentiality</h4>
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {clinicalStatementOptions.map((option) => (
+                          <label key={option} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="respectsPatientConfidentiality"
+                              value={option}
+                              checked={formData.respectsPatientConfidentiality === option}
+                              onChange={handleInputChange}
+                              className="mr-2 text-blue-600"
+                              required
+                            />
+                            <span className="text-sm text-gray-700">{option}</span>
+                          </label>
                         ))}
-                      </select>
-                      <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* This clinician is honest and trustworthy */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                      <h4 className="text-center font-medium text-gray-800 mb-4">This clinician is honest and trustworthy</h4>
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {clinicalStatementOptions.map((option) => (
+                          <label key={option} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="honestAndTrustworthy"
+                              value={option}
+                              checked={formData.honestAndTrustworthy === option}
+                              onChange={handleInputChange}
+                              className="mr-2 text-blue-600"
+                              required
+                            />
+                            <span className="text-sm text-gray-700">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* This clinician's performance is not impaired by ill health */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                      <h4 className="text-center font-medium text-gray-800 mb-4">This clinician's performance is not impaired by ill health</h4>
+                      <div className="flex flex-wrap justify-center gap-4">
+                        {clinicalStatementOptions.map((option) => (
+                          <label key={option} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="performanceNotImpaired"
+                              value={option}
+                              checked={formData.performanceNotImpaired === option}
+                              onChange={handleInputChange}
+                              className="mr-2 text-blue-600"
+                              required
+                            />
+                            <span className="text-sm text-gray-700">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fitness to practice Section */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold text-green-600 text-center mb-6">Fitness to practice</h3>
+                    
+                    {/* This clinician is fit to practice */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200 mb-4">
+                      <h4 className="text-center font-medium text-gray-800 mb-4">This clinician is fit to practice</h4>
+                      <div className="flex justify-center gap-6">
+                        {fitnessOptions.map((option) => (
+                          <label key={option} className="flex items-center">
+                            <input
+                              type="radio"
+                              name="fitToPractice"
+                              value={option}
+                              checked={formData.fitToPractice === option}
+                              onChange={handleInputChange}
+                              className="mr-2 text-blue-600"
+                              required
+                            />
+                            <span className="text-sm text-gray-700 font-medium">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* When was the last time you worked with this clinician */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                      <h4 className="text-center font-medium text-gray-800 mb-4">When was the last time you worked with this clinician?</h4>
+                      <div className="flex justify-center">
+                        <input
+                          type="date"
+                          name="lastWorkedWith"
+                          value={formData.lastWorkedWith}
+                          onChange={handleInputChange}
+                          required
+                          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
