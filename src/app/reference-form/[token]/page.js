@@ -73,6 +73,11 @@ export default function ReferenceFormPage() {
           
           setFormData(prev => ({
             ...prev,
+            // Doctor information (read-only)
+            clinicianName: `${doctor.firstName} ${doctor.lastName}`,
+            clinicianPosition: 'General Practitioner',
+            clinicianEmail: doctor.email,
+            // Referee information (editable)
             refereeName: `${reference.firstName} ${reference.lastName}`,
             refereeEmail: reference.email,
             refereePosition: reference.position,
@@ -253,8 +258,9 @@ export default function ReferenceFormPage() {
                       value={formData.clinicianName}
                       onChange={handleInputChange}
                       required
+                      readOnly
                       placeholder={referenceData?.doctor?.firstName + ' ' + referenceData?.doctor?.lastName}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-100 placeholder-gray-500 cursor-not-allowed"
                     />
                   </div>
                   
@@ -266,11 +272,11 @@ export default function ReferenceFormPage() {
                       type="text"
                       id="clinicianPosition"
                       name="clinicianPosition"
-                      value={formData.clinicianPosition}
+                      value="General Practitioner"
                       onChange={handleInputChange}
                       required
-                      placeholder={referenceData?.doctor?.position}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-100 placeholder-gray-500 cursor-not-allowed"
                     />
                   </div>
                   
@@ -285,8 +291,9 @@ export default function ReferenceFormPage() {
                       value={formData.clinicianEmail}
                       onChange={handleInputChange}
                       required
+                      readOnly
                       placeholder={referenceData?.doctor?.email}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-100 placeholder-gray-500 cursor-not-allowed"
                     />
                   </div>
                 </div>
