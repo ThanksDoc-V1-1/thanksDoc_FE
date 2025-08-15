@@ -1600,6 +1600,29 @@ export default function AdminDashboard() {
     }
   };
 
+  // Helper function to get rating color class
+  const getRatingColorClass = (rating) => {
+    if (!rating) return 'bg-gray-100 text-gray-800';
+    
+    const lowerRating = rating.toLowerCase();
+    
+    if (lowerRating === 'excellent' || lowerRating === 'outstanding') {
+      return 'bg-green-100 text-green-800';
+    } else if (lowerRating === 'good' || lowerRating === 'very good') {
+      return 'bg-blue-100 text-blue-800';
+    } else if (lowerRating === 'satisfactory' || lowerRating === 'adequate') {
+      return 'bg-yellow-100 text-yellow-800';
+    } else if (lowerRating === 'less than satisfactory' || lowerRating === 'needs improvement' || lowerRating === 'needs-improvement') {
+      return 'bg-orange-100 text-orange-800';
+    } else if (lowerRating === 'poor' || lowerRating === 'unsatisfactory') {
+      return 'bg-red-100 text-red-800';
+    } else if (lowerRating === 'n/a' || lowerRating === 'not applicable') {
+      return 'bg-gray-100 text-gray-800';
+    } else {
+      return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   // Load professional references for a doctor
   const loadProfessionalReferences = async (doctorId) => {
     try {
@@ -1633,19 +1656,24 @@ export default function AdminDashboard() {
       console.log('🔍 Loading detailed reference data for:', reference);
       setLoadingReferenceDetails(true);
       
-      // The reference from the first API contains the basic info, 
-      // but we need to get the submitted response data using the reference ID
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professional-reference-submissions?filters[professionalReference][id][$eq]=${reference.id}&populate=*`);
+      // Use the custom route to get all submissions for the doctor,
+      // then find the one that matches this reference
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-reference-submissions/doctor/${reference.doctor?.id || reference.doctor}`);
       console.log('📡 Reference Details API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
         console.log('📦 Reference Details API Response data:', data);
         
-        // Get the first submission for this reference
-        const submission = data.data?.[0];
-        if (submission) {
-          setSelectedReference(submission);
+        // Find the submission that matches this professional reference
+        const submissions = data.data?.submissions || [];
+        const matchingSubmission = submissions.find(submission => 
+          submission.professionalReference?.id === reference.id
+        );
+        
+        if (matchingSubmission) {
+          console.log('✅ Found matching submission for reference');
+          setSelectedReference(matchingSubmission);
           setShowReferenceModal(true);
         } else {
           console.log('No submission found for this reference');
@@ -5899,7 +5927,7 @@ export default function AdminDashboard() {
                       Professional Reference Response
                     </h2>
                     <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} font-medium`}>
-                      {selectedReference.refereeFirstName} {selectedReference.refereeLastName}
+                      {selectedReference.refereeName}
                     </p>
                   </div>
                 </div>
@@ -5931,13 +5959,13 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <span className="font-medium">Name:</span> {selectedReference.refereeFirstName} {selectedReference.refereeLastName}
+                          <span className="font-medium">Name:</span> {selectedReference.refereeName}
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
                           <span className="font-medium">Position:</span> {selectedReference.refereePosition}
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                          <span className="font-medium">Organisation:</span> {selectedReference.refereeOrganisation}
+                          <span className="font-medium">Workplace:</span> {selectedReference.refereeWorkPlace}
                         </p>
                       </div>
                       <div>
@@ -5945,10 +5973,10 @@ export default function AdminDashboard() {
                           <span className="font-medium">Email:</span> {selectedReference.refereeEmail}
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                          <span className="font-medium">Working Relationship:</span> {selectedReference.workingRelationship}
+                          <span className="font-medium">Work Duration:</span> {selectedReference.workDuration}
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                          <span className="font-medium">Duration:</span> {selectedReference.workingRelationshipDuration}
+                          <span className="font-medium">Last Worked:</span> {selectedReference.lastWorkedWith}
                         </p>
                       </div>
                     </div>
@@ -5962,18 +5990,15 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <span className="font-medium">Name:</span> {selectedReference.doctorFirstName} {selectedReference.doctorLastName}
+                          <span className="font-medium">Name:</span> {selectedReference.clinicianName}
                         </p>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                          <span className="font-medium">Email:</span> {selectedReference.doctorEmail}
+                          <span className="font-medium">Email:</span> {selectedReference.clinicianEmail}
                         </p>
                       </div>
                       <div>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <span className="font-medium">GMC Number:</span> {selectedReference.doctorGMCNumber}
-                        </p>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                          <span className="font-medium">Speciality:</span> {selectedReference.doctorSpeciality}
+                          <span className="font-medium">Position:</span> {selectedReference.clinicianPosition}
                         </p>
                       </div>
                     </div>
@@ -5988,295 +6013,217 @@ export default function AdminDashboard() {
                       {selectedReference.clinicalKnowledge && (
                         <div className="space-y-2">
                           <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Clinical Knowledge</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.clinicalKnowledge === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.clinicalKnowledge === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.clinicalKnowledge === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.clinicalKnowledge === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.clinicalKnowledge.charAt(0).toUpperCase() + selectedReference.clinicalKnowledge.slice(1).replace('-', ' ')}
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.clinicalKnowledge)}`}>
+                            {selectedReference.clinicalKnowledge}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.diagnosticSkills && (
+                      {selectedReference.diagnosis && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Diagnostic Skills</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.diagnosticSkills === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.diagnosticSkills === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.diagnosticSkills === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.diagnosticSkills === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.diagnosticSkills.charAt(0).toUpperCase() + selectedReference.diagnosticSkills.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Diagnosis</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.diagnosis)}`}>
+                            {selectedReference.diagnosis}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.treatmentPlanning && (
+                      {selectedReference.clinicalDecisionMaking && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Treatment Planning</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.treatmentPlanning === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.treatmentPlanning === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.treatmentPlanning === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.treatmentPlanning === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.treatmentPlanning.charAt(0).toUpperCase() + selectedReference.treatmentPlanning.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Clinical Decision Making</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.clinicalDecisionMaking)}`}>
+                            {selectedReference.clinicalDecisionMaking}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.patientSafety && (
+                      {selectedReference.treatment && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Patient Safety</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.patientSafety === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.patientSafety === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.patientSafety === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.patientSafety === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.patientSafety.charAt(0).toUpperCase() + selectedReference.patientSafety.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Treatment</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.treatment)}`}>
+                            {selectedReference.treatment}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.communication && (
+                      {selectedReference.prescribing && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Communication</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.communication === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.communication === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.communication === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.communication === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.communication.charAt(0).toUpperCase() + selectedReference.communication.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Prescribing</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.prescribing)}`}>
+                            {selectedReference.prescribing}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.professionalism && (
+                      {selectedReference.medicalRecordKeeping && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Professionalism</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.professionalism === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.professionalism === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.professionalism === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.professionalism === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.professionalism.charAt(0).toUpperCase() + selectedReference.professionalism.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Medical Record Keeping</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.medicalRecordKeeping)}`}>
+                            {selectedReference.medicalRecordKeeping}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.teamwork && (
+                      {selectedReference.recognisingLimitations && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Teamwork</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.teamwork === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.teamwork === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.teamwork === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.teamwork === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.teamwork.charAt(0).toUpperCase() + selectedReference.teamwork.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recognising Limitations</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.recognisingLimitations)}`}>
+                            {selectedReference.recognisingLimitations}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.leadership && (
+                      {selectedReference.keepingKnowledgeUpToDate && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Leadership</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.leadership === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.leadership === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.leadership === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.leadership === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.leadership.charAt(0).toUpperCase() + selectedReference.leadership.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Keeping Knowledge Up to Date</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.keepingKnowledgeUpToDate)}`}>
+                            {selectedReference.keepingKnowledgeUpToDate}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.continuousLearning && (
+                      {selectedReference.reviewingPerformance && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Continuous Learning</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.continuousLearning === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.continuousLearning === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.continuousLearning === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.continuousLearning === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.continuousLearning.charAt(0).toUpperCase() + selectedReference.continuousLearning.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Reviewing Performance</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.reviewingPerformance)}`}>
+                            {selectedReference.reviewingPerformance}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.adaptability && (
+                      {selectedReference.teachingStudents && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Adaptability</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.adaptability === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.adaptability === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.adaptability === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.adaptability === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.adaptability.charAt(0).toUpperCase() + selectedReference.adaptability.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Teaching Students</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.teachingStudents)}`}>
+                            {selectedReference.teachingStudents}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.timeManagement && (
+                      {selectedReference.supervisingColleagues && (
                         <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Time Management</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.timeManagement === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.timeManagement === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.timeManagement === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.timeManagement === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.timeManagement.charAt(0).toUpperCase() + selectedReference.timeManagement.slice(1).replace('-', ' ')}
-                          </span>
-                        </div>
-                      )}
-
-                      {selectedReference.ethicalConduct && (
-                        <div className="space-y-2">
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Ethical Conduct</h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.ethicalConduct === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.ethicalConduct === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.ethicalConduct === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.ethicalConduct === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.ethicalConduct.charAt(0).toUpperCase() + selectedReference.ethicalConduct.slice(1).replace('-', ' ')}
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Supervising Colleagues</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.supervisingColleagues)}`}>
+                            {selectedReference.supervisingColleagues}
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Clinical Assessment Statements */}
+                  {/* Professional Attributes */}
                   <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
-                      Clinical Assessment Statements
+                      Professional Attributes
                     </h3>
-                    <div className="space-y-4">
-                      {selectedReference.doctorCompetency && (
-                        <div>
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                            Would you be confident receiving care from this doctor?
-                          </h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.doctorCompetency === 'very-confident' ? 'bg-green-100 text-green-800' :
-                            selectedReference.doctorCompetency === 'confident' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.doctorCompetency === 'somewhat-confident' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.doctorCompetency.charAt(0).toUpperCase() + selectedReference.doctorCompetency.slice(1).replace('-', ' ')}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {selectedReference.commitmentToCare && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Commitment to Care</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.commitmentToCare)}`}>
+                            {selectedReference.commitmentToCare}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.recommendDoctor && (
-                        <div>
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                            Would you recommend this doctor to work at another healthcare organization?
-                          </h4>
-                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.recommendDoctor === 'strongly-recommend' ? 'bg-green-100 text-green-800' :
-                            selectedReference.recommendDoctor === 'recommend' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.recommendDoctor === 'recommend-with-reservations' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {selectedReference.recommendDoctor.charAt(0).toUpperCase() + selectedReference.recommendDoctor.slice(1).replace('-', ' ')}
+                      {selectedReference.communicationWithPatients && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Communication with Patients</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.communicationWithPatients)}`}>
+                            {selectedReference.communicationWithPatients}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.overallAssessment && (
-                        <div>
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                            Overall Clinical Assessment
-                          </h4>
+                      {selectedReference.workingEffectivelyWithColleagues && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Working Effectively with Colleagues</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.workingEffectivelyWithColleagues)}`}>
+                            {selectedReference.workingEffectivelyWithColleagues}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedReference.effectiveTimeManagement && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Effective Time Management</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${getRatingColorClass(selectedReference.effectiveTimeManagement)}`}>
+                            {selectedReference.effectiveTimeManagement}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedReference.respectsPatientConfidentiality && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Respects Patient Confidentiality</h4>
                           <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.overallAssessment === 'outstanding' ? 'bg-green-100 text-green-800' :
-                            selectedReference.overallAssessment === 'excellent' ? 'bg-green-100 text-green-800' :
-                            selectedReference.overallAssessment === 'good' ? 'bg-blue-100 text-blue-800' :
-                            selectedReference.overallAssessment === 'satisfactory' ? 'bg-yellow-100 text-yellow-800' :
-                            selectedReference.overallAssessment === 'needs-improvement' ? 'bg-orange-100 text-orange-800' :
-                            'bg-red-100 text-red-800'
+                            selectedReference.respectsPatientConfidentiality === 'Strongly agree' || 
+                            selectedReference.respectsPatientConfidentiality === 'Agree' ? 'bg-green-100 text-green-800' :
+                            selectedReference.respectsPatientConfidentiality === 'Disagree' || 
+                            selectedReference.respectsPatientConfidentiality === 'Strongly disagree' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {selectedReference.overallAssessment.charAt(0).toUpperCase() + selectedReference.overallAssessment.slice(1).replace('-', ' ')}
+                            {selectedReference.respectsPatientConfidentiality}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedReference.honestAndTrustworthy && (
+                        <div className="space-y-2">
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Honest and Trustworthy</h4>
+                          <span className={`inline-block px-3 py-1 text-sm rounded-full ${
+                            selectedReference.honestAndTrustworthy === 'Strongly agree' || 
+                            selectedReference.honestAndTrustworthy === 'Agree' ? 'bg-green-100 text-green-800' :
+                            selectedReference.honestAndTrustworthy === 'Disagree' || 
+                            selectedReference.honestAndTrustworthy === 'Strongly disagree' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {selectedReference.honestAndTrustworthy}
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Fitness to Practice */}
+                  {/* Fitness to Practice Assessment */}
                   <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
                       Fitness to Practice Assessment
                     </h3>
                     <div className="space-y-4">
-                      {selectedReference.safePractice && (
+                      {selectedReference.performanceNotImpaired && (
                         <div>
                           <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                            Is this doctor safe to practice?
+                            Performance Not Impaired
                           </h4>
                           <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.safePractice === 'yes' ? 'bg-green-100 text-green-800' :
-                            selectedReference.safePractice === 'yes-with-supervision' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
+                            selectedReference.performanceNotImpaired === 'Strongly agree' || 
+                            selectedReference.performanceNotImpaired === 'Agree' ? 'bg-green-100 text-green-800' :
+                            selectedReference.performanceNotImpaired === 'Disagree' || 
+                            selectedReference.performanceNotImpaired === 'Strongly disagree' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {selectedReference.safePractice === 'yes' ? 'Yes' :
-                             selectedReference.safePractice === 'yes-with-supervision' ? 'Yes, with supervision' :
-                             'No'}
+                            {selectedReference.performanceNotImpaired}
                           </span>
                         </div>
                       )}
 
-                      {selectedReference.significantConcerns && (
+                      {selectedReference.fitToPractice && (
                         <div>
                           <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                            Are there any significant concerns about this doctor's practice?
+                            Fit to Practice
                           </h4>
                           <span className={`inline-block px-3 py-1 text-sm rounded-full ${
-                            selectedReference.significantConcerns === 'no' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
+                            selectedReference.fitToPractice === 'Yes' ? 'bg-green-100 text-green-800' :
+                            selectedReference.fitToPractice === 'No' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
-                            {selectedReference.significantConcerns === 'no' ? 'No' : 'Yes'}
+                            {selectedReference.fitToPractice}
                           </span>
                         </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Additional Comments */}
-                  {selectedReference.additionalComments && (
-                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
-                        Additional Comments
-                      </h3>
-                      <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded p-4`}>
-                        <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} whitespace-pre-wrap`}>
-                          {selectedReference.additionalComments}
-                        </p>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Submission Details */}
                   <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
@@ -6288,15 +6235,21 @@ export default function AdminDashboard() {
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           <span className="font-medium">Submitted:</span> {new Date(selectedReference.createdAt).toLocaleString('en-GB')}
                         </p>
-                        {selectedReference.updatedAt && selectedReference.updatedAt !== selectedReference.createdAt && (
+                        {selectedReference.submittedAt && (
                           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                            <span className="font-medium">Updated:</span> {new Date(selectedReference.updatedAt).toLocaleString('en-GB')}
+                            <span className="font-medium">Completed:</span> {new Date(selectedReference.submittedAt).toLocaleString('en-GB')}
                           </p>
                         )}
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
+                          <span className="font-medium">Status:</span> {selectedReference.isSubmitted ? 'Completed' : 'In Progress'}
+                        </p>
                       </div>
                       <div>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                           <span className="font-medium">Reference ID:</span> {selectedReference.id}
+                        </p>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
+                          <span className="font-medium">Token:</span> {selectedReference.referenceToken?.substring(0, 16)}...
                         </p>
                       </div>
                     </div>
