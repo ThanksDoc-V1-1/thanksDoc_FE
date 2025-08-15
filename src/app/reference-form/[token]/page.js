@@ -217,8 +217,8 @@ export default function ReferenceFormPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-6 py-4 space-y-6">
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+            <div className="px-6 py-6 space-y-8">
               
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-4">
@@ -232,12 +232,17 @@ export default function ReferenceFormPage() {
               )}
 
               {/* Clinician Information */}
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Clinician Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <div className="bg-blue-100 rounded-full p-2 mr-3">
+                    <span className="text-blue-600 font-bold text-sm">1</span>
+                  </div>
+                  Clinician Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label htmlFor="clinicianName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Clinician's Name *
+                    <label htmlFor="clinicianName" className="block text-sm font-semibold text-gray-800 mb-2">
+                      Clinician's Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -247,13 +252,13 @@ export default function ReferenceFormPage() {
                       onChange={handleInputChange}
                       required
                       placeholder={referenceData?.reference?.firstName + ' ' + referenceData?.reference?.lastName}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="clinicianPosition" className="block text-sm font-medium text-gray-700 mb-1">
-                      Clinician's Position *
+                    <label htmlFor="clinicianPosition" className="block text-sm font-semibold text-gray-800 mb-2">
+                      Clinician's Position <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -263,7 +268,7 @@ export default function ReferenceFormPage() {
                       onChange={handleInputChange}
                       required
                       placeholder={referenceData?.reference?.position}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
@@ -279,16 +284,21 @@ export default function ReferenceFormPage() {
                       onChange={handleInputChange}
                       required
                       placeholder={referenceData?.reference?.email}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Referee Information */}
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Referee Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <div className="bg-green-100 rounded-full p-2 mr-3">
+                    <span className="text-green-600 font-bold text-sm">2</span>
+                  </div>
+                  Referee Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="refereeName" className="block text-sm font-medium text-gray-700 mb-1">
                       Referee's Name *
@@ -300,7 +310,7 @@ export default function ReferenceFormPage() {
                       value={formData.refereeName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
@@ -315,7 +325,7 @@ export default function ReferenceFormPage() {
                       value={formData.refereePosition}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
@@ -331,7 +341,7 @@ export default function ReferenceFormPage() {
                       onChange={handleInputChange}
                       required
                       placeholder={referenceData?.reference?.organisation}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
@@ -347,7 +357,7 @@ export default function ReferenceFormPage() {
                       onChange={handleInputChange}
                       required
                       placeholder="e.g., 2 years, 6 months"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                   
@@ -362,16 +372,21 @@ export default function ReferenceFormPage() {
                       value={formData.refereeEmail}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white placeholder-gray-500"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Clinical Skills Assessment */}
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Clinical Skills</h2>
-                <div className="space-y-4">
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <div className="bg-purple-100 rounded-full p-2 mr-3">
+                    <span className="text-purple-600 font-bold text-sm">3</span>
+                  </div>
+                  Clinical Skills Assessment
+                </h2>
+                <div className="space-y-6">
                   
                   {/* Clinical Knowledge */}
                   <div>
@@ -385,11 +400,11 @@ export default function ReferenceFormPage() {
                         value={formData.clinicalKnowledge}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
                       >
-                        <option value="">Select rating</option>
+                        <option value="" className="text-gray-500">Select rating</option>
                         {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
+                          <option key={option} value={option} className="text-gray-900">{option}</option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -408,11 +423,11 @@ export default function ReferenceFormPage() {
                         value={formData.diagnosis}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
                       >
-                        <option value="">Select rating</option>
+                        <option value="" className="text-gray-500">Select rating</option>
                         {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
+                          <option key={option} value={option} className="text-gray-900">{option}</option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -431,11 +446,11 @@ export default function ReferenceFormPage() {
                         value={formData.clinicalDecisionMaking}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
                       >
-                        <option value="">Select rating</option>
+                        <option value="" className="text-gray-500">Select rating</option>
                         {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
+                          <option key={option} value={option} className="text-gray-900">{option}</option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -454,11 +469,11 @@ export default function ReferenceFormPage() {
                         value={formData.treatment}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none text-gray-900 bg-white"
                       >
-                        <option value="">Select rating</option>
+                        <option value="" className="text-gray-500">Select rating</option>
                         {clinicalSkillOptions.map((option) => (
-                          <option key={option} value={option}>{option}</option>
+                          <option key={option} value={option} className="text-gray-900">{option}</option>
                         ))}
                       </select>
                       <ChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -469,24 +484,30 @@ export default function ReferenceFormPage() {
             </div>
             
             {/* Submit Button */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-              <div className="flex justify-end">
+            <div className="px-6 py-6 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  All fields marked with * are required
+                </p>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`px-6 py-2 rounded-md text-white font-medium ${
+                  className={`px-8 py-3 rounded-lg text-white font-medium transition-colors duration-200 ${
                     submitting 
                       ? 'bg-blue-400 cursor-not-allowed' 
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                      : 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-700'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm`}
                 >
                   {submitting ? (
                     <span className="flex items-center">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Submitting...
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Submitting Reference...
                     </span>
                   ) : (
-                    'Submit Reference'
+                    <span className="flex items-center">
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                      Submit Reference
+                    </span>
                   )}
                 </button>
               </div>
