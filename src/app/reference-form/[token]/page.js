@@ -17,17 +17,13 @@ export default function ReferenceFormPage() {
   
   const [formData, setFormData] = useState({
     clinicianName: '',
-    clinicianPosition: '',
+    clinicianPosition: 'General Practitioner',
     clinicianEmail: '',
     refereeName: '',
     refereePosition: '',
     refereeWorkPlace: '',
     workDuration: '',
     refereeEmail: '',
-    clinicalKnowledge: '',
-    diagnosis: '',
-    clinicalDecisionMaking: '',
-    treatment: '',
     // Additional clinical competencies
     prescribing: '',
     medicalRecordKeeping: '',
@@ -136,12 +132,14 @@ export default function ReferenceFormPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    console.log('Form submission started');
+    console.log('Form data:', formData);
+    
     // Validate required fields
     const requiredFields = [
       'clinicianName', 'clinicianPosition', 'clinicianEmail',
       'refereeName', 'refereePosition', 'refereeWorkPlace',
-      'workDuration', 'refereeEmail', 'clinicalKnowledge',
-      'diagnosis', 'clinicalDecisionMaking', 'treatment',
+      'workDuration', 'refereeEmail',
       'prescribing', 'medicalRecordKeeping', 'recognisingLimitations',
       'keepingKnowledgeUpToDate', 'reviewingPerformance', 'teachingStudents',
       'supervisingColleagues', 'commitmentToCare', 'communicationWithPatients',
@@ -151,8 +149,10 @@ export default function ReferenceFormPage() {
     ];
 
     const emptyFields = requiredFields.filter(field => !formData[field]);
+    console.log('Empty fields:', emptyFields);
+    
     if (emptyFields.length > 0) {
-      setError('Please fill in all required fields');
+      setError('Please fill in all required fields: ' + emptyFields.join(', '));
       return;
     }
 
