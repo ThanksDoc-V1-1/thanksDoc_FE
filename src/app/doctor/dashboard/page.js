@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../../lib/api';
-import { formatCurrency, formatDate, getUrgencyColor, getStatusColor } from '../../../lib/utils';
+import { formatCurrency, formatDate, formatDuration, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
@@ -1599,7 +1599,7 @@ export default function DoctorDashboard() {
                             </div>
                             <div className="flex items-center space-x-2 mt-1">
                               <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                £{service.price || 0}
+                                {formatCurrency(service.price || 0)}
                               </span>
                               <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                 • {service.duration || 30} min
@@ -1654,7 +1654,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                    £{service.price || 0}
+                                    {formatCurrency(service.price || 0)}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -1712,7 +1712,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                                    £{service.price || 0}
+                                    {formatCurrency(service.price || 0)}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -1768,7 +1768,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                                    £{service.price || 0}
+                                    {formatCurrency(service.price || 0)}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -2288,7 +2288,7 @@ export default function DoctorDashboard() {
                                 : 'text-gray-600 bg-gray-100'
                             }`}>
                               <Clock className="h-4 w-4" />
-                              <span className="font-medium">{request.estimatedDuration}h</span>
+                              <span className="font-medium">{formatDuration(request.estimatedDuration)}h</span>
                             </div>
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
                               isDarkMode 
@@ -2739,7 +2739,7 @@ export default function DoctorDashboard() {
                                 : 'text-gray-600 bg-gray-100'
                             }`}>
                               <Clock className="h-4 w-4" />
-                              <span className="font-medium">{request.estimatedDuration}h</span>
+                              <span className="font-medium">{formatDuration(request.estimatedDuration)}h</span>
                             </div>
                           </div>
                           {request.status === 'completed' && (
@@ -3011,7 +3011,7 @@ export default function DoctorDashboard() {
                                         ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
                                         : isDarkMode ? 'text-purple-400' : 'text-purple-600'
                                   }`}>
-                                    £{calculateDoctorTakeHome(parseFloat(service.price || 0)).toFixed(2)}
+                                    {formatCurrency(calculateDoctorTakeHome(parseFloat(service.price || 0)))}
                                   </span>
                                 </div>
                                 <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>

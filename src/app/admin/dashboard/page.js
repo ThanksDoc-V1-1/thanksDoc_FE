@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI } from '../../../lib/api';
-import { formatCurrency, formatDate, getCurrentLocation } from '../../../lib/utils';
+import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import TransactionHistory from '../../../components/TransactionHistory';
@@ -2397,7 +2397,7 @@ export default function AdminDashboard() {
                               <div className="flex justify-between items-center">
                                 <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
                                 <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {(request.estimatedDuration || request.attributes?.estimatedDuration) || 'TBD'}h
+                                  {formatDuration(request.estimatedDuration || request.attributes?.estimatedDuration) || 'TBD'}h
                                 </span>
                               </div>
                             </div>
@@ -3028,7 +3028,7 @@ export default function AdminDashboard() {
                             isDarkMode ? 'bg-green-900/40 text-green-400 border border-green-900' : 'bg-green-100 text-green-700 border border-green-300'
                           }`}>
                             <DollarSign className="h-3.5 w-3.5 mr-1" />
-                            £{parseFloat(price).toFixed(2)}
+                            {formatCurrency(price)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -3765,7 +3765,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
-                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{estimatedDuration}h</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDuration(estimatedDuration)}h</span>
                             </div>
                           </div>
                         </div>

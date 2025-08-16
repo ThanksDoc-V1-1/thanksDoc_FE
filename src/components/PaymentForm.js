@@ -5,6 +5,7 @@ import { CreditCard, Lock, ArrowLeft } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import SavedPaymentMethods from './SavedPaymentMethods';
+import { formatCurrency, formatDuration } from '../lib/utils';
 
 // Load Stripe once and cache it
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
@@ -282,7 +283,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
         
         // Show success message with proper amount formatting
         const amount = (result.paymentIntent.amount || result.paymentIntent.amount_received || 0) / 100;
-        alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${amount.toFixed(2)}\nStatus: ${result.paymentIntent.status}`);
+        alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: ${formatCurrency(amount)}\nStatus: ${result.paymentIntent.status}`);
         
         onPaymentSuccess?.(result.paymentIntent);
       }
@@ -335,7 +336,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
         if (result.paymentIntent.status === 'succeeded') {
           console.log('✅ Saved card payment succeeded:', result.paymentIntent);
           const amount = (result.paymentIntent.amount || 0) / 100;
-          alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: £${amount.toFixed(2)}\nStatus: ${result.paymentIntent.status}`);
+          alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: ${formatCurrency(amount)}\nStatus: ${result.paymentIntent.status}`);
           onPaymentSuccess?.(result.paymentIntent);
         } else {
           console.error('❌ Payment intent status:', result.paymentIntent.status);
@@ -466,7 +467,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">Duration:</span>
-            <span className="text-white">{serviceRequest.estimatedDuration}h</span>
+            <span className="text-white">{formatDuration(serviceRequest.estimatedDuration)}h</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">Doctor:</span>
@@ -474,7 +475,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </div>
           <div className="flex justify-between font-medium text-white pt-2 border-t border-gray-700">
             <span>Total:</span>
-            <span>£{serviceRequest.totalAmount}</span>
+            <span>{formatCurrency(serviceRequest.totalAmount)}</span>
           </div>
         </div>
       </div>
@@ -576,7 +577,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
               ) : (
                 <>
                   <Lock className="h-4 w-4" />
-                  <span>Pay £{serviceRequest.totalAmount}</span>
+                  <span>Pay {formatCurrency(serviceRequest.totalAmount)}</span>
                 </>
               )}
             </button>
@@ -616,7 +617,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
             ) : (
               <>
                 <Lock className="h-4 w-4" />
-                <span>Pay £{serviceRequest.totalAmount}</span>
+                <span>Pay {formatCurrency(serviceRequest.totalAmount)}</span>
               </>
             )}
           </button>

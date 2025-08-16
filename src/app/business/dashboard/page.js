@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
 import api from '../../../lib/api';
-import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, filterDoctorsByDistance, sortDoctorsByDistance, getDoctorDistance, formatDistance } from '../../../lib/utils';
+import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, filterDoctorsByDistance, sortDoctorsByDistance, getDoctorDistance, formatDistance, formatDuration } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
@@ -1035,14 +1035,25 @@ export default function BusinessDashboard() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    let processedValue = value;
+    
+    // Format duration to prevent long decimals
+    if (name === 'estimatedDuration') {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        processedValue = formatDuration(numValue);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
 
     // If estimated duration changes, recalculate service cost
     if (name === 'estimatedDuration' && formData.serviceId) {
-      calculateServiceCost(formData.serviceId, parseFloat(value));
+      calculateServiceCost(formData.serviceId, parseFloat(processedValue));
     }
 
     // If doctor selection type changes, reset preferred doctor and fetch previous doctors if needed
@@ -1075,7 +1086,7 @@ export default function BusinessDashboard() {
       const selectedService = availableServices.find(service => service.id.toString() === value);
       
       // Calculate the correct duration in hours
-      const serviceDurationInHours = selectedService?.duration ? (selectedService.duration / 60) : 1;
+      const serviceDurationInHours = selectedService?.duration ? formatDuration(selectedService.duration / 60) : 1;
       console.log('🕒 Service selection debug:', {
         serviceId: value,
         serviceName: selectedService?.name,
@@ -2713,7 +2724,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   {service.name}
                                 </span>
                                 <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded mr-3`}>
-                                  £{service.price}
+                                  {formatCurrency(service.price)}
                                 </span>
                               </label>
                             ))}
@@ -2746,7 +2757,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   {service.name}
                                 </span>
                                 <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                  £{service.price}
+                                  {formatCurrency(service.price)}
                                 </span>
                               </label>
                             ))}
@@ -2779,7 +2790,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   {service.name}
                                 </span>
                                 <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                  £{service.price}
+                                  {formatCurrency(service.price)}
                                 </span>
                               </label>
                             ))}
@@ -3106,6 +3117,9 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Estimated Duration (hours) *
+                  <span className={`text-xs block mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Enter time in hours (e.g., 0.5 for 30 minutes, 0.25 for 15 minutes)
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -3113,8 +3127,8 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   value={formData.estimatedDuration}
                   onChange={handleInputChange}
                   required
-                  min="0.5"
-                  step="0.5"
+                  min="0.01"
+                  step="0.01"
                   className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
@@ -3268,7 +3282,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                 {service.name}
                               </span>
                               <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded mr-3`}>
-                                £{service.price}
+                                {formatCurrency(service.price)}
                               </span>
                             </label>
                           ))}
@@ -3301,7 +3315,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                 {service.name}
                               </span>
                               <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                £{service.price}
+                                {formatCurrency(service.price)}
                               </span>
                             </label>
                           ))}
@@ -3334,7 +3348,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                 {service.name}
                               </span>
                               <span className={`text-sm font-medium px-2 py-1 rounded mr-3 ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                £{service.price}
+                                {formatCurrency(service.price)}
                               </span>
                             </label>
                           ))}
@@ -3452,7 +3466,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                     const servicePrice = parseFloat(selectedService?.price || 0);
                     return formatCurrency(servicePrice + SERVICE_CHARGE);
                   })()}
-                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes £{SERVICE_CHARGE} booking fee)</span>
+                  <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}> (includes {formatCurrency(SERVICE_CHARGE)} booking fee)</span>
                 </p>
                 <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-orange-900/20 border-orange-600/30' : 'bg-orange-50 border-orange-200'} border`}>
                   <p className={`text-xs ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>

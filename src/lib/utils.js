@@ -14,7 +14,30 @@ export function calculateDistance(lat1, lon1, lat2, lon2) {
 export function formatCurrency(amount, currency = 'GBP') {
   // Always use pound sign for UK currency
   const numAmount = Number(amount) || 0;
-  return `£${numAmount.toFixed(2)}`;
+  
+  // Handle edge cases for very long decimals or scientific notation
+  if (!isFinite(numAmount)) {
+    return '£0.00';
+  }
+  
+  // Round to 2 decimal places to prevent floating point precision issues
+  const roundedAmount = Math.round(numAmount * 100) / 100;
+  
+  return `£${roundedAmount.toFixed(2)}`;
+}
+
+export function formatDuration(duration) {
+  // Convert duration to number and handle edge cases
+  const numDuration = Number(duration) || 0;
+  
+  // Handle edge cases
+  if (!isFinite(numDuration) || numDuration < 0) {
+    return 0;
+  }
+  
+  // Round to 2 decimal places for display purposes
+  // This prevents long decimals like 0.3333333333333
+  return Math.round(numDuration * 100) / 100;
 }
 
 export function formatDate(date, options = {}) {
