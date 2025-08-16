@@ -1119,13 +1119,8 @@ export default function DoctorDashboard() {
             }`}>
               <p className={`text-sm mb-2 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}>Expected Payment</p>
-              <p className="text-2xl font-bold text-green-500">£{(completionAmount || 0).toFixed(2)}</p>
-              <p className={`text-sm mt-1 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-500'
-              }`}>
-                After completion, the business will be prompted to make payment.
-              </p>
+              }`}>Service Cost</p>
+              <p className="text-2xl font-bold text-green-500">{formatCurrency(completionAmount || 0)}</p>
             </div>
             
             <div className="mb-4">
@@ -1599,7 +1594,7 @@ export default function DoctorDashboard() {
                             </div>
                             <div className="flex items-center space-x-2 mt-1">
                               <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                {formatCurrency(service.price || 0)}
+                                {formatCurrency(calculateDoctorTakeHome(service.price || 0))}
                               </span>
                               <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                 • {service.duration || 30} min
@@ -1654,7 +1649,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                    {formatCurrency(service.price || 0)}
+                                    {formatCurrency(calculateDoctorTakeHome(service.price || 0))}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -1712,7 +1707,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                                    {formatCurrency(service.price || 0)}
+                                    {formatCurrency(calculateDoctorTakeHome(service.price || 0))}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -1768,7 +1763,7 @@ export default function DoctorDashboard() {
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className={`text-sm font-semibold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                                    {formatCurrency(service.price || 0)}
+                                    {formatCurrency(calculateDoctorTakeHome(service.price || 0))}
                                   </span>
                                   <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                     • {service.duration || 30} min
@@ -2107,7 +2102,7 @@ export default function DoctorDashboard() {
                     <p className="text-xs lg:text-sm font-medium" style={{color: '#0F9297'}}>My Earnings</p>
                     <p className={`text-xl lg:text-2xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>£{(stats.totalEarnings || 0).toFixed(2)}</p>
+                    }`}>{formatCurrency(stats.totalEarnings || 0)}</p>
                   </div>
                   <div className={`p-2 lg:p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                     <TrendingUp className={`h-4 w-4 lg:h-6 lg:w-6 ${
@@ -2295,7 +2290,7 @@ export default function DoctorDashboard() {
                                 ? 'text-green-400 bg-green-900/20' 
                                 : 'text-green-600 bg-green-50'
                             }`}>
-                              <span className="font-semibold">£{calculateDoctorEarnings(request).toFixed(2)}</span>
+                              <span className="font-semibold">{formatCurrency(calculateDoctorEarnings(request))}</span>
                             </div>
                           </div>
                           
@@ -2559,7 +2554,7 @@ export default function DoctorDashboard() {
                 )}
                 <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
                   <span className={`font-medium`} style={{color: '#0F9297'}}>Total Earnings:</span>
-                  <span className={`font-bold text-lg`} style={{color: '#0F9297'}}>£{(stats.totalEarnings || 0).toFixed(2)}</span>
+                  <span className={`font-bold text-lg`} style={{color: '#0F9297'}}>{formatCurrency(stats.totalEarnings || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Status:</span>
@@ -2744,7 +2739,7 @@ export default function DoctorDashboard() {
                           </div>
                           {request.status === 'completed' && (
                             <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>£{calculateDoctorTakeHome(calculateDoctorEarnings(request)).toFixed(2)}</span>
+                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
                               <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
                                 COMPLETED
                               </div>
