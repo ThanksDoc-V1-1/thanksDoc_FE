@@ -18,6 +18,7 @@ export default function ComplianceDocuments({ doctorId }) {
   const [expandedDocuments, setExpandedDocuments] = useState({});
   const [pendingUploads, setPendingUploads] = useState({}); // Store files before upload
   const [uploadSuccess, setUploadSuccess] = useState({}); // Track upload success states
+  const [updateMode, setUpdateMode] = useState({}); // Per-document update mode to reveal editor when updating
   
   // Professional References state
   const [references, setReferences] = useState({}); // Store references by doctor ID
@@ -223,6 +224,12 @@ export default function ComplianceDocuments({ doctorId }) {
 
           // Refresh documents to show the uploaded file
           await loadDocuments();
+
+          // Exit update mode after a successful upload
+          setUpdateMode(prev => ({
+            ...prev,
+            [documentId]: false
+          }));
         } else {
           throw new Error(result.message || 'Upload failed');
         }
@@ -234,6 +241,22 @@ export default function ComplianceDocuments({ doctorId }) {
       alert('Error uploading file. Please try again.');
     } finally {
       setUploadingDoc(null);
+    }
+  };
+
+  const toggleUpdateMode = (documentId) => {
+    setUpdateMode(prev => ({
+      ...prev,
+      [documentId]: !prev[documentId]
+    }));
+
+    // When cancelling update, clear any pending selected file
+    if (updateMode[documentId]) {
+      setPendingUploads(prev => {
+        const next = { ...prev };
+        delete next[documentId];
+        return next;
+      });
     }
   };
 
@@ -1096,8 +1119,48 @@ export default function ComplianceDocuments({ doctorId }) {
                           </div>
                         </div>
                       ) : (
-                        // Regular Document Upload Section
+                        // Regular Document Upload Section (with view-only state when already uploaded)
                         <>
+                          {/* View-only state when a document exists and not updating */}
+                          {doc && doc.files?.length > 0 && !updateMode[docConfig.id] ? (
+                            <>
+                              {/* Uploaded Files */}
+                              <div className="mb-4">
+                                <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                  Uploaded Files ({doc.files.length})
+                                </h5>
+                                <div className="space-y-2">
+                                  {doc.files.map((file) => (
+                                    <div key={file.id} className={`flex items-center justify-between p-3 rounded border ${
+                                      isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-white'
+                                    }`}>
+                                      <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                        <FileText className={`h-4 w-4 flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                        <div className="flex-1 min-w-0">
+                                          <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                            {file.name}
+                                          </p>
+                                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            {formatFileSize(file.size)} • Uploaded {new Date(file.uploadDate).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); toggleUpdateMode(docConfig.id); }}
+                                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 text-white"
+                                >
+                                  Update Document
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
                           {/* File Upload */}
                       <div className="mb-4">
                         <label className={`block text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -1190,7 +1253,7 @@ export default function ComplianceDocuments({ doctorId }) {
                         </p>
                       </div>
 
-                      {/* Save Button */}
+                      {/* Save/Cancel Buttons */}
                       {pendingUploads[docConfig.id]?.file && (
                         <div className="flex items-center justify-between">
                           <button
@@ -1212,6 +1275,16 @@ export default function ComplianceDocuments({ doctorId }) {
                             )}
                           </button>
 
+                          {updateMode[docConfig.id] && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleUpdateMode(docConfig.id); }}
+                              disabled={uploadingDoc === docConfig.id}
+                              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                            >
+                              Cancel
+                            </button>
+                          )}
+
                           {uploadSuccess[docConfig.id] && (
                             <div className="flex items-center space-x-2 text-green-600">
                               <CheckCircle className="h-4 w-4" />
@@ -1220,46 +1293,8 @@ export default function ComplianceDocuments({ doctorId }) {
                           )}
                         </div>
                       )}
-
-                      {/* Uploaded Files */}
-                      {doc?.files && doc.files.length > 0 && (
-                        <div className="mb-4">
-                          <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            Uploaded Files ({doc.files.length})
-                          </h5>
-                          <div className="space-y-2">
-                            {doc.files.map((file) => (
-                              <div key={file.id} className={`flex items-center justify-between p-3 rounded border ${
-                                isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-white'
-                              }`}>
-                                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                  <FileText className={`h-4 w-4 flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                  <div className="flex-1 min-w-0">
-                                    <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                      {file.name}
-                                    </p>
-                                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {formatFileSize(file.size)} • Uploaded {new Date(file.uploadDate).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeFile(docConfig.id, file.id);
-                                  }}
-                                  className={`p-1 rounded transition-colors ${
-                                    isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
-                                  }`}
-                                  title="Remove file"
-                                >
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      </>
+                          )}
                         </>
                       )}
                     </div>
