@@ -2502,6 +2502,12 @@ export default function DoctorDashboard() {
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.licenseNumber}</span>
                   </div>
                 )}
+                {doctor?.zipCode && (
+                  <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Postal Code:</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.zipCode}</span>
+                  </div>
+                )}
                 {doctor?.qualifications && (
                   <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'} block mb-1`}>Qualifications:</span>
