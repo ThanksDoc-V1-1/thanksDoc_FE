@@ -541,10 +541,11 @@ export default function DoctorDashboard() {
     
     // Calculate payment amount based on service pricing
     const doctorEarnings = calculateDoctorEarnings(request);
+    const doctorTakeHome = calculateDoctorTakeHome(doctorEarnings);
     
     // Show the completion modal instead of multiple popups
     setCompletionRequest(request);
-    setCompletionAmount(doctorEarnings);
+    setCompletionAmount(doctorTakeHome); // Show the actual amount doctor will receive
     setCompletionNotes('');
     setShowCompletionModal(true);
   };
@@ -2290,7 +2291,7 @@ export default function DoctorDashboard() {
                                 ? 'text-green-400 bg-green-900/20' 
                                 : 'text-green-600 bg-green-50'
                             }`}>
-                              <span className="font-semibold">{formatCurrency(calculateDoctorEarnings(request))}</span>
+                              <span className="font-semibold">{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
                             </div>
                           </div>
                           
