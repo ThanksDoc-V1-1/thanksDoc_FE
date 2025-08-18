@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -24,6 +24,8 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [focusedDoctorId, setFocusedDoctorId] = useState(null);
+  // Mobile sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Pagination states
   const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
@@ -1888,10 +1890,17 @@ export default function AdminDashboard() {
           <div className="pointer-events-none absolute -bottom-24 left-[45%] -translate-x-1/2 w-[30rem] h-[30rem] bg-cyan-300/35 rounded-full blur-3xl" />
         </>
       )}
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
       {/* Side Navigation */}
-  <div className={`w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} border-r flex flex-col shadow-lg h-screen fixed`}>
+      <div className={`fixed inset-y-0 left-0 z-30 w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} border-r flex flex-col shadow-lg transform transition-transform duration-300 -translate-x-full md:translate-x-0 md:h-screen ${isSidebarOpen ? 'translate-x-0' : ''}`}>
         {/* Logo/Header */}
-        <div className="p-6 border-b border-gray-800">
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg shadow-lg">
               <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
@@ -1901,6 +1910,14 @@ export default function AdminDashboard() {
               <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Management Dashboard</p>
             </div>
           </div>
+          {/* Close on mobile */}
+          <button
+            className="md:hidden p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            <X className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+          </button>
         </div>
 
         {/* Navigation Menu */}
@@ -1923,13 +1940,14 @@ export default function AdminDashboard() {
                   key={tab.id}
                   onClick={() => {
                     setActiveTab(tab.id);
-                    setCurrentPage(1); // Reset pagination when switching tabs
-                    setSearchTerm(''); // Reset search when switching tabs
+                    setCurrentPage(1);
+                    setSearchTerm('');
+                    setIsSidebarOpen(false); // close on mobile after navigation
                   }}
                   className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === tab.id
-                      ? isDarkMode 
-                        ? 'bg-blue-900 text-blue-100 border border-blue-800 shadow-lg' 
+                      ? isDarkMode
+                        ? 'bg-blue-900 text-blue-100 border border-blue-800 shadow-lg'
                         : 'bg-blue-600 text-white shadow-md'
                       : isDarkMode
                         ? 'text-gray-300 hover:bg-gray-800 hover:text-white'
@@ -1960,26 +1978,26 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="space-y-2">
             <button
               onClick={fetchAllData}
               className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isDarkMode 
-                  ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50' 
+                isDarkMode
+                  ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh Data
             </button>
-            
+
             <button
               onClick={logout}
               className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isDarkMode 
-                  ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' 
+                isDarkMode
+                  ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50'
                   : 'bg-red-600 text-white hover:bg-red-700'
               }`}
             >
@@ -1991,47 +2009,55 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content Area */}
-  <div className="relative z-10 flex-1 flex flex-col min-w-0 ml-64">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 ml-0 md:ml-64">
         {/* Top Header */}
-  <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} border-b px-6 py-4 shadow-sm`}>
+        <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} border-b px-4 sm:px-6 py-4 shadow-sm`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
+            <div className="flex items-center space-x-3">
+              {/* Mobile menu button */}
+              <button
+                className="md:hidden p-2 rounded-lg border hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={() => setIsSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <Menu className={`${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`} />
+              </button>
               <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} capitalize`}>
-                {activeTab === 'settings' ? 'System Settings' : 
-                 activeTab === 'earnings' ? 'Doctor Earnings' : 
-                 activeTab === 'compliance-documents' ? 'Compliance Documents' : 
+                {activeTab === 'settings' ? 'System Settings' :
+                 activeTab === 'earnings' ? 'Doctor Earnings' :
+                 activeTab === 'compliance-documents' ? 'Compliance Documents' :
                  activeTab}
               </h2>
-              <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {activeTab === 'overview' ? 'Dashboard overview and statistics' :
-                 activeTab === 'doctors' ? 'Manage registered doctors and their verification status' :
-                 activeTab === 'businesses' ? 'Manage registered businesses and their profiles' :
-                 activeTab === 'services' ? 'Configure available medical services' :
-                 activeTab === 'settings' ? 'System-wide configuration settings' :
-                 activeTab === 'requests' ? 'Monitor and manage service requests' :
-                 activeTab === 'transactions' ? 'View payment transactions and financial data' :
-                 activeTab === 'earnings' ? 'Track doctor earnings and payments' :
-                 activeTab === 'compliance-documents' ? 'Manage compliance document types and verification' :
-                 'Manage your platform'}
-              </p>
             </div>
-            
+
             <div className="mt-4 sm:mt-0 flex items-center space-x-4">
               {/* Admin Notification Center */}
               <AdminNotificationCenter />
-              
+
               {dataLoading && (
                 <div className="flex items-center space-x-2">
                   <div className={`animate-spin rounded-full h-4 w-4 border-b-2 ${isDarkMode ? 'border-blue-400' : 'border-blue-600'}`}></div>
                   <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
                 </div>
               )}
-              
+
               <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 Last updated: {new Date().toLocaleTimeString()}
               </div>
             </div>
           </div>
+          <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {activeTab === 'overview' ? 'Dashboard overview and statistics' :
+             activeTab === 'doctors' ? 'Manage registered doctors and their verification status' :
+             activeTab === 'businesses' ? 'Manage registered businesses and their profiles' :
+             activeTab === 'services' ? 'Configure available medical services' :
+             activeTab === 'settings' ? 'System-wide configuration settings' :
+             activeTab === 'requests' ? 'Monitor and manage service requests' :
+             activeTab === 'transactions' ? 'View payment transactions and financial data' :
+             activeTab === 'earnings' ? 'Track doctor earnings and payments' :
+             activeTab === 'compliance-documents' ? 'Manage compliance document types and verification' :
+             'Manage your platform'}
+          </p>
         </div>
 
         {/* Content Area with Search */}
