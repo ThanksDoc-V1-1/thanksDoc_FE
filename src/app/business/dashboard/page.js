@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
 import api from '../../../lib/api';
-import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, filterDoctorsByDistance, sortDoctorsByDistance, getDoctorDistance, formatDistance, formatDuration } from '../../../lib/utils';
+import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, formatDuration } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import PaymentForm from '../../../components/PaymentForm';
 import CountryCodePicker from '../../../components/CountryCodePicker';
-import DistanceSlider from '../../../components/DistanceSlider';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -185,14 +184,6 @@ export default function BusinessDashboard() {
   const [fallbackStatuses, setFallbackStatuses] = useState({});
   const requestsPerPage = 5;
   
-  // Distance filtering states
-  const [distanceFilter, setDistanceFilter] = useState(6); // Default to 6 miles (roughly equivalent to 10km)
-  const [businessLocation, setBusinessLocation] = useState(null);
-  const [businessLocationName, setBusinessLocationName] = useState('');
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [filteredDoctorsByDistance, setFilteredDoctorsByDistance] = useState([]);
-  const [filteredPreviousDoctorsByDistance, setFilteredPreviousDoctorsByDistance] = useState([]);
-
   // Business profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
@@ -209,8 +200,6 @@ export default function BusinessDashboard() {
     longitude: ''
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
-  const [businessLocationLoading, setBusinessLocationLoading] = useState(false);
-
   // Auto-refresh functionality
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
@@ -250,52 +239,42 @@ export default function BusinessDashboard() {
     return durationInHours > 0 ? durationInHours : 1; // Ensure positive duration
   };
 
-  const applyDistanceFilter = (distance = distanceFilter, selectedServiceId = null) => {
-    if (!businessLocation) {
-      setFilteredDoctorsByDistance(nearbyDoctors);
-      setFilteredPreviousDoctorsByDistance(previousDoctors);
+  // Function to filter doctors by service only (no location filtering)
+  const applyServiceFilter = (selectedServiceId = null) => {
+    // If no service is selected, return all doctors
+    if (!selectedServiceId) {
       return;
     }
 
-    // Filter main doctors list by distance
-    let filtered = distance === -1 
-      ? nearbyDoctors 
-      : filterDoctorsByDistance(nearbyDoctors, businessLocation, distance);
-    
-    // Filter previous doctors list by distance
-    let filteredPrevious = distance === -1 
-      ? previousDoctors 
-      : filterDoctorsByDistance(previousDoctors, businessLocation, distance);
-    
-    // Apply service filtering if a service is selected
-    if (selectedServiceId) {
-      filtered = filtered.filter(doctor => doctorOffersService(doctor, selectedServiceId));
-      filteredPrevious = filteredPrevious.filter(doctor => doctorOffersService(doctor, selectedServiceId));
-    }
-    
-    // Sort both lists by distance regardless of filter
-    filtered = sortDoctorsByDistance(filtered, businessLocation);
-    filteredPrevious = sortDoctorsByDistance(filteredPrevious, businessLocation);
-    
-    // Only log when there's a mismatch or for debugging
-    console.log('📍 Distance & Service Filter Result:', {
-      range: distance === -1 ? 'Anywhere' : `${distance}km`,
-      selectedService: selectedServiceId ? `Service ID: ${selectedServiceId}` : 'No service filter',
+    console.log('� Service Filter Applied:', {
+      selectedService: `Service ID: ${selectedServiceId}`,
       totalDoctors: nearbyDoctors.length,
-      filteredCount: filtered.length,
-      totalPreviousDoctors: previousDoctors.length,
-      filteredPreviousCount: filteredPrevious.length,
-      businessLocation: `${businessLocation.latitude}, ${businessLocation.longitude}`
+      totalPreviousDoctors: previousDoctors.length
     });
-
-    setFilteredDoctorsByDistance(filtered);
-    setFilteredPreviousDoctorsByDistance(filteredPrevious);
   };
 
-  const handleDistanceFilterChange = (newDistance) => {
-    setDistanceFilter(newDistance);
-    // Apply both distance and service filter (if a service is selected in the form)
-    applyDistanceFilter(newDistance, formData.serviceId);
+  // Helper function to get doctors that offer a specific service (replaces distance filtering)
+  const getDoctorsForService = (doctorsList, serviceId) => {
+    if (!serviceId) return doctorsList;
+    return doctorsList.filter(doctor => doctorOffersService(doctor, serviceId));
+  };
+
+  // Helper function to get available doctors for current service
+  const getAvailableDoctors = () => {
+    let availableDoctors = nearbyDoctors.filter(doctor => doctor.isAvailable);
+    if (formData.serviceId) {
+      availableDoctors = getDoctorsForService(availableDoctors, formData.serviceId);
+    }
+    return availableDoctors;
+  };
+
+  // Helper function to get available previous doctors for current service  
+  const getAvailablePreviousDoctors = () => {
+    let availablePrevious = previousDoctors.filter(doctor => doctor.isAvailable);
+    if (formData.serviceId) {
+      availablePrevious = getDoctorsForService(availablePrevious, formData.serviceId);
+    }
+    return availablePrevious;
   };
 
   // Authentication check - redirect if not authenticated or not business
@@ -398,28 +377,30 @@ export default function BusinessDashboard() {
     // Only log when there are new paid requests for important updates
   }, [serviceRequests]);
 
-  // Handle business location and distance filtering
+  // Handle business data updates
   useEffect(() => {
-    console.log('🏢 Business location useEffect:', { businessData, businessLocation });
-    // Only set business location if the business has actual coordinates stored
-    if (businessData && businessData.latitude && businessData.longitude && !businessLocation) {
-      const location = {
-        latitude: parseFloat(businessData.latitude),
-        longitude: parseFloat(businessData.longitude)
-      };
-      setBusinessLocation(location);
-      console.log('📍 Calling reverse geocode for business:', location);
-      // Get the place name for these coordinates
-      reverseGeocode(location.latitude, location.longitude);
-    } else if (!businessData?.latitude || !businessData?.longitude) {
-      // If business doesn't have coordinates, clear the location
-      setBusinessLocation(null);
-      setBusinessLocationName('');
+    console.log('🏢 Business data useEffect:', businessData);
+    
+    // Update edit profile data when business data is available
+    if (businessData) {
+      setEditProfileData({
+        businessName: businessData.businessName || '',
+        contactPersonName: businessData.contactPersonName || '',
+        email: businessData.email || '',
+        phone: businessData.phone || '',
+        address: businessData.address || '',
+        city: businessData.city || '',
+        state: businessData.state || '',
+        zipCode: businessData.zipCode || '',
+        description: businessData.description || '',
+        latitude: businessData.latitude || '',
+        longitude: businessData.longitude || ''
+      });
     }
 
-    // Apply distance filter when location, doctors, or filter changes
-    applyDistanceFilter(distanceFilter, formData.serviceId);
-  }, [businessData, businessLocation, nearbyDoctors, previousDoctors, distanceFilter, formData.serviceId]);
+    // Apply service filter when service changes
+    applyServiceFilter(formData.serviceId);
+  }, [businessData, nearbyDoctors, previousDoctors, formData.serviceId]);
 
   // Show loading screen while authentication is being checked
   if (authLoading) {
@@ -813,65 +794,6 @@ export default function BusinessDashboard() {
     }
   };
 
-  // Reverse geocode to get place name from coordinates
-  const reverseGeocode = async (lat, lng) => {
-    console.log('🌍 Starting reverse geocode:', { lat, lng });
-    setLocationLoading(true);
-    try {
-      // Try Google Maps API first (more reliable in production)
-      const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      console.log('🗝️ Google API key available:', !!googleApiKey);
-      
-      if (googleApiKey) {
-        console.log('📡 Calling Google Maps API...');
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${googleApiKey}`
-        );
-        const data = await response.json();
-        console.log('🗺️ Google Maps response:', data);
-        
-        if (data.status === 'OK' && data.results && data.results[0]) {
-          const result = data.results[0];
-          const locationName = result.formatted_address || result.address_components[0]?.long_name;
-          if (locationName) {
-            console.log('✅ Google Maps location found:', locationName);
-            setBusinessLocationName(locationName);
-            return;
-          }
-        }
-      }
-      
-      // Fallback to BigDataCloud API
-      console.log('📡 Calling BigDataCloud API fallback...');
-      const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
-      const data = await response.json();
-      console.log('🌐 BigDataCloud response:', data);
-      
-      if (data) {
-        // Create a readable location name
-        const locationParts = [];
-        if (data.locality) locationParts.push(data.locality);
-        if (data.city && data.city !== data.locality) locationParts.push(data.city);
-        if (data.principalSubdivision) locationParts.push(data.principalSubdivision);
-        if (data.countryName) locationParts.push(data.countryName);
-        
-        const locationName = locationParts.join(', ');
-        console.log('✅ BigDataCloud location found:', locationName);
-        setBusinessLocationName(locationName);
-      }
-    } catch (error) {
-      console.error('❌ Error reverse geocoding:', error);
-      // Set a fallback location name if available
-      if (businessData?.city) {
-        const fallbackName = [businessData.city, businessData.state, businessData.country].filter(Boolean).join(', ');
-        console.log('🔄 Using fallback location:', fallbackName);
-        setBusinessLocationName(fallbackName);
-      }
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
   const handleSubmitQuickRequest = async () => {
     if (!selectedDoctor || !requestHours || !quickRequestServiceId) {
       alert('Please select a service and specify the number of hours required.');
@@ -882,20 +804,6 @@ export default function BusinessDashboard() {
     if (!doctorOffersService(selectedDoctor, quickRequestServiceId)) {
       alert(`Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} does not offer this service. Please select a different service.`);
       return;
-    }
-
-    // Check if the selected doctor is within the distance range (warning only, not blocking)
-    if (businessLocation && distanceFilter !== -1) {
-      const isWithinRange = filteredDoctorsByDistance.some(d => d.id === selectedDoctor.id);
-      if (!isWithinRange) {
-        const confirm = window.confirm(
-          `Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} is located more than ${distanceFilter}km from your location. ` +
-          `Do you still want to proceed with this request?`
-        );
-        if (!confirm) {
-          return;
-        }
-      }
     }
 
     // Validate date and time
@@ -952,10 +860,6 @@ export default function BusinessDashboard() {
           servicePrice: serviceAmount, // Store the service price
           estimatedCost: totalWithServiceCharge,
           serviceDateTime: serviceDateTime.toISOString(),
-          // Add distance filtering parameters
-          businessLatitude: businessLocation?.latitude,
-          businessLongitude: businessLocation?.longitude,
-          distanceFilter: distanceFilter,
           // Add patient information for online consultations
           ...(isOnlineConsultation && {
             patientFirstName: quickRequestPatientFirstName,
@@ -1010,38 +914,6 @@ export default function BusinessDashboard() {
     
     console.log('✅ Doctor offers service result:', hasService);
     return hasService;
-  };
-
-  // Distance filtering functions
-  const handleBusinessLocationUpdate = async (location) => {
-    try {
-      console.log('📍 Updating business location:', location);
-      setBusinessLocation(location);
-      
-      // Update the business profile with the new location
-      const response = await businessAPI.updateProfile(user.id, {
-        latitude: location.latitude,
-        longitude: location.longitude
-      });
-      
-      if (response.data) {
-        console.log('✅ Business location updated successfully');
-        // Update local business data
-        setBusinessData(prev => ({
-          ...prev,
-          latitude: location.latitude,
-          longitude: location.longitude
-        }));
-        
-        // Re-filter doctors with new location
-        applyDistanceFilter();
-      }
-    } catch (error) {
-      console.error('❌ Error updating business location:', error);
-      // Still set the local state for immediate UI feedback
-      setBusinessLocation(location);
-      applyDistanceFilter();
-    }
   };
 
   const handleCancelRequest = async (requestId) => {
@@ -1137,13 +1009,9 @@ export default function BusinessDashboard() {
         fetchDoctorsForService(value);
         // Calculate service cost with the service's default duration
         calculateServiceCost(value, serviceDurationInHours);
-        // Re-apply distance and service filters when service selection changes
-        applyDistanceFilter(distanceFilter, value);
       } else {
         // Clear service cost when no service is selected
         setServiceCost(null);
-        // Re-apply distance filter without service filter when no service is selected
-        applyDistanceFilter(distanceFilter, null);
       }
     }
   };
@@ -1246,12 +1114,9 @@ export default function BusinessDashboard() {
         }
       }
 
-      // Validation: Check if there are any doctors available within the selected distance range
-      if (formData.doctorSelectionType === 'any' && filteredDoctorsByDistance.length === 0) {
-        const distanceText = businessLocation && distanceFilter !== -1 
-          ? `within ${distanceFilter} miles of your location` 
-          : 'in your area';
-        alert(`No doctors are available ${distanceText}. Please try increasing the distance range or contact support for assistance.`);
+      // Validation: Check if there are any doctors available for the selected service
+      if (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) {
+        alert('No doctors are available for the selected service. Please contact support for assistance.');
         setLoading(false);
         return;
       }
@@ -1316,11 +1181,7 @@ export default function BusinessDashboard() {
         totalAmount: totalCost,
         // Store the complete form data for later use
         _formData: {
-          ...formData,
-          // Add distance filtering parameters to form data
-          businessLatitude: businessLocation?.latitude,
-          businessLongitude: businessLocation?.longitude,
-          distanceFilter: distanceFilter
+          ...formData
         },
         _serviceDateTime: serviceDateTime
       };
@@ -1380,10 +1241,6 @@ export default function BusinessDashboard() {
           const requestData = {
             ...quickRequestData,
             businessId: user.id,
-            // Add distance filtering parameters
-            businessLatitude: businessLocation?.latitude,
-            businessLongitude: businessLocation?.longitude,
-            distanceFilter: distanceFilter,
             // Mark as paid since payment was successful
             isPaid: true,
             paymentMethod: 'card',
@@ -1444,10 +1301,6 @@ Payment ID: ${paymentIntent.id}`);
             serviceCharge: SERVICE_CHARGE,
             servicePrice: paymentRequest.servicePrice, // Store the service price for doctors
             serviceDateTime: serviceDateTime.toISOString(),
-            // Add distance filtering parameters
-            businessLatitude: businessLocation?.latitude,
-            businessLongitude: businessLocation?.longitude,
-            distanceFilter: distanceFilter,
             // Mark as paid since payment was successful
             isPaid: true,
             paymentMethod: 'card',
@@ -1653,37 +1506,6 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
                     Welcome back, {contactName}
                   </p>
-                  {/* Current Location Display */}
-                  {businessLocation && businessLocationName && (
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
-                      isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
-                    }`}>
-                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
-                      <span className={`text-xs ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                        {businessLocationName}
-                      </span>
-                    </div>
-                  )}
-                  {businessLocation && (!businessLocationName || locationLoading) && (
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
-                      isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100/50'
-                    }`}>
-                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} ${locationLoading ? 'animate-pulse' : ''}`} />
-                      <span className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                        {locationLoading ? 'Loading...' : 'Detecting location...'}
-                      </span>
-                    </div>
-                  )}
-                  {!businessLocation && (
-                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-md ${
-                      isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-100/50'
-                    }`}>
-                      <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
-                      <span className={`text-xs ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                        Location not set
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -2207,43 +2029,6 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-sm`}>{business.description}</span>
                   </div>
                 )}
-                {/* Location Information */}
-                {(business?.latitude && business?.longitude) ? (
-                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
-                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
-                    </div>
-                    
-                    {/* Place Name from Coordinates */}
-                    {businessLocationName ? (
-                      <div className="mb-2">
-                        <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-medium`}>
-                          {businessLocationName}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="mb-2">
-                        <span className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-sm`}>
-                          Detecting location...
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Coordinates */}
-                    <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      📍 Coordinates: {parseFloat(business.latitude).toFixed(6)}, {parseFloat(business.longitude).toFixed(6)}
-                    </div>
-                  </div>
-                ) : (
-                  <div className={`py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className={`h-4 w-4 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
-                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>Location:</span>
-                      <span className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'} text-sm`}>Coordinates not set</span>
-                    </div>
-                  </div>
-                )}
                 <div className={`flex justify-between items-center py-2 px-3 rounded-lg mt-4`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.2)' : 'rgba(15, 146, 151, 0.1)'}}>
                   <span className={`font-medium`} style={{color: '#0F9297'}}>Total Spent:</span>
                   <span className={`font-bold text-lg`} style={{color: '#0F9297'}}>{formatCurrency(stats.totalSpent)}</span>
@@ -2526,38 +2311,6 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 );
               })()}
 
-              {/* Distance Filter */}
-              <DistanceSlider
-                value={distanceFilter}
-                onChange={handleDistanceFilterChange}
-                isDarkMode={isDarkMode}
-                businessLocation={businessLocation}
-                onLocationUpdate={handleBusinessLocationUpdate}
-                disabled={loading}
-              />
-
-              {/* Distance Filter Status */}
-              {businessLocation && (
-                <div className={`mt-2 p-2 rounded-lg text-sm ${
-                  filteredDoctorsByDistance.length > 0 
-                    ? isDarkMode 
-                      ? 'bg-green-900/20 border border-green-800 text-green-300' 
-                      : 'bg-green-50 border border-green-200 text-green-700'
-                    : isDarkMode 
-                      ? 'bg-orange-900/20 border border-orange-800 text-orange-300' 
-                      : 'bg-orange-50 border border-orange-200 text-orange-700'
-                }`}>
-                  📍 {filteredDoctorsByDistance.length} doctor{filteredDoctorsByDistance.length !== 1 ? 's' : ''} available 
-                  {distanceFilter !== -1 ? ` within ${distanceFilter} miles` : ' (no distance limit)'} 
-                  of your location
-                  {filteredDoctorsByDistance.length === 0 && distanceFilter !== -1 && (
-                    <span className="block mt-1 text-xs">
-                      Try increasing the distance range or selecting "Anywhere" to find doctors.
-                    </span>
-                  )}
-                </div>
-              )}
-
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Doctor Selection *
@@ -2584,7 +2337,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                       Loading previous doctors...
                     </div>
-                  ) : filteredPreviousDoctorsByDistance.filter(doctor => {
+                  ) : getAvailablePreviousDoctors().filter(doctor => {
                       // Filter by availability and service if service is selected
                       const isAvailable = doctor.isAvailable;
                       const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
@@ -2599,7 +2352,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                         className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                       >
                         <option value="">Select a previous doctor</option>
-                        {filteredPreviousDoctorsByDistance
+                        {getAvailablePreviousDoctors()
                           .filter(doctor => {
                             // Filter by availability and service if service is selected
                             const isAvailable = doctor.isAvailable;
@@ -2614,31 +2367,31 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                       </select>
                       <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
                         <p className={`text-xs ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
-                          ✅ Showing {filteredPreviousDoctorsByDistance.filter(doctor => {
+                          ✅ Showing {getAvailablePreviousDoctors().filter(doctor => {
                             const isAvailable = doctor.isAvailable;
                             const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
                             return isAvailable && offersService;
-                          }).length} available doctor(s) you've worked with before{formData.serviceId ? ' who offer the selected service' : ''} within {distanceFilter === 'anywhere' ? 'any distance' : distanceFilter}
+                          }).length} available doctor(s) you've worked with before{formData.serviceId ? ' who offer the selected service' : ''}
                         </p>
                       </div>
                     </>
                   ) : (
                     <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {filteredPreviousDoctorsByDistance.length === 0 
+                        {previousDoctors.length === 0 
                           ? "No previously worked with doctors found. You need to complete at least one service request first."
                           : formData.serviceId 
-                            ? `None of your previous doctors who offer the selected service are currently available. ${filteredPreviousDoctorsByDistance.filter(d => d.isAvailable && !doctorOffersService(d, formData.serviceId)).length > 0 ? 'Some of your previous doctors are available but don\'t offer this service.' : ''} Please try the 'Any available doctor' option instead.`
+                            ? `None of your previous doctors who offer the selected service are currently available. ${getAvailablePreviousDoctors().filter(d => d.isAvailable && !doctorOffersService(d, formData.serviceId)).length > 0 ? 'Some of your previous doctors are available but don\'t offer this service.' : ''} Please try the 'Any available doctor' option instead.`
                             : "None of your previous doctors are currently available. Please try the 'Any available doctor' option instead."
                         }
                       </p>
-                      {filteredPreviousDoctorsByDistance.length > 0 && (
+                      {previousDoctors.length > 0 && (
                         <div className="mt-2">
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                            Previous doctors ({filteredPreviousDoctorsByDistance.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length} unavailable{formData.serviceId ? '/don\'t offer this service' : ''}):
+                            Previous doctors ({previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length} unavailable{formData.serviceId ? '/don\'t offer this service' : ''}):
                           </p>
                           <ul className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
-                            {filteredPreviousDoctorsByDistance
+                            {previousDoctors
                               .filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId)))
                               .slice(0, 3)
                               .map((doctor) => (
@@ -2647,8 +2400,8 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   {!doctor.isAvailable ? ' (unavailable)' : formData.serviceId && !doctorOffersService(doctor, formData.serviceId) ? ' (doesn\'t offer this service)' : ''}
                                 </li>
                               ))}
-                            {filteredPreviousDoctorsByDistance.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length > 3 && (
-                              <li>... and {filteredPreviousDoctorsByDistance.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length - 3} more</li>
+                            {previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length > 3 && (
+                              <li>... and {previousDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length - 3} more</li>
                             )}
                           </ul>
                         </div>
@@ -2663,16 +2416,11 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                     Doctor Assignment
                   </label>
-                  {filteredDoctorsByDistance.length > 0 ? (
+                  {getAvailableDoctors().length > 0 ? (
                     <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                        📍 Your request will be sent to {filteredDoctorsByDistance.length} available doctor{filteredDoctorsByDistance.length > 1 ? 's' : ''}
-                        {businessLocation && distanceFilter !== -1 
-                          ? ` within ${distanceFilter} miles of your location` 
-                          : businessLocation 
-                            ? ' (no distance limit)' 
-                            : ' in your area'
-                        }.
+                        📍 Your request will be sent to {getAvailableDoctors().length} available doctor{getAvailableDoctors().length > 1 ? 's' : ''}
+                        {formData.serviceId ? ' who offer this service' : ''}.
                       </p>
                       <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-1`}>
                         The first available doctor will be automatically assigned to your request.
@@ -2681,11 +2429,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   ) : (
                     <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
-                        ⚠️ No doctors available
-                        {businessLocation && distanceFilter !== -1 
-                          ? ` within ${distanceFilter} miles of your location` 
-                          : ' in your area'
-                        }.
+                        ⚠️ No doctors available{formData.serviceId ? ' for this service' : ''}.
                       </p>
                       <p className={`text-xs ${isDarkMode ? 'text-red-400' : 'text-red-600'} mt-1`}>
                         Please try increasing the distance range or contact support for assistance.
@@ -2783,11 +2527,11 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || (formData.doctorSelectionType === 'any' && filteredDoctorsByDistance.length === 0)}
+                  disabled={loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0)}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow disabled:cursor-not-allowed"
                 >
                   {loading ? 'Processing...' : 
-                   (formData.doctorSelectionType === 'any' && filteredDoctorsByDistance.length === 0) ? 'No Doctors Available' :
+                   (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) ? 'No Doctors Available' :
                    'Pay & Request Doctor'}
                 </button>
                 </div>
