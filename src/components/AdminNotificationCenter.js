@@ -228,7 +228,7 @@ const AdminNotificationCenter = ({ className = '' }) => {
 
       {/* Notification Dropdown */}
       {showNotifications && (
-        <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+        <div className="fixed left-2 right-2 top-14 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 w-auto max-w-[92vw] sm:max-w-none max-h-[70vh] sm:max-h-96 overflow-hidden">
           {/* Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between">
@@ -275,7 +275,7 @@ const AdminNotificationCenter = ({ className = '' }) => {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-[60vh] sm:max-h-80 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center">
                 <Bell className="h-8 w-8 text-gray-400 mx-auto mb-2 animate-pulse" />
