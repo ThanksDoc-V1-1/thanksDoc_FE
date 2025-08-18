@@ -44,7 +44,7 @@ export default function DoctorDashboard() {
     lastName: '',
     email: '',
     phone: '',
-    licenceNumber: '',
+    licenseNumber: '',
     qualifications: '',
     bio: '',
     address: '',
@@ -609,7 +609,7 @@ export default function DoctorDashboard() {
       lastName: doctorInfo?.lastName || '',
       email: doctorInfo?.email || '',
       phone: doctorInfo?.phone || '',
-      licenceNumber: doctorInfo?.licenceNumber || '',
+      licenseNumber: doctorInfo?.licenseNumber || '',
       qualifications: doctorInfo?.qualifications || '',
       bio: doctorInfo?.bio || '',
       address: doctorInfo?.address || '',
@@ -644,7 +644,7 @@ export default function DoctorDashboard() {
         lastName: editProfileData.lastName,
         email: editProfileData.email,
         phone: editProfileData.phone,
-        licenceNumber: editProfileData.licenceNumber,
+        licenseNumber: editProfileData.licenseNumber,
         qualifications: editProfileData.qualifications,
         bio: editProfileData.bio,
         address: editProfileData.address,
@@ -706,7 +706,7 @@ export default function DoctorDashboard() {
       lastName: '',
       email: '',
       phone: '',
-      licenceNumber: '',
+      licenseNumber: '',
       qualifications: '',
       bio: '',
       address: '',
@@ -1284,8 +1284,8 @@ export default function DoctorDashboard() {
                   </label>
                   <input
                     type="text"
-                    name="licenceNumber"
-                    value={editProfileData.licenceNumber}
+                    name="licenseNumber"
+                    value={editProfileData.licenseNumber}
                     onChange={handleProfileInputChange}
                     className={`w-full rounded-lg p-3 transition-colors ${
                       isDarkMode 
@@ -2496,10 +2496,10 @@ export default function DoctorDashboard() {
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.phone}</span>
                   </div>
                 )}
-                {doctor?.licenceNumber && (
+                {doctor?.licenseNumber && (
                   <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                     <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>GMC:</span>
-                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.licenceNumber}</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold`}>{doctor.licenseNumber}</span>
                   </div>
                 )}
                 {doctor?.qualifications && (
