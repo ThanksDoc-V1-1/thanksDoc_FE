@@ -2411,7 +2411,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </div>
               )}
 
-              {formData.doctorSelectionType === 'any' && (
+              {formData.doctorSelectionType === 'any' && formData.serviceId && (
                 <div>
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                     Doctor Assignment
@@ -2419,8 +2419,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   {getAvailableDoctors().length > 0 ? (
                     <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                        📍 Your request will be sent to {getAvailableDoctors().length} available doctor{getAvailableDoctors().length > 1 ? 's' : ''}
-                        {formData.serviceId ? ' who offer this service' : ''}.
+                        📍 Your request will be sent to {getAvailableDoctors().length} available doctor{getAvailableDoctors().length > 1 ? 's' : ''} who offer this service.
                       </p>
                       <p className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-1`}>
                         The first available doctor will be automatically assigned to your request.
@@ -2429,10 +2428,10 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   ) : (
                     <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'}`}>
                       <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
-                        ⚠️ No doctors available{formData.serviceId ? ' for this service' : ''}.
+                        ⚠️ No doctors available for this service.
                       </p>
                       <p className={`text-xs ${isDarkMode ? 'text-red-400' : 'text-red-600'} mt-1`}>
-                        Please try increasing the distance range or contact support for assistance.
+                        Please try selecting a different service or contact support for assistance.
                       </p>
                     </div>
                   )}
