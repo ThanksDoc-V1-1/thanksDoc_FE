@@ -138,7 +138,7 @@ export default function BusinessDashboard() {
     serviceId: '', // Add serviceId for service selection
     subcategoryId: '', // Add subcategoryId for subcategory selection
     description: '',
-    estimatedDuration: 1,
+    // estimatedDuration removed - will use service default duration
     preferredDoctorId: null,
     doctorSelectionType: 'any', // 'any' or 'previous'
     serviceDate: '',
@@ -217,6 +217,39 @@ export default function BusinessDashboard() {
   const AUTO_REFRESH_INTERVAL = 10000; // 10 seconds refresh rate
 
   // Distance filtering functions
+  
+  // Helper function to get current service duration in hours
+  const getCurrentServiceDuration = () => {
+    if (!formData.serviceId || !availableServices.length) {
+      return 1; // Default to 1 hour if no service selected
+    }
+    
+    const selectedService = availableServices.find(service => service.id.toString() === formData.serviceId.toString());
+    if (!selectedService || !selectedService.duration) {
+      return 1; // Default to 1 hour if service not found or no duration
+    }
+    
+    // Convert minutes to hours
+    const durationInHours = selectedService.duration / 60;
+    return durationInHours > 0 ? durationInHours : 1; // Ensure positive duration
+  };
+
+  // Helper function to get service duration by service ID
+  const getServiceDurationById = (serviceId) => {
+    if (!serviceId || !availableServices.length) {
+      return 1; // Default to 1 hour if no service ID or services
+    }
+    
+    const selectedService = availableServices.find(service => service.id.toString() === serviceId.toString());
+    if (!selectedService || !selectedService.duration) {
+      return 1; // Default to 1 hour if service not found or no duration
+    }
+    
+    // Convert minutes to hours
+    const durationInHours = selectedService.duration / 60;
+    return durationInHours > 0 ? durationInHours : 1; // Ensure positive duration
+  };
+
   const applyDistanceFilter = (distance = distanceFilter, selectedServiceId = null) => {
     if (!businessLocation) {
       setFilteredDoctorsByDistance(nearbyDoctors);
@@ -1038,23 +1071,10 @@ export default function BusinessDashboard() {
     
     let processedValue = value;
     
-    // Format duration to prevent long decimals
-    if (name === 'estimatedDuration') {
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue) && numValue > 0) {
-        processedValue = formatDuration(numValue);
-      }
-    }
-    
     setFormData(prev => ({
       ...prev,
       [name]: processedValue
     }));
-
-    // If estimated duration changes, recalculate service cost
-    if (name === 'estimatedDuration' && formData.serviceId) {
-      calculateServiceCost(formData.serviceId, parseFloat(processedValue));
-    }
 
     // If doctor selection type changes, reset preferred doctor and fetch previous doctors if needed
     if (name === 'doctorSelectionType') {
@@ -1092,7 +1112,7 @@ export default function BusinessDashboard() {
         serviceName: selectedService?.name,
         serviceDurationMinutes: selectedService?.duration,
         serviceDurationHours: serviceDurationInHours,
-        currentFormDuration: formData.estimatedDuration
+        willUseServiceDefaultDuration: true
       });
       
       // Check if currently selected doctor still offers the new service (for previous doctor selection)
@@ -1108,7 +1128,7 @@ export default function BusinessDashboard() {
       setFormData(prev => ({
         ...prev,
         serviceType: selectedService ? selectedService.name : '', // Update serviceType when service changes
-        estimatedDuration: serviceDurationInHours, // Set duration from service (convert minutes to hours, default to 1 hour)
+        // estimatedDuration removed - duration now comes from service default
         preferredDoctorId: shouldResetDoctor || !value ? null : prev.preferredDoctorId // Reset selected doctor when service changes or doctor doesn't offer service
       }));
       
@@ -1150,7 +1170,7 @@ export default function BusinessDashboard() {
       
       const basePrice = parseFloat(selectedService.price || 0);
       const serviceDuration = selectedService.duration ? (selectedService.duration / 60) : 1; // Convert minutes to hours
-      const requestedDuration = duration || parseFloat(formData.estimatedDuration) || 1;
+      const requestedDuration = duration || getCurrentServiceDuration();
       
       console.log('🔍 Debug duration calculation:');
       console.log('  - Service duration (minutes):', selectedService.duration);
@@ -1277,7 +1297,7 @@ export default function BusinessDashboard() {
       // Calculate total cost including booking fee and duration scaling
       const baseServiceCost = parseFloat(selectedService?.price || 0);
       const serviceDuration = selectedService?.duration ? (selectedService.duration / 60) : 1; // Convert minutes to hours, default to 1 hour
-      const requestedDuration = parseFloat(formData.estimatedDuration);
+      const requestedDuration = getCurrentServiceDuration();
       
       // Scale the price based on duration (proportional scaling)
       const scaledServiceCost = baseServiceCost * (requestedDuration / serviceDuration);
@@ -1289,7 +1309,7 @@ export default function BusinessDashboard() {
         businessId: user.id,
         serviceType: selectedService?.name || 'Selected Service',
         description: formData.description,
-        estimatedDuration: parseInt(formData.estimatedDuration),
+        estimatedDuration: parseInt(requestedDuration * 60), // Convert hours back to minutes for storage
         serviceCharge: SERVICE_CHARGE,
         servicePrice: scaledServiceCost, // Store the scaled service price based on duration
         serviceDateTime: serviceDateTime.toISOString(),
@@ -1420,7 +1440,7 @@ Payment ID: ${paymentIntent.id}`);
             doctorSelectionType: formDataFromTemp.doctorSelectionType,
             // Set explicit values for other fields
             urgencyLevel: 'medium', // Default urgency level since we removed it from UI
-            estimatedDuration: parseInt(formDataFromTemp.estimatedDuration),
+            estimatedDuration: parseInt(getServiceDurationById(formDataFromTemp.serviceId) * 60), // Convert hours to minutes for storage
             serviceCharge: SERVICE_CHARGE,
             servicePrice: paymentRequest.servicePrice, // Store the service price for doctors
             serviceDateTime: serviceDateTime.toISOString(),
@@ -1470,7 +1490,7 @@ Payment ID: ${paymentIntent.id}`;
               serviceType: '',
               serviceId: '',
               description: '',
-              estimatedDuration: 1,
+              // estimatedDuration removed - will use service default duration
               preferredDoctorId: null,
               doctorSelectionType: 'any',
               serviceDate: '',
@@ -2677,25 +2697,6 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
 
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                  Estimated Duration (hours) *
-                  <span className={`text-xs block mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Enter time in hours (e.g., 0.5 for 30 minutes, 0.25 for 15 minutes)
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  name="estimatedDuration"
-                  value={formData.estimatedDuration}
-                  onChange={handleInputChange}
-                  required
-                  min="0.01"
-                  step="0.01"
-                  className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                   Description
                 </label>
                 <textarea
@@ -2763,7 +2764,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                       urgencyLevel: 'medium',
                       serviceType: '',
                       description: '',
-                      estimatedDuration: 1,
+                      // estimatedDuration removed - will use service default duration
                       preferredDoctorId: null,
                       doctorSelectionType: 'any',
                       serviceDate: '',
