@@ -310,6 +310,12 @@ export default function ComplianceDocuments({ doctorId }) {
           const newDocuments = { ...documents };
           delete newDocuments[documentId];
           saveDocuments(newDocuments);
+
+          // Ensure update mode is cleared for that document
+          setUpdateMode(prev => ({
+            ...prev,
+            [documentId]: false
+          }));
         } else {
           throw new Error('Failed to delete document');
         }
@@ -1145,6 +1151,20 @@ export default function ComplianceDocuments({ doctorId }) {
                                           </p>
                                         </div>
                                       </div>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (confirm('Are you sure you want to remove this document? This action cannot be undone.')) {
+                                            removeFile(docConfig.id, file.id);
+                                          }
+                                        }}
+                                        className={`p-1 rounded transition-colors ${
+                                          isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
+                                        }`}
+                                        title="Remove file"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
