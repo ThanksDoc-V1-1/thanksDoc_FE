@@ -111,25 +111,25 @@ export default function CountryCodePicker({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      <div className="flex">
+      <div className="flex w-full">
         {/* Country Code Picker */}
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`relative flex items-center px-3 py-2 border-r-0 rounded-l-lg transition-colors ${
+          className={`relative flex items-center px-2 sm:px-3 py-2 border-r-0 rounded-l-lg transition-colors flex-shrink-0 ${
             isDarkMode 
               ? 'border-gray-600 bg-gray-700 text-white hover:bg-gray-600' 
               : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
         >
-          <span className={`text-xs font-bold mr-2 px-1.5 py-0.5 rounded ${
+          <span className={`text-xs font-bold mr-1 sm:mr-2 px-1 sm:px-1.5 py-0.5 rounded ${
             isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-600'
           }`}>
             {selectedCountry.flag}
           </span>
-          <span className="text-sm font-medium mr-1">{selectedCountry.code}</span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <span className="text-xs sm:text-sm font-medium mr-1">{selectedCountry.code}</span>
+          <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {/* Phone Number Input */}
@@ -140,7 +140,7 @@ export default function CountryCodePicker({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
-          className={`flex-1 px-3 py-2 border-l-0 rounded-r-lg transition-colors ${
+          className={`flex-1 min-w-0 px-2 sm:px-3 py-2 border-l-0 rounded-r-lg transition-colors text-sm sm:text-base ${
             isDarkMode 
               ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
@@ -156,7 +156,7 @@ export default function CountryCodePicker({
           {/* Search Input */}
           <div className={`p-2 border-b ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+              <Search className={`absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
               }`} />
               <input
@@ -165,7 +165,7 @@ export default function CountryCodePicker({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search countries..."
-                className={`w-full pl-10 pr-3 py-2 text-sm border rounded ${
+                className={`w-full pl-8 sm:pl-10 pr-2 sm:pr-3 py-1.5 sm:py-2 text-xs sm:text-sm border rounded ${
                   isDarkMode 
                     ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
                     : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
@@ -182,21 +182,21 @@ export default function CountryCodePicker({
                   key={`${country.code}-${country.iso}`}
                   type="button"
                   onClick={() => handleCountrySelect(country)}
-                  className={`w-full flex items-center px-3 py-2 text-left text-sm transition-colors ${
+                  className={`w-full flex items-center px-2 sm:px-3 py-2 text-left text-xs sm:text-sm transition-colors ${
                     selectedCode === country.code
                       ? isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'
                       : isDarkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-50 text-gray-900'
                   }`}
                 >
-                  <span className={`text-xs font-bold mr-3 px-1.5 py-0.5 rounded min-w-[32px] text-center ${
+                  <span className={`text-xs font-bold mr-2 sm:mr-3 px-1 sm:px-1.5 py-0.5 rounded min-w-[28px] sm:min-w-[32px] text-center ${
                     selectedCode === country.code
                       ? isDarkMode ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'
                       : isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-600'
                   }`}>
                     {country.flag}
                   </span>
-                  <span className="flex-1">{country.name}</span>
-                  <span className={`text-sm font-medium ${
+                  <span className="flex-1 truncate">{country.name}</span>
+                  <span className={`text-xs sm:text-sm font-medium ml-2 ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     {country.code}
@@ -204,7 +204,7 @@ export default function CountryCodePicker({
                 </button>
               ))
             ) : (
-              <div className={`px-3 py-2 text-sm text-center ${
+              <div className={`px-2 sm:px-3 py-2 text-xs sm:text-sm text-center ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
               }`}>
                 No countries found

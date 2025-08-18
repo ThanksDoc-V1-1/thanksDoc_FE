@@ -877,8 +877,8 @@ export default function BusinessDashboard() {
                                   selectedService?.category === 'online';
     
     if (isOnlineConsultation) {
-      if (!quickRequestPatientFirstName || !quickRequestPatientLastName || !quickRequestPatientPhone) {
-        alert('Please provide patient information for online consultation.');
+      if (!quickRequestPatientFirstName || !quickRequestPatientLastName || !quickRequestPatientPhone || !quickRequestPatientEmail) {
+        alert('Please provide complete patient information (name, phone, and email) for online consultation.');
         return;
       }
     }
@@ -1258,8 +1258,8 @@ export default function BusinessDashboard() {
                                     selectedService?.category === 'online';
       
       if (isOnlineConsultation) {
-        if (!formData.patientFirstName || !formData.patientLastName || !formData.patientPhone) {
-          alert('For online consultations, please provide the patient\'s first name, last name, and phone number.');
+        if (!formData.patientFirstName || !formData.patientLastName || !formData.patientPhone || !formData.patientEmail) {
+          alert('For online consultations, please provide the patient\'s first name, last name, phone number, and email address.');
           setLoading(false);
           return;
         }
@@ -2929,7 +2929,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                       </div>
                       <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                          Email Address (Optional)
+                          Email Address *
                         </label>
                         <input
                           type="email"
@@ -2937,6 +2937,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                           value={formData.patientEmail}
                           onChange={handleInputChange}
                           placeholder="Patient's email address"
+                          required
                           className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                         />
                       </div>
@@ -3431,13 +3432,14 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                       </div>
                       <div>
                         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                          Email Address (Optional)
+                          Email Address *
                         </label>
                         <input
                           type="email"
                           value={quickRequestPatientEmail}
                           onChange={(e) => setQuickRequestPatientEmail(e.target.value)}
                           placeholder="Patient's email address"
+                          required
                           className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                         />
                       </div>
