@@ -464,6 +464,9 @@ export default function AdminDashboard() {
   const [showReferenceModal, setShowReferenceModal] = useState(false);
   const [selectedReference, setSelectedReference] = useState(null);
   const [loadingReferenceDetails, setLoadingReferenceDetails] = useState(false);
+  // Email verification update states
+  const [updatingDoctorEmailVerifiedId, setUpdatingDoctorEmailVerifiedId] = useState(null);
+  const [updatingBusinessEmailVerifiedId, setUpdatingBusinessEmailVerifiedId] = useState(null);
   
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -878,6 +881,42 @@ export default function AdminDashboard() {
     }
   };
 
+  // Toggle email verification for a doctor
+  const handleToggleDoctorEmailVerified = async (doctor) => {
+    try {
+      const id = doctor.id;
+      const current = (doctor.isEmailVerified !== undefined ? doctor.isEmailVerified : doctor.attributes?.isEmailVerified) || false;
+      setUpdatingDoctorEmailVerifiedId(id);
+      await doctorAPI.update(id, { isEmailVerified: !current });
+      // Update local selected doctor state optimistically
+      setSelectedDoctor((prev) => (prev && prev.id === id ? { ...prev, isEmailVerified: !current } : prev));
+      await fetchAllData();
+    } catch (error) {
+      console.error('Error updating doctor email verification:', error);
+      alert('Failed to update email verification for doctor.');
+    } finally {
+      setUpdatingDoctorEmailVerifiedId(null);
+    }
+  };
+
+  // Toggle email verification for a business
+  const handleToggleBusinessEmailVerified = async (business) => {
+    try {
+      const id = business.id;
+      const current = (business.isEmailVerified !== undefined ? business.isEmailVerified : business.attributes?.isEmailVerified) || false;
+      setUpdatingBusinessEmailVerifiedId(id);
+      await businessAPI.update(id, { isEmailVerified: !current });
+      // Update local selected business state optimistically
+      setSelectedBusiness((prev) => (prev && prev.id === id ? { ...prev, isEmailVerified: !current } : prev));
+      await fetchAllData();
+    } catch (error) {
+      console.error('Error updating business email verification:', error);
+      alert('Failed to update email verification for business.');
+    } finally {
+      setUpdatingBusinessEmailVerifiedId(null);
+    }
+  };
+
   // Registration functions for doctors and businesses
   const handleDoctorRegistration = async (e) => {
     e.preventDefault();
@@ -956,6 +995,7 @@ export default function AdminDashboard() {
         longitude: parseFloat(businessFormData.longitude),
         description: businessFormData.description || '',
         isVerified: true, // Admin registered businesses are automatically verified
+  isEmailVerified: true, // Admin-registered businesses can log in immediately
         operatingHours: {},
         emergencyContact: '',
         paymentMethods: []
@@ -1027,6 +1067,7 @@ export default function AdminDashboard() {
         latitude: 0.0, // Default coordinate
         longitude: 0.0, // Default coordinate
         isVerified: true, // Admin-registered doctors are auto-verified
+  isEmailVerified: true, // Admin-registered doctors can log in immediately
         isAvailable: true,
         emergencyContact: '',
         languages: ['English'],
@@ -5142,6 +5183,32 @@ export default function AdminDashboard() {
                         {selectedDoctor.isVerified ? 'Verified' : 'Not Verified'}
                       </span>
                     </div>
+                    {/* Email Verification Toggle */}
+                    <div className="flex justify-between items-center">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email Verified:</span>
+                      {(() => {
+                        const emailVerified = (selectedDoctor.isEmailVerified !== undefined ? selectedDoctor.isEmailVerified : selectedDoctor.attributes?.isEmailVerified) || false;
+                        return (
+                          <div className="flex items-center space-x-3">
+                            <span className={`font-medium ${emailVerified ? 'text-green-600' : 'text-red-600'}`}>{emailVerified ? 'Yes' : 'No'}</span>
+                            <button
+                              onClick={() => handleToggleDoctorEmailVerified(selectedDoctor)}
+                              disabled={updatingDoctorEmailVerifiedId === selectedDoctor.id}
+                              className={`px-3 py-1.5 rounded font-medium text-xs transition-colors ${
+                                emailVerified
+                                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                  : 'bg-green-600 text-white hover:bg-green-700'
+                              }`}
+                              title={emailVerified ? 'Mark as unverified' : 'Mark as verified'}
+                            >
+                              {updatingDoctorEmailVerifiedId === selectedDoctor.id
+                                ? 'Updating...'
+                                : emailVerified ? 'Set Unverified' : 'Mark Verified'}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
                   </div>
                 </div>
 
@@ -5728,6 +5795,32 @@ export default function AdminDashboard() {
                       <span className={`font-medium ${selectedBusiness.isVerified ? 'text-green-600' : 'text-red-600'}`}>
                         {selectedBusiness.isVerified ? 'Verified' : 'Not Verified'}
                       </span>
+                    </div>
+                    {/* Email Verification Toggle */}
+                    <div className="flex justify-between items-center">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Email Verified:</span>
+                      {(() => {
+                        const emailVerified = (selectedBusiness.isEmailVerified !== undefined ? selectedBusiness.isEmailVerified : selectedBusiness.attributes?.isEmailVerified) || false;
+                        return (
+                          <div className="flex items-center space-x-3">
+                            <span className={`font-medium ${emailVerified ? 'text-green-600' : 'text-red-600'}`}>{emailVerified ? 'Yes' : 'No'}</span>
+                            <button
+                              onClick={() => handleToggleBusinessEmailVerified(selectedBusiness)}
+                              disabled={updatingBusinessEmailVerifiedId === selectedBusiness.id}
+                              className={`px-3 py-1.5 rounded font-medium text-xs transition-colors ${
+                                emailVerified
+                                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                  : 'bg-green-600 text-white hover:bg-green-700'
+                              }`}
+                              title={emailVerified ? 'Mark as unverified' : 'Mark as verified'}
+                            >
+                              {updatingBusinessEmailVerifiedId === selectedBusiness.id
+                                ? 'Updating...'
+                                : emailVerified ? 'Set Unverified' : 'Mark Verified'}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
