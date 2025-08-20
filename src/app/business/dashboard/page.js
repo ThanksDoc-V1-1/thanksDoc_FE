@@ -1560,7 +1560,10 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
             </div>
             
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-2">
+              {/* Business Notification Center for mobile */}
+              <BusinessNotificationCenter businessId={user?.id} className="flex-shrink-0" />
+              
               <button 
                 onClick={() => {
                   const mobileMenu = document.getElementById('mobile-menu-business');
