@@ -476,6 +476,12 @@ export default function AdminDashboard() {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [updatingVerification, setUpdatingVerification] = useState(false);
   
+  // Business compliance documents state
+  const [businessComplianceDocuments, setBusinessComplianceDocuments] = useState([]);
+  const [loadingBusinessComplianceDocuments, setLoadingBusinessComplianceDocuments] = useState(false);
+  const [updatingBusinessDocumentVerification, setUpdatingBusinessDocumentVerification] = useState(false);
+  const [businessDocumentTypes, setBusinessDocumentTypes] = useState([]);
+  
   // Professional References state
   const [professionalReferences, setProfessionalReferences] = useState([]);
   const [loadingReferences, setLoadingReferences] = useState(false);
@@ -1367,6 +1373,8 @@ export default function AdminDashboard() {
     console.log('🔍 Current selectedBusiness state:', selectedBusiness);
     setSelectedBusiness(business);
     setShowBusinessDetails(true);
+    // Load business compliance documents for this business
+    loadBusinessComplianceDocuments(business.id);
     console.log('✅ Modal states updated - showBusinessDetails: true, selectedBusiness:', business);
   };
 
@@ -2040,6 +2048,68 @@ export default function AdminDashboard() {
     }
   };
 
+  // Handle business document verification
+  const handleBusinessDocumentVerification = async (documentId, verificationStatus) => {
+    try {
+      setUpdatingBusinessDocumentVerification(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/${documentId}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verificationStatus,
+          notes: `${verificationStatus === 'verified' ? 'Approved' : 'Rejected'} by admin via dashboard`
+        })
+      });
+
+      if (response.ok) {
+        // Refresh business documents
+        if (selectedBusiness) {
+          await loadBusinessComplianceDocuments(selectedBusiness.id);
+        }
+        setShowDocumentModal(false);
+        setSelectedDocument(null);
+      } else {
+        console.error('Failed to update business document verification status');
+        alert('Failed to update business document verification status');
+      }
+    } catch (error) {
+      console.error('Error updating business document verification status:', error);
+      alert('Error updating business document verification status');
+    } finally {
+      setUpdatingBusinessDocumentVerification(false);
+    }
+  };
+
+  // Load business compliance documents
+  const loadBusinessComplianceDocuments = async (businessId) => {
+    try {
+      setLoadingBusinessComplianceDocuments(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('📄 Business compliance documents loaded:', result);
+        setBusinessComplianceDocuments(result.data?.documents || []);
+        
+        // Also store the business document types from the API response
+        if (result.data?.overview?.requiredDocuments) {
+          console.log('📋 Business document types from API:', result.data.overview.requiredDocuments);
+          setBusinessDocumentTypes(result.data.overview.requiredDocuments);
+        }
+      } else {
+        console.error('Failed to load business compliance documents:', response.status, response.statusText);
+        setBusinessComplianceDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error loading business compliance documents:', error);
+      setBusinessComplianceDocuments([]);
+    } finally {
+      setLoadingBusinessComplianceDocuments(false);
+    }
+  };
+
   // Get document status info
   const getDocumentStatus = (status, verificationStatus) => {
     if (status === 'missing') {
@@ -2103,9 +2173,70 @@ export default function AdminDashboard() {
     });
   };
 
+  // Get all business documents with their statuses
+  const getAllBusinessDocumentsWithStatus = () => {
+    // Ensure businessComplianceDocuments is always an array
+    const documents = Array.isArray(businessComplianceDocuments) ? businessComplianceDocuments : [];
+    
+    console.log('📋 Processing business documents:', documents);
+    console.log('📋 Available business document types:', businessDocumentTypes);
+    console.log('📋 General document types:', documentTypes);
+    
+    // Use business-specific document types if available, otherwise fall back to general document types
+    const availableDocumentTypes = businessDocumentTypes.length > 0 ? businessDocumentTypes : documentTypes.filter(docType => docType.key !== 'professional_references');
+    
+    return availableDocumentTypes.map(docType => {
+      const docKey = docType.id || docType.key; // Business document types use 'id', general ones use 'key'
+      const uploadedDoc = documents.find(doc => doc.documentType === docKey);
+      console.log(`📄 Checking document type ${docKey} (${docType.name}):`, uploadedDoc ? 'Found' : 'Missing');
+      
+      // For business compliance documents, if document exists, status is based on verification status
+      let status = uploadedDoc ? 'uploaded' : 'missing';
+      let expiryStatus = null;
+      let daysUntilExpiry = null;
+      
+      // Use existing expiry status from API if available
+      if (uploadedDoc && uploadedDoc.expiryStatus) {
+        expiryStatus = uploadedDoc.expiryStatus;
+        daysUntilExpiry = uploadedDoc.daysUntilExpiry;
+        
+        // Override status if document is expired
+        if (expiryStatus === 'expired') {
+          status = 'expired';
+        }
+      } else if (uploadedDoc && docType.autoExpiry && uploadedDoc.expiryDate) {
+        // Calculate expiry status if not provided by API
+        const today = new Date();
+        const expiryDate = new Date(uploadedDoc.expiryDate);
+        daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysUntilExpiry < 0) {
+          expiryStatus = 'expired';
+          status = 'expired';
+        } else if (daysUntilExpiry <= (docType.expiryWarningDays || 30)) {
+          expiryStatus = 'expiring';
+        } else {
+          expiryStatus = 'valid';
+        }
+      }
+      
+      return {
+        type: docKey,
+        config: docType,
+        document: uploadedDoc,
+        status: status,
+        expiryStatus: expiryStatus,
+        daysUntilExpiry: daysUntilExpiry,
+        verificationStatus: uploadedDoc?.verificationStatus || 'pending'
+      };
+    });
+  };
+
   const handleCloseBusinessDetails = () => {
     setShowBusinessDetails(false);
     setSelectedBusiness(null);
+    setBusinessComplianceDocuments([]);
+    setBusinessDocumentTypes([]);
   };
 
   const stats = {
@@ -6502,6 +6633,248 @@ export default function AdminDashboard() {
                     <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedBusiness.description}</p>
                   </div>
                 )}
+              </div>
+
+              {/* Business Compliance Documents Section */}
+              <div className="mt-8">
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} p-4 rounded-lg`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Business Compliance Documents
+                    </h3>
+                    {loadingBusinessComplianceDocuments && (
+                      <div className="flex items-center">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!loadingBusinessComplianceDocuments && Array.isArray(businessComplianceDocuments) && (
+                    <>
+                      {/* Documents Summary */}
+                      <div className="grid grid-cols-5 gap-4 mb-6">
+                        {(() => {
+                          try {
+                            const allDocs = getAllBusinessDocumentsWithStatus();
+                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
+                            const verifiedCount = allDocs.filter(doc => doc.verificationStatus === 'verified').length;
+                            const pendingCount = allDocs.filter(doc => doc.verificationStatus === 'pending' && doc.status === 'uploaded').length;
+                            const missingCount = allDocs.filter(doc => doc.status === 'missing').length;
+                            const expiredCount = allDocs.filter(doc => doc.expiryStatus === 'expired' || doc.status === 'expired').length;
+                            const expiringCount = allDocs.filter(doc => doc.expiryStatus === 'expiring').length;
+
+                            return (
+                              <>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                    {uploadedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Uploaded</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                    {verifiedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verified</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                                    {pendingCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Pending</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+                                    {expiringCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Expiring</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                    {expiredCount > 0 ? expiredCount : missingCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {expiredCount > 0 ? 'Expired' : 'Missing'}
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          } catch (error) {
+                            console.error('Error calculating business document stats:', error);
+                            return (
+                              <div className="col-span-4 text-center">
+                                <span className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                  Error loading document statistics
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+
+                      {/* Documents Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {(() => {
+                          try {
+                            return getAllBusinessDocumentsWithStatus().map(({ type, config, document, status, expiryStatus, daysUntilExpiry, verificationStatus }) => {
+                              // Determine the display status - prioritize expiry status over verification status
+                              let displayStatus = status;
+                              let statusText = status;
+                              let statusColor = '';
+                              
+                              if (expiryStatus === 'expired') {
+                                displayStatus = 'expired';
+                                statusText = 'Expired';
+                                statusColor = isDarkMode ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-700 border-red-200';
+                              } else if (expiryStatus === 'expiring') {
+                                displayStatus = 'expiring';
+                                statusText = `Expires in ${daysUntilExpiry} days`;
+                                statusColor = isDarkMode ? 'bg-orange-900/30 text-orange-400 border-orange-800' : 'bg-orange-50 text-orange-700 border-orange-200';
+                              } else if (verificationStatus === 'verified') {
+                                statusText = 'Verified';
+                                statusColor = isDarkMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-700 border-green-200';
+                              } else if (verificationStatus === 'pending' && status === 'uploaded') {
+                                statusText = 'Pending Review';
+                                statusColor = isDarkMode ? 'bg-yellow-900/30 text-yellow-400 border-yellow-800' : 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                              } else if (status === 'missing') {
+                                statusText = 'Missing';
+                                statusColor = isDarkMode ? 'bg-gray-900/30 text-gray-400 border-gray-800' : 'bg-gray-50 text-gray-700 border-gray-200';
+                              } else {
+                                statusText = status.charAt(0).toUpperCase() + status.slice(1);
+                                statusColor = isDarkMode ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-700 border-blue-200';
+                              }
+                              
+                              return (
+                                <div
+                                  key={type}
+                                  className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white/90 border-blue-200'} border rounded-lg p-4 transition-all duration-200 ${
+                                    document ? 'cursor-pointer hover:shadow-md' : 'opacity-60'
+                                  }`}
+                                  onClick={() => document && setSelectedDocument(document) && setShowDocumentModal(true)}
+                                >
+                              <div className="flex justify-between items-start mb-3">
+                                <div className="flex-1">
+                                  <h4 className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>
+                                    {config.name}
+                                  </h4>
+                                  {config.required && (
+                                    <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'}`}>
+                                      Required
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded-full border ${statusColor}`}>
+                                  {statusText}
+                                </span>
+                              </div>
+                              
+                              {document && (
+                                <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} space-y-1`}>
+                                  <div>Uploaded: {new Date(document.uploadedAt).toLocaleDateString('en-GB')}</div>
+                                  {document.expiryDate && (
+                                    <div className={expiryStatus === 'expired' ? 'text-red-500 font-medium' : expiryStatus === 'expiring' ? 'text-orange-500 font-medium' : ''}>
+                                      Expires: {new Date(document.expiryDate).toLocaleDateString('en-GB')}
+                                      {daysUntilExpiry !== null && (
+                                        <span className="ml-1">
+                                          ({daysUntilExpiry < 0 ? `${Math.abs(daysUntilExpiry)} days ago` : `${daysUntilExpiry} days left`})
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {document.verifiedBy && (
+                                    <div>Verified by: {document.verifiedBy}</div>
+                                  )}
+                                  {config.autoExpiry && (
+                                    <div className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                      Auto-expiry: {config.validityYears} year{config.validityYears > 1 ? 's' : ''}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {document && (
+                                <div className="mt-3 flex justify-between items-center">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDocument(document);
+                                      setShowDocumentModal(true);
+                                    }}
+                                    className={`text-xs px-3 py-1 rounded ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-100 hover:bg-blue-200 text-blue-800'} transition-colors`}
+                                  >
+                                    <Eye className="h-3 w-3 inline mr-1" />
+                                    View
+                                  </button>
+                                  
+                                  {verificationStatus === 'pending' && expiryStatus !== 'expired' && (
+                                    <div className="flex space-x-1">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleBusinessDocumentVerification(document.documentId, 'verified');
+                                        }}
+                                        disabled={updatingBusinessDocumentVerification}
+                                        className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50"
+                                      >
+                                        <Check className="h-3 w-3" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleBusinessDocumentVerification(document.documentId, 'rejected');
+                                        }}
+                                        disabled={updatingBusinessDocumentVerification}
+                                        className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {expiryStatus === 'expired' && (
+                                    <div className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-red-900/50 text-red-300' : 'bg-red-100 text-red-700'}`}>
+                                      Document Expired - Requires Renewal
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        });
+                          } catch (error) {
+                            console.error('Error rendering business documents grid:', error);
+                            return (
+                              <div className="col-span-3 text-center p-4">
+                                <span className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                  Error loading business compliance documents
+                                </span>
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    </>
+                  )}
+
+                  {!loadingBusinessComplianceDocuments && (!businessComplianceDocuments || businessComplianceDocuments.length === 0) && (
+                    <div className="text-center py-8">
+                      <FileText className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mb-4`} />
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        No compliance documents uploaded yet
+                      </p>
+                    </div>
+                  )}
+
+                  {loadingBusinessComplianceDocuments && (
+                    <div className="text-center py-8">
+                      <RefreshCw className={`h-8 w-8 mx-auto animate-spin ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mb-4`} />
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Loading business compliance documents...
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
