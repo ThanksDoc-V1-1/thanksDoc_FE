@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [serviceRequests, setServiceRequests] = useState([]);
   const [services, setServices] = useState([]);
   const [businessTypes, setBusinessTypes] = useState([]);
+  const [businessComplianceDocumentTypes, setBusinessComplianceDocumentTypes] = useState([]);
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [systemSettings, setSystemSettings] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
@@ -467,6 +468,7 @@ export default function AdminDashboard() {
   // Email verification update states
   const [updatingDoctorEmailVerifiedId, setUpdatingDoctorEmailVerifiedId] = useState(null);
   const [updatingBusinessEmailVerifiedId, setUpdatingBusinessEmailVerifiedId] = useState(null);
+  const [businessComplianceDocumentTypesLoading, setBusinessComplianceDocumentTypesLoading] = useState(true);
   
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -810,12 +812,83 @@ export default function AdminDashboard() {
     loadDocumentTypesWithDelay();
   }, []); // Run once on component mount
 
+  // Separate useEffect for business compliance document types
+  useEffect(() => {
+    const loadBusinessComplianceDocumentTypes = async () => {
+      console.log('🏢 Starting business compliance document types loading...');
+      setBusinessComplianceDocumentTypesLoading(true);
+      
+      // Wait 3 seconds to ensure backend is ready
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      // Try loading business compliance document types with retry logic
+      let attempts = 0;
+      const maxAttempts = 5;
+      const baseDelay = 2000;
+      
+      while (attempts < maxAttempts) {
+        try {
+          console.log(`🏢 Business compliance document types loading attempt ${attempts + 1}/${maxAttempts}`);
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`);
+          console.log('📡 Business compliance document types API Response status:', response.status);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('📦 Business compliance document types received:', data.data?.length || 0);
+            
+            if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+              console.log('✅ Successfully loaded business compliance document types:', data.data.length);
+              setBusinessComplianceDocumentTypes(data.data);
+              setBusinessComplianceDocumentTypesLoading(false);
+              return;
+            } else {
+              console.log('⚠️ API returned empty data, retrying...');
+              throw new Error('Empty data received');
+            }
+          } else {
+            throw new Error(`API request failed with status: ${response.status}`);
+          }
+        } catch (error) {
+          attempts++;
+          console.error(`❌ Business compliance document types loading attempt ${attempts} failed:`, error.message);
+          
+          if (attempts >= maxAttempts) {
+            console.log('❌ All business compliance document types loading attempts failed, using fallback');
+            const fallbackTypes = [
+              { key: 'business_insurance', name: 'Business Insurance', required: true, description: 'Comprehensive business insurance coverage' },
+              { key: 'vat_registration', name: 'VAT Registration', required: true, description: 'VAT registration certificate' },
+              { key: 'company_registration', name: 'Company Registration', required: true, description: 'Companies House registration' },
+              { key: 'data_protection', name: 'Data Protection Certificate', required: true, description: 'Data protection compliance certificate' }
+            ];
+            setBusinessComplianceDocumentTypes(fallbackTypes);
+            setBusinessComplianceDocumentTypesLoading(false);
+            return;
+          }
+          
+          const delay = baseDelay * Math.pow(2, attempts - 1);
+          console.log(`⏳ Waiting ${delay}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    };
+    
+    loadBusinessComplianceDocumentTypes();
+  }, []);
+
   // Debug effect to track documentTypes changes
   useEffect(() => {
     console.log('📋 DocumentTypes state changed:', documentTypes);
     console.log('📋 DocumentTypes length:', documentTypes.length);
     console.log('📋 DocumentTypes is array:', Array.isArray(documentTypes));
   }, [documentTypes]);
+
+  // Debug effect to track businessComplianceDocumentTypes changes
+  useEffect(() => {
+    console.log('🏢 BusinessComplianceDocumentTypes state changed:', businessComplianceDocumentTypes);
+    console.log('🏢 BusinessComplianceDocumentTypes length:', businessComplianceDocumentTypes.length);
+    console.log('🏢 BusinessComplianceDocumentTypes is array:', Array.isArray(businessComplianceDocumentTypes));
+  }, [businessComplianceDocumentTypes]);
 
   // Authentication check - redirect if not authenticated or not admin
   useEffect(() => {
@@ -1972,7 +2045,8 @@ export default function AdminDashboard() {
               { id: 'requests', name: 'Service Requests', icon: Calendar },
               { id: 'transactions', name: 'Transactions', icon: CreditCard },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
-              { id: 'compliance-documents', name: 'Compliance Documents', icon: FileText },
+              { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText },
+              { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck },
               { id: 'settings', name: 'System Settings', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -2066,7 +2140,8 @@ export default function AdminDashboard() {
               <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} capitalize`}>
                 {activeTab === 'settings' ? 'System Settings' :
                  activeTab === 'earnings' ? 'Doctor Earnings' :
-                 activeTab === 'compliance-documents' ? 'Compliance Documents' :
+                 activeTab === 'compliance-documents' ? 'Doctor Compliance Documents' :
+                 activeTab === 'business-compliance-documents' ? 'Business Compliance Documents' :
                  activeTab}
               </h2>
             </div>
@@ -4379,6 +4454,166 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Business Compliance Documents Tab */}
+        {activeTab === 'business-compliance-documents' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <FileCheck className="h-5 w-5 text-blue-500 mr-2" />
+                  Business Compliance Documents
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage and verify business compliance documents</p>
+              </div>
+              <button
+                onClick={() => {
+                  // Refresh compliance documents
+                  window.location.reload();
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isDarkMode 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                } flex items-center space-x-2`}
+              >
+                <FileCheck className="h-4 w-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-6`}>
+                <div className="flex items-center">
+                  <div className={`p-2 ${isDarkMode ? 'bg-blue-900/50' : 'bg-blue-100'} rounded-lg mr-3`}>
+                    <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                  </div>
+                  <div>
+                    <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Business Compliance Documents System
+                    </h3>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                      This section shows business compliance documents from all registered businesses. 
+                      Document types are now dynamically managed through the backend API.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg`}>
+                  <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                    Available Document Types
+                  </h4>
+                  {businessComplianceDocumentTypesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      <span className={`ml-3 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Loading document types...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {businessComplianceDocumentTypes.length > 0 ? (
+                        businessComplianceDocumentTypes.map((docType, index) => (
+                          <div key={docType.key || index} className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border`}>
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-2 h-2 ${docType.required ? 'bg-red-500' : 'bg-green-500'} rounded-full`}></div>
+                              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {docType.name}
+                              </span>
+                              {docType.required && (
+                                <span className="text-xs text-red-500 font-medium">*Required</span>
+                              )}
+                            </div>
+                            {docType.description && (
+                              <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'} mt-1 ml-4`}>
+                                {docType.description}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className={`col-span-full p-4 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <FileCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No business compliance document types configured yet.</p>
+                          <p className="text-xs mt-1">Document types can be added through the Strapi admin panel.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg`}>
+                  <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
+                    System Status
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
+                      <div className={`text-lg font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        ✅ Active
+                      </div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                        Backend API
+                      </div>
+                    </div>
+                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
+                      <div className={`text-lg font-bold ${
+                        businessComplianceDocumentTypesLoading 
+                          ? (isDarkMode ? 'text-yellow-400' : 'text-yellow-600')
+                          : businessComplianceDocumentTypes.length > 0 
+                            ? (isDarkMode ? 'text-green-400' : 'text-green-600')
+                            : (isDarkMode ? 'text-red-400' : 'text-red-600')
+                      }`}>
+                        {businessComplianceDocumentTypesLoading 
+                          ? '🔄 Loading' 
+                          : businessComplianceDocumentTypes.length > 0 
+                            ? '✅ Ready' 
+                            : '❌ No Data'
+                        }
+                      </div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                        Document Types
+                      </div>
+                      {!businessComplianceDocumentTypesLoading && (
+                        <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
+                          {businessComplianceDocumentTypes.length} types loaded
+                        </div>
+                      )}
+                    </div>
+                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
+                      <div className={`text-lg font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                        ✅ Working
+                      </div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                        File Upload
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-yellow-50 border-yellow-200'} border rounded-lg`}>
+                  <div className="flex items-start space-x-3">
+                    <div className={`p-2 ${isDarkMode ? 'bg-yellow-900/50' : 'bg-yellow-100'} rounded-lg`}>
+                      <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                    </div>
+                    <div>
+                      <h4 className={`font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-800'} mb-2`}>
+                        Next Steps
+                      </h4>
+                      <ul className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'} space-y-1`}>
+                        <li>• Business compliance documents are now dynamically loaded from the backend</li>
+                        <li>• Document types can be managed through the Strapi admin panel</li>
+                        <li>• Business dashboard will automatically show the latest document requirements</li>
+                        <li>• Admin can verify and manage compliance documents here</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

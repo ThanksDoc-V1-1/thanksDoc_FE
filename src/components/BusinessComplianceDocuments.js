@@ -10,9 +10,77 @@ export default function BusinessComplianceDocuments({ businessId }) {
   const [expandedDoc, setExpandedDoc] = useState(null);
   const [editingDoc, setEditingDoc] = useState(null);
   const [deletingDoc, setDeletingDoc] = useState(null);
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [loadingDocumentTypes, setLoadingDocumentTypes] = useState(true);
 
-  // Business-specific document configuration
-  const BUSINESS_DOCUMENT_TYPES = [
+  // Check if user is in dark mode
+  const isDarkMode = document.documentElement.classList.contains('dark');
+
+  useEffect(() => {
+    if (businessId) {
+      loadDocumentTypes();
+      loadDocuments();
+    }
+  }, [businessId]);
+
+  // Load document types from API
+  const loadDocumentTypes = async () => {
+    try {
+      console.log('🔄 Loading document types from API...');
+      setLoadingDocumentTypes(true);
+      
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`;
+      console.log('📡 API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📨 API Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('📋 API Result:', result);
+      
+      if (result.data && Array.isArray(result.data)) {
+        // Transform API response to match expected format
+        const transformedTypes = result.data.map(docType => ({
+          id: docType.key,
+          name: docType.name,
+          description: docType.description,
+          required: docType.required,
+          autoExpiry: docType.autoExpiry,
+          category: docType.category,
+          acceptedFormats: docType.acceptedFormats,
+          examples: docType.examples,
+          validityYears: docType.validityYears
+        }));
+        
+        console.log('✅ Transformed document types:', transformedTypes);
+        setDocumentTypes(transformedTypes);
+      } else {
+        console.log('❌ Invalid API response format:', result);
+        throw new Error('Invalid API response format');
+      }
+    } catch (error) {
+      console.error('❌ Error loading document types:', error);
+      // Fallback to hardcoded types if API fails
+      console.log('🔄 Falling back to hardcoded document types');
+      setDocumentTypes(FALLBACK_BUSINESS_DOCUMENT_TYPES);
+    } finally {
+      setLoadingDocumentTypes(false);
+    }
+  };
+
+  // Fallback document types in case API fails
+  const FALLBACK_BUSINESS_DOCUMENT_TYPES = [
     {
       id: 'business-license',
       name: 'Business License',
@@ -64,15 +132,6 @@ export default function BusinessComplianceDocuments({ businessId }) {
       examples: 'Data protection certification, GDPR compliance certificate'
     }
   ];
-
-  // Check if user is in dark mode
-  const isDarkMode = document.documentElement.classList.contains('dark');
-
-  useEffect(() => {
-    if (businessId) {
-      loadDocuments();
-    }
-  }, [businessId]);
 
   const loadDocuments = async () => {
     try {
@@ -336,7 +395,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  if (loading || loadingDocumentTypes) {
     return (
       <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow`}>
         <div className="animate-pulse">
@@ -378,7 +437,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
       </div>
 
       <div className="space-y-4">
-        {BUSINESS_DOCUMENT_TYPES.map((docConfig) => {
+        {documentTypes.map((docConfig) => {
           const doc = documents.find(d => d.documentType === docConfig.id);
           const status = getDocumentStatus(docConfig);
           const isExpanded = expandedDoc === docConfig.id;
