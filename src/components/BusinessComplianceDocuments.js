@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Upload, Check, X, Clock, AlertTriangle, Download, Calendar, FileX, Edit2, Trash2 } from 'lucide-react';
+import DateDropdowns from './DateSliders';
 
 export default function BusinessComplianceDocuments({ businessId }) {
   const [documents, setDocuments] = useState([]);
@@ -12,6 +13,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loadingDocumentTypes, setLoadingDocumentTypes] = useState(true);
+  const [issueDates, setIssueDates] = useState({}); // Store issue dates for each document type
 
   // Check if user is in dark mode
   const isDarkMode = document.documentElement.classList.contains('dark');
@@ -136,19 +138,25 @@ export default function BusinessComplianceDocuments({ businessId }) {
   const loadDocuments = async () => {
     try {
       setLoading(true);
+      console.log('📋 Loading documents for business:', businessId);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
+      console.log('📋 Load documents response status:', response.status);
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log('📋 Load documents result:', result);
       
       if (result.success) {
+        console.log('📋 Setting documents:', result.data.documents?.length || 0, 'documents');
         setDocuments(result.data.documents || []);
         setOverview(result.data.overview || null);
       }
@@ -184,16 +192,33 @@ export default function BusinessComplianceDocuments({ businessId }) {
       formData.append('documentType', documentId);
       formData.append('businessId', businessId);
       
-      // Add dates if provided
-      const issueDateInput = document.getElementById(`issue-date-${documentId}`);
-      const expiryDateInput = document.getElementById(`expiry-date-${documentId}`);
+      // Get issue date from state
+      const issueDate = issueDates[documentId];
       
-      if (issueDateInput?.value) {
-        formData.append('issueDate', issueDateInput.value);
-      }
-
-      if (expiryDateInput?.value) {
-        formData.append('expiryDate', expiryDateInput.value);
+      if (issueDate) {
+        formData.append('issueDate', issueDate);
+        
+        // Calculate expiry date automatically based on document type validity
+        const docType = documentTypes.find(dt => dt.id === documentId);
+        const validityYears = docType?.validityYears || 1; // Default to 1 year if not specified
+        
+        const issueDateObj = new Date(issueDate);
+        const expiryDate = new Date(issueDateObj);
+        expiryDate.setFullYear(expiryDate.getFullYear() + validityYears);
+        
+        // Format expiry date as YYYY-MM-DD
+        const expiryDateString = expiryDate.toISOString().split('T')[0];
+        formData.append('expiryDate', expiryDateString);
+        
+        console.log(`📅 Auto-calculated expiry date for ${documentId}:`, {
+          issueDate: issueDate,
+          validityYears,
+          expiryDate: expiryDateString
+        });
+      } else {
+        alert('Please select an issue date');
+        setUploadingDoc(null);
+        return;
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/upload`, {
@@ -213,8 +238,13 @@ export default function BusinessComplianceDocuments({ businessId }) {
       // Refresh the documents to show updated status
       await loadDocuments();
       
-      // Clear the pending upload and editing state
+      // Clear the pending upload, editing state, and issue date
       setPendingUploads(prev => {
+        const updated = { ...prev };
+        delete updated[documentId];
+        return updated;
+      });
+      setIssueDates(prev => {
         const updated = { ...prev };
         delete updated[documentId];
         return updated;
@@ -244,21 +274,29 @@ export default function BusinessComplianceDocuments({ businessId }) {
         throw new Error('Document not found');
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/${doc.id}`, {
+      console.log('🗑️ Deleting document:', doc.documentId, 'for document type:', documentId);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/${doc.documentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
 
+      console.log('🗑️ Delete response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🗑️ Delete failed:', response.status, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      console.log('✅ Document deleted successfully, refreshing documents...');
 
       // Refresh the documents to show updated status
       await loadDocuments();
       
-      console.log('Business document deleted successfully');
+      console.log('🔄 Documents reloaded after deletion');
       
     } catch (error) {
       console.error('Error deleting business document:', error);
@@ -538,6 +576,9 @@ export default function BusinessComplianceDocuments({ businessId }) {
                         {doc.expiryDate && (
                           <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
                             <strong>Expiry Date:</strong> {formatDate(doc.expiryDate)}
+                            <span className={`ml-2 text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-blue-900/50 text-blue-300' : 'bg-blue-100 text-blue-600'}`}>
+                              Auto-calculated
+                            </span>
                           </div>
                         )}
                         <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
@@ -603,30 +644,21 @@ export default function BusinessComplianceDocuments({ businessId }) {
                         </div>
 
                         {/* Date Fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                              Issue Date *
-                            </label>
-                            <input
-                              type="date"
-                              id={`issue-date-${docConfig.id}`}
-                              defaultValue={doc?.issueDate ? new Date(doc.issueDate).toISOString().split('T')[0] : ''}
-                              className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                              Expiry Date *
-                            </label>
-                            <input
-                              type="date"
-                              id={`expiry-date-${docConfig.id}`}
-                              defaultValue={doc?.expiryDate ? new Date(doc.expiryDate).toISOString().split('T')[0] : ''}
-                              className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
-                              required
-                            />
+                        <div className="grid grid-cols-1 gap-3">
+                          <DateDropdowns
+                            label="Issue Date *"
+                            value={issueDates[docConfig.id] || (doc?.issueDate ? new Date(doc.issueDate).toISOString().split('T')[0] : '')}
+                            onChange={(dateString) => {
+                              setIssueDates(prev => ({
+                                ...prev,
+                                [docConfig.id]: dateString
+                              }));
+                            }}
+                          />
+                          <div className={`p-3 ${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                              <strong>Auto-Expiry:</strong> This document will automatically expire {docConfig.validityYears || 1} year(s) after the issue date.
+                            </p>
                           </div>
                         </div>
 

@@ -19,6 +19,23 @@ export default function AdminDashboard() {
   const [services, setServices] = useState([]);
   const [businessTypes, setBusinessTypes] = useState([]);
   const [businessComplianceDocumentTypes, setBusinessComplianceDocumentTypes] = useState([]);
+  const [businessComplianceDocumentTypesLoading, setBusinessComplianceDocumentTypesLoading] = useState(true);
+  
+  // Business document type form management
+  const [showBusinessDocumentTypeForm, setShowBusinessDocumentTypeForm] = useState(false);
+  const [editingBusinessDocumentType, setEditingBusinessDocumentType] = useState(null);
+  const [businessDocumentTypeFormData, setBusinessDocumentTypeFormData] = useState({
+    name: '',
+    required: true,
+    description: '',
+    autoExpiry: true,
+    validityYears: 1,
+    expiryWarningDays: 30,
+    allowedFileTypes: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+    maxFileSize: 10485760, // 10MB
+    helpText: ''
+  });
+  
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [systemSettings, setSystemSettings] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
@@ -468,7 +485,6 @@ export default function AdminDashboard() {
   // Email verification update states
   const [updatingDoctorEmailVerifiedId, setUpdatingDoctorEmailVerifiedId] = useState(null);
   const [updatingBusinessEmailVerifiedId, setUpdatingBusinessEmailVerifiedId] = useState(null);
-  const [businessComplianceDocumentTypesLoading, setBusinessComplianceDocumentTypesLoading] = useState(true);
   
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -713,6 +729,40 @@ export default function AdminDashboard() {
     }
   };
 
+  // Load business compliance document types from API
+  const loadBusinessComplianceDocumentTypes = async () => {
+    console.log('🏢 Starting business compliance document types loading...');
+    setBusinessComplianceDocumentTypesLoading(true);
+    
+    try {
+      console.log('🏢 Loading business compliance document types from API...');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`);
+      console.log('📡 Business compliance document types API Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📦 Business compliance document types received:', data.data?.length || 0);
+        
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+          console.log('✅ Successfully loaded business compliance document types:', data.data.length);
+          setBusinessComplianceDocumentTypes(data.data);
+        } else {
+          console.log('⚠️ API returned empty data for business compliance document types');
+          setBusinessComplianceDocumentTypes([]);
+        }
+      } else {
+        throw new Error(`API request failed with status: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('❌ Error loading business compliance document types:', error.message);
+      // Set empty array on error instead of fallback
+      setBusinessComplianceDocumentTypes([]);
+    } finally {
+      setBusinessComplianceDocumentTypesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchAllData();
     
@@ -814,65 +864,6 @@ export default function AdminDashboard() {
 
   // Separate useEffect for business compliance document types
   useEffect(() => {
-    const loadBusinessComplianceDocumentTypes = async () => {
-      console.log('🏢 Starting business compliance document types loading...');
-      setBusinessComplianceDocumentTypesLoading(true);
-      
-      // Wait 3 seconds to ensure backend is ready
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Try loading business compliance document types with retry logic
-      let attempts = 0;
-      const maxAttempts = 5;
-      const baseDelay = 2000;
-      
-      while (attempts < maxAttempts) {
-        try {
-          console.log(`🏢 Business compliance document types loading attempt ${attempts + 1}/${maxAttempts}`);
-          
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`);
-          console.log('📡 Business compliance document types API Response status:', response.status);
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log('📦 Business compliance document types received:', data.data?.length || 0);
-            
-            if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-              console.log('✅ Successfully loaded business compliance document types:', data.data.length);
-              setBusinessComplianceDocumentTypes(data.data);
-              setBusinessComplianceDocumentTypesLoading(false);
-              return;
-            } else {
-              console.log('⚠️ API returned empty data, retrying...');
-              throw new Error('Empty data received');
-            }
-          } else {
-            throw new Error(`API request failed with status: ${response.status}`);
-          }
-        } catch (error) {
-          attempts++;
-          console.error(`❌ Business compliance document types loading attempt ${attempts} failed:`, error.message);
-          
-          if (attempts >= maxAttempts) {
-            console.log('❌ All business compliance document types loading attempts failed, using fallback');
-            const fallbackTypes = [
-              { key: 'business_insurance', name: 'Business Insurance', required: true, description: 'Comprehensive business insurance coverage' },
-              { key: 'vat_registration', name: 'VAT Registration', required: true, description: 'VAT registration certificate' },
-              { key: 'company_registration', name: 'Company Registration', required: true, description: 'Companies House registration' },
-              { key: 'data_protection', name: 'Data Protection Certificate', required: true, description: 'Data protection compliance certificate' }
-            ];
-            setBusinessComplianceDocumentTypes(fallbackTypes);
-            setBusinessComplianceDocumentTypesLoading(false);
-            return;
-          }
-          
-          const delay = baseDelay * Math.pow(2, attempts - 1);
-          console.log(`⏳ Waiting ${delay}ms before next attempt...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
-    };
-    
     loadBusinessComplianceDocumentTypes();
   }, []);
 
@@ -1684,6 +1675,213 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('❌ Error enabling auto-expiry:', error);
       alert(`Failed to enable auto-expiry: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Business Document Type Management Functions
+  const handleBusinessDocumentTypeFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setBusinessDocumentTypeFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleBusinessDocumentTypeSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      console.log('🏢 Business document type form submission started');
+      console.log('📝 Form data:', businessDocumentTypeFormData);
+
+      // Auto-generate key from name if creating new document type
+      const documentKey = editingBusinessDocumentType 
+        ? editingBusinessDocumentType.key // Keep existing key when editing
+        : generateDocumentKey(businessDocumentTypeFormData.name);
+
+      console.log('🔑 Using business document key:', documentKey);
+
+      let response;
+      if (editingBusinessDocumentType) {
+        // Update existing business document type
+        const documentId = editingBusinessDocumentType.id;
+        console.log('📝 Updating business document type with ID:', documentId);
+        
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/${documentId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              key: documentKey,
+              name: businessDocumentTypeFormData.name,
+              required: businessDocumentTypeFormData.required,
+              description: businessDocumentTypeFormData.description,
+              autoExpiry: businessDocumentTypeFormData.autoExpiry,
+              validityYears: businessDocumentTypeFormData.autoExpiry ? businessDocumentTypeFormData.validityYears : null,
+              expiryWarningDays: businessDocumentTypeFormData.autoExpiry ? businessDocumentTypeFormData.expiryWarningDays : 30,
+              allowedFileTypes: businessDocumentTypeFormData.allowedFileTypes,
+              maxFileSize: businessDocumentTypeFormData.maxFileSize,
+              helpText: businessDocumentTypeFormData.helpText
+            }
+          })
+        });
+      } else {
+        // Create new business document type
+        console.log('🆕 Creating new business document type');
+        
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              key: documentKey,
+              name: businessDocumentTypeFormData.name,
+              required: businessDocumentTypeFormData.required,
+              description: businessDocumentTypeFormData.description,
+              autoExpiry: businessDocumentTypeFormData.autoExpiry,
+              validityYears: businessDocumentTypeFormData.autoExpiry ? businessDocumentTypeFormData.validityYears : null,
+              expiryWarningDays: businessDocumentTypeFormData.autoExpiry ? businessDocumentTypeFormData.expiryWarningDays : 30,
+              allowedFileTypes: businessDocumentTypeFormData.allowedFileTypes,
+              maxFileSize: businessDocumentTypeFormData.maxFileSize,
+              helpText: businessDocumentTypeFormData.helpText
+            }
+          })
+        });
+      }
+
+      console.log('📡 Business document type response status:', response.status);
+
+      if (response.ok) {
+        console.log('✅ Business document type saved successfully');
+        alert('Business document type saved successfully!');
+        
+        // Reset form and close modal
+        setBusinessDocumentTypeFormData({
+          name: '',
+          required: true,
+          description: '',
+          autoExpiry: true,
+          validityYears: 1,
+          expiryWarningDays: 30,
+          category: 'registration',
+          allowedFileTypes: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+          maxFileSize: 10485760,
+          examples: '',
+          helpText: ''
+        });
+        setEditingBusinessDocumentType(null);
+        setShowBusinessDocumentTypeForm(false);
+        
+        // Reload business document types to reflect changes
+        await loadBusinessComplianceDocumentTypes();
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Save request failed:', response.status, errorData);
+        throw new Error(errorData.error?.message || errorData.message || 'Failed to save business document type');
+      }
+    } catch (error) {
+      console.error('❌ Error saving business document type:', error);
+      alert(`Failed to save business document type: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditBusinessDocumentType = (documentType) => {
+    console.log('✏️ Edit business document type requested:', documentType);
+    setEditingBusinessDocumentType(documentType);
+    setBusinessDocumentTypeFormData({
+      name: documentType.name,
+      required: documentType.required,
+      description: documentType.description || '',
+      autoExpiry: documentType.autoExpiry || false,
+      validityYears: documentType.validityYears || 1,
+      expiryWarningDays: documentType.expiryWarningDays || 30,
+      allowedFileTypes: documentType.allowedFileTypes || ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      maxFileSize: documentType.maxFileSize || 10485760,
+      helpText: documentType.helpText || ''
+    });
+    setShowBusinessDocumentTypeForm(true);
+  };
+
+  const handleDeleteBusinessDocumentType = async (documentType) => {
+    console.log('🗑️ Delete business document type requested:', documentType);
+    
+    if (!confirm(`Are you sure you want to delete the business document type "${documentType.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDataLoading(true);
+      const documentId = documentType.id;
+      console.log('🗑️ Deleting business document type with ID:', documentId);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/${documentId}`, {
+        method: 'DELETE'
+      });
+
+      console.log('📡 Delete response status:', response.status);
+
+      if (response.ok) {
+        console.log('✅ Business document type deleted successfully');
+        alert('Business document type deleted successfully!');
+        
+        // Reload business document types to reflect changes
+        await loadBusinessComplianceDocumentTypes();
+      } else {
+        const responseData = await response.json();
+        console.error('❌ Delete request failed:', response.status, responseData);
+        throw new Error(responseData.error?.message || responseData.message || 'Failed to delete business document type');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting business document type:', error);
+      alert(`Failed to delete business document type: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEnableAutoExpiryForAllBusiness = async () => {
+    if (!confirm('This will enable auto-expiry tracking for ALL business compliance documents. This action will update existing document types and calculate expiry dates for existing documents. Do you want to continue?')) {
+      return;
+    }
+
+    try {
+      setDataLoading(true);
+      console.log('🚀 Starting business auto-expiry migration...');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/enable-auto-expiry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Business auto-expiry migration completed:', result);
+        
+        alert(`Business auto-expiry tracking enabled successfully!\n\n` +
+              `Document Types Updated: ${result.result?.documentTypesUpdated || 0}\n` +
+              `Documents Updated: ${result.result?.documentsUpdated || 0}\n\n` +
+              `All business documents now have automatic expiry tracking enabled.`);
+        
+        // Reload business document types to reflect changes
+        await loadBusinessComplianceDocumentTypes();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to enable auto-expiry');
+      }
+    } catch (error) {
+      console.error('❌ Error enabling business auto-expiry:', error);
+      alert(`Failed to enable business auto-expiry: ${error.message}`);
     } finally {
       setDataLoading(false);
     }
@@ -4460,160 +4658,188 @@ export default function AdminDashboard() {
 
         {/* Business Compliance Documents Tab */}
         {activeTab === 'business-compliance-documents' && (
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
-            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
-              <div>
-                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
-                  <FileCheck className="h-5 w-5 text-blue-500 mr-2" />
-                  Business Compliance Documents
-                </h2>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage and verify business compliance documents</p>
-              </div>
-              <button
-                onClick={() => {
-                  // Refresh compliance documents
-                  window.location.reload();
-                }}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isDarkMode 
-                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                } flex items-center space-x-2`}
-              >
-                <FileCheck className="h-4 w-4" />
-                <span>Refresh</span>
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-6`}>
-                <div className="flex items-center">
-                  <div className={`p-2 ${isDarkMode ? 'bg-blue-900/50' : 'bg-blue-100'} rounded-lg mr-3`}>
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'} p-2 rounded-lg`}>
                     <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
                   </div>
                   <div>
-                    <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      Business Compliance Documents System
-                    </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                      This section shows business compliance documents from all registered businesses. 
-                      Document types are now dynamically managed through the backend API.
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Business Compliance Document Types</h2>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage required document types for business compliance</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleEnableAutoExpiryForAllBusiness}
+                    disabled={dataLoading}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
+                    <Clock className="h-4 w-4" />
+                    <span>Enable Auto-Expiry for All</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingBusinessDocumentType(null);
+                      setBusinessDocumentTypeFormData({
+                        name: '',
+                        required: true,
+                        description: '',
+                        autoExpiry: true,
+                        validityYears: 1,
+                        expiryWarningDays: 30,
+                        category: 'registration',
+                        allowedFileTypes: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+                        maxFileSize: 10485760,
+                        examples: '',
+                        helpText: ''
+                      });
+                      setShowBusinessDocumentTypeForm(true);
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Document Type</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {businessComplianceDocumentTypesLoading ? (
+                <div className="text-center py-12">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                    <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Loading Business Document Types</h3>
+                    <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Please wait while we load the business compliance document types...
                     </p>
                   </div>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg`}>
-                  <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                    Available Document Types
-                  </h4>
-                  {businessComplianceDocumentTypesLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      <span className={`ml-3 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Loading document types...
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {businessComplianceDocumentTypes.length > 0 ? (
-                        businessComplianceDocumentTypes.map((docType, index) => (
-                          <div key={docType.key || index} className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border`}>
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 ${docType.required ? 'bg-red-500' : 'bg-green-500'} rounded-full`}></div>
-                              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                {docType.name}
-                              </span>
-                              {docType.required && (
-                                <span className="text-xs text-red-500 font-medium">*Required</span>
-                              )}
-                            </div>
-                            {docType.description && (
-                              <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'} mt-1 ml-4`}>
-                                {docType.description}
-                              </p>
-                            )}
+              ) : businessComplianceDocumentTypes.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {businessComplianceDocumentTypes.map((docType) => (
+                    <div
+                      key={docType.key || docType.id}
+                      className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg p-4 border hover:shadow-md transition-shadow`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{docType.name}</h3>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            docType.required 
+                              ? isDarkMode 
+                                ? 'bg-red-900/30 text-red-400' 
+                                : 'bg-red-100 text-red-700'
+                              : isDarkMode 
+                                ? 'bg-green-900/30 text-green-400' 
+                                : 'bg-green-100 text-green-700'
+                          }`}>
+                            {docType.required ? 'Required' : 'Optional'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mb-4">
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <span className="font-medium">Key:</span> {docType.key}
+                        </p>
+                        {docType.description && (
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            {docType.description}
+                          </p>
+                        )}
+                        {docType.category && (
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                            <span className="font-medium">Category:</span> {docType.category}
+                          </p>
+                        )}
+                        {docType.autoExpiry ? (
+                          <div className={`p-2 rounded ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                            <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-700'}`}>
+                              <span className="font-medium">Auto-Expiry:</span> {docType.validityYears} year{docType.validityYears > 1 ? 's' : ''} validity
+                            </p>
+                            <p className={`text-xs ${isDarkMode ? 'text-blue-400/80' : 'text-blue-600'}`}>
+                              Warning: {docType.expiryWarningDays || 30} days before expiry
+                            </p>
                           </div>
-                        ))
-                      ) : (
-                        <div className={`col-span-full p-4 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <FileCheck className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No business compliance document types configured yet.</p>
-                          <p className="text-xs mt-1">Document types can be added through the Strapi admin panel.</p>
-                        </div>
-                      )}
+                        ) : (
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                            No automatic expiry tracking
+                          </p>
+                        )}
+                        {docType.examples && (
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                            <span className="font-medium">Examples:</span> {docType.examples}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditBusinessDocumentType(docType)}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' 
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBusinessDocumentType(docType)}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors ${
+                            isDarkMode 
+                              ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-
-                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg`}>
-                  <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
-                    System Status
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
-                      <div className={`text-lg font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
-                        ✅ Active
-                      </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                        Backend API
-                      </div>
-                    </div>
-                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
-                      <div className={`text-lg font-bold ${
-                        businessComplianceDocumentTypesLoading 
-                          ? (isDarkMode ? 'text-yellow-400' : 'text-yellow-600')
-                          : businessComplianceDocumentTypes.length > 0 
-                            ? (isDarkMode ? 'text-green-400' : 'text-green-600')
-                            : (isDarkMode ? 'text-red-400' : 'text-red-600')
-                      }`}>
-                        {businessComplianceDocumentTypesLoading 
-                          ? '🔄 Loading' 
-                          : businessComplianceDocumentTypes.length > 0 
-                            ? '✅ Ready' 
-                            : '❌ No Data'
-                        }
-                      </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                        Document Types
-                      </div>
-                      {!businessComplianceDocumentTypesLoading && (
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
-                          {businessComplianceDocumentTypes.length} types loaded
-                        </div>
-                      )}
-                    </div>
-                    <div className={`p-3 ${isDarkMode ? 'bg-gray-700' : 'bg-white'} rounded border text-center`}>
-                      <div className={`text-lg font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                        ✅ Working
-                      </div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
-                        File Upload
-                      </div>
-                    </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <FileCheck className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <h3 className={`text-lg font-medium mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No business document types found</h3>
+                    <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      No business compliance document types have been created yet. Click the "Add Document Type" button to create one.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setEditingBusinessDocumentType(null);
+                        setBusinessDocumentTypeFormData({
+                          name: '',
+                          required: true,
+                          description: '',
+                          autoExpiry: true,
+                          validityYears: 1,
+                          expiryWarningDays: 30,
+                          category: 'registration',
+                          allowedFileTypes: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+                          maxFileSize: 10485760,
+                          examples: '',
+                          helpText: ''
+                        });
+                        setShowBusinessDocumentTypeForm(true);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors mx-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Add Document Type</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className={`p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-yellow-50 border-yellow-200'} border rounded-lg`}>
-                  <div className="flex items-start space-x-3">
-                    <div className={`p-2 ${isDarkMode ? 'bg-yellow-900/50' : 'bg-yellow-100'} rounded-lg`}>
-                      <FileCheck className={`h-5 w-5 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
-                    </div>
-                    <div>
-                      <h4 className={`font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-800'} mb-2`}>
-                        Next Steps
-                      </h4>
-                      <ul className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'} space-y-1`}>
-                        <li>• Business compliance documents are now dynamically loaded from the backend</li>
-                        <li>• Document types can be managed through the Strapi admin panel</li>
-                        <li>• Business dashboard will automatically show the latest document requirements</li>
-                        <li>• Admin can verify and manage compliance documents here</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -4775,6 +5001,173 @@ export default function AdminDashboard() {
                     <>
                       <FileText className="h-4 w-4 mr-2" />
                       {editingDocumentType ? 'Update Document Type' : 'Create Document Type'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Business Document Type Form Modal */}
+      {showBusinessDocumentTypeForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                <FileCheck className="h-5 w-5 text-blue-600 dark:text-blue-500 mr-2" />
+                {editingBusinessDocumentType ? 'Edit Business Document Type' : 'Add Business Document Type'}
+              </h2>
+              <button
+                onClick={() => setShowBusinessDocumentTypeForm(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleBusinessDocumentTypeSubmit} className="p-6 space-y-6">
+              <div>
+                <label htmlFor="businessDocumentTypeName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Display Name *
+                </label>
+                <input
+                  type="text"
+                  id="businessDocumentTypeName"
+                  name="name"
+                  value={businessDocumentTypeFormData.name}
+                  onChange={handleBusinessDocumentTypeFormChange}
+                  required
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                  placeholder="e.g., Business Registration Certificate"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  This is what users will see when uploading documents
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="businessDocumentTypeDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="businessDocumentTypeDescription"
+                  name="description"
+                  rows={3}
+                  value={businessDocumentTypeFormData.description}
+                  onChange={handleBusinessDocumentTypeFormChange}
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                  placeholder="Describe what this document is for and any specific requirements..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="required"
+                      checked={businessDocumentTypeFormData.required}
+                      onChange={handleBusinessDocumentTypeFormChange}
+                      className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Required document</span>
+                  </label>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Business must provide this document to complete registration
+                  </p>
+                </div>
+
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="autoExpiry"
+                      checked={businessDocumentTypeFormData.autoExpiry}
+                      onChange={handleBusinessDocumentTypeFormChange}
+                      className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Enable auto-expiry tracking</span>
+                  </label>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Track document expiry dates and send reminders
+                  </p>
+                </div>
+              </div>
+
+              {businessDocumentTypeFormData.autoExpiry && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div>
+                    <label htmlFor="businessDocumentTypeValidityYears" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Validity Period (Years) *
+                    </label>
+                    <input
+                      type="number"
+                      id="businessDocumentTypeValidityYears"
+                      name="validityYears"
+                      min="1"
+                      max="10"
+                      value={businessDocumentTypeFormData.validityYears}
+                      onChange={handleBusinessDocumentTypeFormChange}
+                      required={businessDocumentTypeFormData.autoExpiry}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="businessDocumentTypeExpiryWarningDays" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Warning Days *
+                    </label>
+                    <input
+                      type="number"
+                      id="businessDocumentTypeExpiryWarningDays"
+                      name="expiryWarningDays"
+                      min="1"
+                      max="365"
+                      value={businessDocumentTypeFormData.expiryWarningDays}
+                      onChange={handleBusinessDocumentTypeFormChange}
+                      required={businessDocumentTypeFormData.autoExpiry}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className={`p-4 rounded-lg ${businessDocumentTypeFormData.autoExpiry ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800' : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}`}>
+                <h4 className={`font-medium mb-2 ${businessDocumentTypeFormData.autoExpiry ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>
+                  Auto-Expiry Settings
+                </h4>
+                <p className={`text-sm ${businessDocumentTypeFormData.autoExpiry ? 'text-blue-700 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                  {businessDocumentTypeFormData.autoExpiry 
+                    ? `Documents will automatically expire ${businessDocumentTypeFormData.validityYears} year(s) after issue date and show warning ${businessDocumentTypeFormData.expiryWarningDays} days before expiry.`
+                    : 'Enable expiry tracking for documents that have a validity period (e.g., business licenses, insurance certificates).'
+                  }
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowBusinessDocumentTypeForm(false)}
+                  className="px-6 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center"
+                >
+                  {dataLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      {editingBusinessDocumentType ? 'Update Document Type' : 'Create Document Type'}
                     </>
                   )}
                 </button>
