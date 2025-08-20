@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Upload, Check, X, Clock, AlertTriangle, Download, Calendar, FileX } from 'lucide-react';
+import { FileText, Upload, Check, X, Clock, AlertTriangle, Download, Calendar, FileX, Edit2, Trash2 } from 'lucide-react';
 
 export default function BusinessComplianceDocuments({ businessId }) {
   const [documents, setDocuments] = useState([]);
@@ -8,6 +8,8 @@ export default function BusinessComplianceDocuments({ businessId }) {
   const [pendingUploads, setPendingUploads] = useState({});
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [expandedDoc, setExpandedDoc] = useState(null);
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [deletingDoc, setDeletingDoc] = useState(null);
 
   // Business-specific document configuration
   const BUSINESS_DOCUMENT_TYPES = [
@@ -125,9 +127,14 @@ export default function BusinessComplianceDocuments({ businessId }) {
       
       // Add dates if provided
       const issueDateInput = document.getElementById(`issue-date-${documentId}`);
+      const expiryDateInput = document.getElementById(`expiry-date-${documentId}`);
       
       if (issueDateInput?.value) {
         formData.append('issueDate', issueDateInput.value);
+      }
+
+      if (expiryDateInput?.value) {
+        formData.append('expiryDate', expiryDateInput.value);
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/upload`, {
@@ -147,12 +154,13 @@ export default function BusinessComplianceDocuments({ businessId }) {
       // Refresh the documents to show updated status
       await loadDocuments();
       
-      // Clear the pending upload
+      // Clear the pending upload and editing state
       setPendingUploads(prev => {
         const updated = { ...prev };
         delete updated[documentId];
         return updated;
       });
+      setEditingDoc(null);
       
       console.log('Business document uploaded successfully:', result);
       
@@ -161,6 +169,43 @@ export default function BusinessComplianceDocuments({ businessId }) {
       alert('Failed to upload document. Please try again.');
     } finally {
       setUploadingDoc(null);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeletingDoc(documentId);
+    
+    try {
+      const doc = documents.find(d => d.documentType === documentId);
+      if (!doc) {
+        throw new Error('Document not found');
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/${doc.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Refresh the documents to show updated status
+      await loadDocuments();
+      
+      console.log('Business document deleted successfully');
+      
+    } catch (error) {
+      console.error('Error deleting business document:', error);
+      alert('Failed to delete document. Please try again.');
+    } finally {
+      setDeletingDoc(null);
     }
   };
 
@@ -338,6 +383,8 @@ export default function BusinessComplianceDocuments({ businessId }) {
           const status = getDocumentStatus(docConfig);
           const isExpanded = expandedDoc === docConfig.id;
           const hasPendingUpload = pendingUploads[docConfig.id];
+          const isEditing = editingDoc === docConfig.id;
+          const showUploadSection = !doc || isEditing;
 
           return (
             <div
@@ -386,35 +433,37 @@ export default function BusinessComplianceDocuments({ businessId }) {
               {isExpanded && (
                 <div className={`border-t p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
                   
-                  {/* Document Info */}
-                  <div className={`mb-4 p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                    <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                      Document Information
-                    </h4>
-                    <div className="space-y-1 text-sm">
-                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                        <strong>Category:</strong> {docConfig.category}
-                      </div>
-                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                        <strong>Accepted formats:</strong> {docConfig.acceptedFormats}
-                      </div>
-                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                        <strong>Examples:</strong> {docConfig.examples}
-                      </div>
-                      {docConfig.autoExpiry && (
-                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                          <strong>Requires expiry date:</strong> Yes
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Current Document Status */}
                   {doc && (
                     <div className={`mb-4 p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                        Current Document
-                      </h4>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          Current Document
+                        </h4>
+                        <div className="flex items-center space-x-2">
+                          {!isEditing && (
+                            <button
+                              onClick={() => setEditingDoc(docConfig.id)}
+                              className={`flex items-center space-x-1 px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} transition-colors`}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                              <span>Update</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteDocument(docConfig.id)}
+                            disabled={deletingDoc === docConfig.id}
+                            className={`flex items-center space-x-1 px-2 py-1 text-xs rounded ${isDarkMode ? 'bg-red-900 text-red-300 hover:bg-red-800' : 'bg-red-100 text-red-700 hover:bg-red-200'} transition-colors disabled:opacity-50`}
+                          >
+                            {deletingDoc === docConfig.id ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
                       <div className="space-y-2 text-sm">
                         <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
                           <strong>File:</strong> {doc.fileName}
@@ -451,78 +500,106 @@ export default function BusinessComplianceDocuments({ businessId }) {
                     </div>
                   )}
 
-                  {/* Upload Section */}
-                  <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-                    <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                      {doc ? 'Replace Document' : 'Upload Document'}
-                    </h4>
-                    
-                    <div className="space-y-3">
-                      {/* File Selection */}
-                      <div>
-                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                          Select File
-                        </label>
-                        <input
-                          type="file"
-                          accept={docConfig.acceptedFormats}
-                          onChange={(e) => handleFileSelect(docConfig.id, e)}
-                          className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
-                        />
-                        {hasPendingUpload && (
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                            Selected: {hasPendingUpload.fileName}
-                          </p>
+                  {/* Upload Section - Only show if no document exists or editing */}
+                  {showUploadSection && (
+                    <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {doc ? 'Replace Document' : 'Upload Document'}
+                        </h4>
+                        {isEditing && (
+                          <button
+                            onClick={() => {
+                              setEditingDoc(null);
+                              setPendingUploads(prev => {
+                                const updated = { ...prev };
+                                delete updated[docConfig.id];
+                                return updated;
+                              });
+                            }}
+                            className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} transition-colors`}
+                          >
+                            Cancel
+                          </button>
                         )}
                       </div>
-
-                      {/* Date Fields */}
-                      <div className="grid grid-cols-1 gap-3">
+                      
+                      <div className="space-y-3">
+                        {/* File Selection */}
                         <div>
                           <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                            Issue Date *
+                            Select File
                           </label>
                           <input
-                            type="date"
-                            id={`issue-date-${docConfig.id}`}
-                            defaultValue={doc?.issueDate ? new Date(doc.issueDate).toISOString().split('T')[0] : ''}
+                            type="file"
+                            accept={docConfig.acceptedFormats}
+                            onChange={(e) => handleFileSelect(docConfig.id, e)}
                             className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
-                            required
                           />
-                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Expiry date will be automatically calculated (1 year from issue date)
-                          </p>
+                          {hasPendingUpload && (
+                            <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                              Selected: {hasPendingUpload.fileName}
+                            </p>
+                          )}
                         </div>
-                      </div>
 
-                      {/* Upload Button */}
-                      <button
-                        onClick={() => handleSaveDocument(docConfig.id)}
-                        disabled={!hasPendingUpload || uploadingDoc === docConfig.id}
-                        className={`w-full px-4 py-2 rounded font-medium transition-colors ${
-                          hasPendingUpload && uploadingDoc !== docConfig.id
-                            ? isDarkMode
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : isDarkMode
-                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        }`}
-                      >
-                        {uploadingDoc === docConfig.id ? (
-                          <div className="flex items-center justify-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>Uploading...</span>
+                        {/* Date Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Issue Date *
+                            </label>
+                            <input
+                              type="date"
+                              id={`issue-date-${docConfig.id}`}
+                              defaultValue={doc?.issueDate ? new Date(doc.issueDate).toISOString().split('T')[0] : ''}
+                              className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                              required
+                            />
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-center space-x-2">
-                            <Upload className="h-4 w-4" />
-                            <span>{doc ? 'Replace Document' : 'Upload Document'}</span>
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Expiry Date *
+                            </label>
+                            <input
+                              type="date"
+                              id={`expiry-date-${docConfig.id}`}
+                              defaultValue={doc?.expiryDate ? new Date(doc.expiryDate).toISOString().split('T')[0] : ''}
+                              className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                              required
+                            />
                           </div>
-                        )}
-                      </button>
+                        </div>
+
+                        {/* Upload Button */}
+                        <button
+                          onClick={() => handleSaveDocument(docConfig.id)}
+                          disabled={!hasPendingUpload || uploadingDoc === docConfig.id}
+                          className={`w-full px-4 py-2 rounded font-medium transition-colors ${
+                            hasPendingUpload && uploadingDoc !== docConfig.id
+                              ? isDarkMode
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : isDarkMode
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                          {uploadingDoc === docConfig.id ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Uploading...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center space-x-2">
+                              <Upload className="h-4 w-4" />
+                              <span>{doc ? 'Replace Document' : 'Upload Document'}</span>
+                            </div>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
