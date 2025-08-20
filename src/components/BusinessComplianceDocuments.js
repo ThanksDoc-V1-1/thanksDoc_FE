@@ -55,6 +55,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
         // Transform API response to match expected format
         const transformedTypes = result.data.map(docType => ({
           id: docType.key,
+          key: docType.key,
           name: docType.name,
           description: docType.description,
           required: docType.required,
@@ -201,6 +202,10 @@ export default function BusinessComplianceDocuments({ businessId }) {
         // Calculate expiry date automatically based on document type validity
         const docType = documentTypes.find(dt => dt.id === documentId);
         const validityYears = docType?.validityYears || 1; // Default to 1 year if not specified
+        
+        console.log(`🔍 Looking for document type with id: ${documentId}`);
+        console.log(`📋 Found document type:`, docType);
+        console.log(`⏰ Validity years:`, validityYears);
         
         const issueDateObj = new Date(issueDate);
         const expiryDate = new Date(issueDateObj);
