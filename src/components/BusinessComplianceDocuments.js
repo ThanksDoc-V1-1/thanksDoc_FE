@@ -1,0 +1,534 @@
+import React, { useState, useEffect } from 'react';
+import { FileText, Upload, Check, X, Clock, AlertTriangle, Download, Calendar, FileX } from 'lucide-react';
+
+export default function BusinessComplianceDocuments({ businessId }) {
+  const [documents, setDocuments] = useState([]);
+  const [overview, setOverview] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [pendingUploads, setPendingUploads] = useState({});
+  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [expandedDoc, setExpandedDoc] = useState(null);
+
+  // Business-specific document configuration
+  const BUSINESS_DOCUMENT_TYPES = [
+    {
+      id: 'business-license',
+      name: 'Business License',
+      description: 'Valid business registration/license document',
+      required: true,
+      autoExpiry: true,
+      category: 'registration',
+      acceptedFormats: '.pdf,.jpg,.jpeg,.png',
+      examples: 'Business registration certificate, trading license'
+    },
+    {
+      id: 'insurance-certificate',
+      name: 'Insurance Certificate',
+      description: 'Professional liability insurance certificate',
+      required: true,
+      autoExpiry: true,
+      category: 'insurance',
+      acceptedFormats: '.pdf,.jpg,.jpeg,.png',
+      examples: 'Professional indemnity insurance, public liability insurance'
+    },
+    {
+      id: 'tax-certificate',
+      name: 'Tax Registration Certificate',
+      description: 'Tax registration or VAT certificate',
+      required: true,
+      autoExpiry: true,
+      category: 'financial',
+      acceptedFormats: '.pdf,.jpg,.jpeg,.png',
+      examples: 'VAT registration, tax identification certificate'
+    },
+    {
+      id: 'health-safety-certificate',
+      name: 'Health & Safety Certificate',
+      description: 'Health and safety compliance certificate',
+      required: true,
+      autoExpiry: true,
+      category: 'compliance',
+      acceptedFormats: '.pdf,.jpg,.jpeg,.png',
+      examples: 'HSE compliance certificate, workplace safety certification'
+    },
+    {
+      id: 'data-protection-certificate',
+      name: 'Data Protection Certificate',
+      description: 'GDPR/Data protection compliance certificate',
+      required: true,
+      autoExpiry: true,
+      category: 'compliance',
+      acceptedFormats: '.pdf,.jpg,.jpeg,.png',
+      examples: 'Data protection certification, GDPR compliance certificate'
+    }
+  ];
+
+  // Check if user is in dark mode
+  const isDarkMode = document.documentElement.classList.contains('dark');
+
+  useEffect(() => {
+    if (businessId) {
+      loadDocuments();
+    }
+  }, [businessId]);
+
+  const loadDocuments = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setDocuments(result.data.documents || []);
+        setOverview(result.data.overview || null);
+      }
+    } catch (error) {
+      console.error('Error loading business documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileSelect = (documentType, event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setPendingUploads(prev => ({
+        ...prev,
+        [documentType]: { file, fileName: file.name }
+      }));
+    }
+  };
+
+  const handleSaveDocument = async (documentId) => {
+    const pendingUpload = pendingUploads[documentId];
+    if (!pendingUpload || !pendingUpload.file) {
+      alert('Please select a file first');
+      return;
+    }
+
+    setUploadingDoc(documentId);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', pendingUpload.file);
+      formData.append('documentType', documentId);
+      formData.append('businessId', businessId);
+      
+      // Add dates if provided
+      const issueDateInput = document.getElementById(`issue-date-${documentId}`);
+      
+      if (issueDateInput?.value) {
+        formData.append('issueDate', issueDateInput.value);
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      // Refresh the documents to show updated status
+      await loadDocuments();
+      
+      // Clear the pending upload
+      setPendingUploads(prev => {
+        const updated = { ...prev };
+        delete updated[documentId];
+        return updated;
+      });
+      
+      console.log('Business document uploaded successfully:', result);
+      
+    } catch (error) {
+      console.error('Error uploading business document:', error);
+      alert('Failed to upload document. Please try again.');
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
+  const getDocumentStatus = (docConfig) => {
+    const doc = documents.find(d => d.documentType === docConfig.id);
+    
+    if (!doc) {
+      return 'missing';
+    }
+    
+    // Check if expired
+    if (doc.autoExpiry && doc.expiryDate) {
+      const expiryDate = new Date(doc.expiryDate);
+      const today = new Date();
+      
+      if (expiryDate < today) {
+        return 'expired';
+      }
+      
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntilExpiry <= 30) {
+        return 'expiring';
+      }
+    }
+    
+    return 'uploaded';
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'missing':
+        return isDarkMode 
+          ? 'border-red-600 bg-red-900/10 text-red-400' 
+          : 'border-red-300 bg-red-50 text-red-600';
+      case 'uploaded':
+        return isDarkMode 
+          ? 'border-green-600 bg-green-900/10 text-green-400' 
+          : 'border-green-300 bg-green-50 text-green-600';
+      case 'expiring':
+        return isDarkMode 
+          ? 'border-yellow-600 bg-yellow-900/10 text-yellow-400' 
+          : 'border-yellow-300 bg-yellow-50 text-yellow-600';
+      case 'expired':
+        return isDarkMode 
+          ? 'border-red-600 bg-red-900/10 text-red-400' 
+          : 'border-red-300 bg-red-50 text-red-600';
+      default:
+        return isDarkMode 
+          ? 'border-gray-600 bg-gray-900/10 text-gray-400' 
+          : 'border-gray-300 bg-gray-50 text-gray-600';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'missing':
+        return <FileX className="h-3 w-3" />;
+      case 'uploaded':
+        return <Check className="h-3 w-3" />;
+      case 'expiring':
+        return <AlertTriangle className="h-3 w-3" />;
+      case 'expired':
+        return <X className="h-3 w-3" />;
+      default:
+        return <FileText className="h-3 w-3" />;
+    }
+  };
+
+  const getStatusText = (status, docId) => {
+    switch (status) {
+      case 'missing':
+        return 'Required';
+      case 'uploaded':
+        return 'Uploaded';
+      case 'expiring':
+        return 'Expiring Soon';
+      case 'expired':
+        return 'Expired';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  const getVerificationStatusColor = (status) => {
+    switch (status) {
+      case 'verified':
+        return isDarkMode 
+          ? 'border-green-600 bg-green-900/10 text-green-400' 
+          : 'border-green-300 bg-green-50 text-green-600';
+      case 'rejected':
+        return isDarkMode 
+          ? 'border-red-600 bg-red-900/10 text-red-400' 
+          : 'border-red-300 bg-red-50 text-red-600';
+      case 'pending':
+      default:
+        return isDarkMode 
+          ? 'border-yellow-600 bg-yellow-900/10 text-yellow-400' 
+          : 'border-yellow-300 bg-yellow-50 text-yellow-600';
+    }
+  };
+
+  const getVerificationStatusIcon = (status) => {
+    switch (status) {
+      case 'verified':
+        return <Check className="h-3 w-3" />;
+      case 'rejected':
+        return <X className="h-3 w-3" />;
+      case 'pending':
+      default:
+        return <Clock className="h-3 w-3" />;
+    }
+  };
+
+  const getVerificationStatusText = (status) => {
+    switch (status) {
+      case 'verified':
+        return 'Verified';
+      case 'rejected':
+        return 'Rejected';
+      case 'pending':
+      default:
+        return 'Under Review';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not specified';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  if (loading) {
+    return (
+      <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg shadow`}>
+        <div className="animate-pulse">
+          <div className={`h-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded mb-4`}></div>
+          <div className={`h-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded mb-2`}></div>
+          <div className={`h-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded mb-2`}></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-6 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
+      <div className="mb-6">
+        <h2 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+          Business Compliance Documents
+        </h2>
+        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Upload and manage your business compliance documents. All documents are required for business verification.
+        </p>
+        
+        {overview && (
+          <div className={`mt-4 p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} border`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                  Compliance Progress
+                </span>
+                <div className={`text-xs ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-1`}>
+                  {overview.stats.uploaded} of {overview.stats.total} documents uploaded
+                </div>
+              </div>
+              <div className={`text-2xl font-bold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                {overview.completionPercentage}%
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        {BUSINESS_DOCUMENT_TYPES.map((docConfig) => {
+          const doc = documents.find(d => d.documentType === docConfig.id);
+          const status = getDocumentStatus(docConfig);
+          const isExpanded = expandedDoc === docConfig.id;
+          const hasPendingUpload = pendingUploads[docConfig.id];
+
+          return (
+            <div
+              key={docConfig.id}
+              className={`border rounded-lg ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-300 bg-gray-50/50'}`}
+            >
+              <div
+                className={`p-4 cursor-pointer ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
+                onClick={() => setExpandedDoc(isExpanded ? null : docConfig.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <FileText className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <div>
+                        <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {docConfig.name}
+                          {docConfig.required && <span className="text-red-500 ml-1">*</span>}
+                        </h3>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {docConfig.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    {/* Document Status */}
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
+                      {getStatusIcon(status)}
+                      <span>{getStatusText(status, docConfig.id)}</span>
+                    </div>
+                    
+                    {/* Verification Status - Only show for uploaded documents */}
+                    {status === 'uploaded' && doc && (
+                      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getVerificationStatusColor(doc.verificationStatus || 'pending')}`}>
+                        {getVerificationStatusIcon(doc.verificationStatus || 'pending')}
+                        <span>{getVerificationStatusText(doc.verificationStatus || 'pending')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Collapsible Content */}
+              {isExpanded && (
+                <div className={`border-t p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  
+                  {/* Document Info */}
+                  <div className={`mb-4 p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                      Document Information
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        <strong>Category:</strong> {docConfig.category}
+                      </div>
+                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        <strong>Accepted formats:</strong> {docConfig.acceptedFormats}
+                      </div>
+                      <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        <strong>Examples:</strong> {docConfig.examples}
+                      </div>
+                      {docConfig.autoExpiry && (
+                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          <strong>Requires expiry date:</strong> Yes
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Current Document Status */}
+                  {doc && (
+                    <div className={`mb-4 p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                        Current Document
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          <strong>File:</strong> {doc.fileName}
+                        </div>
+                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          <strong>Uploaded:</strong> {formatDate(doc.uploadedAt)}
+                        </div>
+                        {doc.issueDate && (
+                          <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                            <strong>Issue Date:</strong> {formatDate(doc.issueDate)}
+                          </div>
+                        )}
+                        {doc.expiryDate && (
+                          <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                            <strong>Expiry Date:</strong> {formatDate(doc.expiryDate)}
+                          </div>
+                        )}
+                        <div className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          <strong>Verification Status:</strong> {getVerificationStatusText(doc.verificationStatus || 'pending')}
+                        </div>
+                      </div>
+                      
+                      {doc.fileUrl && (
+                        <a
+                          href={doc.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`inline-flex items-center space-x-1 mt-2 px-3 py-1 text-xs rounded ${isDarkMode ? 'bg-blue-900 text-blue-300 hover:bg-blue-800' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} transition-colors`}
+                        >
+                          <Download className="h-3 w-3" />
+                          <span>View Document</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upload Section */}
+                  <div className={`p-3 rounded ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                      {doc ? 'Replace Document' : 'Upload Document'}
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      {/* File Selection */}
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                          Select File
+                        </label>
+                        <input
+                          type="file"
+                          accept={docConfig.acceptedFormats}
+                          onChange={(e) => handleFileSelect(docConfig.id, e)}
+                          className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                        />
+                        {hasPendingUpload && (
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                            Selected: {hasPendingUpload.fileName}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Date Fields */}
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                            Issue Date *
+                          </label>
+                          <input
+                            type="date"
+                            id={`issue-date-${docConfig.id}`}
+                            defaultValue={doc?.issueDate ? new Date(doc.issueDate).toISOString().split('T')[0] : ''}
+                            className={`w-full px-3 py-2 border rounded ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'}`}
+                            required
+                          />
+                          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Expiry date will be automatically calculated (1 year from issue date)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Upload Button */}
+                      <button
+                        onClick={() => handleSaveDocument(docConfig.id)}
+                        disabled={!hasPendingUpload || uploadingDoc === docConfig.id}
+                        className={`w-full px-4 py-2 rounded font-medium transition-colors ${
+                          hasPendingUpload && uploadingDoc !== docConfig.id
+                            ? isDarkMode
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : isDarkMode
+                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {uploadingDoc === docConfig.id ? (
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Uploading...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-2">
+                            <Upload className="h-4 w-4" />
+                            <span>{doc ? 'Replace Document' : 'Upload Document'}</span>
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

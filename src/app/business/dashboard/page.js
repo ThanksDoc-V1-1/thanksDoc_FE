@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save } from 'lucide-react';
+import { Building2, Plus, Clock, User, MapPin, DollarSign, LogOut, X, Phone, CreditCard, Lock, Edit, Save, FileText } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, businessAPI, serviceAPI } from '../../../lib/api';
 import api from '../../../lib/api';
 import { formatCurrency, formatDate, getStatusColor, getTimeElapsed, formatDuration } from '../../../lib/utils';
@@ -11,6 +11,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import PaymentForm from '../../../components/PaymentForm';
 import CountryCodePicker from '../../../components/CountryCodePicker';
+import BusinessComplianceDocuments from '../../../components/BusinessComplianceDocuments';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -160,6 +161,9 @@ export default function BusinessDashboard() {
   const [serviceCost, setServiceCost] = useState(null);
   const [loadingCost, setLoadingCost] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState('');
+  
+  // Tab state for navigation
+  const [activeTab, setActiveTab] = useState('dashboard');
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState(null);
@@ -1609,10 +1613,54 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
         </div>
       </header>
 
+      {/* Tab Navigation */}
+      <div className={`border-b transition-colors ${
+        isDarkMode 
+          ? 'bg-gray-900 border-gray-800' 
+          : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-gray-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
+                activeTab === 'dashboard'
+                  ? isDarkMode
+                    ? 'border-blue-400 text-blue-400'
+                    : 'border-blue-600 text-blue-600'
+                  : isDarkMode
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Building2 className="h-4 w-4" />
+              <span>Dashboard</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('compliance')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
+                activeTab === 'compliance'
+                  ? isDarkMode
+                    ? 'border-blue-400 text-blue-400'
+                    : 'border-blue-600 text-blue-600'
+                  : isDarkMode
+                    ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Compliance Documents</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
   <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+        {/* Tab Content */}
+        {activeTab === 'dashboard' && (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
             <div className="grid md:grid-cols-4 gap-4">
               <button 
@@ -2039,6 +2087,14 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
 
           </div>
         </div>
+        )}
+
+        {/* Compliance Tab Content */}
+        {activeTab === 'compliance' && (
+          <div className="space-y-6">
+            <BusinessComplianceDocuments businessId={user?.businessId || user?.id} />
+          </div>
+        )}
       </div>
 
       {/* Request Form Modal */}
