@@ -12,6 +12,7 @@ import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import PaymentForm from '../../../components/PaymentForm';
 import CountryCodePicker from '../../../components/CountryCodePicker';
 import BusinessComplianceDocuments from '../../../components/BusinessComplianceDocuments';
+import BusinessNotificationCenter from '../../../components/BusinessNotificationCenter';
 
 // Helper function to check fallback status
 const checkFallbackStatus = async (requestId) => {
@@ -1545,6 +1546,10 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 <Plus className="h-4 w-4 mr-1" />
                 <span>Request Doctor</span>
               </button>
+              
+              {/* Business Notification Center */}
+              <BusinessNotificationCenter businessId={user?.id} className="flex-shrink-0" />
+              
               <button
                 onClick={handleLogout}
                 className={`px-4 py-2 ${isDarkMode ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50' : 'bg-red-600 text-white hover:bg-red-700'} rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow`}
