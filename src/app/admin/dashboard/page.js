@@ -2048,6 +2048,18 @@ export default function AdminDashboard() {
     }
   };
 
+  // Smart verification handler that detects document type
+  const handleModalDocumentVerification = async (documentId, verificationStatus) => {
+    // Detect if this is a business compliance document by checking if it has documentId field
+    if (selectedDocument && selectedDocument.documentId) {
+      // This is a business compliance document - use business handler
+      await handleBusinessDocumentVerification(documentId, verificationStatus);
+    } else {
+      // This is a doctor compliance document - use doctor handler  
+      await handleDocumentVerification(documentId, verificationStatus);
+    }
+  };
+
   // Handle business document verification
   const handleBusinessDocumentVerification = async (documentId, verificationStatus) => {
     try {
@@ -2195,20 +2207,20 @@ export default function AdminDashboard() {
       let expiryStatus = null;
       let daysUntilExpiry = null;
       
-      // Use existing expiry status from API if available
-      if (uploadedDoc && uploadedDoc.expiryStatus) {
-        expiryStatus = uploadedDoc.expiryStatus;
-        daysUntilExpiry = uploadedDoc.daysUntilExpiry;
-        
-        // Override status if document is expired
-        if (expiryStatus === 'expired') {
-          status = 'expired';
-        }
-      } else if (uploadedDoc && docType.autoExpiry && uploadedDoc.expiryDate) {
-        // Calculate expiry status if not provided by API
+      // Use existing expiry status from API if available, but recalculate the days
+      if (uploadedDoc && uploadedDoc.expiryDate) {
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate calculation
         const expiryDate = new Date(uploadedDoc.expiryDate);
+        expiryDate.setHours(0, 0, 0, 0); // Reset time to start of day
+        
         daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        console.log(`📅 Date calculation for ${docKey}:`, {
+          today: today.toISOString().split('T')[0],
+          expiryDate: expiryDate.toISOString().split('T')[0],
+          daysUntilExpiry
+        });
         
         if (daysUntilExpiry < 0) {
           expiryStatus = 'expired';
@@ -6322,8 +6334,27 @@ export default function AdminDashboard() {
       )}
 
       {/* Document Viewer Modal */}
-      {showDocumentModal && selectedDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      {(() => {
+        console.log('🔍 Modal render check:', {
+          showDocumentModal,
+          selectedDocument,
+          shouldShow: showDocumentModal && selectedDocument
+        });
+        
+        if (!showDocumentModal || !selectedDocument) {
+          console.log('❌ Modal not showing because:', {
+            showDocumentModal,
+            selectedDocument: !!selectedDocument
+          });
+          return false;
+        }
+        
+        console.log('✅ Modal should be visible');
+        return true;
+      })() && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+             style={{display: 'flex !important', zIndex: 9999}}
+             key={selectedDocument?.id || selectedDocument?.documentId}>
           <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
@@ -6336,7 +6367,12 @@ export default function AdminDashboard() {
                       Document Review
                     </h2>
                     <p className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'} font-medium`}>
-                      {documentTypes[selectedDocument.documentType]?.name || selectedDocument.documentType}
+                      {(() => {
+                        // Try to find document type name from business document types first, then general document types
+                        const businessDocType = businessDocumentTypes.find(dt => dt.id === selectedDocument.documentType);
+                        const generalDocType = documentTypes.find(dt => dt.key === selectedDocument.documentType);
+                        return businessDocType?.name || generalDocType?.name || selectedDocument.documentType;
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -6362,15 +6398,19 @@ export default function AdminDashboard() {
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Document Name:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>{selectedDocument.documentName}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>{selectedDocument.documentName || selectedDocument.fileName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Name:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>{selectedDocument.originalFileName}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} text-right max-w-xs truncate`}>
+                        {selectedDocument.originalFileName || selectedDocument.fileName}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Upload Date:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{new Date(selectedDocument.uploadedAt).toLocaleDateString('en-GB')}</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {new Date(selectedDocument.uploadedAt || selectedDocument.createdAt).toLocaleDateString('en-GB')}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Size:</span>
@@ -6430,13 +6470,13 @@ export default function AdminDashboard() {
                   <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white/90 border-blue-200'} border rounded-lg p-8 text-center`}>
                     <FileText className={`h-16 w-16 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
                     <h4 className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-                      {selectedDocument.originalFileName}
+                      {selectedDocument.originalFileName || selectedDocument.fileName}
                     </h4>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
                       Click the button below to download and review this document
                     </p>
                     <button
-                      onClick={() => window.open(selectedDocument.s3Url, '_blank')}
+                      onClick={() => window.open(selectedDocument.s3Url || selectedDocument.fileUrl, '_blank')}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center mx-auto"
                     >
                       <Eye className="h-5 w-5 mr-2" />
@@ -6451,34 +6491,34 @@ export default function AdminDashboard() {
                 <div className="flex space-x-3">
                   {selectedDocument.verificationStatus !== 'verified' && (
                     <button
-                      onClick={() => handleDocumentVerification(selectedDocument.id, 'verified')}
-                      disabled={updatingVerification}
+                      onClick={() => handleModalDocumentVerification(selectedDocument.id, 'verified')}
+                      disabled={updatingVerification || updatingBusinessDocumentVerification}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50"
                     >
                       <Check className="h-5 w-5 mr-2" />
-                      {updatingVerification ? 'Updating...' : 'Verify Document'}
+                      {(updatingVerification || updatingBusinessDocumentVerification) ? 'Updating...' : 'Verify Document'}
                     </button>
                   )}
                   {selectedDocument.verificationStatus !== 'rejected' && (
                     <button
-                      onClick={() => handleDocumentVerification(selectedDocument.id, 'rejected')}
-                      disabled={updatingVerification}
+                      onClick={() => handleModalDocumentVerification(selectedDocument.id, 'rejected')}
+                      disabled={updatingVerification || updatingBusinessDocumentVerification}
                       className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50"
                     >
                       <X className="h-5 w-5 mr-2" />
-                      {updatingVerification ? 'Updating...' : 'Reject Document'}
+                      {(updatingVerification || updatingBusinessDocumentVerification) ? 'Updating...' : 'Reject Document'}
                     </button>
                   )}
                   {selectedDocument.verificationStatus !== 'pending' && (
                     <button
-                      onClick={() => handleDocumentVerification(selectedDocument.id, 'pending')}
-                      disabled={updatingVerification}
+                      onClick={() => handleModalDocumentVerification(selectedDocument.id, 'pending')}
+                      disabled={updatingVerification || updatingBusinessDocumentVerification}
                       className={`px-6 py-3 rounded-lg transition-colors flex items-center disabled:opacity-50 ${
                         isDarkMode ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-yellow-500 hover:bg-yellow-600 text-white'
                       }`}
                     >
                       <AlertTriangle className="h-5 w-5 mr-2" />
-                      {updatingVerification ? 'Updating...' : 'Reset to Pending'}
+                      {(updatingVerification || updatingBusinessDocumentVerification) ? 'Updating...' : 'Reset to Pending'}
                     </button>
                   )}
                 </div>
@@ -6798,8 +6838,10 @@ export default function AdminDashboard() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
+                                      console.log('🔍 Business View button clicked, document:', document);
                                       setSelectedDocument(document);
                                       setShowDocumentModal(true);
+                                      console.log('📄 Modal should be opening with document:', document);
                                     }}
                                     className={`text-xs px-3 py-1 rounded ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-100 hover:bg-blue-200 text-blue-800'} transition-colors`}
                                   >
@@ -6812,7 +6854,7 @@ export default function AdminDashboard() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleBusinessDocumentVerification(document.documentId, 'verified');
+                                          handleBusinessDocumentVerification(document.id, 'verified');
                                         }}
                                         disabled={updatingBusinessDocumentVerification}
                                         className="text-xs px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-50"
@@ -6822,7 +6864,7 @@ export default function AdminDashboard() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleBusinessDocumentVerification(document.documentId, 'rejected');
+                                          handleBusinessDocumentVerification(document.id, 'rejected');
                                         }}
                                         disabled={updatingBusinessDocumentVerification}
                                         className="text-xs px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
