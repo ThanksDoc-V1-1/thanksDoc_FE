@@ -283,16 +283,9 @@ export default function VideoConsultationPage({ params }) {
                 </div>
                 
                 {userType === 'doctor' && (
-                  <>
-                    <div>
-                      <span className="font-medium">Patient:</span> {serviceRequest?.patientFirstName} {serviceRequest?.patientLastName}
-                    </div>
-                    {serviceRequest?.patientEmail && (
-                      <div>
-                        <span className="font-medium">Email:</span> {serviceRequest?.patientEmail}
-                      </div>
-                    )}
-                  </>
+                  <div>
+                    <span className="font-medium">Patient:</span> {serviceRequest?.patientFirstName} {serviceRequest?.patientLastName}
+                  </div>
                 )}
                 
                 {userType === 'patient' && serviceRequest?.doctor && (
@@ -302,7 +295,7 @@ export default function VideoConsultationPage({ params }) {
                 )}
                 
                 <div>
-                  <span className="font-medium">Duration:</span> {serviceRequest?.estimatedDuration || 1} hour(s)
+                  <span className="font-medium">Duration:</span> {serviceRequest?.estimatedDuration || 20} minute(s)
                 </div>
                 
                 {serviceRequest?.requestedServiceDateTime && (
