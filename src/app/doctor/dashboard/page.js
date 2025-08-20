@@ -2752,6 +2752,25 @@ export default function DoctorDashboard() {
                               </div>
                             </div>
                           )}
+                          {(request.status === 'accepted' || request.status === 'in_progress') && (
+                            <button
+                              onClick={() => handleCompleteRequest(request.id)}
+                              disabled={actionLoading === request.id}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
+                            >
+                              {actionLoading === request.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  <span>Processing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4" />
+                                  <span>Mark Complete</span>
+                                </>
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
