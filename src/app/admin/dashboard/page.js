@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu } from 'lucide-react';
-import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI } from '../../../lib/api';
+import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -44,6 +44,13 @@ export default function AdminDashboard() {
   const [focusedDoctorId, setFocusedDoctorId] = useState(null);
   // Mobile sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Change password UI state
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changePwdLoading, setChangePwdLoading] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
   
   // Pagination states
   const [servicesCurrentPage, setServicesCurrentPage] = useState(1);
@@ -95,7 +102,7 @@ export default function AdminDashboard() {
 
   const handleServiceFormChange = (e) => {
     const { name, value, type, checked } = e.target;
-    console.log('📝 Form field changed:', { name, value, type, checked });
+    ('📝 Form field changed:', { name, value, type, checked });
     
     setServiceFormData(prev => ({
       ...prev,
@@ -108,9 +115,9 @@ export default function AdminDashboard() {
     setDataLoading(true);
 
     try {
-      console.log('🛠️ Service form submission started');
-      console.log('📝 Form data:', serviceFormData);
-      console.log('✏️ Editing service:', editingService);
+      ('🛠️ Service form submission started');
+      ('📝 Form data:', serviceFormData);
+      ('✏️ Editing service:', editingService);
 
       const serviceData = {
         name: serviceFormData.name.trim(),
@@ -122,7 +129,7 @@ export default function AdminDashboard() {
         displayOrder: parseInt(serviceFormData.displayOrder) || 0
       };
 
-      console.log('📝 Processed service data:', serviceData);
+      ('📝 Processed service data:', serviceData);
 
       let response;
       if (editingService) {
@@ -134,10 +141,10 @@ export default function AdminDashboard() {
           serviceId = serviceId.split(':')[0].split('/').pop();
         }
         
-        console.log('📝 Updating service with clean ID:', serviceId);
+        ('📝 Updating service with clean ID:', serviceId);
         
         response = await serviceAPI.update(serviceId, serviceData);
-        console.log('✅ Update response:', response);
+        ('✅ Update response:', response);
         
         if (response.data) {
           const updatedService = response.data.data || response.data;
@@ -148,10 +155,10 @@ export default function AdminDashboard() {
           alert('Service updated successfully!');
         }
       } else {
-        console.log('🆕 Creating new service');
+        ('🆕 Creating new service');
         
         response = await serviceAPI.create(serviceData);
-        console.log('✅ Create response:', response);
+        ('✅ Create response:', response);
         
         if (response.data) {
           const newService = response.data.data || response.data;
@@ -205,7 +212,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditService = (service) => {
-    console.log('✏️ Edit service clicked:', service);
+    ('✏️ Edit service clicked:', service);
     setEditingService(service);
     
     // Extract data from either Strapi v4 or v5 format
@@ -221,7 +228,7 @@ export default function AdminDashboard() {
       displayOrder: serviceData.displayOrder || 0
     };
     
-    console.log('✏️ Setting form data:', formData);
+    ('✏️ Setting form data:', formData);
     setServiceFormData(formData);
     setShowServiceForm(true);
   };
@@ -243,7 +250,7 @@ export default function AdminDashboard() {
         serviceId = serviceId.split(':')[0].split('/').pop();
       }
       
-      console.log('🗑️ Deleting service with clean ID:', serviceId);
+      ('🗑️ Deleting service with clean ID:', serviceId);
       
       await serviceAPI.delete(serviceId);
       
@@ -690,16 +697,16 @@ export default function AdminDashboard() {
         systemSettingsAPI.getAll()
       ]);
 
-      console.log('🏥 Raw doctors response:', doctorsRes.data);
-      console.log('🏢 Raw businesses response:', businessesRes.data);
-      console.log('📋 Raw requests response:', requestsRes.data);
-      console.log('📦 Raw services response:', servicesRes.data);
-      console.log('📦 Services data structure:');
+      ('🏥 Raw doctors response:', doctorsRes.data);
+      ('🏢 Raw businesses response:', businessesRes.data);
+      ('📋 Raw requests response:', requestsRes.data);
+      ('📦 Raw services response:', servicesRes.data);
+      ('📦 Services data structure:');
       if (servicesRes.data?.data && servicesRes.data.data.length > 0) {
-        console.log('📦 First service object:', JSON.stringify(servicesRes.data.data[0], null, 2));
+        ('📦 First service object:', JSON.stringify(servicesRes.data.data[0], null, 2));
       }
-      console.log('🏗️ Raw business types response:', businessTypesRes.data);
-      console.log('⚙️ Raw system settings response:', systemSettingsRes.data);
+      ('🏗️ Raw business types response:', businessTypesRes.data);
+      ('⚙️ Raw system settings response:', systemSettingsRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
@@ -711,9 +718,9 @@ export default function AdminDashboard() {
       const requests = requestsRes.data?.data || [];
       
       // Log detailed status information for debugging
-      console.log('📋 Request status details:');
+      ('📋 Request status details:');
       requests.forEach(req => {
-        console.log(`ID: ${req.id}, Status: ${req.status}, isPaid: ${req.isPaid ? 'true' : 'false'}, 
+        (`ID: ${req.id}, Status: ${req.status}, isPaid: ${req.isPaid ? 'true' : 'false'}, 
           Timestamps: [requested: ${req.requestedAt || 'none'}, accepted: ${req.acceptedAt || 'none'}, completed: ${req.completedAt || 'none'}]`);
       });
       
@@ -723,7 +730,7 @@ export default function AdminDashboard() {
         return dateB - dateA; // Sort descending (newest first)
       });
       
-      console.log('📋 Sorted requests:', sortedRequests.length);
+      ('📋 Sorted requests:', sortedRequests.length);
       setServiceRequests(sortedRequests);
       
       // Calculate doctor earnings
@@ -737,24 +744,24 @@ export default function AdminDashboard() {
 
   // Load business compliance document types from API
   const loadBusinessComplianceDocumentTypes = async () => {
-    console.log('🏢 Starting business compliance document types loading...');
+    ('🏢 Starting business compliance document types loading...');
     setBusinessComplianceDocumentTypesLoading(true);
     
     try {
-      console.log('🏢 Loading business compliance document types from API...');
+      ('🏢 Loading business compliance document types from API...');
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`);
-      console.log('📡 Business compliance document types API Response status:', response.status);
+      ('📡 Business compliance document types API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Business compliance document types received:', data.data?.length || 0);
+        ('📦 Business compliance document types received:', data.data?.length || 0);
         
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          console.log('✅ Successfully loaded business compliance document types:', data.data.length);
+          ('✅ Successfully loaded business compliance document types:', data.data.length);
           setBusinessComplianceDocumentTypes(data.data);
         } else {
-          console.log('⚠️ API returned empty data for business compliance document types');
+          ('⚠️ API returned empty data for business compliance document types');
           setBusinessComplianceDocumentTypes([]);
         }
       } else {
@@ -794,7 +801,7 @@ export default function AdminDashboard() {
     
     // Set up automatic refresh every 30 seconds
     const refreshInterval = setInterval(() => {
-      console.log('🔄 Auto-refreshing data...');
+      ('🔄 Auto-refreshing data...');
       fetchAllData();
     }, 30000);
     
@@ -805,7 +812,7 @@ export default function AdminDashboard() {
   // Separate useEffect for document types with extended delay and retry logic
   useEffect(() => {
     const loadDocumentTypesWithDelay = async () => {
-      console.log('📋 Starting document types loading with delay...');
+      ('📋 Starting document types loading with delay...');
       setDocumentTypesLoading(true);
       
       // Wait 3 seconds to ensure backend is ready
@@ -818,22 +825,22 @@ export default function AdminDashboard() {
       
       while (attempts < maxAttempts) {
         try {
-          console.log(`📋 Document types loading attempt ${attempts + 1}/${maxAttempts}`);
+          (`📋 Document types loading attempt ${attempts + 1}/${maxAttempts}`);
           
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
-          console.log('📡 Document types API Response status:', response.status);
+          ('📡 Document types API Response status:', response.status);
           
           if (response.ok) {
             const data = await response.json();
-            console.log('📦 Document types received:', data.data?.length || 0);
+            ('📦 Document types received:', data.data?.length || 0);
             
             if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-              console.log('✅ Successfully loaded document types:', data.data.length);
+              ('✅ Successfully loaded document types:', data.data.length);
               setDocumentTypes(data.data);
               setDocumentTypesLoading(false);
               return; // Success, exit the retry loop
             } else {
-              console.log('⚠️ API returned empty data, retrying...');
+              ('⚠️ API returned empty data, retrying...');
               throw new Error('Empty data received');
             }
           } else {
@@ -844,7 +851,7 @@ export default function AdminDashboard() {
           console.error(`❌ Document types loading attempt ${attempts} failed:`, error.message);
           
           if (attempts >= maxAttempts) {
-            console.log('❌ All document types loading attempts failed, using fallback');
+            ('❌ All document types loading attempts failed, using fallback');
             const fallbackTypes = [
               { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
               { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
@@ -859,7 +866,7 @@ export default function AdminDashboard() {
           
           // Exponential backoff: wait longer each time
           const delay = baseDelay * Math.pow(2, attempts - 1);
-          console.log(`⏳ Waiting ${delay}ms before next attempt...`);
+          (`⏳ Waiting ${delay}ms before next attempt...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
@@ -875,34 +882,34 @@ export default function AdminDashboard() {
 
   // Debug effect to track documentTypes changes
   useEffect(() => {
-    console.log('📋 DocumentTypes state changed:', documentTypes);
-    console.log('📋 DocumentTypes length:', documentTypes.length);
-    console.log('📋 DocumentTypes is array:', Array.isArray(documentTypes));
+    ('📋 DocumentTypes state changed:', documentTypes);
+    ('📋 DocumentTypes length:', documentTypes.length);
+    ('📋 DocumentTypes is array:', Array.isArray(documentTypes));
   }, [documentTypes]);
 
   // Debug effect to track businessComplianceDocumentTypes changes
   useEffect(() => {
-    console.log('🏢 BusinessComplianceDocumentTypes state changed:', businessComplianceDocumentTypes);
-    console.log('🏢 BusinessComplianceDocumentTypes length:', businessComplianceDocumentTypes.length);
-    console.log('🏢 BusinessComplianceDocumentTypes is array:', Array.isArray(businessComplianceDocumentTypes));
+    ('🏢 BusinessComplianceDocumentTypes state changed:', businessComplianceDocumentTypes);
+    ('🏢 BusinessComplianceDocumentTypes length:', businessComplianceDocumentTypes.length);
+    ('🏢 BusinessComplianceDocumentTypes is array:', Array.isArray(businessComplianceDocumentTypes));
   }, [businessComplianceDocumentTypes]);
 
   // Authentication check - redirect if not authenticated or not admin
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated || !user) {
-        console.log('🚫 No authentication, redirecting to home');
+        ('🚫 No authentication, redirecting to home');
         window.location.href = '/';
         return;
       }
       
       if (user.role !== 'admin') {
-        console.log('🚫 Not admin role, redirecting to home');
+        ('🚫 Not admin role, redirecting to home');
         window.location.href = '/';
         return;
       }
       
-      console.log('✅ Admin authenticated, loading dashboard');
+      ('✅ Admin authenticated, loading dashboard');
     }
   }, [loading, isAuthenticated, user]);
 
@@ -1355,27 +1362,27 @@ export default function AdminDashboard() {
 
   // View detail handlers
   const handleViewDoctorDetails = (doctor) => {
-    console.log('👨‍⚕️ Viewing doctor details:', doctor);
-    console.log('🆔 Doctor ID for API call:', doctor.id);
-    console.log('🔍 Current showDoctorDetails state:', showDoctorDetails);
-    console.log('🔍 Current selectedDoctor state:', selectedDoctor);
+    ('👨‍⚕️ Viewing doctor details:', doctor);
+    ('🆔 Doctor ID for API call:', doctor.id);
+    ('🔍 Current showDoctorDetails state:', showDoctorDetails);
+    ('🔍 Current selectedDoctor state:', selectedDoctor);
     setSelectedDoctor(doctor);
     setShowDoctorDetails(true);
     // Load compliance documents and professional references for this doctor
     loadComplianceDocuments(doctor.id);
     loadProfessionalReferences(doctor.id);
-    console.log('✅ Modal states updated - showDoctorDetails: true, selectedDoctor:', doctor);
+    ('✅ Modal states updated - showDoctorDetails: true, selectedDoctor:', doctor);
   };
 
   const handleViewBusinessDetails = (business) => {
-    console.log('🏢 Viewing business details:', business);
-    console.log('🔍 Current showBusinessDetails state:', showBusinessDetails);
-    console.log('🔍 Current selectedBusiness state:', selectedBusiness);
+    ('🏢 Viewing business details:', business);
+    ('🔍 Current showBusinessDetails state:', showBusinessDetails);
+    ('🔍 Current selectedBusiness state:', selectedBusiness);
     setSelectedBusiness(business);
     setShowBusinessDetails(true);
     // Load business compliance documents for this business
     loadBusinessComplianceDocuments(business.id);
-    console.log('✅ Modal states updated - showBusinessDetails: true, selectedBusiness:', business);
+    ('✅ Modal states updated - showBusinessDetails: true, selectedBusiness:', business);
   };
 
   const handleCloseDoctorDetails = () => {
@@ -1390,7 +1397,7 @@ export default function AdminDashboard() {
   
   // Load compliance document types from API
   const loadDocumentTypes = async (retryCount = 0) => {
-    console.log('🚀 loadDocumentTypes function called, retry:', retryCount);
+    ('🚀 loadDocumentTypes function called, retry:', retryCount);
     
     // Set loading to true when starting manual load
     if (retryCount === 0) {
@@ -1398,22 +1405,22 @@ export default function AdminDashboard() {
     }
     
     try {
-      console.log('🔄 Loading document types from API...');
+      ('🔄 Loading document types from API...');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
-      console.log('📡 API Response status:', response.status);
+      ('📡 API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Document types received:', data.data?.length || 0);
-        console.log('📋 Document types data:', data.data);
+        ('📦 Document types received:', data.data?.length || 0);
+        ('📋 Document types data:', data.data);
         
         // Check if data.data exists and is an array
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          console.log('✅ Setting document types from API:', data.data.length);
+          ('✅ Setting document types from API:', data.data.length);
           setDocumentTypes(data.data);
           setDocumentTypesLoading(false);
         } else {
-          console.log('⚠️ API returned empty data, using fallback');
+          ('⚠️ API returned empty data, using fallback');
           const fallbackTypes = [
             { key: 'gmc_registration', name: 'GMC Registration', required: true, description: '' },
             { key: 'medical_indemnity', name: 'Medical Indemnity', required: true, description: '' },
@@ -1429,7 +1436,7 @@ export default function AdminDashboard() {
         
         // Retry up to 3 times for failed requests during initial load
         if (retryCount < 3) {
-          console.log(`🔄 Retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
+          (`🔄 Retrying in 2 seconds... (attempt ${retryCount + 1}/3)`);
           setTimeout(() => loadDocumentTypes(retryCount + 1), 2000);
           return;
         }
@@ -1450,7 +1457,7 @@ export default function AdminDashboard() {
       
       // Retry up to 3 times for network errors during initial load
       if (retryCount < 3) {
-        console.log(`🔄 Retrying in 2 seconds due to error... (attempt ${retryCount + 1}/3)`);
+        (`🔄 Retrying in 2 seconds due to error... (attempt ${retryCount + 1}/3)`);
         setTimeout(() => loadDocumentTypes(retryCount + 1), 2000);
         return;
       }
@@ -1468,7 +1475,7 @@ export default function AdminDashboard() {
     }
     
     // Force a re-render to see current state
-    console.log('🔍 Function complete, checking documentTypes state...');
+    ('🔍 Function complete, checking documentTypes state...');
   };
 
   // Handle document type form changes
@@ -1496,22 +1503,22 @@ export default function AdminDashboard() {
     setDataLoading(true);
 
     try {
-      console.log('📝 Document type form submission started');
-      console.log('📝 Form data:', documentTypeFormData);
-      console.log('✏️ Editing document type:', editingDocumentType);
+      ('📝 Document type form submission started');
+      ('📝 Form data:', documentTypeFormData);
+      ('✏️ Editing document type:', editingDocumentType);
 
       // Auto-generate key from name if creating new document type
       const documentKey = editingDocumentType 
         ? editingDocumentType.key // Keep existing key when editing
         : generateDocumentKey(documentTypeFormData.name);
 
-      console.log('🔑 Using document key:', documentKey);
+      ('🔑 Using document key:', documentKey);
 
       let response;
       if (editingDocumentType) {
         // Update existing document type - use numeric ID for Strapi v5
         const documentId = editingDocumentType.id; // Use numeric ID, not documentId
-        console.log('📝 Updating document type with numeric ID:', documentId);
+        ('📝 Updating document type with numeric ID:', documentId);
         
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/${documentId}`, {
           method: 'PUT',
@@ -1531,10 +1538,10 @@ export default function AdminDashboard() {
           })
         });
         
-        console.log('📡 Update response status:', response.status);
+        ('📡 Update response status:', response.status);
       } else {
         // Create new document type
-        console.log('🆕 Creating new document type');
+        ('🆕 Creating new document type');
         
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`, {
           method: 'POST',
@@ -1554,14 +1561,14 @@ export default function AdminDashboard() {
           })
         });
         
-        console.log('📡 Create response status:', response.status);
+        ('📡 Create response status:', response.status);
       }
 
       const responseData = await response.json();
-      console.log('📦 Response data:', responseData);
+      ('📦 Response data:', responseData);
 
       if (response.ok) {
-        console.log('✅ Document type operation successful');
+        ('✅ Document type operation successful');
         alert(editingDocumentType ? 'Document type updated successfully!' : 'Document type created successfully!');
         setShowDocumentTypeForm(false);
         setEditingDocumentType(null);
@@ -1575,7 +1582,7 @@ export default function AdminDashboard() {
         });
         
         // Reload document types to reflect changes
-        console.log('🔄 Reloading document types...');
+        ('🔄 Reloading document types...');
         await loadDocumentTypes(0); // Reset retry count
       } else {
         console.error('❌ API request failed:', response.status, responseData);
@@ -1605,7 +1612,7 @@ export default function AdminDashboard() {
 
   // Handle delete document type
   const handleDeleteDocumentType = async (documentType) => {
-    console.log('🗑️ Delete document type requested:', documentType);
+    ('🗑️ Delete document type requested:', documentType);
     
     if (!confirm(`Are you sure you want to delete the document type "${documentType.name}"? This action cannot be undone.`)) {
       return;
@@ -1614,20 +1621,20 @@ export default function AdminDashboard() {
     try {
       setDataLoading(true);
       const documentId = documentType.id; // Use numeric ID, not documentId
-      console.log('🗑️ Deleting document type with numeric ID:', documentId);
+      ('🗑️ Deleting document type with numeric ID:', documentId);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/${documentId}`, {
         method: 'DELETE'
       });
 
-      console.log('📡 Delete response status:', response.status);
+      ('📡 Delete response status:', response.status);
 
       if (response.ok) {
-        console.log('✅ Document type deleted successfully');
+        ('✅ Document type deleted successfully');
         alert('Document type deleted successfully!');
         
         // Reload document types to reflect changes
-        console.log('🔄 Reloading document types after deletion...');
+        ('🔄 Reloading document types after deletion...');
         await loadDocumentTypes(0); // Reset retry count
       } else {
         // Try to get error details
@@ -1656,7 +1663,7 @@ export default function AdminDashboard() {
 
     try {
       setDataLoading(true);
-      console.log('🚀 Starting auto-expiry migration...');
+      ('🚀 Starting auto-expiry migration...');
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types/enable-auto-expiry`, {
         method: 'POST',
@@ -1667,7 +1674,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Auto-expiry migration completed:', result);
+        ('✅ Auto-expiry migration completed:', result);
         
         alert(`Auto-expiry tracking enabled successfully!\n\n` +
               `Document Types Updated: ${result.result?.documentTypesUpdated || 0}\n` +
@@ -1702,21 +1709,21 @@ export default function AdminDashboard() {
     setDataLoading(true);
 
     try {
-      console.log('🏢 Business document type form submission started');
-      console.log('📝 Form data:', businessDocumentTypeFormData);
+      ('🏢 Business document type form submission started');
+      ('📝 Form data:', businessDocumentTypeFormData);
 
       // Auto-generate key from name if creating new document type
       const documentKey = editingBusinessDocumentType 
         ? editingBusinessDocumentType.key // Keep existing key when editing
         : generateDocumentKey(businessDocumentTypeFormData.name);
 
-      console.log('🔑 Using business document key:', documentKey);
+      ('🔑 Using business document key:', documentKey);
 
       let response;
       if (editingBusinessDocumentType) {
         // Update existing business document type
         const documentId = editingBusinessDocumentType.id;
-        console.log('📝 Updating business document type with ID:', documentId);
+        ('📝 Updating business document type with ID:', documentId);
         
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/${documentId}`, {
           method: 'PUT',
@@ -1740,7 +1747,7 @@ export default function AdminDashboard() {
         });
       } else {
         // Create new business document type
-        console.log('🆕 Creating new business document type');
+        ('🆕 Creating new business document type');
         
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`, {
           method: 'POST',
@@ -1764,10 +1771,10 @@ export default function AdminDashboard() {
         });
       }
 
-      console.log('📡 Business document type response status:', response.status);
+      ('📡 Business document type response status:', response.status);
 
       if (response.ok) {
-        console.log('✅ Business document type saved successfully');
+        ('✅ Business document type saved successfully');
         alert('Business document type saved successfully!');
         
         // Reset form and close modal
@@ -1803,7 +1810,7 @@ export default function AdminDashboard() {
   };
 
   const handleEditBusinessDocumentType = (documentType) => {
-    console.log('✏️ Edit business document type requested:', documentType);
+    ('✏️ Edit business document type requested:', documentType);
     setEditingBusinessDocumentType(documentType);
     setBusinessDocumentTypeFormData({
       name: documentType.name,
@@ -1820,7 +1827,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteBusinessDocumentType = async (documentType) => {
-    console.log('🗑️ Delete business document type requested:', documentType);
+    ('🗑️ Delete business document type requested:', documentType);
     
     if (!confirm(`Are you sure you want to delete the business document type "${documentType.name}"? This action cannot be undone.`)) {
       return;
@@ -1829,16 +1836,16 @@ export default function AdminDashboard() {
     try {
       setDataLoading(true);
       const documentId = documentType.id;
-      console.log('🗑️ Deleting business document type with ID:', documentId);
+      ('🗑️ Deleting business document type with ID:', documentId);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/${documentId}`, {
         method: 'DELETE'
       });
 
-      console.log('📡 Delete response status:', response.status);
+      ('📡 Delete response status:', response.status);
 
       if (response.ok) {
-        console.log('✅ Business document type deleted successfully');
+        ('✅ Business document type deleted successfully');
         alert('Business document type deleted successfully!');
         
         // Reload business document types to reflect changes
@@ -1863,7 +1870,7 @@ export default function AdminDashboard() {
 
     try {
       setDataLoading(true);
-      console.log('🚀 Starting business auto-expiry migration...');
+      ('🚀 Starting business auto-expiry migration...');
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types/enable-auto-expiry`, {
         method: 'POST',
@@ -1874,7 +1881,7 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Business auto-expiry migration completed:', result);
+        ('✅ Business auto-expiry migration completed:', result);
         
         alert(`Business auto-expiry tracking enabled successfully!\n\n` +
               `Document Types Updated: ${result.result?.documentTypesUpdated || 0}\n` +
@@ -1898,16 +1905,16 @@ export default function AdminDashboard() {
   // Load compliance documents for a doctor
   const loadComplianceDocuments = async (doctorId) => {
     try {
-      console.log('🔍 Loading compliance documents for doctor ID:', doctorId);
+      ('🔍 Loading compliance documents for doctor ID:', doctorId);
       setLoadingDocuments(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}`);
-      console.log('📡 API Response status:', response.status);
+      ('📡 API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 API Response data:', data);
+        ('📦 API Response data:', data);
         setComplianceDocuments(data.data?.documents || []);
-        console.log('✅ Compliance documents set:', data.data?.documents || []);
+        ('✅ Compliance documents set:', data.data?.documents || []);
       } else {
         console.error('❌ Failed to load compliance documents, status:', response.status);
         const errorText = await response.text();
@@ -1948,16 +1955,16 @@ export default function AdminDashboard() {
   // Load professional references for a doctor
   const loadProfessionalReferences = async (doctorId) => {
     try {
-      console.log('🔍 Loading professional references for doctor ID:', doctorId);
+      ('🔍 Loading professional references for doctor ID:', doctorId);
       setLoadingReferences(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/doctor/${doctorId}`);
-      console.log('📡 Professional References API Response status:', response.status);
+      ('📡 Professional References API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Professional References API Response data:', data);
+        ('📦 Professional References API Response data:', data);
         setProfessionalReferences(data.data?.references || []);
-        console.log('✅ Professional references set:', data.data?.references || []);
+        ('✅ Professional references set:', data.data?.references || []);
       } else {
         console.error('❌ Failed to load professional references, status:', response.status);
         const errorText = await response.text();
@@ -1975,17 +1982,17 @@ export default function AdminDashboard() {
   // Load detailed reference response data
   const loadReferenceDetails = async (reference) => {
     try {
-      console.log('🔍 Loading detailed reference data for:', reference);
+      ('🔍 Loading detailed reference data for:', reference);
       setLoadingReferenceDetails(true);
       
       // Use the custom route to get all submissions for the doctor,
       // then find the one that matches this reference
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-reference-submissions/doctor/${reference.doctor?.id || reference.doctor}`);
-      console.log('📡 Reference Details API Response status:', response.status);
+      ('📡 Reference Details API Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('📦 Reference Details API Response data:', data);
+        ('📦 Reference Details API Response data:', data);
         
         // Find the submission that matches this professional reference
         const submissions = data.data?.submissions || [];
@@ -1994,11 +2001,11 @@ export default function AdminDashboard() {
         );
         
         if (matchingSubmission) {
-          console.log('✅ Found matching submission for reference');
+          ('✅ Found matching submission for reference');
           setSelectedReference(matchingSubmission);
           setShowReferenceModal(true);
         } else {
-          console.log('No submission found for this reference');
+          ('No submission found for this reference');
           // Show a message that no response has been submitted yet
           alert('This reference has not been responded to yet.');
         }
@@ -2102,12 +2109,12 @@ export default function AdminDashboard() {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('📄 Business compliance documents loaded:', result);
+        ('📄 Business compliance documents loaded:', result);
         setBusinessComplianceDocuments(result.data?.documents || []);
         
         // Also store the business document types from the API response
         if (result.data?.overview?.requiredDocuments) {
-          console.log('📋 Business document types from API:', result.data.overview.requiredDocuments);
+          ('📋 Business document types from API:', result.data.overview.requiredDocuments);
           setBusinessDocumentTypes(result.data.overview.requiredDocuments);
         }
       } else {
@@ -2190,9 +2197,9 @@ export default function AdminDashboard() {
     // Ensure businessComplianceDocuments is always an array
     const documents = Array.isArray(businessComplianceDocuments) ? businessComplianceDocuments : [];
     
-    console.log('📋 Processing business documents:', documents);
-    console.log('📋 Available business document types:', businessDocumentTypes);
-    console.log('📋 General document types:', documentTypes);
+    ('📋 Processing business documents:', documents);
+    ('📋 Available business document types:', businessDocumentTypes);
+    ('📋 General document types:', documentTypes);
     
     // Use business-specific document types if available, otherwise fall back to general document types
     const availableDocumentTypes = businessDocumentTypes.length > 0 ? businessDocumentTypes : documentTypes.filter(docType => docType.key !== 'professional_references');
@@ -2200,7 +2207,7 @@ export default function AdminDashboard() {
     return availableDocumentTypes.map(docType => {
       const docKey = docType.id || docType.key; // Business document types use 'id', general ones use 'key'
       const uploadedDoc = documents.find(doc => doc.documentType === docKey);
-      console.log(`📄 Checking document type ${docKey} (${docType.name}):`, uploadedDoc ? 'Found' : 'Missing');
+      (`📄 Checking document type ${docKey} (${docType.name}):`, uploadedDoc ? 'Found' : 'Missing');
       
       // For business compliance documents, if document exists, status is based on verification status
       let status = uploadedDoc ? 'uploaded' : 'missing';
@@ -2216,7 +2223,7 @@ export default function AdminDashboard() {
         
         daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
-        console.log(`📅 Date calculation for ${docKey}:`, {
+        (`📅 Date calculation for ${docKey}:`, {
           today: today.toISOString().split('T')[0],
           expiryDate: expiryDate.toISOString().split('T')[0],
           daysUntilExpiry
@@ -2450,6 +2457,18 @@ export default function AdminDashboard() {
             </button>
 
             <button
+              onClick={() => setShowChangePassword(v => !v)}
+              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                isDarkMode
+                  ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/50'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              {showChangePassword ? 'Cancel' : 'Change Password'}
+            </button>
+
+            <button
               onClick={logout}
               className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isDarkMode
@@ -2461,6 +2480,71 @@ export default function AdminDashboard() {
               Logout
             </button>
           </div>
+
+          {showChangePassword && (
+            <div className={`mt-3 p-3 rounded-lg border ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-white'}`}>
+              <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Update your admin password</p>
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type={showCurrentPwd ? 'text' : 'password'}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Current password"
+                    className={`w-full px-4 py-2 pr-10 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'}`}
+                  />
+                  <button type="button" onClick={() => setShowCurrentPwd(v=>!v)} className="absolute inset-y-0 right-0 px-3 text-gray-400">
+                    {showCurrentPwd ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showNewPwd ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (min 6 characters)"
+                    className={`w-full px-4 py-2 pr-10 rounded-lg border ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-300 bg-white text-gray-900'}`}
+                  />
+                  <button type="button" onClick={() => setShowNewPwd(v=>!v)} className="absolute inset-y-0 right-0 px-3 text-gray-400">
+                    {showNewPwd ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                  </button>
+                </div>
+                <button
+                  disabled={changePwdLoading}
+                  onClick={async () => {
+                    if (!currentPassword || !newPassword) {
+                      alert('Please fill both fields');
+                      return;
+                    }
+                    if (newPassword.length < 6) {
+                      alert('New password must be at least 6 characters');
+                      return;
+                    }
+                    try {
+                      setChangePwdLoading(true);
+                      await adminAPI.changePassword(currentPassword, newPassword);
+                      alert('Password changed successfully. You will be logged out to re-authenticate.');
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setShowChangePassword(false);
+                      // Force re-authentication so the new password is used on next login
+                      setTimeout(() => {
+                        logout();
+                      }, 300);
+                    } catch (err) {
+                      const msg = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to change password';
+                      alert(msg);
+                    } finally {
+                      setChangePwdLoading(false);
+                    }
+                  }}
+                  className={`w-full px-4 py-2 rounded-lg ${isDarkMode ? 'bg-purple-700 text-white hover:bg-purple-600' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                >
+                  {changePwdLoading ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -2771,7 +2855,7 @@ export default function AdminDashboard() {
               <div className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
                 {serviceRequests.slice(0, 5).map((request, index) => {
                   // Debug log to verify data
-                  console.log(`Overview rendering request ${request.id}: status=${request.status}, completedAt=${request.completedAt}, isPaid=${request.isPaid}`);
+                  (`Overview rendering request ${request.id}: status=${request.status}, completedAt=${request.completedAt}, isPaid=${request.isPaid}`);
                   // Handle both direct properties and nested attributes
                   const id = request.id || request.attributes?.id;
                   const serviceType = request.serviceType || request.attributes?.serviceType;
@@ -3394,7 +3478,7 @@ export default function AdminDashboard() {
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
                 <button
                   onClick={() => {
-                    console.log('🆕 Add New Service button clicked');
+                    ('🆕 Add New Service button clicked');
                     setEditingService(null);
                     setServiceFormData({
                       name: '',
@@ -3408,7 +3492,7 @@ export default function AdminDashboard() {
                       parentService: null
                     });
                     setShowServiceForm(true);
-                    console.log('🆕 Service form should now be visible');
+                    ('🆕 Service form should now be visible');
                   }}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
                 >
@@ -6335,21 +6419,21 @@ export default function AdminDashboard() {
 
       {/* Document Viewer Modal */}
       {(() => {
-        console.log('🔍 Modal render check:', {
+        ('🔍 Modal render check:', {
           showDocumentModal,
           selectedDocument,
           shouldShow: showDocumentModal && selectedDocument
         });
         
         if (!showDocumentModal || !selectedDocument) {
-          console.log('❌ Modal not showing because:', {
+          ('❌ Modal not showing because:', {
             showDocumentModal,
             selectedDocument: !!selectedDocument
           });
           return false;
         }
         
-        console.log('✅ Modal should be visible');
+        ('✅ Modal should be visible');
         return true;
       })() && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
@@ -6838,10 +6922,10 @@ export default function AdminDashboard() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      console.log('🔍 Business View button clicked, document:', document);
+                                      ('🔍 Business View button clicked, document:', document);
                                       setSelectedDocument(document);
                                       setShowDocumentModal(true);
-                                      console.log('📄 Modal should be opening with document:', document);
+                                      ('📄 Modal should be opening with document:', document);
                                     }}
                                     className={`text-xs px-3 py-1 rounded ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-100 hover:bg-blue-200 text-blue-800'} transition-colors`}
                                   >

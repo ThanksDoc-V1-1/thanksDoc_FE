@@ -19,13 +19,13 @@ export async function GET(request) {
       );
     }
 
-    console.log('Fetching payment methods for customer:', customerId);
+    ('Fetching payment methods for customer:', customerId);
 
     // Check cache first
     const cacheKey = `payment_methods_${customerId}`;
     const cached = paymentMethodsCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      console.log('Using cached payment methods:', cached.methods.length);
+      ('Using cached payment methods:', cached.methods.length);
       return NextResponse.json({
         paymentMethods: cached.methods,
       });
@@ -45,7 +45,7 @@ export async function GET(request) {
     // Race between the Stripe call and timeout
     const paymentMethods = await Promise.race([stripePromise, timeoutPromise]);
 
-    console.log('Raw payment methods from Stripe:', paymentMethods.data.length);
+    ('Raw payment methods from Stripe:', paymentMethods.data.length);
 
     // Format the payment methods for frontend (optimized)
     const formattedMethods = paymentMethods.data.map(pm => ({
@@ -114,14 +114,14 @@ export async function POST(request) {
       );
     }
 
-    console.log('Saving payment method for customer:', customerId, 'Payment Method:', paymentMethodId);
+    ('Saving payment method for customer:', customerId, 'Payment Method:', paymentMethodId);
 
     // First check if payment method is already attached to this customer
     try {
       const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
       
       if (paymentMethod.customer && paymentMethod.customer === customerId) {
-        console.log('Payment method already attached to customer');
+        ('Payment method already attached to customer');
         return NextResponse.json({
           success: true,
           message: 'Payment method already attached to customer',
@@ -133,11 +133,11 @@ export async function POST(request) {
         customer: customerId,
       });
       
-      console.log('Payment method attached successfully');
+      ('Payment method attached successfully');
     } catch (attachError) {
       // If already attached, the error message will indicate this
       if (attachError.message && attachError.message.includes('already attached')) {
-        console.log('Payment method already attached (caught in error)');
+        ('Payment method already attached (caught in error)');
       } else {
         throw attachError; // Re-throw if it's a different error
       }
@@ -183,7 +183,7 @@ export async function DELETE(request) {
       );
     }
 
-    console.log('Deleting payment method:', paymentMethodId);
+    ('Deleting payment method:', paymentMethodId);
 
     // Detach payment method from customer
     await stripe.paymentMethods.detach(paymentMethodId);

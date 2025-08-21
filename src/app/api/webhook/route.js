@@ -22,9 +22,9 @@ export async function POST(request) {
   switch (event.type) {
     case 'payment_intent.succeeded':
       const paymentIntent = event.data.object;
-      console.log('PaymentIntent was successful!', paymentIntent.id);
-      console.log('Amount received:', paymentIntent.amount_received / 100);
-      console.log('Metadata:', paymentIntent.metadata);
+      ('PaymentIntent was successful!', paymentIntent.id);
+      ('Amount received:', paymentIntent.amount_received / 100);
+      ('Metadata:', paymentIntent.metadata);
       
       // Here you would typically:
       // 1. Update your database with the successful payment
@@ -35,10 +35,10 @@ export async function POST(request) {
       break;
     case 'payment_intent.payment_failed':
       const failedPayment = event.data.object;
-      console.log('PaymentIntent failed!', failedPayment.id);
+      ('PaymentIntent failed!', failedPayment.id);
       break;
     default:
-      console.log(`Unhandled event type ${event.type}`);
+      (`Unhandled event type ${event.type}`);
   }
 
   return NextResponse.json({ received: true });

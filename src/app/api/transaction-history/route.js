@@ -4,13 +4,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function GET(request) {
   try {
-    console.log('🔄 Transaction history API called');
+    ('🔄 Transaction history API called');
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const searchTerm = searchParams.get('search');
 
-    console.log('📊 Query parameters:', { startDate, endDate, searchTerm });
+    ('📊 Query parameters:', { startDate, endDate, searchTerm });
 
     // Build query parameters for the backend
     let query = '?populate=business,doctor';
@@ -18,7 +18,7 @@ export async function GET(request) {
     // Only get paid transactions for now (simplified)
     query += '&filters[isPaid][$eq]=true';
     
-    console.log('🔍 Fetching transactions from backend:', `${API_URL}/service-requests${query}`);
+    ('🔍 Fetching transactions from backend:', `${API_URL}/service-requests${query}`);
 
     const response = await fetch(`${API_URL}/service-requests${query}`, {
       headers: {
@@ -26,8 +26,8 @@ export async function GET(request) {
       },
     });
 
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response ok:', response.ok);
+    ('📡 Response status:', response.status);
+    ('📡 Response ok:', response.ok);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -36,7 +36,7 @@ export async function GET(request) {
     }
 
     const data = await response.json();
-    console.log('✅ Transactions fetched:', data.data?.length || 0);
+    ('✅ Transactions fetched:', data.data?.length || 0);
 
     // Transform the data to match frontend expectations
     const transactions = (data.data || []).map(item => ({

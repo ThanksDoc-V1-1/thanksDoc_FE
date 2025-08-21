@@ -251,7 +251,7 @@ export default function BusinessDashboard() {
       return;
     }
 
-    console.log('� Service Filter Applied:', {
+    ('� Service Filter Applied:', {
       selectedService: `Service ID: ${selectedServiceId}`,
       totalDoctors: nearbyDoctors.length,
       totalPreviousDoctors: previousDoctors.length
@@ -284,7 +284,7 @@ export default function BusinessDashboard() {
 
   // Authentication check - redirect if not authenticated or not business
   useEffect(() => {
-    console.log('🔍 Business Dashboard - Auth state check:', {
+    ('🔍 Business Dashboard - Auth state check:', {
       authLoading,
       isAuthenticated,
       user: user ? { id: user.id, email: user.email, role: user.role } : null
@@ -292,7 +292,7 @@ export default function BusinessDashboard() {
 
     // Don't redirect while authentication is still loading
     if (authLoading) {
-      console.log('⏳ Auth still loading, waiting...');
+      ('⏳ Auth still loading, waiting...');
       return;
     }
 
@@ -300,20 +300,20 @@ export default function BusinessDashboard() {
     const timeoutId = setTimeout(() => {
       // Only redirect if we're sure about the authentication state (not loading)
       if (!authLoading && isAuthenticated === false) {
-        console.log('🚫 Not authenticated after delay, redirecting to business login');
+        ('🚫 Not authenticated after delay, redirecting to business login');
         router.push('/business/login');
         return;
       }
       
       // Only check role if we have a user and are not loading
       if (!authLoading && isAuthenticated && user && user.role !== 'business') {
-        console.log('🚫 Not business role (got:', user.role, '), redirecting to home');
+        ('🚫 Not business role (got:', user.role, '), redirecting to home');
         router.push('/');
         return;
       }
       
       if (!authLoading && isAuthenticated && user && user.role === 'business') {
-        console.log('✅ Business authenticated, loading dashboard');
+        ('✅ Business authenticated, loading dashboard');
       }
     }, 500); // 500ms delay to ensure auth is fully loaded
 
@@ -322,9 +322,9 @@ export default function BusinessDashboard() {
   }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
-    console.log('🏢 Business Dashboard useEffect - User:', user);
-    console.log('🆔 User ID:', user?.id);
-    console.log('📧 User email:', user?.email);
+    ('🏢 Business Dashboard useEffect - User:', user);
+    ('🆔 User ID:', user?.id);
+    ('📧 User email:', user?.email);
     
     if (user?.id) {
       fetchBusinessData();
@@ -384,7 +384,7 @@ export default function BusinessDashboard() {
 
   // Handle business data updates
   useEffect(() => {
-    console.log('🏢 Business data useEffect:', businessData);
+    ('🏢 Business data useEffect:', businessData);
     
     // Update edit profile data when business data is available
     if (businessData) {
@@ -434,22 +434,22 @@ export default function BusinessDashboard() {
   // fetchBusinessData function
   const fetchBusinessData = async () => {
     try {
-      console.log('🔍 Fetching business data for ID:', user.id);
+      ('🔍 Fetching business data for ID:', user.id);
       const response = await businessAPI.getById(user.id);
-      console.log('📡 Business API response:', response);
+      ('📡 Business API response:', response);
       
       if (response.data?.data) {
         const business = response.data.data;
-        console.log('✅ Business data received:', business);
+        ('✅ Business data received:', business);
         setBusinessData(business);
       } else {
-        console.log('⚠️ No business data in response, falling back to user data');
+        ('⚠️ No business data in response, falling back to user data');
         setBusinessData(user);
       }
     } catch (error) {
       console.error('❌ Error fetching business data:', error);
       console.error('❌ Error details:', error.response?.data);
-      console.log('🔄 Falling back to user data from auth context');
+      ('🔄 Falling back to user data from auth context');
       setBusinessData(user);
     }
   };
@@ -520,11 +520,11 @@ export default function BusinessDashboard() {
   const fetchPreviousDoctors = async () => {
     try {
       setLoadingPreviousDoctors(true);
-      console.log('🔍 Fetching previously worked with doctors for business:', user.id);
+      ('🔍 Fetching previously worked with doctors for business:', user.id);
       
       // Get all completed service requests for this business
       const response = await serviceRequestAPI.getBusinessRequests(user.id);
-      console.log('📊 Business requests for previous doctors:', response.data);
+      ('📊 Business requests for previous doctors:', response.data);
 
       let allRequests = [];
       if (Array.isArray(response.data)) {
@@ -562,7 +562,7 @@ export default function BusinessDashboard() {
             const availableDoctors = availableResponse.data || [];
             const currentDoctor = availableDoctors.find(d => d.id.toString() === doctorId.toString());
             
-            console.log(`🔍 Checking doctor ${doctorId}:`, {
+            (`🔍 Checking doctor ${doctorId}:`, {
               foundInAvailable: !!currentDoctor,
               currentDoctorServices: currentDoctor?.services,
               availableDoctorsCount: availableDoctors.length
@@ -573,9 +573,9 @@ export default function BusinessDashboard() {
             try {
               const profileResponse = await doctorAPI.getProfile(doctorId);
               doctorWithServices = profileResponse.data;
-              console.log(`🔍 Doctor ${doctorId} profile services:`, doctorWithServices?.services);
+              (`🔍 Doctor ${doctorId} profile services:`, doctorWithServices?.services);
             } catch (profileErr) {
-              console.log(`Could not fetch profile for doctor ${doctorId}:`, profileErr);
+              (`Could not fetch profile for doctor ${doctorId}:`, profileErr);
             }
             
             if (currentDoctor) {
@@ -588,7 +588,7 @@ export default function BusinessDashboard() {
                 services: currentDoctor.services || doctorWithServices?.services || [] // Prefer services from available endpoint, fallback to profile
               };
               
-              console.log(`✅ Updated doctor ${doctorId}:`, {
+              (`✅ Updated doctor ${doctorId}:`, {
                 name: `${updatedDoctor.firstName} ${updatedDoctor.lastName}`,
                 isAvailable: updatedDoctor.isAvailable,
                 servicesCount: updatedDoctor.services?.length || 0,
@@ -601,7 +601,7 @@ export default function BusinessDashboard() {
               uniqueDoctors[doctorId].isAvailable = false;
               uniqueDoctors[doctorId].services = doctorWithServices?.services || [];
               
-              console.log(`❌ Doctor ${doctorId} not available, services:`, uniqueDoctors[doctorId].services?.map(s => ({ id: s.id, name: s.name })));
+              (`❌ Doctor ${doctorId} not available, services:`, uniqueDoctors[doctorId].services?.map(s => ({ id: s.id, name: s.name })));
             }
           } catch (err) {
             console.error(`Error checking availability for doctor ${doctorId}:`, err);
@@ -617,8 +617,8 @@ export default function BusinessDashboard() {
       }
 
       const previousDoctorsList = Object.values(uniqueDoctors);
-      console.log('👨‍⚕️ Previously worked with doctors with current availability:', previousDoctorsList);
-      console.log('✅ Available previous doctors:', previousDoctorsList.filter(d => d.isAvailable));
+      ('👨‍⚕️ Previously worked with doctors with current availability:', previousDoctorsList);
+      ('✅ Available previous doctors:', previousDoctorsList.filter(d => d.isAvailable));
       setPreviousDoctors(previousDoctorsList);
     } catch (error) {
       console.error('❌ Error fetching previous doctors:', error);
@@ -632,7 +632,7 @@ export default function BusinessDashboard() {
   const fetchAvailableServices = async () => {
     try {
       setLoadingServices(true);
-      console.log('🔍 Fetching available services from backend');
+      ('🔍 Fetching available services from backend');
       
       // Add a small delay to see the loading state
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -640,22 +640,22 @@ export default function BusinessDashboard() {
       // Fetch all active services sorted by category and display order
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[isActive][$eq]=true&sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const data = await response.json();
-      console.log('📊 Raw API response:', data);
-      console.log('📊 Response status:', response.status);
+      ('📊 Raw API response:', data);
+      ('📊 Response status:', response.status);
       
       let services = [];
       if (data && Array.isArray(data.data)) {
         services = data.data;
-        console.log('📊 Using data.data array:', services.length, 'services');
+        ('📊 Using data.data array:', services.length, 'services');
       } else if (Array.isArray(data)) {
         services = data;
-        console.log('📊 Using data array:', services.length, 'services');
+        ('📊 Using data array:', services.length, 'services');
       } else {
-        console.log('❌ Unexpected response structure:', data);
+        ('❌ Unexpected response structure:', data);
       }
       
-      console.log('✅ Fetched services:', services.length, 'services');
-      console.log('✅ Service categories found:', [...new Set(services.map(s => s.category))]);
+      ('✅ Fetched services:', services.length, 'services');
+      ('✅ Service categories found:', [...new Set(services.map(s => s.category))]);
       
       setAvailableServices(services);
     } catch (error) {
@@ -663,7 +663,7 @@ export default function BusinessDashboard() {
       setAvailableServices([]);
     } finally {
       setLoadingServices(false);
-      console.log('🏁 Loading services completed');
+      ('🏁 Loading services completed');
     }
   };
 
@@ -676,13 +676,13 @@ export default function BusinessDashboard() {
 
     try {
       setLoadingServiceDoctors(true);
-      console.log('🔍 Fetching doctors for service ID:', serviceId);
+      ('🔍 Fetching doctors for service ID:', serviceId);
       
       const response = await serviceAPI.getDoctorsByService(serviceId, {
         available: true // Only get available doctors
       });
       
-      console.log('👨‍⚕️ Doctors for service response:', response.data);
+      ('👨‍⚕️ Doctors for service response:', response.data);
       
       let doctors = [];
       if (Array.isArray(response.data)) {
@@ -691,7 +691,7 @@ export default function BusinessDashboard() {
         doctors = response.data.data;
       }
       
-      console.log('✅ Available doctors for service:', doctors);
+      ('✅ Available doctors for service:', doctors);
       setServiceBasedDoctors(doctors);
     } catch (error) {
       console.error('❌ Error fetching doctors for service:', error);
@@ -890,7 +890,7 @@ export default function BusinessDashboard() {
 
   // Helper function to check if a doctor offers a specific service
   const doctorOffersService = (doctor, serviceId) => {
-    console.log('🔍 Checking if doctor offers service:', {
+    ('🔍 Checking if doctor offers service:', {
       doctor: doctor?.firstName + ' ' + doctor?.lastName,
       doctorServices: doctor?.services,
       serviceId,
@@ -899,7 +899,7 @@ export default function BusinessDashboard() {
     });
     
     if (!doctor?.services || !serviceId) {
-      console.log('❌ Missing doctor services or serviceId:', {
+      ('❌ Missing doctor services or serviceId:', {
         hasServices: !!doctor?.services,
         servicesLength: doctor?.services?.length,
         hasServiceId: !!serviceId
@@ -908,7 +908,7 @@ export default function BusinessDashboard() {
     }
     
     const hasService = doctor.services.some(service => {
-      console.log('🔍 Comparing service:', {
+      ('🔍 Comparing service:', {
         serviceIdFromDoctor: service.id,
         serviceNameFromDoctor: service.name,
         serviceIdFromDropdown: serviceId,
@@ -917,7 +917,7 @@ export default function BusinessDashboard() {
       return service.id.toString() === serviceId.toString();
     });
     
-    console.log('✅ Doctor offers service result:', hasService);
+    ('✅ Doctor offers service result:', hasService);
     return hasService;
   };
 
@@ -984,7 +984,7 @@ export default function BusinessDashboard() {
       
       // Calculate the correct duration in hours
       const serviceDurationInHours = selectedService?.duration ? formatDuration(selectedService.duration / 60) : 1;
-      console.log('🕒 Service selection debug:', {
+      ('🕒 Service selection debug:', {
         serviceId: value,
         serviceName: selectedService?.name,
         serviceDurationMinutes: selectedService?.duration,
@@ -998,7 +998,7 @@ export default function BusinessDashboard() {
         const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
         if (selectedDoctor && !doctorOffersService(selectedDoctor, value)) {
           shouldResetDoctor = true;
-          console.log('🔄 Selected doctor no longer offers the new service, resetting selection');
+          ('🔄 Selected doctor no longer offers the new service, resetting selection');
         }
       }
       
@@ -1030,7 +1030,7 @@ export default function BusinessDashboard() {
 
     try {
       setLoadingCost(true);
-      console.log('💰 Calculating cost for service:', serviceId, 'with duration:', duration);
+      ('💰 Calculating cost for service:', serviceId, 'with duration:', duration);
       
       // Find the selected service to get base price and duration
       const selectedService = availableServices.find(service => service.id.toString() === serviceId.toString());
@@ -1045,19 +1045,19 @@ export default function BusinessDashboard() {
       const serviceDuration = selectedService.duration ? (selectedService.duration / 60) : 1; // Convert minutes to hours
       const requestedDuration = duration || getCurrentServiceDuration();
       
-      console.log('🔍 Debug duration calculation:');
-      console.log('  - Service duration (minutes):', selectedService.duration);
-      console.log('  - Service duration (hours):', serviceDuration);
-      console.log('  - Requested duration (hours):', requestedDuration);
-      console.log('  - Base price:', basePrice);
+      ('🔍 Debug duration calculation:');
+      ('  - Service duration (minutes):', selectedService.duration);
+      ('  - Service duration (hours):', serviceDuration);
+      ('  - Requested duration (hours):', requestedDuration);
+      ('  - Base price:', basePrice);
       
       // Scale the price based on duration
       const scalingFactor = requestedDuration / serviceDuration;
       const scaledPrice = basePrice * scalingFactor;
       const totalCost = scaledPrice + SERVICE_CHARGE;
       
-      console.log('  - Scaling factor:', scalingFactor);
-      console.log('  - Scaled price:', scaledPrice);
+      ('  - Scaling factor:', scalingFactor);
+      ('  - Scaled price:', scaledPrice);
       
       const costData = {
         servicePrice: scaledPrice,
@@ -1068,7 +1068,7 @@ export default function BusinessDashboard() {
         scalingFactor: scalingFactor
       };
       
-      console.log('💰 Calculated service cost:', costData);
+      ('💰 Calculated service cost:', costData);
       setServiceCost(costData);
     } catch (error) {
       console.error('❌ Error calculating service cost:', error);
@@ -1276,7 +1276,7 @@ Payment ID: ${paymentIntent.id}`);
             setQuickRequestServiceId('');
             setQuickRequestServiceDate('');
             setQuickRequestServiceTime('');
-            console.log('🔄 Manually refreshing after creating paid quick service request');
+            ('🔄 Manually refreshing after creating paid quick service request');
             await fetchServiceRequests();
           }
         } else {
@@ -1363,7 +1363,7 @@ Payment ID: ${paymentIntent.id}`;
             // Reset service-related states
             setSelectedServiceId('');
             setServiceBasedDoctors([]);
-            console.log('🔄 Manually refreshing after creating paid service request');
+            ('🔄 Manually refreshing after creating paid service request');
             await fetchServiceRequests();
             await fetchNearbyDoctors();
           }
@@ -1391,7 +1391,7 @@ Payment ID: ${paymentIntent.id}`;
           currency: paymentIntent.currency || 'gbp'
         });
         
-        console.log('💳 Card Payment Response:', response.data);
+        ('💳 Card Payment Response:', response.data);
         
         if (response.data) {
           alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee) Payment ID: ${paymentIntent.id}`);
@@ -1414,7 +1414,7 @@ Payment ID: ${paymentIntent.id}`;
           );
           
           // Also fetch fresh data from server immediately regardless of auto-refresh
-          console.log('🔄 Manually refreshing after card payment');
+          ('🔄 Manually refreshing after card payment');
           await fetchServiceRequests();
         }
       }
@@ -2931,7 +2931,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   name: businessData?.businessName || user?.businessName,
                   businessName: businessData?.businessName || user?.businessName
                 };
-                console.log('🏢 Business info for payment:', info);
+                ('🏢 Business info for payment:', info);
                 return info;
               })()}
             />

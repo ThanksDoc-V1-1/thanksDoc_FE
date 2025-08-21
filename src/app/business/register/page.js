@@ -134,7 +134,7 @@ export default function BusinessRegister() {
   useEffect(() => {
     const fetchBusinessTypes = async () => {
       try {
-        console.log('🔄 Fetching business types from backend...');
+        ('🔄 Fetching business types from backend...');
         const response = await businessAPI.getBusinessTypes();
         
         if (response.data?.data && Array.isArray(response.data.data)) {
@@ -142,14 +142,14 @@ export default function BusinessRegister() {
             id: type.value || type.id,
             name: type.name || type.label
           }));
-          console.log('✅ Business types loaded from backend:', backendTypes);
+          ('✅ Business types loaded from backend:', backendTypes);
           setBusinessTypes(backendTypes);
         } else {
-          console.log('⚠️ No business types received from backend, using default types');
+          ('⚠️ No business types received from backend, using default types');
         }
       } catch (error) {
         console.error('❌ Error fetching business types:', error);
-        console.log('🔄 Using default business types due to error');
+        ('🔄 Using default business types due to error');
         // Keep default types as fallback
       }
     };

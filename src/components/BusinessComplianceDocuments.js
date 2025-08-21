@@ -28,11 +28,11 @@ export default function BusinessComplianceDocuments({ businessId }) {
   // Load document types from API
   const loadDocumentTypes = async () => {
     try {
-      console.log('🔄 Loading document types from API...');
+      ('🔄 Loading document types from API...');
       setLoadingDocumentTypes(true);
       
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/business-compliance-document-types`;
-      console.log('📡 API URL:', apiUrl);
+      ('📡 API URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -42,14 +42,14 @@ export default function BusinessComplianceDocuments({ businessId }) {
         }
       });
 
-      console.log('📨 API Response status:', response.status);
+      ('📨 API Response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('📋 API Result:', result);
+      ('📋 API Result:', result);
       
       if (result.data && Array.isArray(result.data)) {
         // Transform API response to match expected format
@@ -66,16 +66,16 @@ export default function BusinessComplianceDocuments({ businessId }) {
           validityYears: docType.validityYears
         }));
         
-        console.log('✅ Transformed document types:', transformedTypes);
+        ('✅ Transformed document types:', transformedTypes);
         setDocumentTypes(transformedTypes);
       } else {
-        console.log('❌ Invalid API response format:', result);
+        ('❌ Invalid API response format:', result);
         throw new Error('Invalid API response format');
       }
     } catch (error) {
       console.error('❌ Error loading document types:', error);
       // Fallback to hardcoded types if API fails
-      console.log('🔄 Falling back to hardcoded document types');
+      ('🔄 Falling back to hardcoded document types');
       setDocumentTypes(FALLBACK_BUSINESS_DOCUMENT_TYPES);
     } finally {
       setLoadingDocumentTypes(false);
@@ -139,7 +139,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      console.log('📋 Loading documents for business:', businessId);
+      ('📋 Loading documents for business:', businessId);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}`, {
         headers: {
@@ -147,17 +147,17 @@ export default function BusinessComplianceDocuments({ businessId }) {
         }
       });
 
-      console.log('📋 Load documents response status:', response.status);
+      ('📋 Load documents response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('📋 Load documents result:', result);
+      ('📋 Load documents result:', result);
       
       if (result.success) {
-        console.log('📋 Setting documents:', result.data.documents?.length || 0, 'documents');
+        ('📋 Setting documents:', result.data.documents?.length || 0, 'documents');
         setDocuments(result.data.documents || []);
         setOverview(result.data.overview || null);
       }
@@ -203,9 +203,9 @@ export default function BusinessComplianceDocuments({ businessId }) {
         const docType = documentTypes.find(dt => dt.id === documentId);
         const validityYears = docType?.validityYears || 1; // Default to 1 year if not specified
         
-        console.log(`🔍 Looking for document type with id: ${documentId}`);
-        console.log(`📋 Found document type:`, docType);
-        console.log(`⏰ Validity years:`, validityYears);
+        (`🔍 Looking for document type with id: ${documentId}`);
+        (`📋 Found document type:`, docType);
+        (`⏰ Validity years:`, validityYears);
         
         const issueDateObj = new Date(issueDate);
         const expiryDate = new Date(issueDateObj);
@@ -215,7 +215,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
         const expiryDateString = expiryDate.toISOString().split('T')[0];
         formData.append('expiryDate', expiryDateString);
         
-        console.log(`📅 Auto-calculated expiry date for ${documentId}:`, {
+        (`📅 Auto-calculated expiry date for ${documentId}:`, {
           issueDate: issueDate,
           validityYears,
           expiryDate: expiryDateString
@@ -256,7 +256,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
       });
       setEditingDoc(null);
       
-      console.log('Business document uploaded successfully:', result);
+      ('Business document uploaded successfully:', result);
       
     } catch (error) {
       console.error('Error uploading business document:', error);
@@ -279,7 +279,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
         throw new Error('Document not found');
       }
 
-      console.log('🗑️ Deleting document:', doc.documentId, 'for document type:', documentId);
+      ('🗑️ Deleting document:', doc.documentId, 'for document type:', documentId);
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/${doc.documentId}`, {
         method: 'DELETE',
@@ -288,7 +288,7 @@ export default function BusinessComplianceDocuments({ businessId }) {
         }
       });
 
-      console.log('🗑️ Delete response status:', response.status);
+      ('🗑️ Delete response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -296,12 +296,12 @@ export default function BusinessComplianceDocuments({ businessId }) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      console.log('✅ Document deleted successfully, refreshing documents...');
+      ('✅ Document deleted successfully, refreshing documents...');
 
       // Refresh the documents to show updated status
       await loadDocuments();
       
-      console.log('🔄 Documents reloaded after deletion');
+      ('🔄 Documents reloaded after deletion');
       
     } catch (error) {
       console.error('Error deleting business document:', error);

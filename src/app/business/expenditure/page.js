@@ -76,7 +76,7 @@ function ExpenditureContent() {
     
     // Only redirect if we're sure the user is not authenticated or not a business
     if (!isAuthenticated || user?.role !== 'business') {
-      console.log('🔐 Auth check failed:', { isAuthenticated, userRole: user?.role, authLoading });
+      ('🔐 Auth check failed:', { isAuthenticated, userRole: user?.role, authLoading });
       router.push('/business/login');
       return;
     }
@@ -86,7 +86,7 @@ function ExpenditureContent() {
   useEffect(() => {
     // Only fetch if we have a valid authenticated business user
     if (!authLoading && isAuthenticated && user?.role === 'business' && user?.id) {
-      console.log('✅ Fetching data for authenticated business:', user.id);
+      ('✅ Fetching data for authenticated business:', user.id);
       fetchBusinessData();
       fetchServices();
       fetchExpenditures();
@@ -110,10 +110,10 @@ function ExpenditureContent() {
 
   const fetchBusinessData = async () => {
     try {
-      console.log('🔍 Fetching business profile...');
+      ('🔍 Fetching business profile...');
       const response = await businessAPI.getProfile();
-      console.log('✅ Business profile response:', response.data);
-      console.log('📍 Business address fields:', {
+      ('✅ Business profile response:', response.data);
+      ('📍 Business address fields:', {
         address: response.data?.address,
         city: response.data?.city,
         state: response.data?.state,
@@ -125,7 +125,7 @@ function ExpenditureContent() {
       
       // If we get an authentication error, redirect to login
       if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('🔐 Authentication failed, redirecting to login');
+        ('🔐 Authentication failed, redirecting to login');
         localStorage.clear(); // Clear potentially invalid tokens
         router.push('/business/login');
       }
@@ -155,11 +155,11 @@ function ExpenditureContent() {
         return;
       }
 
-      console.log('🔍 Fetching expenditure data for business:', user.id);
+      ('🔍 Fetching expenditure data for business:', user.id);
       
       // Fetch all service requests (both completed and active for filtering)
       const response = await serviceRequestAPI.getBusinessRequests(user.id);
-      console.log('📊 Raw expenditure response:', response.data);
+      ('📊 Raw expenditure response:', response.data);
 
       let allRequests = [];
       if (Array.isArray(response.data)) {
@@ -199,7 +199,7 @@ function ExpenditureContent() {
         };
       });
 
-      console.log('📈 Processed expenditure data:', expenditureData);
+      ('📈 Processed expenditure data:', expenditureData);
       
       setExpenditures(expenditureData);
       setFilteredExpenditures(expenditureData);
@@ -212,7 +212,7 @@ function ExpenditureContent() {
       
       // If we get an authentication error, redirect to login
       if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('🔐 Authentication failed, redirecting to login');
+        ('🔐 Authentication failed, redirecting to login');
         localStorage.clear();
         router.push('/business/login');
       }
@@ -383,7 +383,7 @@ function ExpenditureContent() {
                     {businessData?.businessName || user?.businessName || 'Business Account'}
                   </p>
                   {/* Debug: Show what data we have */}
-                  {console.log('🏢 Business data in render:', businessData)}
+                  {('🏢 Business data in render:', businessData)}
                   {businessData?.address && (
                     <p className="text-sm">
                       📍 {businessData.address}

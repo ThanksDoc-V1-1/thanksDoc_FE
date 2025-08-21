@@ -19,7 +19,7 @@ export async function GET(request) {
     // Only get paid transactions
     query += '&filters[isPaid][$eq]=true';
     
-    console.log('🔍 Fetching doctor earnings from backend:', `${API_URL}/service-requests${query}`);
+    ('🔍 Fetching doctor earnings from backend:', `${API_URL}/service-requests${query}`);
 
     const response = await fetch(`${API_URL}/service-requests${query}`, {
       headers: {
@@ -32,7 +32,7 @@ export async function GET(request) {
     }
 
     const data = await response.json();
-    console.log('✅ Doctor earnings data fetched:', data.data?.length || 0);
+    ('✅ Doctor earnings data fetched:', data.data?.length || 0);
 
     // Transform the data to calculate doctor earnings
     const transactions = (data.data || []).map(item => ({
@@ -115,7 +115,7 @@ export async function POST(request) {
       );
     }
 
-    console.log('🔵 Updating paymentStatus for transaction:', transactionId);
+    ('🔵 Updating paymentStatus for transaction:', transactionId);
     
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
     const currentDate = new Date().toISOString();
@@ -142,11 +142,11 @@ export async function POST(request) {
         );
       }
       
-      console.log(`🔵 Found transaction ${transaction.id}, documentId: ${transaction.documentId}`);
+      (`🔵 Found transaction ${transaction.id}, documentId: ${transaction.documentId}`);
       
       // Check if transaction is already marked as doctor_paid
       if (transaction.paymentStatus === 'doctor_paid') {
-        console.log(`ℹ️ Transaction ${transactionId} is already marked as doctor_paid`);
+        (`ℹ️ Transaction ${transactionId} is already marked as doctor_paid`);
         return NextResponse.json(
           { 
             success: true, 
@@ -161,7 +161,7 @@ export async function POST(request) {
       // Update paymentStatus to 'doctor_paid' for this specific transaction
       const updateUrl = `${API_URL}/service-requests/${transaction.documentId}`;
       
-      console.log(`🔍 Updating transaction ${transaction.id} using documentId ${transaction.documentId} at ${updateUrl}`);
+      (`🔍 Updating transaction ${transaction.id} using documentId ${transaction.documentId} at ${updateUrl}`);
       
       const updateResponse = await fetch(updateUrl, {
         method: 'PUT',
@@ -185,7 +185,7 @@ export async function POST(request) {
         );
       }
       
-      console.log(`✅ Updated transaction ${transaction.id} payment status to doctor_paid`);
+      (`✅ Updated transaction ${transaction.id} payment status to doctor_paid`);
       
     } catch (dbError) {
       console.error('❌ Database error when updating payment status:', dbError);

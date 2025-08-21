@@ -28,12 +28,12 @@ export default function ComplianceDocuments({ doctorId }) {
   const loadDocumentTypes = async () => {
     setLoadingDocumentTypes(true);
     try {
-      console.log('🔍 Loading document types from API...');
+      ('🔍 Loading document types from API...');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-document-types`);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Document types loaded:', result);
+        ('✅ Document types loaded:', result);
         
         if (result.data && Array.isArray(result.data)) {
           // Transform the API response to match the expected format
@@ -49,7 +49,7 @@ export default function ComplianceDocuments({ doctorId }) {
           }));
           
           setDocumentTypes(transformedTypes);
-          console.log('✅ Document types set:', transformedTypes);
+          ('✅ Document types set:', transformedTypes);
         } else {
           console.error('❌ Invalid document types response format:', result);
           setDocumentTypes([]);
@@ -162,7 +162,7 @@ export default function ComplianceDocuments({ doctorId }) {
       // Refresh the documents to show updated verification status
       await loadDocuments();
       
-      console.log('Document verification updated:', result);
+      ('Document verification updated:', result);
       
     } catch (error) {
       console.error('Error updating verification status:', error);
@@ -410,7 +410,7 @@ export default function ComplianceDocuments({ doctorId }) {
     }
 
     try {
-      console.log('🗑️ Removing reference ID:', referenceId);
+      ('🗑️ Removing reference ID:', referenceId);
 
       // Call the delete endpoint
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/professional-references/${referenceId}`, {
@@ -420,11 +420,11 @@ export default function ComplianceDocuments({ doctorId }) {
         }
       });
 
-      console.log('🌐 Response status:', response.status);
+      ('🌐 Response status:', response.status);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('📊 Response result:', result);
+        ('📊 Response result:', result);
         
         if (result.success) {
           // Reload references to update the display

@@ -70,7 +70,7 @@
         
         async function loadServices() {
             try {
-                console.log('🔄 Loading services...');
+                ('🔄 Loading services...');
                 const response = await axios.get('http://localhost:1337/api/services?filters[serviceType][$eq]=subcategory&populate=*');
                 allServices = response.data.data || response.data;
                 
@@ -101,7 +101,7 @@
                     }
                 });
                 
-                console.log(`✅ Loaded ${allServices.length} services`);
+                (`✅ Loaded ${allServices.length} services`);
                 
             } catch (error) {
                 console.error('❌ Error loading services:', error);
@@ -151,7 +151,7 @@
             }
             
             try {
-                console.log(`🔄 Calculating cost for service ${serviceId}, duration ${duration}min`);
+                (`🔄 Calculating cost for service ${serviceId}, duration ${duration}min`);
                 
                 const response = await axios.post('http://localhost:1337/api/service-requests/calculate-cost', {
                     data: {
@@ -161,7 +161,7 @@
                 });
                 
                 const result = response.data;
-                console.log('✅ Cost calculation result:', result);
+                ('✅ Cost calculation result:', result);
                 
                 if (result.totalCost) {
                     const service = allServices.find(s => s.id == serviceId);
@@ -216,7 +216,7 @@
             const testDuration = testService.duration;
             
             try {
-                console.log(`🧪 Quick testing ${category} service: ${testService.name}`);
+                (`🧪 Quick testing ${category} service: ${testService.name}`);
                 
                 const response = await axios.post('http://localhost:1337/api/service-requests/calculate-cost', {
                     data: {

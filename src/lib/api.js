@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-console.log('🌐 API URL configured as:', API_URL);
+('🌐 API URL configured as:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -28,7 +28,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('📡 Making API request to:', config.url);
+    ('📡 Making API request to:', config.url);
     return config;
   },
   (error) => {
@@ -40,7 +40,7 @@ api.interceptors.request.use(
 // Add response interceptor to handle authentication errors
 api.interceptors.response.use(
   (response) => {
-    console.log('✅ API response received:', response.config.url);
+    ('✅ API response received:', response.config.url);
     return response;
   },
   (error) => {
@@ -61,7 +61,7 @@ api.interceptors.response.use(
     // Only handle authentication errors for login attempts
     // Do NOT auto-logout users for other API failures
     if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log('🔒 Authentication error detected:', {
+      ('🔒 Authentication error detected:', {
         status: error.response?.status,
         url: error.config?.url,
         message: error.response?.data?.message
@@ -71,10 +71,10 @@ api.interceptors.response.use(
       const isLoginEndpoint = error.config?.url?.includes('/auth/login');
       
       if (isLoginEndpoint) {
-        console.log('🔒 Login endpoint failed - this is expected for invalid credentials');
+        ('🔒 Login endpoint failed - this is expected for invalid credentials');
         // Don't auto-logout here - let the login component handle the error
       } else {
-        console.log('🔒 API endpoint failed but NOT auto-logging out - user stays logged in');
+        ('🔒 API endpoint failed but NOT auto-logging out - user stays logged in');
         // Log the error but don't logout the user automatically
         // This prevents the issue where dashboard API calls failing cause auto-logout
       }
@@ -85,7 +85,7 @@ api.interceptors.response.use(
 
 // Helper function to manually logout user (can be called by components)
 export const forceLogout = () => {
-  console.log('🔒 Force logout called');
+  ('🔒 Force logout called');
   
   // Clear tokens
   localStorage.removeItem('jwt');
@@ -111,17 +111,17 @@ export const isUserAuthenticated = () => {
     const jwt = localStorage.getItem('jwt');
     
     if (!user || !jwt) {
-      console.log('🔍 No authentication data found');
+      ('🔍 No authentication data found');
       return false;
     }
     
     const userData = JSON.parse(user);
     if (!userData.id && !userData.email) {
-      console.log('🔍 Invalid user data structure');
+      ('🔍 Invalid user data structure');
       return false;
     }
     
-    console.log('✅ User authentication data is valid');
+    ('✅ User authentication data is valid');
     return true;
   } catch (error) {
     console.error('❌ Error checking authentication:', error);
@@ -132,34 +132,34 @@ export const isUserAuthenticated = () => {
 // Helper function to test JWT token validity
 export const testJWTToken = async () => {
   try {
-    console.log('🧪 Testing JWT token validity...');
+    ('🧪 Testing JWT token validity...');
     const token = localStorage.getItem('jwt');
     const user = localStorage.getItem('user');
     
     if (!token) {
-      console.log('❌ No JWT token found');
+      ('❌ No JWT token found');
       return false;
     }
     
-    console.log('🔑 JWT token found:', token.substring(0, 50) + '...');
-    console.log('👤 User data:', user);
+    ('🔑 JWT token found:', token.substring(0, 50) + '...');
+    ('👤 User data:', user);
     
     // Try to decode the JWT token first
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('🔍 JWT Payload:', payload);
-      console.log('🆔 User ID in token:', payload.id);
-      console.log('🕐 JWT Expires:', new Date(payload.exp * 1000));
-      console.log('🕐 Current time:', new Date());
-      console.log('⏰ Token expired?', payload.exp * 1000 < Date.now());
+      ('🔍 JWT Payload:', payload);
+      ('🆔 User ID in token:', payload.id);
+      ('🕐 JWT Expires:', new Date(payload.exp * 1000));
+      ('🕐 Current time:', new Date());
+      ('⏰ Token expired?', payload.exp * 1000 < Date.now());
     } catch (decodeError) {
       console.error('❌ Cannot decode JWT token:', decodeError);
     }
     
     // Test with a simple endpoint that should always work if JWT is valid
     const response = await api.get('/services');
-    console.log('✅ JWT token is valid - services endpoint accessible');
-    console.log('📊 Services response:', response.data);
+    ('✅ JWT token is valid - services endpoint accessible');
+    ('📊 Services response:', response.data);
     return true;
   } catch (error) {
     console.error('❌ JWT token test failed:', error);
@@ -175,21 +175,21 @@ export const testUserExists = async () => {
     const userEmail = userData.email;
     
     if (!userEmail) {
-      console.log('❌ No user email found');
+      ('❌ No user email found');
       return false;
     }
     
-    console.log('🔍 Testing if user exists in database:', userEmail);
+    ('🔍 Testing if user exists in database:', userEmail);
     
     // Try to find user by email without authentication (this should work)
     const response = await api.get(`/doctors?filters[email][$eq]=${userEmail}`);
-    console.log('👨‍⚕️ User search result:', response.data);
+    ('👨‍⚕️ User search result:', response.data);
     
     if (response.data.data && response.data.data.length > 0) {
       const foundUser = response.data.data[0];
-      console.log('✅ User exists in hosted database:', foundUser);
-      console.log('🆔 Hosted DB User ID:', foundUser.id);
-      console.log('🆔 Local storage User ID:', userData.id);
+      ('✅ User exists in hosted database:', foundUser);
+      ('🆔 Hosted DB User ID:', foundUser.id);
+      ('🆔 Local storage User ID:', userData.id);
       
       if (foundUser.id !== userData.id) {
         console.warn('⚠️ USER ID MISMATCH! This is the problem!');
@@ -198,7 +198,7 @@ export const testUserExists = async () => {
       
       return true;
     } else {
-      console.log('❌ User not found in hosted database');
+      ('❌ User not found in hosted database');
       alert('User not found in hosted database! You may need to register again.');
       return false;
     }
@@ -211,7 +211,7 @@ export const testUserExists = async () => {
 // Helper function to test services endpoint permissions
 export const testServicesPermissions = async () => {
   try {
-    console.log('🧪 Testing services endpoint permissions...');
+    ('🧪 Testing services endpoint permissions...');
     
     // Test 1: Try without JWT (public access)
     const originalToken = localStorage.getItem('jwt');
@@ -219,23 +219,23 @@ export const testServicesPermissions = async () => {
     
     try {
       const publicResponse = await api.get('/services');
-      console.log('✅ Services accessible without JWT (public permissions)');
-      console.log('📊 Public services response:', publicResponse.data);
+      ('✅ Services accessible without JWT (public permissions)');
+      ('📊 Public services response:', publicResponse.data);
       localStorage.setItem('jwt', originalToken); // Restore JWT
       return { public: true, authenticated: null };
     } catch (publicError) {
-      console.log('❌ Services NOT accessible without JWT');
+      ('❌ Services NOT accessible without JWT');
       localStorage.setItem('jwt', originalToken); // Restore JWT
       
       // Test 2: Try with JWT (authenticated access)
       try {
         const authResponse = await api.get('/services');
-        console.log('✅ Services accessible with JWT (authenticated permissions)');
-        console.log('📊 Auth services response:', authResponse.data);
+        ('✅ Services accessible with JWT (authenticated permissions)');
+        ('📊 Auth services response:', authResponse.data);
         return { public: false, authenticated: true };
       } catch (authError) {
-        console.log('❌ Services NOT accessible with JWT either');
-        console.log('🔍 This suggests a backend permissions configuration issue');
+        ('❌ Services NOT accessible with JWT either');
+        ('🔍 This suggests a backend permissions configuration issue');
         return { public: false, authenticated: false };
       }
     }
@@ -247,22 +247,22 @@ export const testServicesPermissions = async () => {
 
 // Test category-specific services API calls (like the dashboard uses)
 export const testServiceCategories = async () => {
-  console.log('🧪 Testing category-specific services API calls...');
+  ('🧪 Testing category-specific services API calls...');
   
   try {
     // Test in-person services
-    console.log('📡 Testing in-person services...');
+    ('📡 Testing in-person services...');
     const inPersonResponse = await api.get('/services?filters[category][$eq]=in-person&sort=displayOrder:asc');
-    console.log('✅ In-person services response:', inPersonResponse.data);
+    ('✅ In-person services response:', inPersonResponse.data);
     
     // Test online services  
-    console.log('📡 Testing online services...');
+    ('📡 Testing online services...');
     const onlineResponse = await api.get('/services?filters[category][$eq]=online&sort=displayOrder:asc');
-    console.log('✅ Online services response:', onlineResponse.data);
+    ('✅ Online services response:', onlineResponse.data);
     
     // Test data structure
-    console.log('📊 In-person services count:', inPersonResponse.data?.data?.length || 0);
-    console.log('📊 Online services count:', onlineResponse.data?.data?.length || 0);
+    ('📊 In-person services count:', inPersonResponse.data?.data?.length || 0);
+    ('📊 Online services count:', onlineResponse.data?.data?.length || 0);
     
     // Alert with results
     const inPersonCount = inPersonResponse.data?.data?.length || 0;
@@ -289,8 +289,8 @@ export const doctorAPI = {
   create: (data) => api.post('/doctors', { data }),
   update: (id, data) => api.put(`/doctors/${id}`, { data }),
   updateProfile: (id, data) => {
-    console.log('🔄 Doctor API updateProfile called with:', { id, data });
-    console.log('🌐 Making request to:', `${API_URL}/doctors/${id}`);
+    ('🔄 Doctor API updateProfile called with:', { id, data });
+    ('🌐 Making request to:', `${API_URL}/doctors/${id}`);
     return api.put(`/doctors/${id}`, { data });
   }, // Convenience method for profile updates
   delete: (id) => api.delete(`/doctors/${id}`),
@@ -305,7 +305,7 @@ export const authAPI = {
   // New unified login function using the backend auth endpoint
   login: async (email, password) => {
     try {
-      console.log('� Starting login process for:', email);
+      ('� Starting login process for:', email);
       
       // No longer need to handle admin login separately - the backend handles it now
       // Let all login attempts go through the API
@@ -316,7 +316,7 @@ export const authAPI = {
         password
       });
       
-      console.log('✅ Login successful:', response.data);
+      ('✅ Login successful:', response.data);
       
       // Ensure the response has the correct structure
       const result = {
@@ -372,14 +372,14 @@ export const authAPI = {
   // New unified register function
   register: async (type, userData) => {
     try {
-      console.log('� Starting registration process for:', userData.email, 'as', type);
+      ('� Starting registration process for:', userData.email, 'as', type);
       
       const response = await api.post('/auth/register', {
         type,
         ...userData
       });
       
-      console.log('✅ Registration successful:', response.data);
+      ('✅ Registration successful:', response.data);
       return response.data;
       
     } catch (error) {
@@ -406,12 +406,12 @@ export const authAPI = {
 
   // Legacy functions kept for backward compatibility (but updated to use new auth)
   findDoctorByEmail: async (email) => {
-    console.log('�‍⚕️ Checking doctor by email:', email);
+    ('�‍⚕️ Checking doctor by email:', email);
     try {
       const response = await api.get(`/doctors?filters[email][$eq]=${email}`);
-      console.log('👨‍⚕️ Doctor API response:', response.data);
+      ('👨‍⚕️ Doctor API response:', response.data);
       const result = response.data.data.length > 0 ? { user: response.data.data[0], role: 'doctor' } : null;
-      console.log('👨‍⚕️ Doctor result:', result);
+      ('👨‍⚕️ Doctor result:', result);
       return result;
     } catch (error) {
       console.error('❌ Error checking doctor:', error);
@@ -420,12 +420,12 @@ export const authAPI = {
   },
   
   findBusinessByEmail: async (email) => {
-    console.log('🏢 Checking business by email:', email);
+    ('🏢 Checking business by email:', email);
     try {
       const response = await api.get(`/businesses?filters[email][$eq]=${email}`);
-      console.log('🏢 Business API response:', response.data);
+      ('🏢 Business API response:', response.data);
       const result = response.data.data.length > 0 ? { user: response.data.data[0], role: 'business' } : null;
-      console.log('🏢 Business result:', result);
+      ('🏢 Business result:', result);
       return result;
     } catch (error) {
       console.error('❌ Error checking business:', error);
@@ -488,42 +488,42 @@ export const serviceRequestAPI = {
 // Service API calls
 export const serviceAPI = {
   getAll: () => {
-    console.log('🔍 Fetching all services...');
+    ('🔍 Fetching all services...');
     return api.get('/services?populate[doctors][fields][0]=id&populate[doctors][fields][1]=firstName&populate[doctors][fields][2]=lastName&sort=category:asc,displayOrder:asc,name:asc');
   },
   getById: (id) => {
-    console.log('🔍 Fetching service by ID:', id);
+    ('🔍 Fetching service by ID:', id);
     return api.get(`/services/${id}?populate=*`);
   },
   create: (data) => {
-    console.log('🆕 Creating new service with data:', data);
+    ('🆕 Creating new service with data:', data);
     const payload = { data: { ...data } };
-    console.log('🆕 Create payload:', payload);
+    ('🆕 Create payload:', payload);
     return api.post('/services', payload);
   },
   update: (id, data) => {
     // Clean the ID to ensure it's just the ID without any URL fragments
     const cleanId = typeof id === 'string' ? id.split(':')[0].split('/').pop() : id;
-    console.log('🔄 Service update - Original ID:', id);
-    console.log('🔄 Service update - Clean ID:', cleanId);
-    console.log('🔄 Service update - Data:', data);
+    ('🔄 Service update - Original ID:', id);
+    ('🔄 Service update - Clean ID:', cleanId);
+    ('🔄 Service update - Data:', data);
     
     const payload = { data: { ...data } };
-    console.log('🔄 Update payload:', payload);
-    console.log('🔄 Full URL will be:', `/services/${cleanId}`);
+    ('🔄 Update payload:', payload);
+    ('🔄 Full URL will be:', `/services/${cleanId}`);
     
     return api.put(`/services/${cleanId}`, payload);
   },
   delete: (id) => {
     // Clean the ID to ensure it's just the ID without any URL fragments
     const cleanId = typeof id === 'string' ? id.split(':')[0].split('/').pop() : id;
-    console.log('🗑️ Service delete - Original ID:', id);
-    console.log('🗑️ Service delete - Clean ID:', cleanId);
+    ('🗑️ Service delete - Original ID:', id);
+    ('🗑️ Service delete - Clean ID:', cleanId);
     
     return api.delete(`/services/${cleanId}`);
   },
   getByCategory: (category) => {
-    console.log('🔍 Fetching services by category:', category);
+    ('🔍 Fetching services by category:', category);
     return publicAPI.get(`/services?filters[category][$eq]=${category}&sort=displayOrder:asc`);
   },
   getDoctorsByService: async (serviceId, params) => {
@@ -531,9 +531,9 @@ export const serviceAPI = {
       // Get all doctors with their services populated
       const response = await api.get('/doctors?populate=services&filters[isAvailable][$eq]=true&filters[isVerified][$eq]=true');
       
-      console.log('🔍 Raw response from doctors API:', response);
-      console.log('🔍 Response data structure:', response.data);
-      console.log('🔍 Is response.data an array?', Array.isArray(response.data));
+      ('🔍 Raw response from doctors API:', response);
+      ('🔍 Response data structure:', response.data);
+      ('🔍 Is response.data an array?', Array.isArray(response.data));
       
       // Handle different response structures
       let doctors = response.data;
@@ -549,18 +549,18 @@ export const serviceAPI = {
         return { data: [] };
       }
       
-      console.log(`🔍 Processing ${doctors.length} doctors for service ID: ${serviceId}`);
+      (`🔍 Processing ${doctors.length} doctors for service ID: ${serviceId}`);
       
       // Filter doctors who have the specified service
       const doctorsWithService = doctors.filter(doctor => {
         const hasService = doctor.services && doctor.services.some(service => service.id == serviceId);
         if (hasService) {
-          console.log(`✅ Doctor ${doctor.firstName} ${doctor.lastName} offers service ${serviceId}`);
+          (`✅ Doctor ${doctor.firstName} ${doctor.lastName} offers service ${serviceId}`);
         }
         return hasService;
       });
       
-      console.log(`🔍 Found ${doctorsWithService.length} doctors with service ${serviceId}`);
+      (`🔍 Found ${doctorsWithService.length} doctors with service ${serviceId}`);
       
       return { data: doctorsWithService };
     } catch (error) {
@@ -576,7 +576,7 @@ export const serviceAPI = {
       // Get the specific service with its doctors populated
       const response = await api.get(`/services/${serviceId}?populate=doctors`);
       
-      console.log('🔍 Service response:', response);
+      ('🔍 Service response:', response);
       
       if (response.data?.doctors) {
         // Filter only available and verified doctors
@@ -584,7 +584,7 @@ export const serviceAPI = {
           doctor.isAvailable && doctor.isVerified
         );
         
-        console.log(`🔍 Found ${availableDoctors.length} available doctors for service ${serviceId}`);
+        (`🔍 Found ${availableDoctors.length} available doctors for service ${serviceId}`);
         return { data: availableDoctors };
       }
       
@@ -624,6 +624,12 @@ export const systemSettingsAPI = {
   update: (id, data) => api.put(`/system-settings/${id}`, { data }),
   updateByKey: (key, data) => api.put(`/system-settings/key/${key}`, data),
   delete: (id) => api.delete(`/system-settings/${id}`),
+};
+
+// Admin API calls
+export const adminAPI = {
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export default api;

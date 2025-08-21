@@ -30,7 +30,7 @@ export const SystemSettingsProvider = ({ children }) => {
   const fetchPublicSettings = async () => {
     try {
       setLoading(true);
-      console.log('🔧 Fetching public system settings...');
+      ('🔧 Fetching public system settings...');
       
       const response = await systemSettingsAPI.getPublicSettings();
       const fetchedSettings = response.data?.data || {};
@@ -38,12 +38,12 @@ export const SystemSettingsProvider = ({ children }) => {
       // Merge with defaults to ensure we always have critical values
       const mergedSettings = { ...defaultSettings, ...fetchedSettings };
       
-      console.log('⚙️ Public settings loaded:', mergedSettings);
+      ('⚙️ Public settings loaded:', mergedSettings);
       setSettings(mergedSettings);
       setError(null);
     } catch (error) {
       console.error('❌ Error fetching public settings:', error);
-      console.log('🔄 Using default settings as fallback');
+      ('🔄 Using default settings as fallback');
       
       // Use default settings as fallback
       setSettings(defaultSettings);

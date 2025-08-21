@@ -41,7 +41,7 @@ export default function DoctorEarnings() {
     const servicePrice = request.servicePrice || request.attributes?.servicePrice;
     const serviceType = request.serviceType || request.attributes?.serviceType;
     
-    console.log('🔍 [EARNINGS] Calculating earnings for request:', {
+    ('🔍 [EARNINGS] Calculating earnings for request:', {
       requestId: request.id,
       serviceType: serviceType,
       directServicePrice: request.servicePrice,
@@ -54,28 +54,28 @@ export default function DoctorEarnings() {
     
     // First priority: Check if request already has service price stored (same as dashboard)
     if (servicePrice && parseFloat(servicePrice) > 0) {
-      console.log('💰 [EARNINGS] Using stored servicePrice:', servicePrice);
+      ('💰 [EARNINGS] Using stored servicePrice:', servicePrice);
       return parseFloat(servicePrice);
     } else {
-      console.log('❌ [EARNINGS] NO servicePrice found in request! Will attempt service lookup...');
+      ('❌ [EARNINGS] NO servicePrice found in request! Will attempt service lookup...');
     }
     
     // If services haven't loaded yet, return 0 and let it recalculate when services load
     if (availableServices.length === 0) {
-      console.log('⏳ [EARNINGS] Services not loaded yet, returning 0');
+      ('⏳ [EARNINGS] Services not loaded yet, returning 0');
       return 0;
     }
     
-    console.log('🔍 [EARNINGS] SEARCHING for service match for:', serviceType);
+    ('🔍 [EARNINGS] SEARCHING for service match for:', serviceType);
 
     // Second priority: Try exact service name match
     let service = availableServices.find(s => s.name === serviceType);
-    console.log('🎯 [EARNINGS] Found service (exact match):', service);
+    ('🎯 [EARNINGS] Found service (exact match):', service);
     
     // Third priority: Try case-insensitive match
     if (!service) {
       service = availableServices.find(s => s.name?.toLowerCase() === serviceType?.toLowerCase());
-      console.log('🎯 [EARNINGS] Found service (case-insensitive match):', service);
+      ('🎯 [EARNINGS] Found service (case-insensitive match):', service);
     }
     
     // Fourth priority: Try partial match (contains)
@@ -84,7 +84,7 @@ export default function DoctorEarnings() {
         s.name?.toLowerCase().includes(serviceType?.toLowerCase()) ||
         serviceType?.toLowerCase().includes(s.name?.toLowerCase())
       );
-      console.log('🎯 [EARNINGS] Found service (partial match):', service);
+      ('🎯 [EARNINGS] Found service (partial match):', service);
     }
     
     // Fifth priority: Special handling for common service types (same as dashboard)
@@ -94,7 +94,7 @@ export default function DoctorEarnings() {
         s.name?.toLowerCase().includes('consultation') ||
         s.category?.toLowerCase().includes('online')
       );
-      console.log('🎯 [EARNINGS] Found service (online consultation fallback):', service);
+      ('🎯 [EARNINGS] Found service (online consultation fallback):', service);
     }
     
     // Fourth priority: Try partial match (contains)
@@ -103,7 +103,7 @@ export default function DoctorEarnings() {
         s.name?.toLowerCase().includes(serviceType?.toLowerCase()) ||
         serviceType?.toLowerCase().includes(s.name?.toLowerCase())
       );
-      console.log('🎯 [EARNINGS] Found service (partial match):', service);
+      ('🎯 [EARNINGS] Found service (partial match):', service);
     }
     
     // Fifth priority: Try to find any service that might match the service type
@@ -116,7 +116,7 @@ export default function DoctorEarnings() {
           s.name?.toLowerCase().includes('consultation') ||
           s.category?.toLowerCase().includes('online')
         );
-        console.log('🎯 [EARNINGS] Found service (online consultation fallback):', service);
+        ('🎯 [EARNINGS] Found service (online consultation fallback):', service);
       }
       else if (lowerServiceType.includes('prescription')) {
         service = availableServices.find(s => 
@@ -124,30 +124,30 @@ export default function DoctorEarnings() {
           s.name?.toLowerCase().includes('private') ||
           s.category?.toLowerCase().includes('prescription')
         );
-        console.log('🎯 [EARNINGS] Found service (prescription fallback):', service);
+        ('🎯 [EARNINGS] Found service (prescription fallback):', service);
       }
       else if (lowerServiceType.includes('consultation') || lowerServiceType.includes('appointment')) {
         service = availableServices.find(s => 
           s.name?.toLowerCase().includes('consultation') || 
           s.name?.toLowerCase().includes('appointment')
         );
-        console.log('🎯 [EARNINGS] Found service (consultation fallback):', service);
+        ('🎯 [EARNINGS] Found service (consultation fallback):', service);
       }
     }
     
     const finalServicePrice = service ? parseFloat(service.price) : 0;
-    console.log('💵 [EARNINGS] Final calculated price:', finalServicePrice);
+    ('💵 [EARNINGS] Final calculated price:', finalServicePrice);
     
     // Fallback: If still no price found and it's an online consultation, use a realistic default price
     if (finalServicePrice === 0 && serviceType?.toLowerCase().includes('online consultation')) {
-      console.log('🚨 [EARNINGS] Using realistic fallback price for online consultation: £7.00');
+      ('🚨 [EARNINGS] Using realistic fallback price for online consultation: £7.00');
       return 7.00; // Realistic price for online consultations (£6.30 take-home = 90% of £7.00)
     }
     
     if (!service) {
-      console.log('⚠️ [EARNINGS] WARNING: No service match found, returning 0!');
-      console.log('🔍 [EARNINGS] Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
-      console.log('🔍 [EARNINGS] Looking for service type:', serviceType);
+      ('⚠️ [EARNINGS] WARNING: No service match found, returning 0!');
+      ('🔍 [EARNINGS] Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
+      ('🔍 [EARNINGS] Looking for service type:', serviceType);
     }
     
     return finalServicePrice; // Doctor earns the service price (excluding dynamic booking fee)
@@ -182,7 +182,7 @@ export default function DoctorEarnings() {
     
     // Only redirect if we're sure the user is not authenticated or not a doctor
     if (!isAuthenticated || user?.role !== 'doctor') {
-      console.log('🔐 Auth check failed:', { isAuthenticated, userRole: user?.role, authLoading });
+      ('🔐 Auth check failed:', { isAuthenticated, userRole: user?.role, authLoading });
       router.push('/doctor/login');
       return;
     }
@@ -192,7 +192,7 @@ export default function DoctorEarnings() {
   useEffect(() => {
     // Only fetch if we have a valid authenticated doctor user
     if (!authLoading && isAuthenticated && user?.role === 'doctor' && user?.id) {
-      console.log('✅ Fetching data for authenticated doctor:', user.id);
+      ('✅ Fetching data for authenticated doctor:', user.id);
       
       // Add a small delay to ensure authentication context is fully settled
       const timer = setTimeout(() => {
@@ -213,7 +213,7 @@ export default function DoctorEarnings() {
       
       return () => clearTimeout(timer);
     } else {
-      console.log('⏳ Waiting for authentication to complete...', {
+      ('⏳ Waiting for authentication to complete...', {
         authLoading,
         isAuthenticated,
         userRole: user?.role,
@@ -231,22 +231,22 @@ export default function DoctorEarnings() {
 
   const fetchServices = async () => {
     try {
-      console.log('🔍 [SERVICES] Starting to fetch services...');
+      ('🔍 [SERVICES] Starting to fetch services...');
       const response = await serviceAPI.getAll();
-      console.log('🔍 [SERVICES] Raw services response:', response);
-      console.log('🔍 [SERVICES] Response.data:', response.data);
-      console.log('🔍 [SERVICES] Response.data.data:', response.data?.data);
+      ('🔍 [SERVICES] Raw services response:', response);
+      ('🔍 [SERVICES] Response.data:', response.data);
+      ('🔍 [SERVICES] Response.data.data:', response.data?.data);
       
       const servicesData = response.data?.data || response.data || [];
-      console.log('🔍 [SERVICES] Final services data:', servicesData);
-      console.log('🔍 [SERVICES] Services count:', servicesData.length);
+      ('🔍 [SERVICES] Final services data:', servicesData);
+      ('🔍 [SERVICES] Services count:', servicesData.length);
       
       if (servicesData.length > 0) {
-        console.log('🔍 [SERVICES] First service example:', servicesData[0]);
+        ('🔍 [SERVICES] First service example:', servicesData[0]);
         
         // Filter only active services and format them (same as dashboard)
         const activeServices = servicesData.filter(service => service.isActive === true);
-        console.log('✅ [SERVICES] Active services:', activeServices.length, 'out of', servicesData.length, 'total');
+        ('✅ [SERVICES] Active services:', activeServices.length, 'out of', servicesData.length, 'total');
         
         // Map services to expected format (same as dashboard)
         const formattedServices = activeServices.map(service => ({
@@ -257,7 +257,7 @@ export default function DoctorEarnings() {
           duration: service.duration || service.attributes?.duration
         }));
         
-        console.log('🔍 [SERVICES] Formatted services with prices:', formattedServices.map(s => ({
+        ('🔍 [SERVICES] Formatted services with prices:', formattedServices.map(s => ({
           name: s.name,
           price: s.price,
           category: s.category
@@ -265,7 +265,7 @@ export default function DoctorEarnings() {
         
         setAvailableServices(formattedServices);
       } else {
-        console.log('⚠️ [SERVICES] No services found in response');
+        ('⚠️ [SERVICES] No services found in response');
         setAvailableServices([]);
       }
     } catch (error) {
@@ -277,16 +277,16 @@ export default function DoctorEarnings() {
 
   const fetchDoctorData = async () => {
     try {
-      console.log('🔍 Fetching doctor profile...');
+      ('🔍 Fetching doctor profile...');
       const response = await doctorAPI.getProfile();
-      console.log('✅ Doctor profile response:', response.data);
+      ('✅ Doctor profile response:', response.data);
       setDoctorData(response.data);
     } catch (error) {
       console.error('❌ Error fetching doctor data:', error);
       
       // If we get an authentication error, redirect to login
       if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('🔐 Authentication failed, redirecting to login');
+        ('🔐 Authentication failed, redirecting to login');
         localStorage.clear(); // Clear potentially invalid tokens
         router.push('/doctor/login');
       }
@@ -304,14 +304,14 @@ export default function DoctorEarnings() {
       }
       
       // Use the same method as dashboard - get requests specifically for this doctor
-      console.log('🔍 Fetching doctor requests for ID:', user.id);
+      ('🔍 Fetching doctor requests for ID:', user.id);
       const response = await serviceRequestAPI.getDoctorRequests(user.id);
       const allRequests = response.data || [];
       
-      console.log('🔍 Doctor requests response:', allRequests);
-      console.log('🧪 DETAILED REQUEST ANALYSIS:');
+      ('🔍 Doctor requests response:', allRequests);
+      ('🧪 DETAILED REQUEST ANALYSIS:');
       allRequests.forEach((request, index) => {
-        console.log(`🧪 Request ${index + 1}:`, {
+        (`🧪 Request ${index + 1}:`, {
           id: request.id,
           directServicePrice: request.servicePrice,
           attributesServicePrice: request.attributes?.servicePrice,
@@ -329,7 +329,7 @@ export default function DoctorEarnings() {
         const status = request.status || request.attributes?.status;
         const completedAt = request.completedAt || request.attributes?.completedAt;
         
-        console.log('📊 Request details:', {
+        ('📊 Request details:', {
           requestId: request.id,
           status,
           completedAt,
@@ -341,7 +341,7 @@ export default function DoctorEarnings() {
         return status === 'completed' && completedAt;
       });
 
-      console.log('✅ Filtered completed requests:', completedRequests);
+      ('✅ Filtered completed requests:', completedRequests);
 
       // Transform the data for earnings display
       const earningsData = completedRequests.map(request => {
@@ -356,7 +356,7 @@ export default function DoctorEarnings() {
         const doctorEarnings = calculateDoctorEarnings(request);
         const doctorTakeHome = calculateDoctorTakeHome(doctorEarnings);
         
-        console.log('📊 [EARNINGS] Processing request:', {
+        ('📊 [EARNINGS] Processing request:', {
           id: request.id,
           serviceType: serviceType,
           doctorEarnings,
@@ -385,29 +385,29 @@ export default function DoctorEarnings() {
         };
       });
 
-      console.log('💰 Earnings data:', earningsData);
+      ('💰 Earnings data:', earningsData);
       setEarnings(earningsData);
       setFilteredEarnings(earningsData);
       
       // Try to get backend stats first (like dashboard does)
       try {
-        console.log('📊 [BACKEND] Attempting to get stats for user ID:', user?.id);
+        ('📊 [BACKEND] Attempting to get stats for user ID:', user?.id);
         if (!user?.id) {
           throw new Error('User ID is not available for stats API call');
         }
         
         const statsResponse = await doctorAPI.getStats(user.id);
-        console.log('📊 [BACKEND] Stats response:', statsResponse);
+        ('📊 [BACKEND] Stats response:', statsResponse);
         if (statsResponse.data?.data) {
-          console.log('📊 [BACKEND] Using backend stats:', statsResponse.data.data);
+          ('📊 [BACKEND] Using backend stats:', statsResponse.data.data);
           
           // Calculate monthly stats from frontend data for breakdown  
           const frontendStats = calculateStatsReturn(earningsData);
           
-          console.log('📊 [COMPARISON] Backend total earnings:', statsResponse.data.data.totalEarnings);
-          console.log('📊 [COMPARISON] Frontend total from earnings data:', earningsData.reduce((sum, e) => sum + e.amount, 0));
-          console.log('📊 [COMPARISON] This month calculated:', frontendStats.thisMonth);
-          console.log('📊 [COMPARISON] Number of earnings entries:', earningsData.length);
+          ('📊 [COMPARISON] Backend total earnings:', statsResponse.data.data.totalEarnings);
+          ('📊 [COMPARISON] Frontend total from earnings data:', earningsData.reduce((sum, e) => sum + e.amount, 0));
+          ('📊 [COMPARISON] This month calculated:', frontendStats.thisMonth);
+          ('📊 [COMPARISON] Number of earnings entries:', earningsData.length);
           
           // Use backend stats as primary source (like dashboard does) 
           setStats(prev => ({
@@ -420,7 +420,7 @@ export default function DoctorEarnings() {
             averageEarning: earningsData.length > 0 ? (statsResponse.data.data.totalEarnings || 0) / earningsData.length : 0
           }));
         } else {
-          console.log('📊 [FRONTEND] Backend stats not available, using frontend calculation');
+          ('📊 [FRONTEND] Backend stats not available, using frontend calculation');
           calculateStats(earningsData);
         }
       } catch (statsError) {
@@ -432,7 +432,7 @@ export default function DoctorEarnings() {
       
       // If we get an authentication error, redirect to login
       if (error.response?.status === 401 || error.response?.status === 403) {
-        console.log('🔐 Authentication failed during earnings fetch, redirecting to login');
+        ('🔐 Authentication failed during earnings fetch, redirecting to login');
         localStorage.clear(); // Clear potentially invalid tokens
         router.push('/doctor/login');
         return;
@@ -448,11 +448,11 @@ export default function DoctorEarnings() {
   };
 
   const calculateStats = (earningsData) => {
-    console.log('📊 [STATS] Calculating stats from earnings data:', earningsData.length, 'entries');
-    console.log('📊 [STATS] Earnings amounts:', earningsData.map(e => e.amount));
+    ('📊 [STATS] Calculating stats from earnings data:', earningsData.length, 'entries');
+    ('📊 [STATS] Earnings amounts:', earningsData.map(e => e.amount));
     
     const total = earningsData.reduce((sum, earning) => sum + earning.amount, 0);
-    console.log('📊 [STATS] Frontend calculated total:', total);
+    ('📊 [STATS] Frontend calculated total:', total);
     
     const totalRequests = earningsData.length;
     const average = totalRequests > 0 ? total / totalRequests : 0;

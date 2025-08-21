@@ -133,7 +133,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       const data = await response.json();
       
       if (response.ok) {
-        console.log('✅ Customer initialized successfully:', data.customerId);
+        ('✅ Customer initialized successfully:', data.customerId);
         setCustomerId(data.customerId);
         setInitializationStep(2);
         
@@ -270,7 +270,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
         setPaymentError(result.error.message);
       } else {
         // Payment succeeded
-        console.log('Payment succeeded:', result.paymentIntent);
+        ('Payment succeeded:', result.paymentIntent);
         
         // Save payment method if requested
         if (savePaymentMethod && result.paymentIntent.payment_method) {
@@ -302,7 +302,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
     setPaymentError(null);
 
     try {
-      console.log('💳 Starting saved card payment with:', {
+      ('💳 Starting saved card payment with:', {
         selectedPaymentMethodId,
         clientSecret,
         customerId
@@ -310,7 +310,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
       // If no client secret or it wasn't created with the selected payment method, create a new one
       if (!clientSecret) {
-        console.log('💳 Creating new payment intent for saved payment method');
+        ('💳 Creating new payment intent for saved payment method');
         await createPaymentIntentForSavedMethod();
         
         // Wait a moment for the payment intent to be created
@@ -321,20 +321,20 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       }
 
       // For saved payment methods, we need to confirm the payment intent with the saved payment method
-      console.log('💳 Confirming payment with saved payment method:', selectedPaymentMethodId);
+      ('💳 Confirming payment with saved payment method:', selectedPaymentMethodId);
       
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: selectedPaymentMethodId
       });
       
-      console.log('💳 Confirmation result:', result);
+      ('💳 Confirmation result:', result);
       
       if (result.error) {
         console.error('❌ Saved card payment failed:', result.error);
         setPaymentError(result.error.message || 'Payment failed with saved card');
       } else if (result.paymentIntent) {
         if (result.paymentIntent.status === 'succeeded') {
-          console.log('✅ Saved card payment succeeded:', result.paymentIntent);
+          ('✅ Saved card payment succeeded:', result.paymentIntent);
           const amount = (result.paymentIntent.amount || 0) / 100;
           alert(`Payment successful! Payment ID: ${result.paymentIntent.id}\nAmount: ${formatCurrency(amount)}\nStatus: ${result.paymentIntent.status}`);
           onPaymentSuccess?.(result.paymentIntent);
@@ -389,7 +389,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       }
 
       setClientSecret(data.clientSecret);
-      console.log('✅ Payment intent created for saved method:', data.clientSecret);
+      ('✅ Payment intent created for saved method:', data.clientSecret);
       
     } catch (error) {
       console.error('Error creating payment intent for saved method:', error);
@@ -399,7 +399,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
 
   const savePaymentMethodToCustomer = async (paymentMethodId) => {
     try {
-      console.log('💾 Saving payment method to customer:', { customerId, paymentMethodId });
+      ('💾 Saving payment method to customer:', { customerId, paymentMethodId });
       const response = await fetch('/api/payment-methods', {
         method: 'POST',
         headers: {
@@ -412,10 +412,10 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       });
       
       const data = await response.json();
-      console.log('💾 Save payment method response:', data);
+      ('💾 Save payment method response:', data);
       
       if (response.ok) {
-        console.log('✅ Payment method saved successfully');
+        ('✅ Payment method saved successfully');
       } else {
         console.error('❌ Failed to save payment method:', data.error);
       }

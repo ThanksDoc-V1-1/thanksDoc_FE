@@ -77,7 +77,7 @@ export default function DoctorDashboard() {
 
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
-    console.log('🔍 Doctor Dashboard - Auth state check:', {
+    ('🔍 Doctor Dashboard - Auth state check:', {
       authLoading,
       isAuthenticated,
       user: user ? { id: user.id, email: user.email, role: user.role } : null
@@ -85,7 +85,7 @@ export default function DoctorDashboard() {
 
     // Don't redirect while authentication is still loading
     if (authLoading) {
-      console.log('⏳ Auth still loading, waiting...');
+      ('⏳ Auth still loading, waiting...');
       return;
     }
 
@@ -93,20 +93,20 @@ export default function DoctorDashboard() {
     const timeoutId = setTimeout(() => {
       // Only redirect if we're sure about the authentication state (not loading)
       if (!authLoading && isAuthenticated === false) {
-        console.log('🚫 Not authenticated after delay, redirecting to doctor login');
+        ('🚫 Not authenticated after delay, redirecting to doctor login');
         window.location.href = '/doctor/login';
         return;
       }
       
       // Only check role if we have a user and are not loading
       if (!authLoading && isAuthenticated && user && user.role !== 'doctor') {
-        console.log('🚫 Not doctor role (got:', user.role, '), redirecting to home');
+        ('🚫 Not doctor role (got:', user.role, '), redirecting to home');
         window.location.href = '/';
         return;
       }
       
       if (!authLoading && isAuthenticated && user && user.role === 'doctor') {
-        console.log('✅ Doctor authenticated, loading dashboard');
+        ('✅ Doctor authenticated, loading dashboard');
       }
     }, 500); // 500ms delay to ensure auth is fully loaded
 
@@ -122,23 +122,23 @@ export default function DoctorDashboard() {
       const shouldShow = isPending && hasNotDeclined;
       
       if (req.status === 'pending') {
-        console.log(`📋 Request ${req.id}: pending=${isPending}, declined=${declinedRequests.has(req.id)}, showing=${shouldShow}`);
+        (`📋 Request ${req.id}: pending=${isPending}, declined=${declinedRequests.has(req.id)}, showing=${shouldShow}`);
       }
       
       return shouldShow;
     });
     
-    console.log(`📊 Total service requests: ${serviceRequests.length}, Pending: ${serviceRequests.filter(r => r.status === 'pending').length}, Available after filter: ${available.length}`);
-    console.log(`📊 Declined requests: ${Array.from(declinedRequests)}`);
+    (`📊 Total service requests: ${serviceRequests.length}, Pending: ${serviceRequests.filter(r => r.status === 'pending').length}, Available after filter: ${available.length}`);
+    (`📊 Declined requests: ${Array.from(declinedRequests)}`);
     
     return available;
   };
 
   useEffect(() => {
-    console.log('🏠 Dashboard useEffect - User:', user);
-    console.log('🆔 User ID:', user?.id);
-    console.log('📧 User email:', user?.email);
-    console.log('👤 Full user object:', JSON.stringify(user, null, 2));
+    ('🏠 Dashboard useEffect - User:', user);
+    ('🆔 User ID:', user?.id);
+    ('📧 User email:', user?.email);
+    ('👤 Full user object:', JSON.stringify(user, null, 2));
     
     if (user?.id) {
       fetchDoctorData();
@@ -150,13 +150,13 @@ export default function DoctorDashboard() {
 
   // Debug useEffect to monitor allServices state changes
   useEffect(() => {
-    console.log('🔍 AllServices state changed:', {
+    ('🔍 AllServices state changed:', {
       inPerson: allServices.inPerson.length,
       online: allServices.online.length,
       nhs: allServices.nhs.length
     });
-    console.log('📋 Online services:', allServices.online.map(s => s.name));
-    console.log('🏛️ NHS services:', allServices.nhs.map(s => s.name));
+    ('📋 Online services:', allServices.online.map(s => s.name));
+    ('🏛️ NHS services:', allServices.nhs.map(s => s.name));
   }, [allServices]);
 
   // Load declined requests from localStorage when user changes
@@ -167,7 +167,7 @@ export default function DoctorDashboard() {
         try {
           const declinedArray = JSON.parse(savedDeclined);
           setDeclinedRequests(new Set(declinedArray));
-          console.log('📂 Loaded declined requests from localStorage:', declinedArray);
+          ('📂 Loaded declined requests from localStorage:', declinedArray);
         } catch (error) {
           console.error('Error loading declined requests from localStorage:', error);
         }
@@ -180,7 +180,7 @@ export default function DoctorDashboard() {
     if (user?.id && declinedRequests.size > 0) {
       const declinedArray = Array.from(declinedRequests);
       localStorage.setItem(`declined_requests_${user.id}`, JSON.stringify(declinedArray));
-      console.log('💾 Saved declined requests to localStorage:', declinedArray);
+      ('💾 Saved declined requests to localStorage:', declinedArray);
     }
   }, [declinedRequests, user?.id]);
 
@@ -196,7 +196,7 @@ export default function DoctorDashboard() {
   // Helper function to calculate doctor earnings based on service pricing
   const calculateDoctorEarnings = (request) => {
     // Debug logging
-    console.log('🔍 Calculating earnings for request:', {
+    ('🔍 Calculating earnings for request:', {
       requestId: request.id,
       serviceType: request.serviceType,
       servicePrice: request.servicePrice,
@@ -206,28 +206,28 @@ export default function DoctorDashboard() {
     
     // First priority: Check if request already has service price stored
     if (request.servicePrice && parseFloat(request.servicePrice) > 0) {
-      console.log('💰 Using stored servicePrice:', request.servicePrice);
+      ('💰 Using stored servicePrice:', request.servicePrice);
       return parseFloat(request.servicePrice);
     } else {
-      console.log('❌ NO servicePrice found in request! Will attempt service lookup...');
+      ('❌ NO servicePrice found in request! Will attempt service lookup...');
     }
     
     // If services haven't loaded yet, return 0 and let it recalculate when services load
     if (availableServices.length === 0) {
-      console.log('⏳ Services not loaded yet, returning 0');
+      ('⏳ Services not loaded yet, returning 0');
       return 0;
     }
     
-    console.log('🔍 SEARCHING for service match for:', request.serviceType);
+    ('🔍 SEARCHING for service match for:', request.serviceType);
 
     // Second priority: Try exact service name match
     let service = availableServices.find(s => s.name === request.serviceType);
-    console.log('🎯 Found service (exact match):', service);
+    ('🎯 Found service (exact match):', service);
     
     // Third priority: Try case-insensitive match
     if (!service) {
       service = availableServices.find(s => s.name?.toLowerCase() === request.serviceType?.toLowerCase());
-      console.log('🎯 Found service (case-insensitive match):', service);
+      ('🎯 Found service (case-insensitive match):', service);
     }
     
     // Fourth priority: Try partial match (contains)
@@ -236,7 +236,7 @@ export default function DoctorDashboard() {
         s.name?.toLowerCase().includes(request.serviceType?.toLowerCase()) ||
         request.serviceType?.toLowerCase().includes(s.name?.toLowerCase())
       );
-      console.log('🎯 Found service (partial match):', service);
+      ('🎯 Found service (partial match):', service);
     }
     
     // Fifth priority: Special handling for common service types
@@ -246,22 +246,22 @@ export default function DoctorDashboard() {
         s.name?.toLowerCase().includes('consultation') ||
         s.category?.toLowerCase().includes('online')
       );
-      console.log('🎯 Found service (online consultation fallback):', service);
+      ('🎯 Found service (online consultation fallback):', service);
     }
     
     const servicePrice = service ? parseFloat(service.price) : 0; // Return 0 if service not found - should rely on stored servicePrice
-    console.log('💵 Final calculated price:', servicePrice);
+    ('💵 Final calculated price:', servicePrice);
     
     // Fallback: If still no price found and it's an online consultation, use a realistic default price
     if (servicePrice === 0 && request.serviceType?.toLowerCase().includes('online consultation')) {
-      console.log('🚨 Using realistic fallback price for online consultation: £7.00');
+      ('🚨 Using realistic fallback price for online consultation: £7.00');
       return 7.00; // Realistic price for online consultations (£6.30 take-home = 90% of £7.00)
     }
     
     if (!service) {
-      console.log('⚠️ WARNING: No service match found, returning 0!');
-      console.log('🔍 Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
-      console.log('🔍 Looking for service type:', request.serviceType);
+      ('⚠️ WARNING: No service match found, returning 0!');
+      ('🔍 Available services:', availableServices.map(s => ({ name: s.name, price: s.price })));
+      ('🔍 Looking for service type:', request.serviceType);
     }
     
     return servicePrice; // Doctor earns the service price (excluding dynamic booking fee)
@@ -288,7 +288,7 @@ export default function DoctorDashboard() {
   // Force re-calculation when services are loaded
   useEffect(() => {
     if (availableServices.length > 0) {
-      console.log('🔄 Services loaded, triggering re-render for price calculations');
+      ('🔄 Services loaded, triggering re-render for price calculations');
       // Force a state update to trigger re-render of components using calculateDoctorEarnings
       setStats(prev => ({ ...prev }));
     }
@@ -298,15 +298,15 @@ export default function DoctorDashboard() {
   useEffect(() => {
     if (!autoRefresh || !user?.id) return;
     
-    console.log('🔄 Setting up auto-refresh for doctor dashboard');
+    ('🔄 Setting up auto-refresh for doctor dashboard');
     
     const refreshInterval = setInterval(async () => {
       if (refreshing) {
-        console.log('⏭️ Skipping refresh - already in progress');
+        ('⏭️ Skipping refresh - already in progress');
         return;
       }
       
-      console.log('🔄 Auto-refreshing doctor dashboard data');
+      ('🔄 Auto-refreshing doctor dashboard data');
       setRefreshing(true);
       
       try {
@@ -323,36 +323,36 @@ export default function DoctorDashboard() {
     }, AUTO_REFRESH_INTERVAL);
     
     return () => {
-      console.log('🛑 Clearing auto-refresh interval');
+      ('🛑 Clearing auto-refresh interval');
       clearInterval(refreshInterval);
     };
   }, [autoRefresh, user?.id, refreshing]);
 
   const fetchServices = async () => {
     try {
-      console.log('🔍 [DOCTOR] Fetching available services from backend');
+      ('🔍 [DOCTOR] Fetching available services from backend');
       
       // Fetch all services sorted by category and display order, then filter active ones on frontend
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const data = await response.json();
-      console.log('📊 [DOCTOR] Raw API response:', data);
-      console.log('📊 [DOCTOR] Response status:', response.status);
+      ('📊 [DOCTOR] Raw API response:', data);
+      ('📊 [DOCTOR] Response status:', response.status);
       
       let services = [];
       if (data && Array.isArray(data.data)) {
         services = data.data;
-        console.log('📊 [DOCTOR] Using data.data array:', services.length, 'services');
+        ('📊 [DOCTOR] Using data.data array:', services.length, 'services');
       } else if (Array.isArray(data)) {
         services = data;
-        console.log('📊 [DOCTOR] Using data array:', services.length, 'services');
+        ('📊 [DOCTOR] Using data array:', services.length, 'services');
       } else {
-        console.log('❌ [DOCTOR] Unexpected API response format:', data);
+        ('❌ [DOCTOR] Unexpected API response format:', data);
       }
       
       if (services.length > 0) {
         // Filter only active services
         const activeServices = services.filter(service => service.isActive === true);
-        console.log('✅ [DOCTOR] Successfully fetched services:', activeServices.length, 'active out of', services.length, 'total');
+        ('✅ [DOCTOR] Successfully fetched services:', activeServices.length, 'active out of', services.length, 'total');
         
         // Map services to expected format
         const formattedServices = activeServices.map(service => ({
@@ -365,7 +365,7 @@ export default function DoctorDashboard() {
         
         setAvailableServices(formattedServices);
       } else {
-        console.log('⚠️ [DOCTOR] No services found in response');
+        ('⚠️ [DOCTOR] No services found in response');
         setAvailableServices([]);
       }
     } catch (error) {
@@ -377,40 +377,40 @@ export default function DoctorDashboard() {
 
   const fetchDoctorData = async () => {
     try {
-      console.log('🔍 Fetching doctor data for ID:', user.id);
-      console.log('🔍 User object keys:', Object.keys(user));
-      console.log('🔍 User ID type:', typeof user.id);
-      console.log('🔍 User ID value:', JSON.stringify(user.id));
+      ('🔍 Fetching doctor data for ID:', user.id);
+      ('🔍 User object keys:', Object.keys(user));
+      ('🔍 User ID type:', typeof user.id);
+      ('🔍 User ID value:', JSON.stringify(user.id));
       
       const response = await doctorAPI.getById(user.id);
-      console.log('📡 Doctor API response:', response);
+      ('📡 Doctor API response:', response);
       
       if (response.data?.data) {
         const doctor = response.data.data;
-        console.log('✅ Doctor data received:', doctor);
-        console.log('👤 Doctor ID from backend:', doctor.id);
-        console.log('📧 Doctor email from backend:', doctor.email);
-        console.log('🔧 Doctor services from backend:', doctor.services);
-        console.log('🔧 Services type:', typeof doctor.services);
-        console.log('🔧 Services length:', doctor.services?.length);
+        ('✅ Doctor data received:', doctor);
+        ('👤 Doctor ID from backend:', doctor.id);
+        ('📧 Doctor email from backend:', doctor.email);
+        ('🔧 Doctor services from backend:', doctor.services);
+        ('🔧 Services type:', typeof doctor.services);
+        ('🔧 Services length:', doctor.services?.length);
         setDoctorData(doctor);
         setIsAvailable(doctor.isAvailable || false);
         
         // Load doctor's services
         if (doctor.services) {
-          console.log('✅ Setting doctor services:', doctor.services);
+          ('✅ Setting doctor services:', doctor.services);
           setDoctorServices(doctor.services);
         } else {
-          console.log('⚠️ No services found in doctor data');
+          ('⚠️ No services found in doctor data');
         }
       } else {
-        console.log('⚠️ No doctor data in response, falling back to user data');
+        ('⚠️ No doctor data in response, falling back to user data');
         setDoctorData(user);
       }
     } catch (error) {
       console.error('❌ Error fetching doctor data:', error);
       console.error('❌ Error details:', error.response?.data);
-      console.log('🔄 Falling back to user data from auth context');
+      ('🔄 Falling back to user data from auth context');
       // Fallback to user data from auth context
       setDoctorData(user);
     }
@@ -418,7 +418,7 @@ export default function DoctorDashboard() {
 
   const fetchNearbyRequests = async () => {
     if (fetchingNearby) {
-      console.log('⏭️ Skipping fetchNearbyRequests - already in progress');
+      ('⏭️ Skipping fetchNearbyRequests - already in progress');
       return;
     }
     
@@ -427,9 +427,9 @@ export default function DoctorDashboard() {
       // Get available requests for this specific doctor (unassigned or assigned to them)
       const response = await serviceRequestAPI.getAvailableRequests(user.id);
       const availableRequests = response.data || [];
-      console.log('🔍 Available requests:', availableRequests);
-      console.log('📊 Request statuses:', availableRequests.map(req => req.status));
-      console.log('💰 Service prices in requests:', availableRequests.map(req => ({ 
+      ('🔍 Available requests:', availableRequests);
+      ('📊 Request statuses:', availableRequests.map(req => req.status));
+      ('💰 Service prices in requests:', availableRequests.map(req => ({ 
         id: req.id, 
         serviceType: req.serviceType, 
         servicePrice: req.servicePrice,
@@ -453,7 +453,7 @@ export default function DoctorDashboard() {
 
   const fetchMyRequests = async () => {
     if (fetchingMyRequests) {
-      console.log('⏭️ Skipping fetchMyRequests - already in progress');
+      ('⏭️ Skipping fetchMyRequests - already in progress');
       return;
     }
     
@@ -461,9 +461,9 @@ export default function DoctorDashboard() {
     try {
       const response = await serviceRequestAPI.getDoctorRequests(user.id);
       const doctorRequests = response.data || [];
-      console.log('👨‍⚕️ Doctor requests:', doctorRequests);
-      console.log('📊 Doctor request statuses:', doctorRequests.map(req => req.status));
-      console.log('💰 Service prices in doctor requests:', doctorRequests.map(req => ({ 
+      ('👨‍⚕️ Doctor requests:', doctorRequests);
+      ('📊 Doctor request statuses:', doctorRequests.map(req => req.status));
+      ('💰 Service prices in doctor requests:', doctorRequests.map(req => ({ 
         id: req.id, 
         serviceType: req.serviceType, 
         servicePrice: req.servicePrice,
@@ -474,9 +474,9 @@ export default function DoctorDashboard() {
       // Also fetch stats from backend
       try {
         const statsResponse = await doctorAPI.getStats(user.id);
-        console.log('📊 [DASHBOARD] Backend stats response:', statsResponse);
+        ('📊 [DASHBOARD] Backend stats response:', statsResponse);
         if (statsResponse.data?.data) {
-          console.log('📊 [DASHBOARD] Using backend stats:', statsResponse.data.data);
+          ('📊 [DASHBOARD] Using backend stats:', statsResponse.data.data);
           setStats(prev => ({
             ...prev,
             ...statsResponse.data.data
@@ -486,7 +486,7 @@ export default function DoctorDashboard() {
         console.error('📊 [DASHBOARD] Error fetching stats from backend, using fallback calculation:', statsError);
         // Fallback to calculating stats from available and completed requests
         const totalEarnings = completedRequests.reduce((sum, req) => sum + calculateDoctorTakeHome(calculateDoctorEarnings(req)), 0);
-        console.log('📊 [DASHBOARD] Frontend calculated total earnings:', totalEarnings);
+        ('📊 [DASHBOARD] Frontend calculated total earnings:', totalEarnings);
         
         // We'll count accepted requests from serviceRequests
         const acceptedRequests = serviceRequests.filter(req => req.status === 'accepted' && req.doctor?.id === user.id);
@@ -511,7 +511,7 @@ export default function DoctorDashboard() {
       const response = await serviceRequestAPI.acceptRequest(requestId, user.id);
       if (response.data) {
         alert('Service request accepted successfully!');
-        console.log('🔄 Manually refreshing after accepting request');
+        ('🔄 Manually refreshing after accepting request');
         await fetchNearbyRequests();
         await fetchMyRequests();
       }
@@ -527,28 +527,28 @@ export default function DoctorDashboard() {
     const reason = prompt('Please provide a reason for rejecting this request (optional):');
     if (reason === null) return; // User cancelled
 
-    console.log('🚫 Starting to reject request:', requestId);
-    console.log('📊 Before reject - declinedRequests:', Array.from(declinedRequests));
+    ('🚫 Starting to reject request:', requestId);
+    ('📊 Before reject - declinedRequests:', Array.from(declinedRequests));
 
     setActionLoading(requestId);
     try {
       const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
       if (response.data) {
         // Add the declined request to local state so it disappears from this doctor's view
-        console.log('✅ API call successful, adding to declined requests');
+        ('✅ API call successful, adding to declined requests');
         setDeclinedRequests(prev => {
           const newSet = new Set([...prev, requestId]);
-          console.log('📊 New declined requests set:', Array.from(newSet));
+          ('📊 New declined requests set:', Array.from(newSet));
           // Save to localStorage
           localStorage.setItem('declinedRequests', JSON.stringify(Array.from(newSet)));
-          console.log('💾 Saved declined requests to localStorage');
+          ('💾 Saved declined requests to localStorage');
           return newSet;
         });
         
         alert('Service request rejected successfully!');
-        console.log('🔄 Request declined locally - no API refresh needed');
+        ('🔄 Request declined locally - no API refresh needed');
         
-        console.log('📊 After decline - available requests:', getAvailablePendingRequests().length);
+        ('📊 After decline - available requests:', getAvailablePendingRequests().length);
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
@@ -572,10 +572,10 @@ export default function DoctorDashboard() {
       return;
     }
     
-    console.log('🩺 Request to complete:', JSON.stringify(request, null, 2));
-    console.log('🩺 Current request status:', request.status);
-    console.log('🩺 Request ID:', requestId);
-    console.log('🩺 Doctor ID:', request.doctor?.id);
+    ('🩺 Request to complete:', JSON.stringify(request, null, 2));
+    ('🩺 Current request status:', request.status);
+    ('🩺 Request ID:', requestId);
+    ('🩺 Doctor ID:', request.doctor?.id);
     
     // Check if the request is in the correct state to be completed
     if (request.status !== 'accepted' && request.status !== 'in_progress') {
@@ -590,10 +590,10 @@ export default function DoctorDashboard() {
       
       if (freshRequest && (freshRequest.status !== 'accepted' && freshRequest.status !== 'in_progress')) {
         alert(`Cannot complete request with current status: ${freshRequest.status}. The request must be in 'accepted' or 'in_progress' state.`);
-        console.log('❌ Request completion failed - incorrect status after refresh:', freshRequest.status);
+        ('❌ Request completion failed - incorrect status after refresh:', freshRequest.status);
         return;
       }
-      console.log('✅ Fresh request status verified:', freshRequest?.status);
+      ('✅ Fresh request status verified:', freshRequest?.status);
     } catch (error) {
       console.error('❌ Error fetching fresh request data:', error);
       // Continue anyway as we already have the request data
@@ -618,16 +618,16 @@ export default function DoctorDashboard() {
     setActionLoading(completionRequest.id);
     
     try {
-      console.log('🚀 Sending complete request to API for ID:', completionRequest.id);
+      ('🚀 Sending complete request to API for ID:', completionRequest.id);
       const response = await serviceRequestAPI.completeRequest(completionRequest.id, completionNotes);
-      console.log('✅ Complete request API response:', response);
+      ('✅ Complete request API response:', response);
       
       if (response.data) {
         // Show a single success notification
         alert(`Service completed successfully! Expected payment: ${formatCurrency(completionAmount)}`);
         
         // Refresh data immediately to update the UI, regardless of auto-refresh setting
-        console.log('🔄 Manually refreshing data after successful completion');
+        ('🔄 Manually refreshing data after successful completion');
         await fetchNearbyRequests();
         await fetchMyRequests();
       }
@@ -641,7 +641,7 @@ export default function DoctorDashboard() {
       alert(`Failed to complete request: ${errorMessage}\n\nPlease try again or contact support if the issue persists.`);
       
       // Log additional details that might help debug
-      console.log('📊 Current request data:', JSON.stringify(completionRequest, null, 2));
+      ('📊 Current request data:', JSON.stringify(completionRequest, null, 2));
     } finally {
       setActionLoading(null);
     }
@@ -696,8 +696,8 @@ export default function DoctorDashboard() {
     setProfileUpdateLoading(true);
 
     try {
-      console.log('🔄 Updating doctor profile for user ID:', user.id);
-      console.log('📝 Raw profile data:', editProfileData);
+      ('🔄 Updating doctor profile for user ID:', user.id);
+      ('📝 Raw profile data:', editProfileData);
       
       // Transform data to ensure proper types and field name mapping
       const transformedData = {
@@ -716,12 +716,12 @@ export default function DoctorDashboard() {
         longitude: editProfileData.longitude ? parseFloat(editProfileData.longitude) : null
       };
       
-      console.log('📝 Transformed profile data being sent:', transformedData);
+      ('📝 Transformed profile data being sent:', transformedData);
       
       // Try to update the doctor profile
       const response = await doctorAPI.updateProfile(user.id, transformedData);
       
-      console.log('✅ Profile update response:', response);
+      ('✅ Profile update response:', response);
       
       if (response.data) {
         alert('Profile updated successfully!');
@@ -734,7 +734,7 @@ export default function DoctorDashboard() {
         // Refresh doctor data from server
         await fetchDoctorData();
       } else {
-        console.log('⚠️ No data in response:', response);
+        ('⚠️ No data in response:', response);
         alert('Update completed but no confirmation received. Please refresh the page.');
       }
     } catch (error) {
@@ -909,44 +909,44 @@ export default function DoctorDashboard() {
 
   const loadAllServices = async () => {
     try {
-      console.log('🔄 Loading all services...');
+      ('🔄 Loading all services...');
       
       // Use direct fetch to get all services without populate filters
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const responseData = await response.json();
-      console.log('📊 All services response:', responseData);
+      ('📊 All services response:', responseData);
       
       const allServicesData = responseData.data || [];
-      console.log('📋 All services data:', allServicesData);
+      ('📋 All services data:', allServicesData);
       
       // Filter active services and group by category
       const activeServices = allServicesData.filter(service => service.isActive === true);
-      console.log('📋 Active services data:', activeServices.length, 'out of', allServicesData.length);
+      ('📋 Active services data:', activeServices.length, 'out of', allServicesData.length);
       
       const inPersonServices = activeServices.filter(service => service.category === 'in-person');
       const onlineServices = activeServices.filter(service => service.category === 'online');
       const nhsServices = activeServices.filter(service => service.category === 'nhs');
       
-      console.log('📍 In-person services:', inPersonServices.length);
-      console.log('💻 Online services:', onlineServices.length);
-      console.log('🏛️ NHS services:', nhsServices.length);
+      ('📍 In-person services:', inPersonServices.length);
+      ('💻 Online services:', onlineServices.length);
+      ('🏛️ NHS services:', nhsServices.length);
       
       // Debug: log online service names
-      console.log('💻 Online service names:', onlineServices.map(s => s.name));
-      console.log('🏛️ NHS service names:', nhsServices.map(s => s.name));
+      ('💻 Online service names:', onlineServices.map(s => s.name));
+      ('🏛️ NHS service names:', nhsServices.map(s => s.name));
       
-      console.log('🔄 Setting allServices state...');
+      ('🔄 Setting allServices state...');
       setAllServices({
         inPerson: inPersonServices,
         online: onlineServices,
         nhs: nhsServices
       });
-      console.log('✅ AllServices state set successfully');
+      ('✅ AllServices state set successfully');
     } catch (error) {
       console.error('Error loading all services:', error);
       // Fallback: try without authentication in case JWT is the issue
       try {
-        console.log('🔄 Retrying without JWT token...');
+        ('🔄 Retrying without JWT token...');
         const token = localStorage.getItem('jwt');
         localStorage.removeItem('jwt');
         
@@ -968,7 +968,7 @@ export default function DoctorDashboard() {
         
         // Restore token
         if (token) localStorage.setItem('jwt', token);
-        console.log('✅ Services loaded successfully without JWT');
+        ('✅ Services loaded successfully without JWT');
       } catch (fallbackError) {
         console.error('❌ Failed to load services even without JWT:', fallbackError);
       }
@@ -1121,10 +1121,10 @@ export default function DoctorDashboard() {
     doctor?.email?.split('@')[0] || 'Doctor';
   
   // For debugging - let's log what we're getting
-  console.log('👨‍⚕️ Doctor data:', doctor);
-  console.log('👤 Doctor firstName:', doctor?.firstName);
-  console.log('👤 Doctor lastName:', doctor?.lastName);
-  console.log('📝 Doctor name result:', doctorName);
+  ('👨‍⚕️ Doctor data:', doctor);
+  ('👤 Doctor firstName:', doctor?.firstName);
+  ('👤 Doctor lastName:', doctor?.lastName);
+  ('📝 Doctor name result:', doctorName);
 
   if (authLoading) {
     return (
@@ -1744,12 +1744,12 @@ export default function DoctorDashboard() {
                     {(() => {
                       const filteredOnlineServices = allServices.online
                         .filter(service => !doctorServices.find(ds => ds.id === service.id));
-                      console.log('🔍 Online Services Filtering Debug:');
-                      console.log('  Total online services:', allServices.online.length);
-                      console.log('  Doctor services count:', doctorServices.length);
-                      console.log('  Filtered online services:', filteredOnlineServices.length);
-                      console.log('  Doctor service IDs:', doctorServices.map(ds => ds.id));
-                      console.log('  Online service IDs:', allServices.online.map(s => s.id));
+                      ('🔍 Online Services Filtering Debug:');
+                      ('  Total online services:', allServices.online.length);
+                      ('  Doctor services count:', doctorServices.length);
+                      ('  Filtered online services:', filteredOnlineServices.length);
+                      ('  Doctor service IDs:', doctorServices.map(ds => ds.id));
+                      ('  Online service IDs:', allServices.online.map(s => s.id));
                       return filteredOnlineServices;
                     })()
                       .map((service) => (
@@ -1802,10 +1802,10 @@ export default function DoctorDashboard() {
                     {(() => {
                       const filteredNhsServices = allServices.nhs
                         .filter(service => !doctorServices.find(ds => ds.id === service.id));
-                      console.log('🔍 NHS Services Filtering Debug:');
-                      console.log('  Total NHS services:', allServices.nhs.length);
-                      console.log('  Filtered NHS services:', filteredNhsServices.length);
-                      console.log('  NHS service IDs:', allServices.nhs.map(s => s.id));
+                      ('🔍 NHS Services Filtering Debug:');
+                      ('  Total NHS services:', allServices.nhs.length);
+                      ('  Filtered NHS services:', filteredNhsServices.length);
+                      ('  NHS service IDs:', allServices.nhs.map(s => s.id));
                       return filteredNhsServices;
                     })()
                       .map((service) => (

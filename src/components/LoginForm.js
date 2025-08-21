@@ -24,41 +24,41 @@ export default function LoginForm() {
     setLoading(true);
     setError('');
 
-    console.log('🔐 Login attempt started');
-    console.log('📧 Email:', formData.email);
+    ('🔐 Login attempt started');
+    ('📧 Email:', formData.email);
 
     try {
       // Use the backend API to authenticate user
-      console.log('🌐 Calling authAPI.login...');
+      ('🌐 Calling authAPI.login...');
       const result = await authAPI.login(formData.email, formData.password);
       
-      console.log('✅ Login API result:', result);
+      ('✅ Login API result:', result);
       
       if (result) {
         const { user, jwt } = result;
         
-        console.log('👤 User data:', user);
-        console.log('🔑 JWT token:', jwt ? 'RECEIVED' : 'NOT RECEIVED');
+        ('👤 User data:', user);
+        ('🔑 JWT token:', jwt ? 'RECEIVED' : 'NOT RECEIVED');
         
         // Login returns the redirect URL
-        console.log('🔄 Calling login function...');
+        ('🔄 Calling login function...');
         const redirectUrl = await login(user, jwt);
         
-        console.log('🎯 Received redirect URL:', redirectUrl);
+        ('🎯 Received redirect URL:', redirectUrl);
         
         // Ensure redirect happens with a small delay to let auth state settle
         if (redirectUrl && redirectUrl !== '/') {
-          console.log('🚀 Will navigate to dashboard:', redirectUrl);
+          ('🚀 Will navigate to dashboard:', redirectUrl);
           // Add a small delay to ensure authentication state is fully set
           setTimeout(() => {
-            console.log('🚀 Navigating to dashboard now:', redirectUrl);
+            ('🚀 Navigating to dashboard now:', redirectUrl);
             window.location.href = redirectUrl;
           }, 200); // 200ms delay to ensure auth state is set
         } else {
-          console.log('⚠️ No valid redirect URL, staying on home page');
+          ('⚠️ No valid redirect URL, staying on home page');
         }
       } else {
-        console.log('❌ No result from login API');
+        ('❌ No result from login API');
         setError('Invalid email or password');
       }
     } catch (err) {
@@ -75,7 +75,7 @@ export default function LoginForm() {
       }
     } finally {
       setLoading(false);
-      console.log('🏁 Login attempt finished');
+      ('🏁 Login attempt finished');
     }
   };
 

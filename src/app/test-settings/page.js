@@ -13,18 +13,18 @@ export default function TestSystemSettings() {
   useEffect(() => {
     const testAPIs = async () => {
       try {
-        console.log('🧪 Testing system settings APIs from frontend...');
+        ('🧪 Testing system settings APIs from frontend...');
         
         // Test public settings
-        console.log('1. Testing public settings API...');
+        ('1. Testing public settings API...');
         const publicRes = await systemSettingsAPI.getPublicSettings();
-        console.log('✅ Public settings response:', publicRes);
+        ('✅ Public settings response:', publicRes);
         setPublicSettings(publicRes.data);
         
         // Test authenticated settings
-        console.log('2. Testing authenticated settings API...');
+        ('2. Testing authenticated settings API...');
         const allRes = await systemSettingsAPI.getAll();
-        console.log('✅ All settings response:', allRes);
+        ('✅ All settings response:', allRes);
         setAllSettings(allRes.data);
         
       } catch (err) {

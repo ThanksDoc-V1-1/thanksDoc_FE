@@ -49,11 +49,11 @@
     <script>
         async function testServices() {
             try {
-                console.log('🚀 Testing new service categories...');
+                ('🚀 Testing new service categories...');
                 
                 // Test basic service fetch
                 const response = await axios.get('http://localhost:1337/api/services');
-                console.log('✅ Services response:', response.data);
+                ('✅ Services response:', response.data);
                 
                 const services = response.data.data || response.data;
                 
@@ -67,7 +67,7 @@
                 const mainCategories = services.filter(s => s.serviceType === 'main').sort((a, b) => a.displayOrder - b.displayOrder);
                 const subServices = services.filter(s => s.serviceType === 'subcategory');
                 
-                console.log(`📊 Found ${mainCategories.length} main categories and ${subServices.length} subcategories`);
+                (`📊 Found ${mainCategories.length} main categories and ${subServices.length} subcategories`);
                 
                 // Display statistics
                 const statsContainer = document.getElementById('stats');
@@ -147,7 +147,7 @@
                     }
                 }
                 
-                console.log('🎉 Service categories display completed successfully!');
+                ('🎉 Service categories display completed successfully!');
                 
             } catch (error) {
                 console.error('❌ Error testing services:', error);

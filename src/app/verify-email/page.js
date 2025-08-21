@@ -37,13 +37,13 @@ function VerifyEmailContent() {
         const tokenParts = verificationToken.split('.');
         if (tokenParts.length === 3) {
           const payload = JSON.parse(atob(tokenParts[1]));
-          console.log('🔍 Token payload:', payload);
+          ('🔍 Token payload:', payload);
           if (payload.email) {
             setUserEmail(payload.email);
           }
         }
       } catch (tokenError) {
-        console.log('Could not decode token for email extraction:', tokenError);
+        ('Could not decode token for email extraction:', tokenError);
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify-email`, {
@@ -58,7 +58,7 @@ function VerifyEmailContent() {
       });
 
       const data = await response.json();
-      console.log('🔍 Verification response:', { status: response.status, data });
+      ('🔍 Verification response:', { status: response.status, data });
 
       if (response.ok) {
         setStatus('success');
@@ -89,7 +89,7 @@ function VerifyEmailContent() {
       } else {
         // Enhanced error handling for different scenarios
         const errorMessage = data.message || data.error?.message || 'Email verification failed';
-        console.log('🚫 Verification failed:', { status: response.status, errorMessage, fullData: data });
+        ('🚫 Verification failed:', { status: response.status, errorMessage, fullData: data });
         
         // Check if email is already verified - enhanced detection
         if (response.status === 409 || 
@@ -102,7 +102,7 @@ function VerifyEmailContent() {
               data.error === 'EMAIL_ALREADY_VERIFIED' ||
               data.code === 'EMAIL_ALREADY_VERIFIED'
             )) {
-          console.log('✅ Detected already verified email');
+          ('✅ Detected already verified email');
           setStatus('already_verified');
           setMessage('Your email has already been verified. You can now proceed to login.');
         } else if (response.status === 401 || response.status === 404 || 
@@ -110,19 +110,19 @@ function VerifyEmailContent() {
                    errorMessage.toLowerCase().includes('invalid token') ||
                    errorMessage.toLowerCase().includes('token not found') ||
                    errorMessage.toLowerCase().includes('token has expired')) {
-          console.log('⏰ Detected expired/invalid token - checking if already verified');
+          ('⏰ Detected expired/invalid token - checking if already verified');
           
           // For expired/invalid tokens, check if the user might already be verified
           let emailToCheck = userEmail;
           
           // If we don't have email from token, try to get it from URL or prompt user
           if (!emailToCheck) {
-            console.log('📧 No email available, attempting to get from URL or user');
+            ('📧 No email available, attempting to get from URL or user');
             emailToCheck = searchParams.get('email') || email; // Try URL parameters
           }
           
           if (emailToCheck) {
-            console.log('🔍 Checking if email is already verified:', emailToCheck);
+            ('🔍 Checking if email is already verified:', emailToCheck);
             // Try to check verification status first
             const isAlreadyVerified = await checkUserVerificationStatus(emailToCheck, userType);
             if (isAlreadyVerified) {
@@ -132,7 +132,7 @@ function VerifyEmailContent() {
             }
           } else {
             // If we can't get the email, show a more helpful message
-            console.log('❓ Cannot determine email - showing helpful expired message');
+            ('❓ Cannot determine email - showing helpful expired message');
             setStatus('expired');
             setMessage('This verification link has expired. If you believe your email is already verified, please try logging in directly.');
             return;
@@ -142,13 +142,13 @@ function VerifyEmailContent() {
           setStatus('expired');
           setMessage('This verification link has expired or is invalid. Please request a new verification email.');
         } else {
-          console.log('❌ Other verification error');
+          ('❌ Other verification error');
           setStatus('error');
           setMessage(errorMessage);
           
           // As a last resort, if we have the user's email, try to check their verification status
           if (userEmail && errorMessage.toLowerCase().includes('verification') && !errorMessage.toLowerCase().includes('expired')) {
-            console.log('🔍 Attempting to check verification status for email:', userEmail);
+            ('🔍 Attempting to check verification status for email:', userEmail);
             const isAlreadyVerified = await checkUserVerificationStatus(userEmail, userType);
             if (isAlreadyVerified) {
               setStatus('already_verified');
@@ -171,7 +171,7 @@ function VerifyEmailContent() {
         setMessage('Network error. Please check your internet connection and try again.');
       } else if (error.response) {
         // If there's a response, try to extract meaningful error info
-        console.log('🔍 Error response:', error.response);
+        ('🔍 Error response:', error.response);
         const errorData = error.response.data || {};
         const errorMessage = errorData.message || errorData.error?.message || 'Email verification failed';
         
@@ -194,7 +194,7 @@ function VerifyEmailContent() {
   // Helper function to check if a user is already verified
   const checkUserVerificationStatus = async (email, userType) => {
     try {
-      console.log('🔍 Checking verification status for:', email, 'type:', userType);
+      ('🔍 Checking verification status for:', email, 'type:', userType);
       
       // Map user types to API endpoints
       const endpointMap = {
@@ -204,11 +204,11 @@ function VerifyEmailContent() {
       
       const endpoint = endpointMap[userType];
       if (!endpoint) {
-        console.log('❌ Unknown user type:', userType);
+        ('❌ Unknown user type:', userType);
         return null;
       }
       
-      console.log('🔍 Querying endpoint:', `${process.env.NEXT_PUBLIC_API_URL}/${endpoint}`);
+      ('🔍 Querying endpoint:', `${process.env.NEXT_PUBLIC_API_URL}/${endpoint}`);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${endpoint}?filters[email][$eq]=${encodeURIComponent(email)}`, {
         method: 'GET',
         headers: {
@@ -218,22 +218,22 @@ function VerifyEmailContent() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ User query result:', data);
+        ('✅ User query result:', data);
         
         if (data.data && data.data.length > 0) {
           const user = data.data[0];
           // Check if email is verified
           return user.isEmailVerified === true;
         } else {
-          console.log('❌ No user found with email:', email);
+          ('❌ No user found with email:', email);
           return false;
         }
       } else {
-        console.log('❌ API error:', response.status);
+        ('❌ API error:', response.status);
         return null;
       }
     } catch (error) {
-      console.log('❌ Error checking verification status:', error);
+      ('❌ Error checking verification status:', error);
       return null;
     }
   };
@@ -251,7 +251,7 @@ function VerifyEmailContent() {
     setLoading(true);
     
     try {
-      console.log('🔍 Checking verification status for manually entered email:', email.trim());
+      ('🔍 Checking verification status for manually entered email:', email.trim());
       
       // Check both doctor and business collections since we don't know the user type
       const userTypes = [
@@ -265,7 +265,7 @@ function VerifyEmailContent() {
       
       for (const { type, endpoint } of userTypes) {
         try {
-          console.log(`🔍 Checking ${type} collection...`);
+          (`🔍 Checking ${type} collection...`);
           
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/${endpoint}?filters[email][$eq]=${encodeURIComponent(email.trim())}`, {
             method: 'GET',
@@ -276,7 +276,7 @@ function VerifyEmailContent() {
           
           if (response.ok) {
             const userData = await response.json();
-            console.log(`📊 ${type} data:`, userData);
+            (`📊 ${type} data:`, userData);
             
             if (userData.data && userData.data.length > 0) {
               const user = userData.data[0];
@@ -286,18 +286,18 @@ function VerifyEmailContent() {
               // Check if email is verified
               if (user.isEmailVerified === true) {
                 isVerified = true;
-                console.log(`✅ Found verified ${type}:`, user.email);
+                (`✅ Found verified ${type}:`, user.email);
                 break;
               } else {
-                console.log(`❌ Found unverified ${type}:`, user.email);
+                (`❌ Found unverified ${type}:`, user.email);
                 break; // Found user but not verified, no need to check other types
               }
             }
           } else {
-            console.log(`❌ Error checking ${type}:`, response.status);
+            (`❌ Error checking ${type}:`, response.status);
           }
         } catch (error) {
-          console.log(`❌ Error checking ${type}:`, error);
+          (`❌ Error checking ${type}:`, error);
         }
       }
       
@@ -318,7 +318,7 @@ function VerifyEmailContent() {
       }
       
     } catch (error) {
-      console.log('❌ Error during verification check:', error);
+      ('❌ Error during verification check:', error);
       alert('Unable to check verification status. Please try again later.');
     } finally {
       setLoading(false);
@@ -341,7 +341,7 @@ function VerifyEmailContent() {
 
     setIsResending(true);
     try {
-      console.log('🔄 Attempting to resend verification email for:', emailToUse, 'type:', type);
+      ('🔄 Attempting to resend verification email for:', emailToUse, 'type:', type);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/resend-verification`, {
         method: 'POST',
@@ -355,13 +355,13 @@ function VerifyEmailContent() {
       });
 
       const data = await response.json();
-      console.log('📡 Resend response:', response.status, data);
+      ('📡 Resend response:', response.status, data);
 
       if (response.ok) {
         setMessage('Verification email sent! Please check your email and click the new verification link.');
         setStatus('success');
       } else {
-        console.log('❌ Resend failed with:', data.message || data.error);
+        ('❌ Resend failed with:', data.message || data.error);
         setMessage(data.message || data.error || 'Failed to resend verification email');
         
         // If user not found or already verified, suggest checking verification status

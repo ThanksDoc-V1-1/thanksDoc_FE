@@ -132,8 +132,8 @@ export default function ReferenceFormPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('Form submission started');
-    console.log('Form data:', formData);
+    ('Form submission started');
+    ('Form data:', formData);
     
     // Validate required fields
     const requiredFields = [
@@ -149,7 +149,7 @@ export default function ReferenceFormPage() {
     ];
 
     const emptyFields = requiredFields.filter(field => !formData[field]);
-    console.log('Empty fields:', emptyFields);
+    ('Empty fields:', emptyFields);
     
     if (emptyFields.length > 0) {
       setError('Please fill in all required fields: ' + emptyFields.join(', '));

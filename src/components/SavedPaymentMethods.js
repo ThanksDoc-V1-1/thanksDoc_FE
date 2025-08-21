@@ -29,7 +29,7 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
     
     try {
       setLoading(true);
-      console.log('🔍 Fetching payment methods for customer:', customerId, retryCount > 0 ? `(retry ${retryCount})` : '');
+      ('🔍 Fetching payment methods for customer:', customerId, retryCount > 0 ? `(retry ${retryCount})` : '');
       
       // Increase timeout and add retry logic
       const controller = new AbortController();
@@ -45,11 +45,11 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
       clearTimeout(timeoutId);
       const data = await response.json();
       
-      console.log('🔍 Payment methods response:', data);
+      ('🔍 Payment methods response:', data);
       
       if (response.ok) {
         setPaymentMethods(data.paymentMethods || []);
-        console.log('✅ Payment methods loaded:', data.paymentMethods?.length || 0);
+        ('✅ Payment methods loaded:', data.paymentMethods?.length || 0);
       } else {
         console.error('Failed to fetch payment methods:', data.error);
         setPaymentMethods([]); // Clear methods on error
@@ -60,7 +60,7 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
         
         // Retry logic for timeout errors
         if (retryCount < maxRetries) {
-          console.log(`⏳ Retrying payment methods fetch (${retryCount + 1}/${maxRetries})...`);
+          (`⏳ Retrying payment methods fetch (${retryCount + 1}/${maxRetries})...`);
           setTimeout(() => {
             fetchPaymentMethods(retryCount + 1);
           }, 1000); // Wait 1 second before retry
@@ -69,7 +69,7 @@ const SavedPaymentMethods = forwardRef(function SavedPaymentMethods({
         
         setPaymentMethods([]);
         // Show user-friendly message for persistent timeouts
-        console.log('💡 Consider using "Add New Card" if saved methods don\'t load');
+        ('💡 Consider using "Add New Card" if saved methods don\'t load');
       } else {
         console.error('Error fetching payment methods:', error);
         setPaymentMethods([]);

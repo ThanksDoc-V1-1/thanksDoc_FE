@@ -14,7 +14,7 @@ export async function POST(request) {
       savePaymentMethod = false 
     } = await request.json();
 
-    console.log('🔵 Creating payment intent with:', {
+    ('🔵 Creating payment intent with:', {
       amount,
       currency,
       customerId,
@@ -64,12 +64,12 @@ export async function POST(request) {
     }
 
     // Create a PaymentIntent with the order amount and currency
-    console.log('🔵 Creating Stripe payment intent with data:', paymentIntentData);
+    ('🔵 Creating Stripe payment intent with data:', paymentIntentData);
     const paymentIntent = await stripe.paymentIntents.create(paymentIntentData, {
       idempotencyKey: idemKey, // Prevents duplicate PaymentIntents
     });
 
-    console.log('✅ Payment intent created successfully:', paymentIntent.id, 'Status:', paymentIntent.status);
+    ('✅ Payment intent created successfully:', paymentIntent.id, 'Status:', paymentIntent.status);
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,

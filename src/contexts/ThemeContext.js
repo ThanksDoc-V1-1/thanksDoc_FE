@@ -30,13 +30,13 @@ export const ThemeProvider = ({ children }) => {
     applyTheme(systemPrefersDark);
     setIsInitialized(true);
     
-    console.log(`🎨 Theme automatically set to: ${systemPrefersDark ? 'dark' : 'light'} mode (following system)`);
+    (`🎨 Theme automatically set to: ${systemPrefersDark ? 'dark' : 'light'} mode (following system)`);
 
     // Listen for system theme changes
     const handleSystemThemeChange = (e) => {
       setIsDarkMode(e.matches);
       applyTheme(e.matches);
-      console.log(`🎨 System theme changed: ${e.matches ? 'dark' : 'light'} mode`);
+      (`🎨 System theme changed: ${e.matches ? 'dark' : 'light'} mode`);
     };
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);

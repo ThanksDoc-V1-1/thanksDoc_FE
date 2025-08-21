@@ -18,13 +18,13 @@ export async function POST(request) {
       );
     }
 
-    console.log('Creating/retrieving customer for:', { email, businessId, businessName });
+    ('Creating/retrieving customer for:', { email, businessId, businessName });
 
     // Check cache first
     const cacheKey = `customer_${email}`;
     const cached = customerCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      console.log('Using cached customer:', cached.customer.id);
+      ('Using cached customer:', cached.customer.id);
       return NextResponse.json({
         customerId: cached.customer.id,
         email: cached.customer.email,
@@ -38,14 +38,14 @@ export async function POST(request) {
       limit: 1,
     });
 
-    console.log('Found existing customers:', existingCustomers.data.length);
+    ('Found existing customers:', existingCustomers.data.length);
 
     let customer;
     
     if (existingCustomers.data.length > 0) {
       // Customer exists, return existing customer
       customer = existingCustomers.data[0];
-      console.log('Found existing customer:', customer.id);
+      ('Found existing customer:', customer.id);
     } else {
       // Create new customer with optimized metadata
       customer = await stripe.customers.create({
@@ -57,7 +57,7 @@ export async function POST(request) {
           createdAt: new Date().toISOString(),
         },
       });
-      console.log('Created new customer:', customer.id);
+      ('Created new customer:', customer.id);
     }
 
     // Cache the result

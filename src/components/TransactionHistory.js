@@ -43,7 +43,7 @@ export default function TransactionHistory() {
       if (dateRange.startDate) query += `&filters[paidAt][$gte]=${dateRange.startDate}`;
       if (dateRange.endDate) query += `&filters[paidAt][$lte]=${dateRange.endDate}`;
 
-      console.log('🔍 Fetching from backend:', `${API_URL}/service-requests${query}`);
+      ('🔍 Fetching from backend:', `${API_URL}/service-requests${query}`);
 
       const response = await fetch(`${API_URL}/service-requests${query}`);
       
@@ -67,7 +67,7 @@ export default function TransactionHistory() {
               bookingFee = parseFloat(paymentDetails.serviceCharge) || 0;
               actualTotalAmount = parseFloat(paymentDetails.totalAmount) || actualTotalAmount;
               
-              console.log('💰 Parsed payment details for transaction', item.id, ':', {
+              ('💰 Parsed payment details for transaction', item.id, ':', {
                 servicePrice,
                 bookingFee,
                 totalAmount: actualTotalAmount,
@@ -82,13 +82,13 @@ export default function TransactionHistory() {
             }
           } else {
             // Fallback for older records without paymentDetails
-            console.log('📝 No paymentDetails found for transaction', item.id, ', using fallback calculation');
+            ('📝 No paymentDetails found for transaction', item.id, ', using fallback calculation');
             servicePrice = item.doctor?.hourlyRate || 12;
             bookingFee = 3; // Old fixed booking fee  
             actualTotalAmount = servicePrice + bookingFee;
           }
           
-          console.log('🔍 Raw transaction data for ID', item.id, ':', {
+          ('🔍 Raw transaction data for ID', item.id, ':', {
             paymentStatus: item.paymentStatus,
             doctorPaidAt: item.doctorPaidAt,
             isPaid: item.isPaid
@@ -141,8 +141,8 @@ export default function TransactionHistory() {
         }))
         .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending (latest first)
 
-      console.log('🔍 Individual doctor payments:', doctorPayments.length);
-      console.log('🔍 Doctor payments data:', doctorPayments.map(p => ({
+      ('🔍 Individual doctor payments:', doctorPayments.length);
+      ('🔍 Doctor payments data:', doctorPayments.map(p => ({
         id: p.id,
         doctorName: p.doctorName,
         amount: p.amount,
@@ -226,10 +226,10 @@ export default function TransactionHistory() {
       setPendingPayments(pendingPayments);
       setPaidPayments(paidPayments);
       
-      console.log('✅ Loaded transactions:', transactions.length);
-      console.log('✅ Loaded doctor payments:', doctorPayments.length);
-      console.log('✅ Loaded pending payments:', pendingPayments.length);
-      console.log('✅ Loaded paid payments:', paidPayments.length);
+      ('✅ Loaded transactions:', transactions.length);
+      ('✅ Loaded doctor payments:', doctorPayments.length);
+      ('✅ Loaded pending payments:', pendingPayments.length);
+      ('✅ Loaded paid payments:', paidPayments.length);
       
     } catch (error) {
       console.error('Error fetching transaction history:', error);
@@ -245,7 +245,7 @@ export default function TransactionHistory() {
 
   const markDoctorAsPaid = async (transactionId) => {
     try {
-      console.log('🔵 Marking transaction as paid:', transactionId);
+      ('🔵 Marking transaction as paid:', transactionId);
       
       const response = await fetch('/api/doctor-earnings', {
         method: 'POST',
@@ -258,9 +258,9 @@ export default function TransactionHistory() {
         })
       });
 
-      console.log('🔵 Response status:', response.status);
+      ('🔵 Response status:', response.status);
       const responseData = await response.json();
-      console.log('🔵 Response data:', responseData);
+      ('🔵 Response data:', responseData);
 
       if (response.ok) {
         // Update the specific transaction's status in the local state
@@ -281,7 +281,7 @@ export default function TransactionHistory() {
         
         // Refresh data from server to ensure consistency
         setTimeout(() => {
-          console.log('🔵 Refreshing data...');
+          ('🔵 Refreshing data...');
           fetchTransactionHistory();
         }, 1000);
       } else {

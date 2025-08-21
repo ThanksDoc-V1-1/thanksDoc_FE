@@ -32,8 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Check if user is logged in on app start
-    console.log('🔍 AuthContext: Checking localStorage for user data...');
-    console.log('🌍 Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
+    ('🔍 AuthContext: Checking localStorage for user data...');
+    ('🌍 Environment:', typeof window !== 'undefined' ? 'browser' : 'server');
     
     // Add delay in production to ensure localStorage is accessible
     const checkAuth = () => {
@@ -41,12 +41,12 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('user');
         const savedToken = localStorage.getItem('jwt');
         
-        console.log('💾 Saved user exists:', !!savedUser);
-        console.log('🔑 Saved token exists:', !!savedToken);
+        ('💾 Saved user exists:', !!savedUser);
+        ('🔑 Saved token exists:', !!savedToken);
         
         if (savedUser && savedToken) {
           const userData = JSON.parse(savedUser);
-          console.log('👤 Found saved user data:', userData);
+          ('👤 Found saved user data:', userData);
           
           // Validate user data structure
           if (userData && (userData.id || userData.email) && userData.role) {
@@ -57,23 +57,23 @@ export const AuthProvider = ({ children }) => {
               role: normalizedRole
             };
             
-            console.log('✅ Setting user with normalized role:', normalizedRole);
+            ('✅ Setting user with normalized role:', normalizedRole);
             setUser(normalizedUser);
             
             // Update localStorage with normalized data
             localStorage.setItem('user', JSON.stringify(normalizedUser));
           } else {
-            console.log('❌ Invalid user data, clearing storage');
+            ('❌ Invalid user data, clearing storage');
             localStorage.removeItem('user');
             localStorage.removeItem('jwt');
           }
         } else {
-          console.log('ℹ️ No saved user data found');
+          ('ℹ️ No saved user data found');
         }
       } catch (error) {
         console.error('❌ Error loading user data:', error);
         // Don't clear localStorage on errors - might be temporary
-        console.log('⚠️ Keeping existing auth data despite error');
+        ('⚠️ Keeping existing auth data despite error');
       }
       
       setLoading(false);
@@ -88,8 +88,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (userData, jwt) => {
-    console.log('🔐 Login called with:', userData);
-    console.log('🌍 Login environment:', typeof window !== 'undefined' ? 'browser' : 'server');
+    ('🔐 Login called with:', userData);
+    ('🌍 Login environment:', typeof window !== 'undefined' ? 'browser' : 'server');
 
     // Normalize role to string format
     const normalizedRole = normalizeRole(userData.role);
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       role: normalizedRole
     };
 
-    console.log('✅ Normalized user for login:', normalizedUser);
+    ('✅ Normalized user for login:', normalizedUser);
 
     // Set user state first
     setUser(normalizedUser);
@@ -107,12 +107,12 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.setItem('user', JSON.stringify(normalizedUser));
       localStorage.setItem('jwt', jwt);
-      console.log('💾 User data saved to localStorage');
+      ('💾 User data saved to localStorage');
     } catch (error) {
       console.error('❌ Error saving to localStorage:', error);
     }
 
-    console.log('✅ User logged in successfully');
+    ('✅ User logged in successfully');
 
     // Determine redirect URL but don't redirect immediately
     const dashboardUrls = {
@@ -122,14 +122,14 @@ export const AuthProvider = ({ children }) => {
     };
 
     const redirectUrl = dashboardUrls[normalizedRole] || '/';
-    console.log('🎯 Will redirect to URL:', redirectUrl);
+    ('🎯 Will redirect to URL:', redirectUrl);
 
     // Return the redirect URL so the login component can handle the navigation
     return redirectUrl;
   };
 
   const logout = () => {
-    console.log('🚪 Logging out user - clearing all data');
+    ('🚪 Logging out user - clearing all data');
 
     // Clear user state
     setUser(null);
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }) => {
       });
     }
 
-    console.log('🧹 All data cleared, redirecting to home page');
+    ('🧹 All data cleared, redirecting to home page');
 
     // Redirect directly to the home page
     window.location.href = '/';

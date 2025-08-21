@@ -99,7 +99,7 @@ export default function VideoConsultationPage({ params }) {
         status: 'in_progress'
       });
       
-      console.log('Video call started');
+      ('Video call started');
     } catch (error) {
       console.error('Error updating call start status:', error);
     }
@@ -114,7 +114,7 @@ export default function VideoConsultationPage({ params }) {
         videoCallEndedAt: new Date().toISOString()
       });
       
-      console.log('Video call ended');
+      ('Video call ended');
       
       // Redirect after a delay
       setTimeout(() => {
