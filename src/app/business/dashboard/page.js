@@ -1481,7 +1481,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
         </>
       )}
       {/* Header */}
-      <header className={`shadow-md transition-colors ${
+  <header className={`relative z-40 shadow-md transition-colors ${
         isDarkMode 
           ? 'bg-gray-900 border-b border-gray-800' 
           : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-b border-blue-200'
