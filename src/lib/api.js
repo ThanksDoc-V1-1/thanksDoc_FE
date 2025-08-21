@@ -465,7 +465,7 @@ export const serviceRequestAPI = {
   createServiceRequest: (data) => api.post('/service-requests/create', data, { timeout: 60000 }), // 1 minute timeout for service requests
   createDirectRequest: (data) => api.post('/service-requests/direct', data),
   acceptRequest: (id, doctorId) => api.put(`/service-requests/${id}/accept`, { doctorId }),
-  rejectRequest: (id, doctorId, reason) => api.put(`/service-requests/${id}/reject`, { doctorId, reason }),
+  rejectRequest: (id, doctorId, reason) => api.put(`/service-requests/${id}/doctor-decline`, { doctorId, reason }), // Updated to use doctor-decline endpoint
   completeRequest: (id, notes) => api.put(`/service-requests/${id}/complete`, { notes }),
   processPayment: (id, paymentMethod, paymentDetails, additionalData = {}) => 
     api.put(`/service-requests/${id}/payment`, { 

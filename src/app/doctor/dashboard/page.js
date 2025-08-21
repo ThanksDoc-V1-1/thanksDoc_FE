@@ -22,6 +22,7 @@ export default function DoctorDashboard() {
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // Track which request is being processed
   const [isAvailable, setIsAvailable] = useState(true);
+  const [declinedRequests, setDeclinedRequests] = useState(new Set()); // Track declined requests for this session
   const [stats, setStats] = useState({
     pendingRequests: 0,
     myRequests: 0,
@@ -113,6 +114,26 @@ export default function DoctorDashboard() {
     return () => clearTimeout(timeoutId);
   }, [authLoading, isAuthenticated, user]);
 
+  // Helper function to filter available requests (excludes requests declined by current doctor)
+  const getAvailablePendingRequests = () => {
+    const available = serviceRequests.filter(req => {
+      const isPending = req.status === 'pending';
+      const hasNotDeclined = !declinedRequests.has(req.id);
+      const shouldShow = isPending && hasNotDeclined;
+      
+      if (req.status === 'pending') {
+        console.log(`📋 Request ${req.id}: pending=${isPending}, declined=${declinedRequests.has(req.id)}, showing=${shouldShow}`);
+      }
+      
+      return shouldShow;
+    });
+    
+    console.log(`📊 Total service requests: ${serviceRequests.length}, Pending: ${serviceRequests.filter(r => r.status === 'pending').length}, Available after filter: ${available.length}`);
+    console.log(`📊 Declined requests: ${Array.from(declinedRequests)}`);
+    
+    return available;
+  };
+
   useEffect(() => {
     console.log('🏠 Dashboard useEffect - User:', user);
     console.log('🆔 User ID:', user?.id);
@@ -137,6 +158,31 @@ export default function DoctorDashboard() {
     console.log('📋 Online services:', allServices.online.map(s => s.name));
     console.log('🏛️ NHS services:', allServices.nhs.map(s => s.name));
   }, [allServices]);
+
+  // Load declined requests from localStorage when user changes
+  useEffect(() => {
+    if (user?.id) {
+      const savedDeclined = localStorage.getItem(`declined_requests_${user.id}`);
+      if (savedDeclined) {
+        try {
+          const declinedArray = JSON.parse(savedDeclined);
+          setDeclinedRequests(new Set(declinedArray));
+          console.log('📂 Loaded declined requests from localStorage:', declinedArray);
+        } catch (error) {
+          console.error('Error loading declined requests from localStorage:', error);
+        }
+      }
+    }
+  }, [user?.id]);
+
+  // Save declined requests to localStorage when they change
+  useEffect(() => {
+    if (user?.id && declinedRequests.size > 0) {
+      const declinedArray = Array.from(declinedRequests);
+      localStorage.setItem(`declined_requests_${user.id}`, JSON.stringify(declinedArray));
+      console.log('💾 Saved declined requests to localStorage:', declinedArray);
+    }
+  }, [declinedRequests, user?.id]);
 
   // Handle doctor location reverse geocoding
   useEffect(() => {
@@ -481,14 +527,28 @@ export default function DoctorDashboard() {
     const reason = prompt('Please provide a reason for rejecting this request (optional):');
     if (reason === null) return; // User cancelled
 
+    console.log('🚫 Starting to reject request:', requestId);
+    console.log('📊 Before reject - declinedRequests:', Array.from(declinedRequests));
+
     setActionLoading(requestId);
     try {
       const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
       if (response.data) {
+        // Add the declined request to local state so it disappears from this doctor's view
+        console.log('✅ API call successful, adding to declined requests');
+        setDeclinedRequests(prev => {
+          const newSet = new Set([...prev, requestId]);
+          console.log('📊 New declined requests set:', Array.from(newSet));
+          // Save to localStorage
+          localStorage.setItem('declinedRequests', JSON.stringify(Array.from(newSet)));
+          console.log('💾 Saved declined requests to localStorage');
+          return newSet;
+        });
+        
         alert('Service request rejected successfully!');
-        console.log('🔄 Manually refreshing after rejecting request');
-        await fetchNearbyRequests();
-        await fetchMyRequests();
+        console.log('🔄 Request declined locally - no API refresh needed');
+        
+        console.log('📊 After decline - available requests:', getAvailablePendingRequests().length);
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
@@ -1925,10 +1985,10 @@ export default function DoctorDashboard() {
               </div>
               
               {/* Service request notification counter */}
-              {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
+              {getAvailablePendingRequests().length > 0 && (
                 <div className="relative">
                   <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
-                    {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length}
+                    {getAvailablePendingRequests().length}
                   </span>
                   <span className="absolute animate-ping h-5 w-5 rounded-full bg-red-400 opacity-75"></span>
                 </div>
@@ -2015,10 +2075,10 @@ export default function DoctorDashboard() {
               </button>
               
               {/* Service request notification indicator */}
-              {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
+              {getAvailablePendingRequests().length > 0 && (
                 <div className="bg-red-900/30 text-red-300 rounded-md px-3 py-2 text-center">
                   <span className="font-medium">
-                    {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length} pending requests
+                    {getAvailablePendingRequests().length} pending requests
                   </span>
                 </div>
               )}
@@ -2181,7 +2241,7 @@ export default function DoctorDashboard() {
                       )}
                     </div>
                   </div>
-                  {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 0 && (
+                  {getAvailablePendingRequests().length > 0 && (
                     <div className="relative">
                       <span className="absolute -right-1 -top-1 flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -2192,7 +2252,7 @@ export default function DoctorDashboard() {
                           ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' 
                           : 'bg-yellow-600 text-white border-yellow-500'
                       }`}>
-                        🔔 {serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length} New Request{serviceRequests.filter(req => req.status === 'pending' && (!req.doctor || req.doctor.id === user.id)).length > 1 ? 's' : ''}
+                        🔔 {getAvailablePendingRequests().length} New Request{getAvailablePendingRequests().length > 1 ? 's' : ''}
                       </span>
                       </div>
                   )}
@@ -2202,14 +2262,18 @@ export default function DoctorDashboard() {
                 isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
               }`}>
                 {(() => {
-                  let filteredRequests = serviceRequests;
+                  let filteredRequests = [];
                   
                   // Apply filter based on requestFilter state
                   if (requestFilter === 'pending') {
-                    filteredRequests = serviceRequests.filter(req => req.status === 'pending');
+                    // Use the helper function to get available pending requests
+                    filteredRequests = getAvailablePendingRequests();
                   } else if (requestFilter === 'completed') {
                     // For completed requests, we should show from myRequests instead
                     filteredRequests = myRequests.filter(req => req.status === 'completed');
+                  } else {
+                    // For 'all' filter, show only available pending requests (declined ones should be hidden)
+                    filteredRequests = getAvailablePendingRequests();
                   }
                   
                   return filteredRequests.length > 0 ? (
