@@ -2467,7 +2467,7 @@ export default function AdminDashboard() {
       {/* Main Content Area */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 ml-0 md:ml-64">
         {/* Top Header */}
-        <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} border-b px-4 sm:px-6 py-4 shadow-sm`}>
+  <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} relative z-40 border-b px-4 sm:px-6 py-4 shadow-sm`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center space-x-3">
               {/* Mobile menu button */}
