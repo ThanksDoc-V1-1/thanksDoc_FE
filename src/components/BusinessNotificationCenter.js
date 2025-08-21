@@ -160,11 +160,13 @@ const BusinessNotificationCenter = ({ businessId, className = '' }) => {
 
       {/* Notifications Dropdown */}
       {showNotifications && (
-        <div className={`absolute right-0 top-full mt-2 w-screen max-w-sm sm:w-96 sm:max-w-none max-h-96 overflow-y-auto rounded-lg shadow-lg border z-50 ${
-          isDarkMode 
-            ? 'bg-gray-800 border-gray-700' 
-            : 'bg-white border-gray-200'
-        }`} style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+        <div
+          className={`fixed left-2 right-2 top-14 sm:absolute sm:top-full sm:left-auto sm:right-0 sm:w-96 rounded-lg shadow-lg border z-50 ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}
+        >
           {/* Header */}
           <div className={`px-4 py-3 border-b ${
             isDarkMode ? 'border-gray-700' : 'border-gray-200'
@@ -197,7 +199,7 @@ const BusinessNotificationCenter = ({ businessId, className = '' }) => {
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-[70vh] sm:max-h-80 overflow-y-auto">
             {loading ? (
               <div className="px-4 py-8 text-center">
                 <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
