@@ -1541,7 +1541,12 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
               
               <button
                 onClick={handleOpenRequestForm}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                disabled={!businessData?.isVerified}
+                className={`px-4 py-2 ${businessData?.isVerified 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-gray-400 cursor-not-allowed'
+                } text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow disabled:cursor-not-allowed`}
+                title={!businessData?.isVerified ? 'Business must be verified to request doctors' : 'Request a doctor consultation'}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 <span>Request Doctor</span>
@@ -1600,11 +1605,18 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
               
               <button
                 onClick={() => {
-                  handleOpenRequestForm();
-                  const mobileMenu = document.getElementById('mobile-menu-business');
-                  if (mobileMenu) mobileMenu.classList.add('hidden');
+                  if (businessData?.isVerified) {
+                    handleOpenRequestForm();
+                    const mobileMenu = document.getElementById('mobile-menu-business');
+                    if (mobileMenu) mobileMenu.classList.add('hidden');
+                  }
                 }}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow"
+                disabled={!businessData?.isVerified}
+                className={`w-full px-4 py-2 ${businessData?.isVerified 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-gray-400 cursor-not-allowed'
+                } text-white rounded-md transition-all duration-200 text-sm font-medium flex items-center space-x-2 shadow-sm hover:shadow disabled:cursor-not-allowed`}
+                title={!businessData?.isVerified ? 'Business must be verified to request doctors' : 'Request a doctor consultation'}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 <span>Request Doctor</span>
@@ -1620,6 +1632,26 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
           </div>
         </div>
       </header>
+
+      {/* Verification Banner */}
+      {businessData && !businessData.isVerified && (
+        <div className={`border-b transition-colors ${
+          isDarkMode 
+            ? 'bg-yellow-900/20 border-yellow-800 text-yellow-200' 
+            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        }`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-center space-x-2">
+              <svg className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium">
+                Your business account is pending verification. Go to Compliance documents section to submit compliance documents
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className={`border-b transition-colors ${
@@ -2565,10 +2597,11 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0)}
+                  disabled={loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) || !businessData?.isVerified}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow disabled:cursor-not-allowed"
                 >
                   {loading ? 'Processing...' : 
+                   !businessData?.isVerified ? 'Business Not Verified' :
                    (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) ? 'No Doctors Available' :
                    'Pay & Request Doctor'}
                 </button>
