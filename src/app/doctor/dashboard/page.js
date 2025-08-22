@@ -1918,7 +1918,7 @@ export default function DoctorDashboard() {
                     }`}>
                       <MapPin className={`h-3 w-3 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`} />
                       <span className={`text-xs ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                        Location not set
+                        Location not set - Edit your doctor profile to set location
                       </span>
                     </div>
                   )}
