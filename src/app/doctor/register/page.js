@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Stethoscope, ArrowLeft, MapPin, Eye, EyeOff } from 'lucide-react';
+import { Stethoscope, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { authAPI, serviceAPI } from '../../../lib/api';
-import { getCurrentLocation, validateEmail, validatePhone } from '../../../lib/utils';
+import { validateEmail, validatePhone } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import PhoneInput from '../../../components/PhoneInput';
@@ -15,7 +15,6 @@ export default function DoctorRegister() {
   const { login } = useAuth();
   const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [services, setServices] = useState({ inPerson: [], online: [], nhs: [] });
@@ -117,8 +116,6 @@ export default function DoctorRegister() {
     bio: '',
     languages: ['English'],
     certifications: [],
-    latitude: '',
-    longitude: '',
     selectedServices: [] // Add services array
   });
 
@@ -246,22 +243,6 @@ export default function DoctorRegister() {
     }));
   };
 
-  const handleGetLocation = async () => {
-    setLocationLoading(true);
-    try {
-      const location = await getCurrentLocation();
-      setFormData(prev => ({
-        ...prev,
-        latitude: location.latitude.toString(),
-        longitude: location.longitude.toString(),
-      }));
-    } catch (error) {
-      alert('Unable to get your location. Please enter coordinates manually.');
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -292,9 +273,6 @@ export default function DoctorRegister() {
       if (!formData.postcode.trim()) {
         throw new Error('Please enter your postcode');
       }
-      if (!formData.latitude || !formData.longitude) {
-        throw new Error('Please provide your location coordinates');
-      }
       if (formData.selectedServices.length === 0) {
         throw new Error('Please select at least one service you offer');
       }
@@ -308,8 +286,6 @@ export default function DoctorRegister() {
         city: formData.town,
         state: formData.county,
         zipCode: formData.postcode,
-        latitude: parseFloat(formData.latitude),
-        longitude: parseFloat(formData.longitude),
         services: formData.selectedServices // Add services to the data
       };
 
@@ -757,63 +733,6 @@ export default function DoctorRegister() {
                     />
                   </div>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">
-                      Latitude * (Auto-filled)
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      name="latitude"
-                      value={formData.latitude}
-                      onChange={handleInputChange}
-                      required
-                      readOnly
-                      className={`form-input ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-gray-300 cursor-not-allowed' 
-                          : 'bg-gray-100 text-gray-600 cursor-not-allowed'
-                      }`}
-                      placeholder="Use 'Get Current Location' button"
-                    />
-                  </div>
-                  <div>
-                    <label className="form-label">
-                      Longitude * (Auto-filled)
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      name="longitude"
-                      value={formData.longitude}
-                      onChange={handleInputChange}
-                      required
-                      readOnly
-                      className={`form-input ${
-                        isDarkMode 
-                          ? 'bg-gray-700 text-gray-300 cursor-not-allowed' 
-                          : 'bg-gray-100 text-gray-600 cursor-not-allowed'
-                      }`}
-                      placeholder="Use 'Get Current Location' button"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGetLocation}
-                  disabled={locationLoading}
-                  className={`inline-flex items-center px-4 py-2 border rounded-lg transition-colors disabled:opacity-50 ${
-                    isDarkMode 
-                      ? 'border-blue-500 text-blue-400 bg-gray-800 hover:bg-gray-700' 
-                      : 'border-blue-500 text-blue-600 bg-white hover:bg-blue-50'
-                  }`}
-                >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {locationLoading ? 'Getting Location...' : 'Get My Location'}
-                </button>
               </div>
 
               {/* Submit Button */}
