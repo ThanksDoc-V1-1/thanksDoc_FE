@@ -18,7 +18,7 @@ export default function DoctorRegister() {
   const [locationLoading, setLocationLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [services, setServices] = useState({ inPerson: [], online: [] });
+  const [services, setServices] = useState({ inPerson: [], online: [], nhs: [] });
   const [servicesLoading, setServicesLoading] = useState(true);
   
   // Town/City autocomplete states
@@ -208,14 +208,16 @@ export default function DoctorRegister() {
     const loadServices = async () => {
       try {
         setServicesLoading(true);
-        const [inPersonResponse, onlineResponse] = await Promise.all([
+        const [inPersonResponse, onlineResponse, nhsResponse] = await Promise.all([
           serviceAPI.getByCategory('in-person'),
-          serviceAPI.getByCategory('online')
+          serviceAPI.getByCategory('online'),
+          serviceAPI.getByCategory('nhs')
         ]);
         
         setServices({
           inPerson: inPersonResponse.data.data || [],
-          online: onlineResponse.data.data || []
+          online: onlineResponse.data.data || [],
+          nhs: nhsResponse.data.data || []
         });
       } catch (error) {
         console.error('Error loading services:', error);
@@ -223,7 +225,8 @@ export default function DoctorRegister() {
         alert('Unable to load services. Please try again or contact support.');
         setServices({
           inPerson: [],
-          online: []
+          online: [],
+          nhs: []
         });
       } finally {
         setServicesLoading(false);
@@ -588,6 +591,37 @@ export default function DoctorRegister() {
                               checked={formData.selectedServices.includes(service.id)}
                               onChange={() => handleServiceToggle(service.id)}
                               className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <span className="text-sm font-medium">{service.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* NHS Services */}
+                    <div>
+                      <h3 className={`text-lg font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        NHS Services
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {services.nhs.map((service) => (
+                          <label
+                            key={service.id}
+                            className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                              formData.selectedServices.includes(service.id)
+                                ? isDarkMode
+                                  ? 'border-green-500 bg-green-900/20 text-green-300'
+                                  : 'border-green-500 bg-green-50 text-green-700'
+                                : isDarkMode
+                                  ? 'border-gray-600 hover:border-gray-500 text-gray-300'
+                                  : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.selectedServices.includes(service.id)}
+                              onChange={() => handleServiceToggle(service.id)}
+                              className="mr-3 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                             />
                             <span className="text-sm font-medium">{service.name}</span>
                           </label>
