@@ -387,7 +387,9 @@ export default function BusinessDashboard() {
     ('🏢 Business data useEffect:', businessData);
     
     // Update edit profile data when business data is available
-    if (businessData) {
+    // BUT ONLY if the edit profile modal is not currently open
+    if (businessData && !showEditProfile) {
+      console.log('🔄 Resetting editProfileData from businessData (modal closed)');
       setEditProfileData({
         businessName: businessData.businessName || '',
         contactPersonName: businessData.contactPersonName || '',
@@ -401,11 +403,13 @@ export default function BusinessDashboard() {
         latitude: businessData.latitude || '',
         longitude: businessData.longitude || ''
       });
+    } else if (showEditProfile) {
+      console.log('✅ Preserving editProfileData (modal open)');
     }
 
     // Apply service filter when service changes
     applyServiceFilter(formData.serviceId);
-  }, [businessData, nearbyDoctors, previousDoctors, formData.serviceId]);
+  }, [businessData, nearbyDoctors, previousDoctors, formData.serviceId, showEditProfile]);
 
   // Show loading screen while authentication is being checked
   if (authLoading) {
@@ -731,6 +735,7 @@ export default function BusinessDashboard() {
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
+    console.log('🔄 Form field changed:', name, '=', value);
     setEditProfileData(prev => ({
       ...prev,
       [name]: value
