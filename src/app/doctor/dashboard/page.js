@@ -2247,7 +2247,7 @@ export default function DoctorDashboard() {
                   <MapPin className={`h-4 w-4`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                 </div>
                 <div className="flex-1">
-                  <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <p className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Service Area
                   </p>
                   <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
