@@ -2106,7 +2106,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 )}
                 {business?.state && (
                   <div className={`flex justify-between items-center py-2 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>State:</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-600'}`}>County:</span>
                     <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} font-semibold text-right`}>{business.state}</span>
                   </div>
                 )}
@@ -3091,7 +3091,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
 
                 <div>
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
-                    State
+                    County
                   </label>
                   <input
                     type="text"
@@ -3099,7 +3099,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                     value={editProfileData.state}
                     onChange={handleProfileInputChange}
                     className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                    placeholder="Enter state"
+                    placeholder="Enter county"
                   />
                 </div>
 
