@@ -3137,9 +3137,9 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                         type="number"
                         name="latitude"
                         value={editProfileData.latitude}
-                        onChange={handleProfileInputChange}
+                        readOnly
                         step="any"
-                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-800 text-gray-400 placeholder-gray-500' : 'border-gray-300 bg-gray-100 text-gray-600 placeholder-gray-400'} rounded-lg cursor-not-allowed`}
                         placeholder="Latitude"
                       />
                     </div>
@@ -3148,9 +3148,9 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                         type="number"
                         name="longitude"
                         value={editProfileData.longitude}
-                        onChange={handleProfileInputChange}
+                        readOnly
                         step="any"
-                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-800 text-gray-400 placeholder-gray-500' : 'border-gray-300 bg-gray-100 text-gray-600 placeholder-gray-400'} rounded-lg cursor-not-allowed`}
                         placeholder="Longitude"
                       />
                     </div>
