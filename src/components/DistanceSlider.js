@@ -95,13 +95,6 @@ const DistanceSlider = ({
     updateLocationName();
   }, [businessLocation]);
 
-  const distanceOptions = [
-    { value: 3, label: '3 miles', description: 'Very close nearby' },
-    { value: 6, label: '6 miles', description: 'Close vicinity' },
-    { value: 12, label: '12 miles', description: 'Wider area' },
-    { value: -1, label: 'Anywhere', description: 'No distance limit' }
-  ];
-
   const getCurrentLocation = async () => {
     if (!onLocationUpdate) return;
     
@@ -140,13 +133,11 @@ const DistanceSlider = ({
     }
   };
 
-  const selectedOption = distanceOptions.find(option => option.value === value) || distanceOptions[3];
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-          Doctor Distance Preference
+          Service Distance Preference
         </label>
         {onLocationUpdate && (
           <button
@@ -185,41 +176,72 @@ const DistanceSlider = ({
         </div>
       )}
 
-      <div className="space-y-3">
-        {distanceOptions.map((option) => (
-          <label 
-            key={option.value} 
-            className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-              value === option.value
+      {/* Continuous Range Slider */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            {value === -1 ? 'Anywhere' : `${value} ${value === 1 ? 'mile' : 'miles'} radius`}
+          </span>
+          <button
+            type="button"
+            onClick={() => onChange(-1)}
+            className={`text-xs px-2 py-1 rounded transition-colors ${
+              value === -1
                 ? isDarkMode 
-                  ? 'border-blue-500 bg-blue-900/20' 
-                  : 'border-blue-500 bg-blue-50'
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-purple-600 text-white'
                 : isDarkMode 
-                  ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-800/50' 
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-            } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
           >
+            Anywhere
+          </button>
+        </div>
+
+        {value !== -1 && (
+          <div className="relative">
+            {/* Range Input */}
             <input
-              type="radio"
-              name="distanceFilter"
-              value={option.value}
-              checked={value === option.value}
+              type="range"
+              min="1"
+              max="50"
+              step="1"
+              value={value === -1 ? 25 : value}
               onChange={(e) => onChange(parseInt(e.target.value))}
               disabled={disabled}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className={`w-full h-2 rounded-lg appearance-none cursor-pointer slider ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`}
+              style={{
+                background: value !== -1 ? (
+                  isDarkMode 
+                    ? `linear-gradient(to right, #0F9297 0%, #0F9297 ${((value - 1) / 49) * 100}%, #374151 ${((value - 1) / 49) * 100}%, #374151 100%)`
+                    : `linear-gradient(to right, #0F9297 0%, #0F9297 ${((value - 1) / 49) * 100}%, #E5E7EB ${((value - 1) / 49) * 100}%, #E5E7EB 100%)`
+                ) : undefined
+              }}
             />
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {option.label}
-                </span>
-              </div>
-              <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {option.description}
-              </p>
+            
+            {/* Distance Labels */}
+            <div className="flex justify-between text-xs mt-2">
+              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>1 mile</span>
+              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>25 miles</span>
+              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>50 miles</span>
             </div>
-          </label>
-        ))}
+          </div>
+        )}
+
+        {/* Description */}
+        <div className={`p-3 rounded-lg ${
+          isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'
+        }`}>
+          <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+            {value === -1 
+              ? '🌍 You will receive service requests from businesses anywhere'
+              : `🎯 You will only receive requests from businesses within ${value} ${value === 1 ? 'mile' : 'miles'} of your location`
+            }
+          </p>
+        </div>
       </div>
 
       {!businessLocation && onLocationUpdate && (
@@ -232,7 +254,7 @@ const DistanceSlider = ({
               Location Required
             </p>
             <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
-              Click "Update Location" to enable distance-based doctor filtering
+              Click "Update Location" to enable distance-based filtering
             </p>
           </div>
         </div>
@@ -242,13 +264,43 @@ const DistanceSlider = ({
         <p className="flex items-center space-x-1">
           <span>💡</span>
           <span>
-            {selectedOption.value === -1 
-              ? 'All verified doctors will be available for your request'
-              : `Doctors within ${selectedOption.label} radius will be prioritized for your request`
-            }
+            You can adjust this anytime. Online consultations are not affected by distance settings.
           </span>
         </p>
       </div>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #0F9297;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #0F9297;
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider:disabled::-webkit-slider-thumb {
+          background: #9CA3AF;
+          cursor: not-allowed;
+        }
+        
+        .slider:disabled::-moz-range-thumb {
+          background: #9CA3AF;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 };

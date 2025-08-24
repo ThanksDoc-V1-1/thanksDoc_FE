@@ -10,6 +10,7 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import NotificationCenter from '../../../components/NotificationCenter';
 import NotificationBanner from '../../../components/NotificationBanner';
+import DistanceSlider from '../../../components/DistanceSlider';
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -53,7 +54,8 @@ export default function DoctorDashboard() {
     state: '',
     zipCode: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
+    serviceRadius: 12 // Default to 12 miles
   });
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -678,7 +680,8 @@ export default function DoctorDashboard() {
       state: doctorInfo?.state || '',
       zipCode: doctorInfo?.zipCode || '',
       latitude: doctorInfo?.latitude || '',
-      longitude: doctorInfo?.longitude || ''
+      longitude: doctorInfo?.longitude || '',
+      serviceRadius: doctorInfo?.serviceRadius || 12
     });
     setShowEditProfile(true);
   };
@@ -688,6 +691,13 @@ export default function DoctorDashboard() {
     setEditProfileData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleDistanceChange = (distance) => {
+    setEditProfileData(prev => ({
+      ...prev,
+      serviceRadius: distance
     }));
   };
 
@@ -713,7 +723,8 @@ export default function DoctorDashboard() {
         state: editProfileData.state,
         zipCode: editProfileData.zipCode,
         latitude: editProfileData.latitude ? parseFloat(editProfileData.latitude) : null,
-        longitude: editProfileData.longitude ? parseFloat(editProfileData.longitude) : null
+        longitude: editProfileData.longitude ? parseFloat(editProfileData.longitude) : null,
+        serviceRadius: editProfileData.serviceRadius ? parseInt(editProfileData.serviceRadius) : 12
       };
       
       ('📝 Transformed profile data being sent:', transformedData);
@@ -775,7 +786,8 @@ export default function DoctorDashboard() {
       state: '',
       zipCode: '',
       latitude: '',
-      longitude: ''
+      longitude: '',
+      serviceRadius: 12
     });
   };
 
@@ -1556,6 +1568,31 @@ export default function DoctorDashboard() {
                     <li>• Your location is used for distance-based filtering and routing</li>
                   </ul>
                 </div>
+
+                {/* Service Radius Section */}
+                <div className="mt-6">
+                  <DistanceSlider
+                    value={editProfileData.serviceRadius}
+                    onChange={handleDistanceChange}
+                    isDarkMode={isDarkMode}
+                    businessLocation={editProfileData.latitude && editProfileData.longitude ? {
+                      latitude: parseFloat(editProfileData.latitude),
+                      longitude: parseFloat(editProfileData.longitude)
+                    } : null}
+                  />
+                  <div className={`mt-2 p-3 rounded-lg text-sm ${
+                    isDarkMode 
+                      ? 'bg-purple-900/20 border border-purple-800 text-purple-300' 
+                      : 'bg-purple-50 border border-purple-200 text-purple-700'
+                  }`}>
+                    <p className="font-medium mb-1">🎯 Service Radius Info:</p>
+                    <ul className="text-xs space-y-1">
+                      <li>• Only receive service requests from businesses within your selected radius</li>
+                      <li>• You can adjust this anytime based on your availability and travel preferences</li>
+                      <li>• Online services are not affected by distance settings</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
@@ -2197,6 +2234,44 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
               </button>
+            </div>
+
+            {/* Service Radius Information */}
+            <div className={`rounded-lg shadow border p-4 ${
+              isDarkMode 
+                ? 'bg-gray-900 border-gray-800' 
+                : 'bg-white/90 border-blue-200'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                  <MapPin className={`h-4 w-4`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Service Area
+                  </p>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    You are currently receiving service requests within{' '}
+                    <span className="font-semibold" style={{color: '#0F9297'}}>
+                      {doctorData?.serviceRadius === -1 
+                        ? 'unlimited distance' 
+                        : `${doctorData?.serviceRadius || 12} miles`
+                      }
+                    </span>
+                    {' '}of your location
+                  </p>
+                </div>
+                <button
+                  onClick={handleEditProfile}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    isDarkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  Adjust Range
+                </button>
+              </div>
             </div>
 
             {/* Available Requests */}
