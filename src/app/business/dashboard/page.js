@@ -791,8 +791,7 @@ export default function BusinessDashboard() {
             latitude: latitude.toString(),
             longitude: longitude.toString(),
           }));
-          // Optionally, reverse geocode to get place name
-          reverseGeocode(latitude, longitude);
+          // Location coordinates set successfully
         },
         (error) => {
           console.error('Error getting location:', error);
