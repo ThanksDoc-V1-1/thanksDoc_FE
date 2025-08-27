@@ -189,8 +189,8 @@ export default function BusinessDashboard() {
   const [fallbackStatuses, setFallbackStatuses] = useState({});
   const requestsPerPage = 5;
   
-  // Loading overlay state for form submission
-  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  // Loading overlay state for doctor request submission specifically
+  const [isSendingDoctorRequest, setIsSendingDoctorRequest] = useState(false);
   
   // Business profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
@@ -935,7 +935,7 @@ export default function BusinessDashboard() {
     const reason = window.prompt('Please provide a reason for cancellation (optional):') || 'Cancelled by business';
 
     try {
-      setLoading(true);
+      // Don't show the loading overlay for cancellation
       const response = await serviceRequestAPI.cancel(requestId, reason);
       
       if (response.data) {
@@ -945,8 +945,6 @@ export default function BusinessDashboard() {
     } catch (error) {
       console.error('Error cancelling service request:', error);
       alert('Failed to cancel service request. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1099,20 +1097,20 @@ export default function BusinessDashboard() {
 
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
-    setIsSubmittingRequest(true); // Use the new loading state for overlay
+    setIsSendingDoctorRequest(true); // Show loading overlay only for doctor requests
 
     try {
       // Validation: If service is required but not selected
       if (!formData.serviceId) {
         alert('Please select a service for your request.');
-        setIsSubmittingRequest(false);
+        setIsSendingDoctorRequest(false);
         return;
       }
 
       // Validation: If previous doctors option is selected, a doctor must be chosen
       if (formData.doctorSelectionType === 'previous' && !formData.preferredDoctorId) {
         alert('Please select a doctor from your previously worked with doctors, or choose "Any available doctor" option.');
-        setIsSubmittingRequest(false);
+        setIsSendingDoctorRequest(false);
         return;
       }
 
@@ -1121,7 +1119,7 @@ export default function BusinessDashboard() {
         const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
         if (!selectedDoctor || !selectedDoctor.isAvailable) {
           alert('The selected doctor is no longer available. Please choose another doctor or refresh the list.');
-          setIsSubmittingRequest(false);
+          setIsSendingDoctorRequest(false);
           return;
         }
       }
@@ -1129,14 +1127,14 @@ export default function BusinessDashboard() {
       // Validation: Check if there are any doctors available for the selected service
       if (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) {
         alert('No doctors are available for the selected service. Please contact support for assistance.');
-        setIsSubmittingRequest(false);
+        setIsSendingDoctorRequest(false);
         return;
       }
 
       // Validation: Check if service date and time are provided
       if (!formData.serviceDate || !formData.serviceTime) {
         alert('Please provide both service date and time.');
-        setIsSubmittingRequest(false);
+        setIsSendingDoctorRequest(false);
         return;
       }
 
@@ -1145,7 +1143,7 @@ export default function BusinessDashboard() {
       const now = new Date();
       if (serviceDateTime <= now) {
         alert('Service date and time must be in the future.');
-        setIsSubmittingRequest(false);
+        setIsSendingDoctorRequest(false);
         return;
       }
 
@@ -1157,7 +1155,7 @@ export default function BusinessDashboard() {
       if (isOnlineConsultation) {
         if (!formData.patientFirstName || !formData.patientLastName || !formData.patientPhone || !formData.patientEmail) {
           alert('For online consultations, please provide the patient\'s first name, last name, phone number, and email address.');
-          setIsSubmittingRequest(false);
+          setIsSendingDoctorRequest(false);
           return;
         }
         
@@ -1166,7 +1164,7 @@ export default function BusinessDashboard() {
         const phoneRegex = /^[\+]?[1-9][\d]{7,14}$/;
         if (!phoneRegex.test(fullPhoneNumber.replace(/\s/g, ''))) {
           alert('Please provide a valid phone number for the patient.');
-          setIsSubmittingRequest(false);
+          setIsSendingDoctorRequest(false);
           return;
         }
       }
@@ -1201,12 +1199,12 @@ export default function BusinessDashboard() {
       // Show payment modal first - payment is now required before service request creation
       setPaymentRequest(tempRequest);
       setShowPaymentModal(true);
-      setIsSubmittingRequest(false); // Use the new loading state
+      setIsSendingDoctorRequest(false); // Hide loading overlay when showing payment modal
 
     } catch (error) {
       console.error('Error preparing service request:', error);
       alert('Failed to prepare service request. Please try again.');
-      setIsSubmittingRequest(false); // Use the new loading state
+      setIsSendingDoctorRequest(false); // Hide loading overlay on error
     }
   };
 
@@ -1232,7 +1230,7 @@ export default function BusinessDashboard() {
     if (!paymentRequest) return;
     
     setShowPaymentModal(false);
-    setIsSubmittingRequest(true); // Use the new loading state for overlay
+    setIsSendingDoctorRequest(true); // Show loading overlay for doctor request notifications
     
     try {
       // Check if this is a new service request (temporary) or an existing one
@@ -1452,7 +1450,7 @@ If you don't see your request, please contact support with payment ID: ${payment
 If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
       }
     } finally {
-      setIsSubmittingRequest(false); // Use the new loading state
+      setIsSendingDoctorRequest(false); // Hide loading overlay
       setPaymentRequest(null); // Clear payment request
     }
   };
@@ -2604,10 +2602,15 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) || !businessData?.isVerified}
+                  disabled={isSendingDoctorRequest || loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) || !businessData?.isVerified}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow disabled:cursor-not-allowed"
                 >
-                  {!businessData?.isVerified ? 'Business Not Verified' :
+                  {isSendingDoctorRequest ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Sending Request...
+                    </div>
+                  ) : !businessData?.isVerified ? 'Business Not Verified' :
                    (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) ? 'No Doctors Available' :
                    'Pay & Request Doctor'}
                 </button>
@@ -3204,8 +3207,8 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
         </div>
       )}
 
-      {/* Loading Overlay */}
-      {(isSubmittingRequest || loading) && (
+      {/* Loading Overlay - Only for Doctor Requests */}
+      {isSendingDoctorRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
           <div className={`${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-xl border p-8 max-w-md w-full text-center`}>
             <div className="flex flex-col items-center space-y-4">
@@ -3217,10 +3220,10 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
               
               <div className="space-y-2">
                 <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Processing Your Request
+                  Sending Doctor Request
                 </h3>
                 <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  Please wait while we process your doctor request...
+                  Please wait while we notify available doctors...
                 </p>
               </div>
               
@@ -3235,7 +3238,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse delay-75"></div>
                     <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                      Notifying available doctors
+                      Finding available doctors
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
