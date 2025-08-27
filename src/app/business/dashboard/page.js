@@ -189,6 +189,9 @@ export default function BusinessDashboard() {
   const [fallbackStatuses, setFallbackStatuses] = useState({});
   const requestsPerPage = 5;
   
+  // Loading overlay state for form submission
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  
   // Business profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
@@ -1096,20 +1099,20 @@ export default function BusinessDashboard() {
 
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmittingRequest(true); // Use the new loading state for overlay
 
     try {
       // Validation: If service is required but not selected
       if (!formData.serviceId) {
         alert('Please select a service for your request.');
-        setLoading(false);
+        setIsSubmittingRequest(false);
         return;
       }
 
       // Validation: If previous doctors option is selected, a doctor must be chosen
       if (formData.doctorSelectionType === 'previous' && !formData.preferredDoctorId) {
         alert('Please select a doctor from your previously worked with doctors, or choose "Any available doctor" option.');
-        setLoading(false);
+        setIsSubmittingRequest(false);
         return;
       }
 
@@ -1118,7 +1121,7 @@ export default function BusinessDashboard() {
         const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
         if (!selectedDoctor || !selectedDoctor.isAvailable) {
           alert('The selected doctor is no longer available. Please choose another doctor or refresh the list.');
-          setLoading(false);
+          setIsSubmittingRequest(false);
           return;
         }
       }
@@ -1126,14 +1129,14 @@ export default function BusinessDashboard() {
       // Validation: Check if there are any doctors available for the selected service
       if (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) {
         alert('No doctors are available for the selected service. Please contact support for assistance.');
-        setLoading(false);
+        setIsSubmittingRequest(false);
         return;
       }
 
       // Validation: Check if service date and time are provided
       if (!formData.serviceDate || !formData.serviceTime) {
         alert('Please provide both service date and time.');
-        setLoading(false);
+        setIsSubmittingRequest(false);
         return;
       }
 
@@ -1142,7 +1145,7 @@ export default function BusinessDashboard() {
       const now = new Date();
       if (serviceDateTime <= now) {
         alert('Service date and time must be in the future.');
-        setLoading(false);
+        setIsSubmittingRequest(false);
         return;
       }
 
@@ -1154,7 +1157,7 @@ export default function BusinessDashboard() {
       if (isOnlineConsultation) {
         if (!formData.patientFirstName || !formData.patientLastName || !formData.patientPhone || !formData.patientEmail) {
           alert('For online consultations, please provide the patient\'s first name, last name, phone number, and email address.');
-          setLoading(false);
+          setIsSubmittingRequest(false);
           return;
         }
         
@@ -1163,7 +1166,7 @@ export default function BusinessDashboard() {
         const phoneRegex = /^[\+]?[1-9][\d]{7,14}$/;
         if (!phoneRegex.test(fullPhoneNumber.replace(/\s/g, ''))) {
           alert('Please provide a valid phone number for the patient.');
-          setLoading(false);
+          setIsSubmittingRequest(false);
           return;
         }
       }
@@ -1198,12 +1201,12 @@ export default function BusinessDashboard() {
       // Show payment modal first - payment is now required before service request creation
       setPaymentRequest(tempRequest);
       setShowPaymentModal(true);
-      setLoading(false); // Remove loading since we're showing payment modal
+      setIsSubmittingRequest(false); // Use the new loading state
 
     } catch (error) {
       console.error('Error preparing service request:', error);
       alert('Failed to prepare service request. Please try again.');
-      setLoading(false);
+      setIsSubmittingRequest(false); // Use the new loading state
     }
   };
 
@@ -1229,7 +1232,7 @@ export default function BusinessDashboard() {
     if (!paymentRequest) return;
     
     setShowPaymentModal(false);
-    setLoading(true);
+    setIsSubmittingRequest(true); // Use the new loading state for overlay
     
     try {
       // Check if this is a new service request (temporary) or an existing one
@@ -1449,7 +1452,7 @@ If you don't see your request, please contact support with payment ID: ${payment
 If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
       }
     } finally {
-      setLoading(false);
+      setIsSubmittingRequest(false); // Use the new loading state
       setPaymentRequest(null); // Clear payment request
     }
   };
@@ -2604,8 +2607,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   disabled={loading || (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) || !businessData?.isVerified}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Processing...' : 
-                   !businessData?.isVerified ? 'Business Not Verified' :
+                  {!businessData?.isVerified ? 'Business Not Verified' :
                    (formData.doctorSelectionType === 'any' && getAvailableDoctors().length === 0) ? 'No Doctors Available' :
                    'Pay & Request Doctor'}
                 </button>
@@ -2934,7 +2936,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   })()}
                   className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:opacity-50 transition-all duration-200 font-medium shadow-sm hover:shadow"
                 >
-                  {loading ? 'Processing...' : 'Pay & Send Request'}
+                  Pay & Send Request
                 </button>
               </div>
             </div>
@@ -3198,6 +3200,57 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {(isSubmittingRequest || loading) && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-xl border p-8 max-w-md w-full text-center`}>
+            <div className="flex flex-col items-center space-y-4">
+              {/* Animated spinner */}
+              <div className="relative">
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div className="absolute inset-2 w-12 h-12 border-4 border-transparent border-t-blue-400 rounded-full animate-spin animate-reverse"></div>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Processing Your Request
+                </h3>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Please wait while we process your doctor request...
+                </p>
+              </div>
+              
+              <div className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800' : 'bg-blue-50 border-blue-200'} p-4 rounded-lg border w-full`}>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      Validating payment information
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse delay-75"></div>
+                    <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      Notifying available doctors
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse delay-150"></div>
+                    <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                      Sending WhatsApp and email notifications
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                This may take up to 30 seconds. Please don't close this window.
+              </p>
+            </div>
           </div>
         </div>
       )}
