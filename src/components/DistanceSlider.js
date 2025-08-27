@@ -72,6 +72,7 @@ const DistanceSlider = ({
   const [gettingLocation, setGettingLocation] = useState(false);
   const [locationName, setLocationName] = useState('');
   const [loadingLocationName, setLoadingLocationName] = useState(false);
+  const [showSliderInAnywhereMode, setShowSliderInAnywhereMode] = useState(false);
 
   // Update location name when businessLocation changes
   useEffect(() => {
@@ -184,22 +185,31 @@ const DistanceSlider = ({
           </span>
           <button
             type="button"
-            onClick={() => onChange(-1)}
+            onClick={() => {
+              if (value === -1) {
+                // If currently on "Anywhere", toggle slider visibility
+                setShowSliderInAnywhereMode(!showSliderInAnywhereMode);
+              } else {
+                // If currently on distance mode, switch to "Anywhere"
+                onChange(-1);
+                setShowSliderInAnywhereMode(false);
+              }
+            }}
             className={`text-xs px-2 py-1 rounded transition-colors ${
               value === -1
                 ? isDarkMode 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-purple-600 text-white'
-                : isDarkMode 
                   ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : isDarkMode 
+                  ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
             }`}
           >
-            Anywhere
+            {value === -1 ? 'Back to Slider' : 'Anywhere'}
           </button>
         </div>
 
-        {value !== -1 && (
+        {(value !== -1 || showSliderInAnywhereMode) && (
           <div className="relative">
             {/* Range Input */}
             <input
@@ -208,7 +218,14 @@ const DistanceSlider = ({
               max="50"
               step="1"
               value={value === -1 ? 25 : value}
-              onChange={(e) => onChange(parseInt(e.target.value))}
+              onChange={(e) => {
+                const newValue = parseInt(e.target.value);
+                onChange(newValue);
+                // When user moves slider in "Anywhere" mode, switch back to distance mode
+                if (value === -1) {
+                  setShowSliderInAnywhereMode(false);
+                }
+              }}
               disabled={disabled}
               className={`w-full h-2 rounded-lg appearance-none cursor-pointer slider ${
                 isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
@@ -218,7 +235,12 @@ const DistanceSlider = ({
                   isDarkMode 
                     ? `linear-gradient(to right, #0F9297 0%, #0F9297 ${((value - 1) / 49) * 100}%, #374151 ${((value - 1) / 49) * 100}%, #374151 100%)`
                     : `linear-gradient(to right, #0F9297 0%, #0F9297 ${((value - 1) / 49) * 100}%, #E5E7EB ${((value - 1) / 49) * 100}%, #E5E7EB 100%)`
-                ) : undefined
+                ) : (
+                  // Show a different style when in "Anywhere" mode but slider is visible
+                  isDarkMode 
+                    ? `linear-gradient(to right, #6B7280 0%, #6B7280 48%, #374151 48%, #374151 100%)`
+                    : `linear-gradient(to right, #D1D5DB 0%, #D1D5DB 48%, #E5E7EB 48%, #E5E7EB 100%)`
+                )
               }}
             />
             
@@ -228,6 +250,15 @@ const DistanceSlider = ({
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>25 miles</span>
               <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>50 miles</span>
             </div>
+            
+            {/* Helper text when showing slider in Anywhere mode */}
+            {value === -1 && showSliderInAnywhereMode && (
+              <div className={`mt-2 p-2 rounded text-xs ${
+                isDarkMode ? 'bg-orange-900/20 border border-orange-800 text-orange-300' : 'bg-orange-50 border border-orange-200 text-orange-700'
+              }`}>
+                💡 Move the slider to set a specific distance range, or click "Back to Slider" to hide this slider.
+              </div>
+            )}
           </div>
         )}
 
