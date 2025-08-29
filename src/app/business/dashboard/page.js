@@ -207,6 +207,8 @@ export default function BusinessDashboard() {
     latitude: '',
     longitude: ''
   });
+  const [profileCountryCode, setProfileCountryCode] = useState('+1');
+  const [profilePhoneNumber, setProfilePhoneNumber] = useState('');
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   // Auto-refresh functionality
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -720,11 +722,37 @@ export default function BusinessDashboard() {
 
   const handleEditProfile = () => {
     const business = businessData || user;
+    
+    // Parse existing phone number to extract country code and number
+    const existingPhone = business?.phone || '';
+    const parsePhoneNumber = (phone) => {
+      if (!phone) return { countryCode: '+1', phoneNumber: '' };
+      
+      // Common country codes to check for
+      const countryCodes = ['+1', '+44', '+91', '+86', '+49', '+33', '+81', '+61', '+55', '+52', '+7', '+39', '+34', '+31', '+46', '+47', '+41', '+32', '+48', '+420', '+351', '+30', '+90', '+234', '+254', '+256', '+27', '+20', '+212', '+213', '+216', '+218', '+249', '+251', '+252', '+253', '+223', '+224', '+225', '+226', '+227', '+228', '+229', '+230'];
+      
+      for (const code of countryCodes.sort((a, b) => b.length - a.length)) {
+        if (phone.startsWith(code)) {
+          return {
+            countryCode: code,
+            phoneNumber: phone.slice(code.length)
+          };
+        }
+      }
+      
+      // If no country code found, assume it's a local number
+      return { countryCode: '+1', phoneNumber: phone };
+    };
+    
+    const { countryCode, phoneNumber } = parsePhoneNumber(existingPhone);
+    setProfileCountryCode(countryCode);
+    setProfilePhoneNumber(phoneNumber);
+    
     setEditProfileData({
       businessName: business?.businessName || business?.name || '',
       contactPersonName: business?.contactPersonName || `${business?.firstName || ''} ${business?.lastName || ''}`.trim() || '',
       email: business?.email || '',
-      phone: business?.phone || '',
+      phone: existingPhone,
       address: business?.address || '',
       city: business?.city || '',
       state: business?.state || '',
@@ -742,6 +770,30 @@ export default function BusinessDashboard() {
     setEditProfileData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  // Handler for profile phone country code change
+  const handleProfileCountryCodeChange = (code) => {
+    console.log('🔄 Profile country code changed:', code);
+    setProfileCountryCode(code);
+    // Update the combined phone number in profile data
+    const fullPhone = code + profilePhoneNumber;
+    setEditProfileData(prev => ({
+      ...prev,
+      phone: fullPhone
+    }));
+  };
+
+  // Handler for profile phone number change
+  const handleProfilePhoneChange = (phone) => {
+    console.log('🔄 Profile phone number changed:', phone);
+    setProfilePhoneNumber(phone);
+    // Update the combined phone number in profile data
+    const fullPhone = profileCountryCode + phone;
+    setEditProfileData(prev => ({
+      ...prev,
+      phone: fullPhone
     }));
   };
 
@@ -773,6 +825,8 @@ export default function BusinessDashboard() {
 
   const handlecancelleditProfile = () => {
     setShowEditProfile(false);
+    setProfileCountryCode('+1');
+    setProfilePhoneNumber('');
     setEditProfileData({
       businessName: '',
       contactPersonName: '',
@@ -3061,13 +3115,15 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                   <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                     Phone Number
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={editProfileData.phone}
-                    onChange={handleProfileInputChange}
-                    className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  <CountryCodePicker
+                    selectedCode={profileCountryCode}
+                    onCodeChange={handleProfileCountryCodeChange}
+                    phoneNumber={profilePhoneNumber}
+                    onPhoneChange={handleProfilePhoneChange}
                     placeholder="Enter phone number"
+                    isDarkMode={isDarkMode}
+                    required={false}
+                    className="w-full"
                   />
                 </div>
 

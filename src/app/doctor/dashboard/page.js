@@ -1407,9 +1407,6 @@ export default function DoctorDashboard() {
                     required={false}
                     className="w-full"
                   />
-                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Please include your country code for WhatsApp notifications
-                  </p>
                 </div>
               </div>
 
