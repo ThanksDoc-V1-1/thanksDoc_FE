@@ -11,6 +11,7 @@ import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
 import NotificationCenter from '../../../components/NotificationCenter';
 import NotificationBanner from '../../../components/NotificationBanner';
 import DistanceSlider from '../../../components/DistanceSlider';
+import CountryCodePicker from '../../../components/CountryCodePicker';
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -57,6 +58,8 @@ export default function DoctorDashboard() {
     longitude: '',
     serviceRadius: 12 // Default to 12 miles
   });
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+44'); // Default UK country code
+  const [phoneNumber, setPhoneNumber] = useState(''); // Phone number without country code
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [doctorLocationName, setDoctorLocationName] = useState('');
@@ -683,11 +686,33 @@ export default function DoctorDashboard() {
 
   const handleEditProfile = () => {
     const doctorInfo = doctorData || user;
+    
+    // Parse existing phone number to extract country code and number
+    const fullPhone = doctorInfo?.phone || '';
+    let countryCode = '+44'; // default
+    let phoneNumberOnly = '';
+    
+    if (fullPhone) {
+      // Check for common country codes
+      const countryCodes = ['+256', '+254', '+234', '+44', '+1', '+91', '+86', '+33', '+49', '+39', '+34'];
+      const matchedCode = countryCodes.find(code => fullPhone.startsWith(code));
+      
+      if (matchedCode) {
+        countryCode = matchedCode;
+        phoneNumberOnly = fullPhone.replace(matchedCode, '').replace(/^\s+/, ''); // Remove country code and leading spaces
+      } else {
+        phoneNumberOnly = fullPhone;
+      }
+    }
+    
+    setPhoneCountryCode(countryCode);
+    setPhoneNumber(phoneNumberOnly);
+    
     setEditProfileData({
       firstName: doctorInfo?.firstName || '',
       lastName: doctorInfo?.lastName || '',
       email: doctorInfo?.email || '',
-      phone: doctorInfo?.phone || '',
+      phone: fullPhone,
       licenseNumber: doctorInfo?.licenseNumber || '',
       qualifications: doctorInfo?.qualifications || '',
       bio: doctorInfo?.bio || '',
@@ -707,6 +732,26 @@ export default function DoctorDashboard() {
     setEditProfileData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePhoneCountryCodeChange = (countryCode) => {
+    setPhoneCountryCode(countryCode);
+    // Update the full phone number in profile data
+    const fullPhone = phoneNumber ? `${countryCode}${phoneNumber.replace(/\s/g, '')}` : countryCode;
+    setEditProfileData(prev => ({
+      ...prev,
+      phone: fullPhone
+    }));
+  };
+
+  const handlePhoneNumberChange = (number) => {
+    setPhoneNumber(number);
+    // Update the full phone number in profile data
+    const fullPhone = number ? `${phoneCountryCode}${number.replace(/\s/g, '')}` : phoneCountryCode;
+    setEditProfileData(prev => ({
+      ...prev,
+      phone: fullPhone
     }));
   };
 
@@ -805,6 +850,9 @@ export default function DoctorDashboard() {
       longitude: '',
       serviceRadius: 12
     });
+    // Reset phone-related states
+    setPhoneCountryCode('+44');
+    setPhoneNumber('');
   };
 
   // Get current location for doctor profile
@@ -1347,20 +1395,21 @@ export default function DoctorDashboard() {
                   <label className={`block text-sm font-medium mb-1 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Phone
+                    Phone Number
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={editProfileData.phone}
-                    onChange={handleProfileInputChange}
-                    className={`w-full rounded-lg p-3 transition-colors ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400' 
-                        : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500'
-                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  <CountryCodePicker
+                    selectedCode={phoneCountryCode}
+                    onCodeChange={handlePhoneCountryCodeChange}
+                    phoneNumber={phoneNumber}
+                    onPhoneChange={handlePhoneNumberChange}
                     placeholder="Enter phone number"
+                    isDarkMode={isDarkMode}
+                    required={false}
+                    className="w-full"
                   />
+                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Please include your country code for WhatsApp notifications
+                  </p>
                 </div>
               </div>
 
