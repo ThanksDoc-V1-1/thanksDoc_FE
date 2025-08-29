@@ -2461,7 +2461,7 @@ export default function DoctorDashboard() {
                                 : 'text-gray-600 bg-gray-100'
                             }`}>
                               <Clock className="h-4 w-4" />
-                              <span className="font-medium">{formatDuration(request.estimatedDuration)}h</span>
+                              <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
                             </div>
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
                               isDarkMode 
@@ -2918,7 +2918,7 @@ export default function DoctorDashboard() {
                                 : 'text-gray-600 bg-gray-100'
                             }`}>
                               <Clock className="h-4 w-4" />
-                              <span className="font-medium">{formatDuration(request.estimatedDuration)}h</span>
+                              <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
                             </div>
                           </div>
                           {request.status === 'completed' && (
