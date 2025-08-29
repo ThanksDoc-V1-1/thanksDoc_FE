@@ -303,32 +303,38 @@ export default function DoctorDashboard() {
     ('🔄 Setting up auto-refresh for doctor dashboard');
     
     const refreshInterval = setInterval(async () => {
-      if (refreshing) {
-        ('⏭️ Skipping refresh - already in progress');
-        return;
-      }
-      
-      ('🔄 Auto-refreshing doctor dashboard data');
-      setRefreshing(true);
-      
-      try {
-        await Promise.all([
-          fetchNearbyRequests(),
-          fetchMyRequests()
-        ]);
-        setLastRefreshTime(new Date());
-      } catch (error) {
-        console.error('❌ Auto-refresh failed:', error);
-      } finally {
-        setRefreshing(false);
-      }
+      setRefreshing(current => {
+        if (current) {
+          ('⏭️ Skipping refresh - already in progress');
+          return current;
+        }
+        
+        ('🔄 Auto-refreshing doctor dashboard data');
+        
+        // Use async IIFE to handle the refresh
+        (async () => {
+          try {
+            await Promise.all([
+              fetchNearbyRequests(),
+              fetchMyRequests()
+            ]);
+            setLastRefreshTime(new Date());
+          } catch (error) {
+            console.error('❌ Auto-refresh failed:', error);
+          } finally {
+            setRefreshing(false);
+          }
+        })();
+        
+        return true; // Set refreshing to true
+      });
     }, AUTO_REFRESH_INTERVAL);
     
     return () => {
       ('🛑 Clearing auto-refresh interval');
       clearInterval(refreshInterval);
     };
-  }, [autoRefresh, user?.id, refreshing]);
+  }, [autoRefresh, user?.id]); // Removed 'refreshing' from dependencies
 
   const fetchServices = async () => {
     try {
@@ -424,6 +430,11 @@ export default function DoctorDashboard() {
       return;
     }
     
+    if (!user?.id) {
+      ('⚠️ No user ID available for fetchNearbyRequests');
+      return;
+    }
+    
     setFetchingNearby(true);
     try {
       // Get available requests for this specific doctor (unassigned or assigned to them)
@@ -447,7 +458,10 @@ export default function DoctorDashboard() {
         pendingRequests: pendingCount
       }));
     } catch (error) {
-      console.error('Error fetching available requests:', error);
+      console.error('❌ Error fetching available requests:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      // Don't set empty array on error - keep existing data to prevent flash
     } finally {
       setFetchingNearby(false);
     }
@@ -456,6 +470,11 @@ export default function DoctorDashboard() {
   const fetchMyRequests = async () => {
     if (fetchingMyRequests) {
       ('⏭️ Skipping fetchMyRequests - already in progress');
+      return;
+    }
+    
+    if (!user?.id) {
+      ('⚠️ No user ID available for fetchMyRequests');
       return;
     }
     
@@ -501,7 +520,10 @@ export default function DoctorDashboard() {
         }));
       }
     } catch (error) {
-      console.error('Error fetching completed requests:', error);
+      console.error('❌ Error fetching completed requests:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      // Don't reset data on error - keep existing data
     } finally {
       setFetchingMyRequests(false);
     }
