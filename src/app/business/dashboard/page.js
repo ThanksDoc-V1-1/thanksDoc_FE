@@ -844,6 +844,9 @@ export default function BusinessDashboard() {
       return;
     }
 
+    // Create ISO string without timezone conversion to preserve exact selected time
+    const serviceDateTimeString = `${quickRequestServiceDate}T${quickRequestServiceTime}:00.000Z`;
+
     try {
       // Find the selected service details
       const serviceAmount = parseFloat(selectedService?.price || 0);
@@ -858,7 +861,7 @@ export default function BusinessDashboard() {
         estimatedDuration: parseFloat(requestHours),
         serviceCharge: SERVICE_CHARGE,
         servicePrice: serviceAmount, // Store the service price
-        serviceDateTime: serviceDateTime.toISOString(),
+        serviceDateTime: serviceDateTimeString,
         totalAmount: totalWithServiceCharge,
         // Store the complete request data for later use
         _quickRequestData: {
@@ -871,7 +874,7 @@ export default function BusinessDashboard() {
           serviceCharge: SERVICE_CHARGE,
           servicePrice: serviceAmount, // Store the service price
           estimatedCost: totalWithServiceCharge,
-          serviceDateTime: serviceDateTime.toISOString(),
+          serviceDateTime: serviceDateTimeString,
           // Add patient information for online consultations
           ...(isOnlineConsultation && {
             patientFirstName: quickRequestPatientFirstName,
@@ -1147,6 +1150,9 @@ export default function BusinessDashboard() {
         return;
       }
 
+      // Create ISO string without timezone conversion to preserve exact selected time
+      const serviceDateTimeString = `${formData.serviceDate}T${formData.serviceTime}:00.000Z`;
+
       // Validation: For online consultations, patient information is required
       const selectedService = availableServices.find(service => service.id.toString() === formData.serviceId.toString());
       const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
@@ -1187,13 +1193,13 @@ export default function BusinessDashboard() {
         estimatedDuration: parseInt(requestedDuration * 60), // Convert hours back to minutes for storage
         serviceCharge: SERVICE_CHARGE,
         servicePrice: scaledServiceCost, // Store the scaled service price based on duration
-        serviceDateTime: serviceDateTime.toISOString(),
+        serviceDateTime: serviceDateTimeString,
         totalAmount: totalCost,
         // Store the complete form data for later use
         _formData: {
           ...formData
         },
-        _serviceDateTime: serviceDateTime
+        _serviceDateTime: serviceDateTimeString // Store string instead of Date object
       };
 
       // Show payment modal first - payment is now required before service request creation
@@ -1287,7 +1293,7 @@ Payment ID: ${paymentIntent.id}`);
         } else {
           // Handle regular request creation
           const formDataFromTemp = paymentRequest._formData;
-          const serviceDateTime = paymentRequest._serviceDateTime;
+          const serviceDateTimeString = paymentRequest._serviceDateTime;
           
           // Find the selected service to check if it's an online consultation
           const selectedService = availableServices.find(s => s.id.toString() === formDataFromTemp.serviceId.toString());
@@ -1310,7 +1316,7 @@ Payment ID: ${paymentIntent.id}`);
             estimatedDuration: parseInt(getServiceDurationById(formDataFromTemp.serviceId) * 60), // Convert hours to minutes for storage
             serviceCharge: SERVICE_CHARGE,
             servicePrice: paymentRequest.servicePrice, // Store the service price for doctors
-            serviceDateTime: serviceDateTime.toISOString(),
+            serviceDateTime: serviceDateTimeString,
             // Mark as paid since payment was successful
             isPaid: true,
             paymentMethod: 'card',
