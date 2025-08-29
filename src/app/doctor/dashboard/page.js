@@ -303,38 +303,32 @@ export default function DoctorDashboard() {
     ('🔄 Setting up auto-refresh for doctor dashboard');
     
     const refreshInterval = setInterval(async () => {
-      setRefreshing(current => {
-        if (current) {
-          ('⏭️ Skipping refresh - already in progress');
-          return current;
-        }
-        
-        ('🔄 Auto-refreshing doctor dashboard data');
-        
-        // Use async IIFE to handle the refresh
-        (async () => {
-          try {
-            await Promise.all([
-              fetchNearbyRequests(),
-              fetchMyRequests()
-            ]);
-            setLastRefreshTime(new Date());
-          } catch (error) {
-            console.error('❌ Auto-refresh failed:', error);
-          } finally {
-            setRefreshing(false);
-          }
-        })();
-        
-        return true; // Set refreshing to true
-      });
+      if (refreshing) {
+        ('⏭️ Skipping refresh - already in progress');
+        return;
+      }
+      
+      ('🔄 Auto-refreshing doctor dashboard data');
+      setRefreshing(true);
+      
+      try {
+        await Promise.all([
+          fetchNearbyRequests(),
+          fetchMyRequests()
+        ]);
+        setLastRefreshTime(new Date());
+      } catch (error) {
+        console.error('❌ Auto-refresh failed:', error);
+      } finally {
+        setRefreshing(false);
+      }
     }, AUTO_REFRESH_INTERVAL);
     
     return () => {
       ('🛑 Clearing auto-refresh interval');
       clearInterval(refreshInterval);
     };
-  }, [autoRefresh, user?.id]); // Removed 'refreshing' from dependencies
+  }, [autoRefresh, user?.id]); // Keep refreshing out of dependencies to prevent infinite loops
 
   const fetchServices = async () => {
     try {
