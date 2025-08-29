@@ -2137,27 +2137,27 @@ export default function DoctorDashboard() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards - Mobile responsive */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-3">
       <button 
                 onClick={handlePendingRequestsClick}
-                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
         ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
         : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs lg:text-sm text-yellow-400 font-medium">Pending Requests</p>
-                    <p className={`text-xl lg:text-2xl font-bold ${
+                    <p className="text-xs text-yellow-400 font-medium">Pending</p>
+                    <p className={`text-lg lg:text-xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.pendingRequests}</p>
                   </div>
-                  <div className={`p-2 lg:p-3 rounded-lg ${
+                  <div className={`p-1.5 lg:p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-yellow-900/30' 
                       : 'bg-yellow-600'
                   }`}>
-                    <Clock className={`h-4 w-4 lg:h-6 lg:w-6 ${
+                    <Clock className={`h-4 w-4 ${
                       isDarkMode ? 'text-yellow-400' : 'text-white'
                     }`} />
                   </div>
@@ -2165,24 +2165,24 @@ export default function DoctorDashboard() {
               </button>
       <button 
                 onClick={handleCompletedRequestsClick}
-                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
         ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
         : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs lg:text-sm text-green-400 font-medium">Completed</p>
-                    <p className={`text-xl lg:text-2xl font-bold ${
+                    <p className="text-xs text-green-400 font-medium">Completed</p>
+                    <p className={`text-lg lg:text-xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{stats.completedRequests}</p>
                   </div>
-                  <div className={`p-2 lg:p-3 rounded-lg ${
+                  <div className={`p-1.5 lg:p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-green-900/30' 
                       : 'bg-green-600'
                   }`}>
-                    <Check className={`h-4 w-4 lg:h-6 lg:w-6 ${
+                    <Check className={`h-4 w-4 ${
                       isDarkMode ? 'text-green-400' : 'text-white'
                     }`} />
                   </div>
@@ -2190,20 +2190,42 @@ export default function DoctorDashboard() {
               </button>
       <button 
                 onClick={() => router.push('/doctor/earnings')}
-                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
         ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
         : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs lg:text-sm font-medium" style={{color: '#0F9297'}}>My Earnings</p>
-                    <p className={`text-xl lg:text-2xl font-bold ${
+                    <p className="text-xs font-medium" style={{color: '#0F9297'}}>Earnings</p>
+                    <p className={`text-lg lg:text-xl font-bold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{formatCurrency(stats.totalEarnings || 0)}</p>
                   </div>
-                  <div className={`p-2 lg:p-3 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                    <TrendingUp className={`h-4 w-4 lg:h-6 lg:w-6 ${
+                  <div className={`p-1.5 lg:p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <TrendingUp className={`h-4 w-4 ${
+                      isDarkMode ? 'text-white' : 'text-white'
+                    }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                  </div>
+                </div>
+              </button>
+      <button 
+                onClick={handleManageServices}
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+        ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+        : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
+                }`}
+                disabled={serviceLoading}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium" style={{color: '#0F9297'}}>Services</p>
+                    <p className={`text-lg lg:text-xl font-bold ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{doctorServices.length}</p>
+                  </div>
+                  <div className={`p-1.5 lg:p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                    <Settings className={`h-4 w-4 ${
                       isDarkMode ? 'text-white' : 'text-white'
                     }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
                   </div>
@@ -2211,24 +2233,24 @@ export default function DoctorDashboard() {
               </button>
       <button 
                 onClick={() => router.push('/doctor/compliance')}
-                className={`p-4 lg:p-6 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
                   isDarkMode 
         ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
         : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
                 }`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs lg:text-sm text-red-400 font-medium">Compliance Docs</p>
-                    <p className={`text-xs lg:text-sm ${
+                    <p className="text-xs text-red-400 font-medium">Docs</p>
+                    <p className={`text-xs ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                    }`}>Manage Documents</p>
+                    }`}>Compliance</p>
                   </div>
-                  <div className={`p-2 lg:p-3 rounded-lg ${
+                  <div className={`p-1.5 lg:p-2 rounded-lg ${
                     isDarkMode 
                       ? 'bg-red-900/30' 
                       : 'bg-red-600'
                   }`}>
-                    <FileText className={`h-4 w-4 lg:h-6 lg:w-6 ${
+                    <FileText className={`h-4 w-4 ${
                       isDarkMode ? 'text-red-400' : 'text-white'
                     }`} />
                   </div>
@@ -3089,114 +3111,6 @@ export default function DoctorDashboard() {
                 );
               })()}
             </div>
-              </div>
-            </div>
-            
-            {/* My Services Section - Mobile responsive order */}
-            <div className="lg:col-span-1 order-2 lg:order-2">
-              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border p-4 lg:p-6`}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                      <Settings className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
-                    </div>
-                    <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>My Services</h3>
-                  </div>
-                  <button
-                    onClick={handleManageServices}
-                    className={`w-full sm:w-auto px-4 py-2 rounded-lg transition-colors ${
-                      isDarkMode 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                    disabled={serviceLoading}
-                  >
-                    {serviceLoading ? 'Loading...' : 'Manage Services'}
-                  </button>
-                </div>
-                
-                <div className="space-y-2">
-                  {doctorServices.length === 0 ? (
-                    <div className={`text-center py-6 lg:py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      <Stethoscope className="h-10 w-10 lg:h-12 lg:w-12 mx-auto mb-3 opacity-50" />
-                      <p className="text-sm lg:text-base">No services selected yet.</p>
-                      <p className="text-xs lg:text-sm">Click "Manage Services" to add services you offer.</p>
-                    </div>
-                  ) : (
-                    doctorServices.map((service) => (
-                      <div 
-                        key={service.id} 
-                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border space-y-2 sm:space-y-0 ${
-                          isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                            service.category === 'in-person' 
-                              ? 'bg-green-500' 
-                              : service.category === 'online'
-                                ? 'bg-blue-500'
-                                : 'bg-purple-500'
-                          }`}></div>
-                          <div className="flex-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <div className={`font-medium text-sm lg:text-base ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {service.name}
-                                </div>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                                    service.category === 'in-person'
-                                      ? isDarkMode 
-                                        ? 'bg-green-900/30 text-green-400' 
-                                        : 'bg-green-100 text-green-700'
-                                      : service.category === 'online'
-                                        ? isDarkMode 
-                                          ? 'bg-blue-900/30 text-blue-400' 
-                                          : 'bg-blue-100 text-blue-700'
-                                        : isDarkMode 
-                                          ? 'bg-purple-900/30 text-purple-400' 
-                                          : 'bg-purple-100 text-purple-700'
-                                  }`}>
-                                    {service.category === 'in-person' ? 'In-Person' : service.category === 'online' ? 'Online' : 'NHS'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-2 mt-2 sm:mt-0">
-                                <div className="text-right">
-                                  <span className={`text-sm font-semibold block ${
-                                    service.category === 'in-person'
-                                      ? isDarkMode ? 'text-green-400' : 'text-green-600'
-                                      : service.category === 'online'
-                                        ? isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                                        : isDarkMode ? 'text-purple-400' : 'text-purple-600'
-                                  }`}>
-                                    {formatCurrency(calculateDoctorTakeHome(parseFloat(service.price || 0)))}
-                                  </span>
-                                </div>
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  • {service.duration || 30} min
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveService(service.id)}
-                          className={`w-full sm:w-auto p-2 rounded-lg transition-colors ${
-                            isDarkMode 
-                              ? 'hover:bg-red-900/30 text-red-400' 
-                              : 'hover:bg-red-100 text-red-600'
-                          }`}
-                          disabled={serviceLoading}
-                          title="Remove service"
-                        >
-                          <Minus className="h-4 w-4 mx-auto sm:mx-0" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
             </div>
           </div>
