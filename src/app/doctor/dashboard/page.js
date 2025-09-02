@@ -2518,70 +2518,115 @@ export default function DoctorDashboard() {
                             </div>
                           </div>
                           
-                          {/* Display business contact info when request is accepted */}
-                          {request.status === 'accepted' && request.business && (
+                          {/* Display contact info when request is accepted */}
+                          {request.status === 'accepted' && (
                             <div className={`mt-4 p-3 border rounded-lg ${
                               isDarkMode 
                                 ? 'bg-green-900/10 border-green-800' 
                                 : 'bg-green-50 border-green-200'
                             }`}>
-                              <h4 className={`font-semibold text-sm mb-2 ${
-                                isDarkMode ? 'text-green-300' : 'text-green-800'
-                              }`}>Business Contact Information:</h4>
-                              <div className="space-y-2">
-                                {request.business.contactPersonName && (
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <span className={`font-medium ${
-                                      isDarkMode ? 'text-green-400' : 'text-green-700'
-                                    }`}>Contact:</span>
-                                    <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                                      {request.business.contactPersonName}
-                                    </span>
+                              {request.isPatientRequest ? (
+                                // Patient request contact info
+                                <div>
+                                  <h4 className={`font-semibold text-sm mb-2 ${
+                                    isDarkMode ? 'text-green-300' : 'text-green-800'
+                                  }`}>Patient Contact Information:</h4>
+                                  <div className="space-y-2">
+                                    {(request.patientFirstName || request.patientLastName) && (
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        <span className={`font-medium ${
+                                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        }`}>Patient:</span>
+                                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                                          {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {request.patientPhone && (
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        <span className={`font-medium ${
+                                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        }`}>Phone:</span>
+                                        <a href={`tel:${request.patientPhone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
+                                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
+                                          {request.patientPhone}
+                                        </a>
+                                      </div>
+                                    )}
+                                    {request.patientEmail && (
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        <span className={`font-medium ${
+                                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        }`}>Email:</span>
+                                        <a href={`mailto:${request.patientEmail}`} className={`hover:underline`} style={{color: '#0F9297'}}>
+                                          {request.patientEmail}
+                                        </a>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                {request.business.phone && (
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <span className={`font-medium ${
-                                      isDarkMode ? 'text-green-400' : 'text-green-700'
-                                    }`}>Phone:</span>
-                                    <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
-                                      <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
-                                      {request.business.phone}
-                                    </a>
+                                </div>
+                              ) : (
+                                // Business request contact info
+                                <div>
+                                  <h4 className={`font-semibold text-sm mb-2 ${
+                                    isDarkMode ? 'text-green-300' : 'text-green-800'
+                                  }`}>Business Contact Information:</h4>
+                                  <div className="space-y-2">
+                                    {request.business?.contactPersonName && (
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        <span className={`font-medium ${
+                                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        }`}>Contact:</span>
+                                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                                          {request.business.contactPersonName}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {request.business?.phone && (
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        <span className={`font-medium ${
+                                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                                        }`}>Phone:</span>
+                                        <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
+                                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
+                                          {request.business.phone}
+                                        </a>
+                                      </div>
+                                    )}
+                                    {request.business?.address && (
+                                      <div className="flex items-start space-x-2 text-sm">
+                                        <span className="text-green-700 dark:text-green-400 font-medium">Address:</span>
+                                        <div className="text-gray-700 dark:text-gray-300">
+                                          <p>{request.business.address}</p>
+                                          <p>
+                                            {[
+                                              request.business.city,
+                                              request.business.state,
+                                              request.business.zipCode
+                                            ].filter(Boolean).join(', ')}
+                                          </p>
+                                          <a 
+                                            href={`https://maps.google.com/?q=${encodeURIComponent(
+                                              [
+                                                request.business.address,
+                                                request.business.city,
+                                                request.business.state,
+                                                request.business.zipCode
+                                              ].filter(Boolean).join(', ')
+                                            )}`}
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className={`hover:underline text-xs inline-flex items-center mt-1`}
+                                            style={{color: '#0F9297'}}
+                                          >
+                                            <MapPin className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />View on Map
+                                          </a>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                                {request.business.address && (
-                                  <div className="flex items-start space-x-2 text-sm">
-                                    <span className="text-green-700 dark:text-green-400 font-medium">Address:</span>
-                                    <div className="text-gray-700 dark:text-gray-300">
-                                      <p>{request.business.address}</p>
-                                      <p>
-                                        {[
-                                          request.business.city,
-                                          request.business.state,
-                                          request.business.zipCode
-                                        ].filter(Boolean).join(', ')}
-                                      </p>
-                                      <a 
-                                        href={`https://maps.google.com/?q=${encodeURIComponent(
-                                          [
-                                            request.business.address,
-                                            request.business.city,
-                                            request.business.state,
-                                            request.business.zipCode
-                                          ].filter(Boolean).join(', ')
-                                        )}`}
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className={`hover:underline text-xs inline-flex items-center mt-1`}
-                                        style={{color: '#0F9297'}}
-                                      >
-                                        <MapPin className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />View on Map
-                                      </a>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2935,14 +2980,35 @@ export default function DoctorDashboard() {
                           <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             Requested: {formatDate(request.requestedAt)}
                           </p>
-                          {request.business && (
+                          {request.isPatientRequest ? (
+                            // Patient request display
                             <div className="mt-2">
                               <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
-                                Business: {request.business.businessName || 'Business'}
+                                Patient: {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ') || 'Private Patient'}
+                              </p>
+                              
+                              {/* Show patient contact info when request is accepted */}
+                              {request.status === 'accepted' && request.patientPhone && (
+                                <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
+                                  <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Patient Contact Information:</h4>
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
+                                    <a href={`tel:${request.patientPhone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
+                                      {request.patientPhone}
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            // Business request display
+                            <div className="mt-2">
+                              <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
+                                Business: {request.business?.businessName || 'Business'}
                               </p>
                               
                               {/* Show business contact info when request is accepted */}
-                              {request.status === 'accepted' && request.business.phone && (
+                              {request.status === 'accepted' && request.business?.phone && (
                                 <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
                                   <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Business Contact Information:</h4>
                                   <div className="flex items-center space-x-2 text-sm">
