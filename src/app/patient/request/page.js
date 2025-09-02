@@ -25,6 +25,16 @@ export default function PatientRequestPage() {
     phone: '',
     countryCode: '+44',
     email: '',
+    dateOfBirth: '',
+    dobDay: '',
+    dobMonth: '',
+    dobYear: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    county: '',
+    postcode: '',
+    howDidYouHear: '',
     serviceId: '',
     doctorSelection: 'any', // 'any', 'previous', or 'specific'
     preferredDoctorId: '',
@@ -157,6 +167,26 @@ export default function PatientRequestPage() {
     }
   };
   
+  // Handle date changes
+  const handleDateChange = (field, value) => {
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value };
+      
+      // If all date fields are filled, construct the dateOfBirth
+      if (updated.dobDay && updated.dobMonth && updated.dobYear) {
+        const formattedDate = `${updated.dobYear}-${updated.dobMonth.padStart(2, '0')}-${updated.dobDay.padStart(2, '0')}`;
+        updated.dateOfBirth = formattedDate;
+      }
+      
+      return updated;
+    });
+    
+    // Clear date error when user starts selecting
+    if (errors.dateOfBirth) {
+      setErrors(prev => ({ ...prev, dateOfBirth: '' }));
+    }
+  };
+
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -211,6 +241,58 @@ export default function PatientRequestPage() {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Date of birth validation
+    if (!formData.dobDay || !formData.dobMonth || !formData.dobYear) {
+      newErrors.dateOfBirth = 'Please select your complete date of birth';
+    } else {
+      // Construct the date from dropdown values
+      const birthDate = new Date(
+        parseInt(formData.dobYear), 
+        parseInt(formData.dobMonth) - 1, // Month is 0-indexed
+        parseInt(formData.dobDay)
+      );
+      
+      // Validate the constructed date
+      if (isNaN(birthDate.getTime()) || 
+          birthDate.getDate() !== parseInt(formData.dobDay) ||
+          birthDate.getMonth() !== parseInt(formData.dobMonth) - 1 ||
+          birthDate.getFullYear() !== parseInt(formData.dobYear)) {
+        newErrors.dateOfBirth = 'Please enter a valid date of birth';
+      } else {
+        // Check if person is at least 16 years old
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        if (age < 16) {
+          newErrors.dateOfBirth = 'You must be at least 16 years old';
+        }
+        if (age > 120) {
+          newErrors.dateOfBirth = 'Please enter a valid date of birth';
+        }
+      }
+    }
+
+    if (!formData.addressLine1.trim()) {
+      newErrors.addressLine1 = 'Address line 1 is required';
+    }
+
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required';
+    }
+
+    if (!formData.postcode.trim()) {
+      newErrors.postcode = 'Postcode is required';
+    } else if (!/^[A-Z]{1,2}[0-9R][0-9A-Z]? [0-9][ABD-HJLNP-UW-Z]{2}$/i.test(formData.postcode.replace(/\s/g, '').toUpperCase())) {
+      newErrors.postcode = 'Please enter a valid UK postcode';
+    }
+
+    if (!formData.howDidYouHear) {
+      newErrors.howDidYouHear = 'Please select how you heard about us';
     }
     
     if (!formData.serviceId) {
@@ -304,6 +386,13 @@ export default function PatientRequestPage() {
         patientLastName: patientData.lastName,
         patientPhone: patientData.fullPhone,
         patientEmail: patientData.email,
+        patientDateOfBirth: patientData.dateOfBirth,
+        patientAddressLine1: patientData.addressLine1,
+        patientAddressLine2: patientData.addressLine2,
+        patientCity: patientData.city,
+        patientCounty: patientData.county,
+        patientPostcode: patientData.postcode,
+        patientHowDidYouHear: patientData.howDidYouHear,
         
         // Service information
         serviceId: parseInt(patientData.serviceId),
@@ -526,6 +615,227 @@ export default function PatientRequestPage() {
                   />
                   {errors.email && (
                     <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                  )}
+                </div>
+
+                {/* Date of Birth */}
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                    Date of Birth *
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Day Dropdown */}
+                    <div>
+                      <select
+                        name="dobDay"
+                        value={formData.dobDay || ''}
+                        onChange={(e) => handleDateChange('dobDay', e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.dateOfBirth ? 'border-red-400 bg-red-50' : ''}`}
+                      >
+                        <option value="">Day</option>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                          <option key={day} value={day.toString()}>
+                            {day}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Month Dropdown */}
+                    <div>
+                      <select
+                        name="dobMonth"
+                        value={formData.dobMonth || ''}
+                        onChange={(e) => handleDateChange('dobMonth', e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.dateOfBirth ? 'border-red-400 bg-red-50' : ''}`}
+                      >
+                        <option value="">Month</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                      </select>
+                    </div>
+                    
+                    {/* Year Dropdown */}
+                    <div>
+                      <select
+                        name="dobYear"
+                        value={formData.dobYear || ''}
+                        onChange={(e) => handleDateChange('dobYear', e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.dateOfBirth ? 'border-red-400 bg-red-50' : ''}`}
+                      >
+                        <option value="">Year</option>
+                        {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 16 - i).map(year => (
+                          <option key={year} value={year.toString()}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  {errors.dateOfBirth && (
+                    <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>
+                  )}
+                </div>
+
+                {/* Address Section */}
+                <div className="space-y-4">
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-blue-900'} border-b ${isDarkMode ? 'border-gray-600' : 'border-blue-200'} pb-2`}>
+                    Address Details
+                  </h3>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                      Address Line 1 *
+                    </label>
+                    <input
+                      type="text"
+                      name="addressLine1"
+                      value={formData.addressLine1}
+                      onChange={handleInputChange}
+                      placeholder="House number and street name"
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                      } ${errors.addressLine1 ? 'border-red-400 bg-red-50' : ''}`}
+                    />
+                    {errors.addressLine1 && (
+                      <p className="text-red-500 text-xs mt-1">{errors.addressLine1}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                      Address Line 2
+                    </label>
+                    <input
+                      type="text"
+                      name="addressLine2"
+                      value={formData.addressLine2}
+                      onChange={handleInputChange}
+                      placeholder="Apartment, suite, etc. (optional)"
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                        City/Town *
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        placeholder="City or town"
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                        } ${errors.city ? 'border-red-400 bg-red-50' : ''}`}
+                      />
+                      {errors.city && (
+                        <p className="text-red-500 text-xs mt-1">{errors.city}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                        County
+                      </label>
+                      <input
+                        type="text"
+                        name="county"
+                        value={formData.county}
+                        onChange={handleInputChange}
+                        placeholder="County (optional)"
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                      Postcode *
+                    </label>
+                    <input
+                      type="text"
+                      name="postcode"
+                      value={formData.postcode}
+                      onChange={handleInputChange}
+                      placeholder="e.g. SW1A 1AA"
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                      } ${errors.postcode ? 'border-red-400 bg-red-50' : ''}`}
+                    />
+                    {errors.postcode && (
+                      <p className="text-red-500 text-xs mt-1">{errors.postcode}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* How did you hear about us */}
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                    How did you hear about us? *
+                  </label>
+                  <select
+                    name="howDidYouHear"
+                    value={formData.howDidYouHear}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white' 
+                        : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                    } ${errors.howDidYouHear ? 'border-red-400 bg-red-50' : ''}`}
+                  >
+                    <option value="">Please select...</option>
+                    <option value="search-engine">Search Engine (Google, Bing, etc.)</option>
+                    <option value="social-media">Social Media (Facebook, Instagram, Twitter)</option>
+                    <option value="friend-family">Friend or Family Recommendation</option>
+                    <option value="doctor-referral">Doctor/GP Referral</option>
+                    <option value="online-ad">Online Advertisement</option>
+                    <option value="healthcare-website">Healthcare Website</option>
+                    <option value="pharmacy">Pharmacy</option>
+                    <option value="newspaper-magazine">Newspaper/Magazine</option>
+                    <option value="radio-tv">Radio/TV</option>
+                    <option value="other">Other</option>
+                  </select>
+                  {errors.howDidYouHear && (
+                    <p className="text-red-500 text-xs mt-1">{errors.howDidYouHear}</p>
                   )}
                 </div>
                 
