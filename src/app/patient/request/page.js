@@ -80,6 +80,7 @@ export default function PatientRequestPage() {
     try {
       setLoadingServices(true);
       console.log('🔍 Fetching available services for patients');
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[isActive][$eq]=true&sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
       const data = await response.json();
@@ -92,6 +93,7 @@ export default function PatientRequestPage() {
       }
       
       console.log('✅ Fetched services for patients:', services.length, 'services');
+      console.log('Services data:', services);
       setAvailableServices(services);
     } catch (error) {
       console.error('❌ Error fetching available services:', error);
@@ -179,6 +181,18 @@ export default function PatientRequestPage() {
   const validateForm = () => {
     const newErrors = {};
     
+    console.log('🔍 Validating form with data:', {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone,
+      email: formData.email,
+      serviceId: formData.serviceId,
+      serviceDate: formData.serviceDate,
+      serviceTime: formData.serviceTime,
+      doctorSelection: formData.doctorSelection,
+      preferredDoctorId: formData.preferredDoctorId
+    });
+    
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     }
@@ -189,7 +203,7 @@ export default function PatientRequestPage() {
     
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
-    } else if (formData.phone.length < 10) {
+    } else if (formData.phone.length < 7 || formData.phone.length > 15) {
       newErrors.phone = 'Please enter a valid phone number';
     }
     
@@ -229,6 +243,7 @@ export default function PatientRequestPage() {
     }
     
     setErrors(newErrors);
+    console.log('Validation errors found:', newErrors);
     return Object.keys(newErrors).length === 0;
   };
   
@@ -237,8 +252,12 @@ export default function PatientRequestPage() {
     e.preventDefault();
     
     if (!validateForm()) {
+      console.log('Form validation failed, errors:', errors);
+      alert('Please fill in all required fields before proceeding.');
       return;
     }
+    
+    console.log('Form validation passed, proceeding with submission');
     
     if (!selectedService) {
       alert('Please select a service');
@@ -810,12 +829,8 @@ export default function PatientRequestPage() {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    disabled={loading || !selectedService}
-                    className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors ${
-                      selectedService && !loading
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
+                    // disabled={loading || !selectedService}
+                    className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors bg-blue-600 hover:bg-blue-700 text-white`}
                   >
                     {loading ? (
                       <>
@@ -923,7 +938,17 @@ export default function PatientRequestPage() {
       {/* Payment Modal */}
       {showPaymentModal && paymentRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="max-w-md w-full">
+          <div className="max-w-md w-full relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute -top-2 -right-2 z-10 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-full p-2 transition-colors border border-gray-600"
+              aria-label="Close payment modal"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <PaymentForm
               serviceRequest={paymentRequest}
               onPaymentSuccess={handlePaymentSuccess}

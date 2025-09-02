@@ -118,16 +118,28 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
     try {
       setInitializationStep(1);
       
+      // Check if this is a patient request
+      const isPatientRequest = serviceRequest._isPatientRequest || serviceRequest.isPatientRequest;
+      
+      const requestBody = {
+        email: businessInfo.email,
+        businessName: businessInfo.name || businessInfo.businessName,
+      };
+      
+      // For patient requests, use a special identifier instead of business ID
+      if (isPatientRequest) {
+        requestBody.patientId = `patient_${businessInfo.phone || 'unknown'}`;
+        requestBody.isPatient = true;
+      } else {
+        requestBody.businessId = businessInfo.id;
+      }
+      
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: businessInfo.email,
-          businessId: businessInfo.id,
-          businessName: businessInfo.name || businessInfo.businessName,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -148,13 +160,13 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           }, 500);
         }, 300);
       } else {
-        console.error('Failed to initialize customer:', data.error);
-        setPaymentError('Failed to initialize payment system');
+        console.error('❌ Failed to initialize customer:', data.error);
+        setPaymentError(`Setup failed: ${data.error || 'Unknown error'}`);
         setIsFullyLoaded(true);
       }
     } catch (error) {
-      console.error('Error initializing customer:', error);
-      setPaymentError('Failed to initialize payment system');
+      console.error('❌ Error initializing customer:', error);
+      setPaymentError(`Initialization error: ${error.message || 'Network error'}`);
       setIsFullyLoaded(true);
     }
   };
@@ -384,7 +396,8 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
       const data = await response.json();
       
       if (data.error) {
-        setPaymentError(data.error);
+        console.error('❌ Payment intent creation failed:', data.error);
+        setPaymentError(`Payment setup failed: ${data.error}`);
         return;
       }
 

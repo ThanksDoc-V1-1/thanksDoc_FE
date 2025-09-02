@@ -9,19 +9,19 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // POST - Create or retrieve a Stripe customer
 export async function POST(request) {
   try {
-    const { email, businessId, businessName } = await request.json();
+    const { email, businessId, patientId, businessName, isPatient } = await request.json();
     
-    if (!email || !businessId) {
+    if (!email || (!businessId && !patientId)) {
       return NextResponse.json(
-        { error: 'Email and Business ID are required' },
+        { error: 'Email and either Business ID or Patient ID are required' },
         { status: 400 }
       );
     }
 
-    ('Creating/retrieving customer for:', { email, businessId, businessName });
+    ('Creating/retrieving customer for:', { email, businessId, patientId, businessName, isPatient });
 
     // Check cache first
-    const cacheKey = `customer_${email}`;
+    const cacheKey = `customer_${email}_${businessId || patientId}`;
     const cached = customerCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
       ('Using cached customer:', cached.customer.id);
@@ -48,15 +48,24 @@ export async function POST(request) {
       ('Found existing customer:', customer.id);
     } else {
       // Create new customer with optimized metadata
-      customer = await stripe.customers.create({
+      const customerData = {
         email: email,
         name: businessName,
         metadata: {
-          businessId: businessId.toString(),
-          businessName: businessName || '',
           createdAt: new Date().toISOString(),
         },
-      });
+      };
+
+      if (isPatient) {
+        customerData.metadata.patientId = patientId;
+        customerData.metadata.customerType = 'patient';
+      } else {
+        customerData.metadata.businessId = businessId.toString();
+        customerData.metadata.businessName = businessName || '';
+        customerData.metadata.customerType = 'business';
+      }
+
+      customer = await stripe.customers.create(customerData);
       ('Created new customer:', customer.id);
     }
 
