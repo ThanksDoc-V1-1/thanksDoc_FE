@@ -41,14 +41,31 @@ export function formatDuration(duration) {
 }
 
 export function formatDate(date, options = {}) {
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    ...options,
-  }).format(new Date(date));
+  if (!date) {
+    return 'Not specified';
+  }
+  
+  try {
+    // Handle both Date objects and string formats
+    const dateObj = date instanceof Date ? date : new Date(date);
+    
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid date';
+    }
+    
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      ...options,
+    }).format(dateObj);
+  } catch (error) {
+    console.error('Error formatting date:', error, 'Input:', date);
+    return 'Invalid date';
+  }
 }
 
 export function getUrgencyColor(urgency, isDarkMode = true) {
