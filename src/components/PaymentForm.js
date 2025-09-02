@@ -467,7 +467,7 @@ function CheckoutForm({ serviceRequest, onPaymentSuccess, businessInfo }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">Duration:</span>
-            <span className="text-white">{formatDuration(serviceRequest.estimatedDuration)}h</span>
+            <span className="text-white">{formatDuration(serviceRequest.estimatedDuration)}min</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-300">Doctor:</span>

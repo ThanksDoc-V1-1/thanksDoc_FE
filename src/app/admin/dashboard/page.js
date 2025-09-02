@@ -2964,7 +2964,7 @@ export default function AdminDashboard() {
                               <div className="flex justify-between items-center">
                                 <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
                                 <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {formatDuration(request.estimatedDuration || request.attributes?.estimatedDuration) || 'TBD'}h
+                                  {formatDuration(request.estimatedDuration || request.attributes?.estimatedDuration) || 'TBD'}min
                                 </span>
                               </div>
                             </div>
@@ -4332,7 +4332,7 @@ export default function AdminDashboard() {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Duration</span>
-                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDuration(estimatedDuration)}h</span>
+                              <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDuration(estimatedDuration)}min</span>
                             </div>
                           </div>
                         </div>

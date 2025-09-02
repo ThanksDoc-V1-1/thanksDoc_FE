@@ -942,7 +942,7 @@ export default function DoctorEarnings() {
                             : 'text-gray-600 bg-gray-100'
                         }`}>
                           <Clock className="h-4 w-4" />
-                          <span className="font-medium">{earning.duration}h</span>
+                          <span className="font-medium">{earning.duration}min</span>
                         </div>
                       </div>
                     </div>

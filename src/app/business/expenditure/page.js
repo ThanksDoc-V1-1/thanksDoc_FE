@@ -747,7 +747,7 @@ function ExpenditureContent() {
                             : 'text-gray-600 bg-gray-100'
                         }`}>
                           <Clock className="h-4 w-4" />
-                          <span className="font-medium">{expenditure.duration}h</span>
+                          <span className="font-medium">{expenditure.duration}min</span>
                         </div>
                         
                         <div className={`px-2 py-1 rounded text-xs font-medium ${
