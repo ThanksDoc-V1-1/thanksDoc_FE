@@ -663,8 +663,12 @@ export default function BusinessDashboard() {
         ('❌ Unexpected response structure:', data);
       }
       
-      ('✅ Fetched services:', services.length, 'services');
+      // Filter out patient services for business dashboard
+      services = services.filter(service => service.serviceType !== 'patient');
+      
+      ('✅ Fetched services:', services.length, 'services (after filtering out patient services)');
       ('✅ Service categories found:', [...new Set(services.map(s => s.category))]);
+      ('✅ Service types found:', [...new Set(services.map(s => s.serviceType))]);
       
       setAvailableServices(services);
     } catch (error) {
