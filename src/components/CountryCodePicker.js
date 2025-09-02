@@ -117,19 +117,19 @@ export default function CountryCodePicker({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`relative flex items-center px-2 sm:px-3 py-2 border-r-0 rounded-l-lg transition-colors flex-shrink-0 ${
+          className={`relative flex items-center px-3 py-3 border-r-0 rounded-l-xl transition-all duration-200 flex-shrink-0 ${
             isDarkMode 
               ? 'border-gray-600 bg-gray-700 text-white hover:bg-gray-600' 
-              : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
+              : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300 hover:bg-blue-100/50'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
         >
-          <span className={`text-xs font-bold mr-1 sm:mr-2 px-1 sm:px-1.5 py-0.5 rounded ${
-            isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-200 text-gray-600'
+          <span className={`text-xs font-bold mr-2 px-1.5 py-0.5 rounded ${
+            isDarkMode ? 'bg-gray-600 text-gray-200' : 'bg-blue-200 text-blue-800'
           }`}>
             {selectedCountry.flag}
           </span>
-          <span className="text-xs sm:text-sm font-medium mr-1">{selectedCountry.code}</span>
-          <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <span className="text-sm font-medium mr-1">{selectedCountry.code}</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {/* Phone Number Input */}
@@ -140,10 +140,10 @@ export default function CountryCodePicker({
           placeholder={placeholder}
           required={required}
           disabled={disabled}
-          className={`flex-1 min-w-0 px-2 sm:px-3 py-2 border-l-0 rounded-r-lg transition-colors text-sm sm:text-base ${
+          className={`flex-1 min-w-0 px-4 py-3 border-l-0 rounded-r-xl transition-all duration-200 ${
             isDarkMode 
               ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+              : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
           } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
         />
       </div>

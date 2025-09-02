@@ -403,19 +403,19 @@ export default function PatientRequestPage() {
   }
   
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-blue-50 via-white to-cyan-50'}`}>
       {/* Header */}
-      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b shadow-sm`}>
+      <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/80 backdrop-blur-sm border-blue-100'} border-b shadow-lg`}>
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center space-x-3">
-            <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-600'} p-2 rounded-lg`}>
+            <div className={`${isDarkMode ? 'bg-blue-900/30' : 'bg-gradient-to-r from-blue-600 to-cyan-600 shadow-lg'} p-3 rounded-xl`}>
               <Heart className={`h-6 w-6 ${isDarkMode ? 'text-blue-400' : 'text-white'}`} />
             </div>
             <div>
-              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent'}`}>
                 Request a Doctor
               </h1>
-              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-blue-600/70'}`}>
                 Get medical care from qualified doctors
               </p>
             </div>
@@ -429,12 +429,12 @@ export default function PatientRequestPage() {
           
           {/* Request Form */}
           <div className="lg:col-span-2">
-            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow border`}>
-              <div className={`p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/70 backdrop-blur-sm border-blue-100 shadow-xl'} rounded-xl border`}>
+              <div className={`p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50'} rounded-t-xl`}>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
                   Patient Information
                 </h2>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-blue-600/70'} mt-1`}>
                   Please provide your details to request medical service
                 </p>
               </div>
@@ -443,7 +443,7 @@ export default function PatientRequestPage() {
                 {/* Personal Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                       First Name *
                     </label>
                     <input
@@ -452,11 +452,11 @@ export default function PatientRequestPage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       placeholder="Your first name"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                         isDarkMode 
                           ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
-                      } ${errors.firstName ? 'border-red-500' : ''}`}
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                      } ${errors.firstName ? 'border-red-400 bg-red-50' : ''}`}
                     />
                     {errors.firstName && (
                       <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
@@ -464,7 +464,7 @@ export default function PatientRequestPage() {
                   </div>
                   
                   <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                       Last Name *
                     </label>
                     <input
@@ -473,11 +473,11 @@ export default function PatientRequestPage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       placeholder="Your last name"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                         isDarkMode 
                           ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
-                      } ${errors.lastName ? 'border-red-500' : ''}`}
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                      } ${errors.lastName ? 'border-red-400 bg-red-50' : ''}`}
                     />
                     {errors.lastName && (
                       <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
@@ -487,7 +487,7 @@ export default function PatientRequestPage() {
                 
                 {/* Contact Information */}
                 <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                     Phone Number *
                   </label>
                   <CountryCodePicker
@@ -503,13 +503,13 @@ export default function PatientRequestPage() {
                   {errors.phone && (
                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
                   )}
-                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-blue-600/70'}`}>
                     You'll receive WhatsApp notifications when a doctor accepts your request
                   </p>
                 </div>
                 
                 <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                     Email Address *
                   </label>
                   <input
@@ -518,11 +518,11 @@ export default function PatientRequestPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Your email address"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                       isDarkMode 
                         ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
-                    } ${errors.email ? 'border-red-500' : ''}`}
+                        : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
+                    } ${errors.email ? 'border-red-400 bg-red-50' : ''}`}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -531,11 +531,11 @@ export default function PatientRequestPage() {
                 
                 {/* Service Selection */}
                 <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                     Which service do you require? *
                   </label>
                   {loadingServices ? (
-                    <div className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-400' : 'border-gray-300 bg-gray-100 text-gray-500'} rounded-lg`}>
+                    <div className={`w-full px-4 py-3 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-400' : 'border-blue-200 bg-blue-50/50 text-blue-600'} rounded-xl`}>
                       Loading services...
                     </div>
                   ) : (
@@ -545,8 +545,8 @@ export default function PatientRequestPage() {
                         const nhsServices = availableServices.filter(service => service.category === 'nhs');
                         if (nhsServices.length === 0) return null;
                         return (
-                          <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50'}`}>
+                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-blue-900'}`}>
                               NHS Work *
                             </h3>
                             <div className="space-y-2">
@@ -578,8 +578,8 @@ export default function PatientRequestPage() {
                         const onlineServices = availableServices.filter(service => service.category === 'online');
                         if (onlineServices.length === 0) return null;
                         return (
-                          <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'}`}>
+                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-green-900'}`}>
                               Online Private Doctor *
                             </h3>
                             <div className="space-y-2">
@@ -611,8 +611,8 @@ export default function PatientRequestPage() {
                         const inPersonServices = availableServices.filter(service => service.category === 'in-person');
                         if (inPersonServices.length === 0) return null;
                         return (
-                          <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-200 bg-gray-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-purple-200 bg-gradient-to-r from-purple-50 to-violet-50'}`}>
+                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-purple-900'}`}>
                               In-Person Private Services *
                             </h3>
                             <div className="space-y-2">
@@ -647,17 +647,17 @@ export default function PatientRequestPage() {
 
                 {/* Doctor Selection */}
                 <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                     Doctor Selection *
                   </label>
                   <select
                     name="doctorSelection"
                     value={formData.doctorSelection}
                     onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                       isDarkMode 
                         ? 'border-gray-600 bg-gray-700 text-white' 
-                        : 'border-gray-300 bg-white text-gray-900'
+                        : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
                     }`}
                   >
                     <option value="any">Any available doctor</option>
@@ -680,11 +680,11 @@ export default function PatientRequestPage() {
                             Select a doctor you've worked with before:
                           </p>
                           {previousDoctors.map(doctor => (
-                            <label key={doctor.id} className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:border-blue-500 transition-colors ${
+                            <label key={doctor.id} className={`flex items-center space-x-3 p-3 rounded-xl border cursor-pointer hover:border-blue-500 transition-all duration-200 ${
                               isDarkMode 
                                 ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' 
-                                : 'border-gray-200 bg-gray-50 hover:bg-blue-50'
-                            } ${formData.preferredDoctorId === doctor.id.toString() ? 'border-blue-500 bg-blue-50' : ''}`}>
+                                : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-300'
+                            } ${formData.preferredDoctorId === doctor.id.toString() ? 'border-blue-500 bg-blue-100' : ''}`}>
                               <input
                                 type="radio"
                                 name="preferredDoctorId"
@@ -734,7 +734,7 @@ export default function PatientRequestPage() {
 
                 {/* Description */}
                 <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                     Description
                   </label>
                   <textarea
@@ -743,10 +743,10 @@ export default function PatientRequestPage() {
                     onChange={handleInputChange}
                     placeholder="Describe what kind of medical assistance you need (optional)"
                     rows={4}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 ${
                       isDarkMode 
                         ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
-                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                        : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
                     }`}
                   />
                 </div>
@@ -754,7 +754,7 @@ export default function PatientRequestPage() {
                 {/* Service Date and Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                       Service Date *
                     </label>
                     <input
@@ -763,11 +763,11 @@ export default function PatientRequestPage() {
                       value={formData.serviceDate}
                       onChange={handleInputChange}
                       min={new Date().toISOString().split('T')[0]} // Today or later
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                         isDarkMode 
                           ? 'border-gray-600 bg-gray-700 text-white' 
-                          : 'border-gray-300 bg-white text-gray-900'
-                      } ${errors.serviceDate ? 'border-red-500' : ''}`}
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                      } ${errors.serviceDate ? 'border-red-400 bg-red-50' : ''}`}
                     />
                     {errors.serviceDate && (
                       <p className="text-red-500 text-xs mt-1">{errors.serviceDate}</p>
@@ -775,7 +775,7 @@ export default function PatientRequestPage() {
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                       Service Time *
                     </label>
                     <input
@@ -783,11 +783,11 @@ export default function PatientRequestPage() {
                       name="serviceTime"
                       value={formData.serviceTime}
                       onChange={handleInputChange}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                         isDarkMode 
                           ? 'border-gray-600 bg-gray-700 text-white' 
-                          : 'border-gray-300 bg-white text-gray-900'
-                      } ${errors.serviceTime ? 'border-red-500' : ''}`}
+                          : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                      } ${errors.serviceTime ? 'border-red-400 bg-red-50' : ''}`}
                     />
                     {errors.serviceTime && (
                       <p className="text-red-500 text-xs mt-1">{errors.serviceTime}</p>
@@ -825,7 +825,7 @@ export default function PatientRequestPage() {
                   <button
                     type="submit"
                     // disabled={loading || !selectedService}
-                    className={`w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center space-x-2 transition-colors bg-blue-600 hover:bg-blue-700 text-white`}
+                    className={`w-full py-4 px-6 rounded-xl font-medium flex items-center justify-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white`}
                   >
                     {loading ? (
                       <>
@@ -847,9 +847,9 @@ export default function PatientRequestPage() {
           
           {/* Price Summary */}
           <div className="lg:col-span-1">
-            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow border sticky top-8`}>
-              <div className={`p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/70 backdrop-blur-sm border-blue-100 shadow-xl'} rounded-xl border sticky top-8`}>
+              <div className={`p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-blue-100 bg-gradient-to-r from-blue-50 to-cyan-50'} rounded-t-xl`}>
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
                   Price Summary
                 </h3>
               </div>
@@ -857,11 +857,11 @@ export default function PatientRequestPage() {
               <div className="p-6">
                 {selectedService ? (
                   <div className="space-y-4">
-                    <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} border rounded-lg p-4`}>
-                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                    <div className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200'} border rounded-xl p-4`}>
+                      <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-blue-900'} mb-2`}>
                         {selectedService.name}
                       </h4>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-3`}>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-blue-600/70'} mb-3`}>
                         Category: {selectedService.category === 'nhs' ? 'NHS Work' : 
                                  selectedService.category === 'online' ? 'Online Private' :
                                  'In-Person Private'}
