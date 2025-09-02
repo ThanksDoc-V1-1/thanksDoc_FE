@@ -82,7 +82,7 @@ export default function PatientRequestPage() {
       console.log('🔍 Fetching available services for patients');
       console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services?filters[isActive][$eq]=true&sort=category:asc,displayOrder:asc,name:asc&pagination[limit]=100`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/patient`);
       const data = await response.json();
       
       let services = [];
@@ -92,11 +92,11 @@ export default function PatientRequestPage() {
         services = data;
       }
       
-      console.log('✅ Fetched services for patients:', services.length, 'services');
-      console.log('Services data:', services);
+      console.log('✅ Fetched patient services:', services.length, 'services');
+      console.log('Patient services data:', services);
       setAvailableServices(services);
     } catch (error) {
-      console.error('❌ Error fetching available services:', error);
+      console.error('❌ Error fetching patient services:', error);
       setAvailableServices([]);
     } finally {
       setLoadingServices(false);
@@ -539,105 +539,41 @@ export default function PatientRequestPage() {
                       Loading services...
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {/* NHS Services */}
-                      {(() => {
-                        const nhsServices = availableServices.filter(service => service.category === 'nhs');
-                        if (nhsServices.length === 0) return null;
-                        return (
-                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-blue-900'}`}>
-                              NHS Work *
-                            </h3>
-                            <div className="space-y-2">
-                              {nhsServices.map(service => (
-                                <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name="serviceId"
-                                    value={service.id}
-                                    checked={formData.serviceId === service.id.toString()}
-                                    onChange={handleInputChange}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {service.name}
-                                  </span>
-                                  <span className={`text-sm font-medium ${isDarkMode ? 'text-blue-400 bg-blue-900/20' : 'text-blue-600 bg-blue-100'} px-2 py-1 rounded`}>
-                                    {formatCurrency(service.price)}
-                                  </span>
-                                </label>
-                              ))}
+                    <div className="space-y-3">
+                      {availableServices.map(service => (
+                        <label key={service.id} className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' 
+                            : 'border-blue-200 bg-blue-50/30 hover:bg-blue-50 hover:border-blue-300'
+                        } ${formData.serviceId === service.id.toString() ? 'border-blue-500 bg-blue-100' : ''}`}>
+                          <div className="flex items-center space-x-3">
+                            <input
+                              type="radio"
+                              name="serviceId"
+                              value={service.id}
+                              checked={formData.serviceId === service.id.toString()}
+                              onChange={handleInputChange}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                            <div>
+                              <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-blue-900'}`}>
+                                {service.name}
+                              </div>
+                              {service.description && (
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-blue-600/70'}`}>
+                                  {service.description}
+                                </div>
+                              )}
+                              <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-blue-500'}`}>
+                                Duration: {service.duration} minutes
+                              </div>
                             </div>
                           </div>
-                        );
-                      })()}
-
-                      {/* Online Services */}
-                      {(() => {
-                        const onlineServices = availableServices.filter(service => service.category === 'online');
-                        if (onlineServices.length === 0) return null;
-                        return (
-                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-green-200 bg-gradient-to-r from-green-50 to-emerald-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-green-900'}`}>
-                              Online Private Doctor *
-                            </h3>
-                            <div className="space-y-2">
-                              {onlineServices.map(service => (
-                                <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name="serviceId"
-                                    value={service.id}
-                                    checked={formData.serviceId === service.id.toString()}
-                                    onChange={handleInputChange}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {service.name}
-                                  </span>
-                                  <span className={`text-sm font-medium px-2 py-1 rounded ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                    {formatCurrency(service.price)}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
+                          <div className={`text-lg font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                            {formatCurrency(service.price)}
                           </div>
-                        );
-                      })()}
-
-                      {/* In-Person Services */}
-                      {(() => {
-                        const inPersonServices = availableServices.filter(service => service.category === 'in-person');
-                        if (inPersonServices.length === 0) return null;
-                        return (
-                          <div className={`border rounded-xl p-4 ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-purple-200 bg-gradient-to-r from-purple-50 to-violet-50'}`}>
-                            <h3 className={`font-medium text-sm mb-3 ${isDarkMode ? 'text-gray-300' : 'text-purple-900'}`}>
-                              In-Person Private Services *
-                            </h3>
-                            <div className="space-y-2">
-                              {inPersonServices.map(service => (
-                                <label key={service.id} className="flex items-center space-x-3 cursor-pointer">
-                                  <input
-                                    type="radio"
-                                    name="serviceId"
-                                    value={service.id}
-                                    checked={formData.serviceId === service.id.toString()}
-                                    onChange={handleInputChange}
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                  />
-                                  <span className={`text-sm flex-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {service.name}
-                                  </span>
-                                  <span className={`text-sm font-medium px-2 py-1 rounded ${isDarkMode ? 'text-blue-300 bg-blue-900/20' : 'text-blue-700 bg-blue-100'}`}>
-                                    {formatCurrency(service.price)}
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                        </label>
+                      ))}
                     </div>
                   )}
                   {errors.serviceId && (
