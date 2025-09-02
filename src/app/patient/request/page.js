@@ -570,7 +570,7 @@ export default function PatientRequestPage() {
         doctorSelectionType: patientData.doctorSelection,
         preferredDoctorId: patientData.preferredDoctorId || null,
         serviceDateTime: patientData.serviceDate && patientData.serviceTime ? 
-          new Date(`${patientData.serviceDate}T${patientData.serviceTime}`).toISOString() : null,
+          `${patientData.serviceDate}T${patientData.serviceTime}:00` : null,
         
         // Payment information
         isPaid: true,
@@ -596,6 +596,9 @@ export default function PatientRequestPage() {
       };
       
       console.log('Creating patient service request with data:', requestData);
+      console.log('🕐 DEBUG - serviceDate:', patientData.serviceDate);
+      console.log('🕐 DEBUG - serviceTime:', patientData.serviceTime);
+      console.log('🕐 DEBUG - constructed serviceDateTime:', requestData.serviceDateTime);
       
       // Create the service request via a special patient endpoint
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/service-requests/patient-request`, {
