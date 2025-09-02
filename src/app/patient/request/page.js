@@ -64,9 +64,96 @@ export default function PatientRequestPage() {
   // Form validation
   const [errors, setErrors] = useState({});
   
+  // UK Cities autocomplete states
+  const [cityQuery, setCityQuery] = useState('');
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [selectedCityIndex, setSelectedCityIndex] = useState(-1);
+  
+  // UK Towns and Counties data
+  const ukTownsAndCounties = [
+    { town: 'London', county: 'Greater London' },
+    { town: 'Birmingham', county: 'West Midlands' },
+    { town: 'Manchester', county: 'Greater Manchester' },
+    { town: 'Liverpool', county: 'Merseyside' },
+    { town: 'Leeds', county: 'West Yorkshire' },
+    { town: 'Sheffield', county: 'South Yorkshire' },
+    { town: 'Bristol', county: 'Bristol' },
+    { town: 'Newcastle upon Tyne', county: 'Tyne and Wear' },
+    { town: 'Nottingham', county: 'Nottinghamshire' },
+    { town: 'Leicester', county: 'Leicestershire' },
+    { town: 'Coventry', county: 'West Midlands' },
+    { town: 'Bradford', county: 'West Yorkshire' },
+    { town: 'Stoke-on-Trent', county: 'Staffordshire' },
+    { town: 'Wolverhampton', county: 'West Midlands' },
+    { town: 'Plymouth', county: 'Devon' },
+    { town: 'Derby', county: 'Derbyshire' },
+    { town: 'Southampton', county: 'Hampshire' },
+    { town: 'Portsmouth', county: 'Hampshire' },
+    { town: 'Brighton', county: 'East Sussex' },
+    { town: 'Hull', county: 'East Yorkshire' },
+    { town: 'Reading', county: 'Berkshire' },
+    { town: 'Oxford', county: 'Oxfordshire' },
+    { town: 'Cambridge', county: 'Cambridgeshire' },
+    { town: 'York', county: 'North Yorkshire' },
+    { town: 'Bath', county: 'Somerset' },
+    { town: 'Canterbury', county: 'Kent' },
+    { town: 'Salisbury', county: 'Wiltshire' },
+    { town: 'Winchester', county: 'Hampshire' },
+    { town: 'Norwich', county: 'Norfolk' },
+    { town: 'Exeter', county: 'Devon' },
+    { town: 'Chester', county: 'Cheshire' },
+    { town: 'Gloucester', county: 'Gloucestershire' },
+    { town: 'Worcester', county: 'Worcestershire' },
+    { town: 'Lincoln', county: 'Lincolnshire' },
+    { town: 'Peterborough', county: 'Cambridgeshire' },
+    { town: 'Lancaster', county: 'Lancashire' },
+    { town: 'Preston', county: 'Lancashire' },
+    { town: 'Blackpool', county: 'Lancashire' },
+    { town: 'Bournemouth', county: 'Dorset' },
+    { town: 'Swindon', county: 'Wiltshire' },
+    { town: 'Warrington', county: 'Cheshire' },
+    { town: 'Stockport', county: 'Greater Manchester' },
+    { town: 'Bolton', county: 'Greater Manchester' },
+    { town: 'Wigan', county: 'Greater Manchester' },
+    { town: 'Rochdale', county: 'Greater Manchester' },
+    { town: 'Salford', county: 'Greater Manchester' },
+    { town: 'Oldham', county: 'Greater Manchester' },
+    { town: 'Bury', county: 'Greater Manchester' },
+    { town: 'Huddersfield', county: 'West Yorkshire' },
+    { town: 'Wakefield', county: 'West Yorkshire' },
+    { town: 'Halifax', county: 'West Yorkshire' },
+    { town: 'Doncaster', county: 'South Yorkshire' },
+    { town: 'Rotherham', county: 'South Yorkshire' },
+    { town: 'Barnsley', county: 'South Yorkshire' },
+    { town: 'Edinburgh', county: 'City of Edinburgh' },
+    { town: 'Glasgow', county: 'Glasgow City' },
+    { town: 'Aberdeen', county: 'Aberdeenshire' },
+    { town: 'Dundee', county: 'Angus' },
+    { town: 'Stirling', county: 'Stirlingshire' },
+    { town: 'Perth', county: 'Perth and Kinross' },
+    { town: 'Inverness', county: 'Highland' },
+    { town: 'Cardiff', county: 'Cardiff' },
+    { town: 'Swansea', county: 'Swansea' },
+    { town: 'Newport', county: 'Newport' },
+    { town: 'Wrexham', county: 'Wrexham' },
+    { town: 'Bangor', county: 'Gwynedd' },
+    { town: 'Belfast', county: 'Belfast' },
+    { town: 'Londonderry', county: 'Londonderry' },
+    { town: 'Lisburn', county: 'Lisburn and Castlereagh' },
+    { town: 'Newtownabbey', county: 'Antrim and Newtownabbey' }
+  ];
+  
   useEffect(() => {
     fetchAvailableServices();
   }, []);
+  
+  // Sync cityQuery with formData.city
+  useEffect(() => {
+    if (formData.city && !cityQuery) {
+      setCityQuery(formData.city);
+    }
+  }, [formData.city, cityQuery]);
   
   // Update pricing when service changes
   useEffect(() => {
@@ -206,6 +293,82 @@ export default function PatientRequestPage() {
       return () => clearTimeout(timeoutId);
     }
   };
+
+  // Handle city input with autocomplete
+  const handleCityChange = (e) => {
+    const value = e.target.value;
+    setCityQuery(value);
+    setFormData(prev => ({
+      ...prev,
+      city: value
+    }));
+
+    if (value.length > 0) {
+      const filtered = ukTownsAndCounties.filter(location =>
+        location.town.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10); // Limit to 10 suggestions
+      setFilteredCities(filtered);
+      setShowCitySuggestions(true);
+      setSelectedCityIndex(-1); // Reset selection
+    } else {
+      setShowCitySuggestions(false);
+      setFilteredCities([]);
+      setSelectedCityIndex(-1);
+      // Clear county when city is cleared
+      setFormData(prev => ({
+        ...prev,
+        county: ''
+      }));
+    }
+
+    // Clear city error when user starts typing
+    if (errors.city) {
+      setErrors(prev => ({ ...prev, city: '' }));
+    }
+  };
+
+  // Handle city selection from suggestions
+  const handleCitySelect = (cityData) => {
+    setCityQuery(cityData.town);
+    setFormData(prev => ({
+      ...prev,
+      city: cityData.town,
+      county: cityData.county
+    }));
+    setShowCitySuggestions(false);
+    setFilteredCities([]);
+    setSelectedCityIndex(-1);
+  };
+
+  // Handle keyboard navigation for city suggestions
+  const handleCityKeyDown = (e) => {
+    if (!showCitySuggestions || filteredCities.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedCityIndex(prev => 
+          prev < filteredCities.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedCityIndex(prev => 
+          prev > 0 ? prev - 1 : filteredCities.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedCityIndex >= 0 && selectedCityIndex < filteredCities.length) {
+          handleCitySelect(filteredCities[selectedCityIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowCitySuggestions(false);
+        setSelectedCityIndex(-1);
+        break;
+    }
+  };
   
   // Validate form
   const validateForm = () => {
@@ -285,10 +448,12 @@ export default function PatientRequestPage() {
       newErrors.city = 'City is required';
     }
 
+    if (!formData.county.trim()) {
+      newErrors.county = 'Please select a city from the dropdown to auto-fill county';
+    }
+
     if (!formData.postcode.trim()) {
       newErrors.postcode = 'Postcode is required';
-    } else if (!/^[A-Z]{1,2}[0-9R][0-9A-Z]? [0-9][ABD-HJLNP-UW-Z]{2}$/i.test(formData.postcode.replace(/\s/g, '').toUpperCase())) {
-      newErrors.postcode = 'Please enter a valid UK postcode';
     }
 
     if (!formData.howDidYouHear) {
@@ -745,22 +910,61 @@ export default function PatientRequestPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div className="relative">
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
                         City/Town *
                       </label>
                       <input
                         type="text"
                         name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="City or town"
+                        value={cityQuery || formData.city}
+                        onChange={handleCityChange}
+                        onKeyDown={handleCityKeyDown}
+                        placeholder="Start typing city or town..."
+                        autoComplete="off"
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                           isDarkMode 
                             ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
                             : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
                         } ${errors.city ? 'border-red-400 bg-red-50' : ''}`}
                       />
+                      {showCitySuggestions && filteredCities.length > 0 && (
+                        <div className={`absolute z-50 w-full mt-1 border rounded-lg shadow-lg max-h-60 overflow-y-auto ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-800' 
+                            : 'border-blue-200 bg-white'
+                        }`}>
+                          {filteredCities.map((cityData, index) => (
+                            <button
+                              key={`${cityData.town}-${cityData.county}`}
+                              type="button"
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-blue-50 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                                index === selectedCityIndex
+                                  ? 'bg-blue-100 dark:bg-gray-700'
+                                  : ''
+                              } ${
+                                isDarkMode 
+                                  ? 'text-gray-200 hover:text-white' 
+                                  : 'text-gray-700 hover:text-gray-900'
+                              }`}
+                              onClick={() => handleCitySelect(cityData)}
+                              style={{ 
+                                WebkitTapHighlightColor: 'transparent',
+                                touchAction: 'manipulation'
+                              }}
+                            >
+                              <div className="font-medium">{cityData.town}</div>
+                              <div className={`text-xs ${
+                                index === selectedCityIndex
+                                  ? 'text-blue-600 dark:text-blue-300'
+                                  : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
+                                {cityData.county}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                       {errors.city && (
                         <p className="text-red-500 text-xs mt-1">{errors.city}</p>
                       )}
@@ -768,19 +972,20 @@ export default function PatientRequestPage() {
 
                     <div>
                       <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
-                        County
+                        County *
                       </label>
                       <input
                         type="text"
                         name="county"
                         value={formData.county}
                         onChange={handleInputChange}
-                        placeholder="County (optional)"
+                        placeholder="County (auto-filled)"
+                        readOnly={!!formData.county}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                           isDarkMode 
                             ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
                             : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
-                        }`}
+                        } ${formData.county ? (isDarkMode ? 'bg-gray-600' : 'bg-gray-50') : ''}`}
                       />
                     </div>
                   </div>
@@ -794,12 +999,12 @@ export default function PatientRequestPage() {
                       name="postcode"
                       value={formData.postcode}
                       onChange={handleInputChange}
-                      placeholder="e.g. SW1A 1AA"
+                      placeholder="Enter your postcode"
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
                         isDarkMode 
-                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
                           : 'border-blue-200 bg-blue-50/50 text-blue-900 placeholder-blue-400/70 hover:border-blue-300'
-                      } ${errors.postcode ? 'border-red-400 bg-red-50' : ''}`}
+                      } ${errors.postcode ? (isDarkMode ? 'border-red-400 bg-red-900/20' : 'border-red-400 bg-red-50') : ''}`}
                     />
                     {errors.postcode && (
                       <p className="text-red-500 text-xs mt-1">{errors.postcode}</p>
