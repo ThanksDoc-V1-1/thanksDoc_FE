@@ -394,16 +394,9 @@ export default function PatientRequestPage() {
             </p>
           </div>
           
-          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>
-            Keep this page open to track your request status, or save this link for later reference.
+          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-4 font-medium`}>
+            Thank you for choosing our service! You can now safely close this window.
           </p>
-          
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            Make Another Request
-          </button>
         </div>
       </div>
     );
