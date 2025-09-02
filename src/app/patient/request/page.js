@@ -270,6 +270,8 @@ export default function PatientRequestPage() {
       totalAmount: totalAmount,
       servicePrice: servicePrice,
       serviceCharge: SERVICE_CHARGE,
+      serviceType: selectedService.name,
+      estimatedDuration: selectedService.duration || 60,
       _isPatientRequest: true,
       _patientData: {
         ...formData,
@@ -873,6 +875,15 @@ export default function PatientRequestPage() {
                       </p>
                       
                       <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            Duration:
+                          </span>
+                          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {selectedService.duration || 60} min
+                          </span>
+                        </div>
+                        
                         <div className="flex justify-between">
                           <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                             Service Price:
