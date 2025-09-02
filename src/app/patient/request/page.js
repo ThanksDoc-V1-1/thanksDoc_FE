@@ -26,12 +26,16 @@ export default function PatientRequestPage() {
     countryCode: '+44',
     email: '',
     serviceId: '',
-    doctorSelection: 'any', // 'any' or 'specific'
+    doctorSelection: 'any', // 'any', 'previous', or 'specific'
     preferredDoctorId: '',
     description: '',
     serviceDate: '',
     serviceTime: '',
   });
+  
+  // Doctor-related states
+  const [previousDoctors, setPreviousDoctors] = useState([]);
+  const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
   
   // Service and pricing states
   const [availableServices, setAvailableServices] = useState([]);
@@ -96,6 +100,60 @@ export default function PatientRequestPage() {
       setLoadingServices(false);
     }
   };
+
+  // Fetch previously worked with doctors based on patient contact info
+  const fetchPreviousDoctors = async () => {
+    if (!formData.phone && !formData.email) return;
+    
+    try {
+      setLoadingPreviousDoctors(true);
+      
+      // Build search criteria
+      const searchCriteria = [];
+      if (formData.phone) {
+        const fullPhone = formData.countryCode + formData.phone.replace(/\s/g, '');
+        searchCriteria.push(`filters[patientPhone][$eq]=${encodeURIComponent(fullPhone)}`);
+      }
+      if (formData.email) {
+        searchCriteria.push(`filters[patientEmail][$eq]=${encodeURIComponent(formData.email)}`);
+      }
+      
+      const searchQuery = searchCriteria.join('&');
+      
+      // Fetch previous service requests for this patient
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/service-requests?${searchQuery}&filters[isPatientRequest][$eq]=true&filters[status][$in][0]=accepted&filters[status][$in][1]=completed&populate[doctor]=*`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract unique doctors from previous requests
+        const doctorMap = new Map();
+        data.data?.forEach(request => {
+          if (request.doctor && request.doctor.id) {
+            doctorMap.set(request.doctor.id, {
+              id: request.doctor.id,
+              firstName: request.doctor.firstName,
+              lastName: request.doctor.lastName,
+              specialization: request.doctor.specialization,
+              lastWorkedWith: request.acceptedAt || request.completedAt
+            });
+          }
+        });
+        
+        const uniqueDoctors = Array.from(doctorMap.values());
+        setPreviousDoctors(uniqueDoctors);
+        
+        console.log(`Found ${uniqueDoctors.length} previously worked with doctors`);
+      }
+    } catch (error) {
+      console.error('Error fetching previous doctors:', error);
+      setPreviousDoctors([]);
+    } finally {
+      setLoadingPreviousDoctors(false);
+    }
+  };
   
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -105,6 +163,15 @@ export default function PatientRequestPage() {
     // Clear specific field error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Fetch previous doctors when phone or email changes (with debounce)
+    if (name === 'phone' || name === 'email') {
+      const timeoutId = setTimeout(() => {
+        fetchPreviousDoctors();
+      }, 1000); // 1 second debounce
+      
+      return () => clearTimeout(timeoutId);
     }
   };
   
@@ -150,6 +217,15 @@ export default function PatientRequestPage() {
     
     if (!formData.serviceTime) {
       newErrors.serviceTime = 'Service time is required';
+    }
+    
+    // Validate doctor selection
+    if (formData.doctorSelection === 'previous') {
+      if (previousDoctors.length === 0) {
+        newErrors.doctorSelection = 'No previous doctors found. Please select "Any available doctor".';
+      } else if (!formData.preferredDoctorId) {
+        newErrors.preferredDoctorId = 'Please select a doctor from your previous doctors';
+      }
     }
     
     setErrors(newErrors);
@@ -571,8 +647,75 @@ export default function PatientRequestPage() {
                     }`}
                   >
                     <option value="any">Any available doctor</option>
-                    <option value="specific">Specific doctor (coming soon)</option>
+                    <option value="previous">Previously worked with doctors</option>
                   </select>
+
+                  {/* Show previous doctors when selected */}
+                  {formData.doctorSelection === 'previous' && (
+                    <div className="mt-3">
+                      {loadingPreviousDoctors ? (
+                        <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} flex items-center space-x-2`}>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            Loading your previous doctors...
+                          </span>
+                        </div>
+                      ) : previousDoctors.length > 0 ? (
+                        <div className="space-y-2">
+                          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
+                            Select a doctor you've worked with before:
+                          </p>
+                          {previousDoctors.map(doctor => (
+                            <label key={doctor.id} className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:border-blue-500 transition-colors ${
+                              isDarkMode 
+                                ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' 
+                                : 'border-gray-200 bg-gray-50 hover:bg-blue-50'
+                            } ${formData.preferredDoctorId === doctor.id.toString() ? 'border-blue-500 bg-blue-50' : ''}`}>
+                              <input
+                                type="radio"
+                                name="preferredDoctorId"
+                                value={doctor.id}
+                                checked={formData.preferredDoctorId === doctor.id.toString()}
+                                onChange={handleInputChange}
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  Dr. {doctor.firstName} {doctor.lastName}
+                                </div>
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {doctor.specialization}
+                                </div>
+                                {doctor.lastWorkedWith && (
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                    Last worked: {formatDate(doctor.lastWorkedWith)}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-yellow-900/20 border-yellow-700' : 'bg-yellow-50 border-yellow-200'} border`}>
+                          <div className="flex items-start space-x-2">
+                            <div className="flex-shrink-0 mt-0.5">
+                              <svg className="h-4 w-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                                No previous doctors found
+                              </p>
+                              <p className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-700'} mt-1`}>
+                                Complete a service request first to build your doctor history. For now, please select "Any available doctor".
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
