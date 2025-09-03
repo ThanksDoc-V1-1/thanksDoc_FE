@@ -424,16 +424,13 @@ export default function PatientRequestPage() {
           birthDate.getFullYear() !== parseInt(formData.dobYear)) {
         newErrors.dateOfBirth = 'Please enter a valid date of birth';
       } else {
-        // Check if person is at least 16 years old
+        // Check if the date is not in the future
         const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-          age--;
+        if (birthDate > today) {
+          newErrors.dateOfBirth = 'Date of birth cannot be in the future';
         }
-        if (age < 16) {
-          newErrors.dateOfBirth = 'You must be at least 16 years old';
-        }
+        // Check if age is reasonable (not more than 120 years old)
+        const age = today.getFullYear() - birthDate.getFullYear();
         if (age > 120) {
           newErrors.dateOfBirth = 'Please enter a valid date of birth';
         }
@@ -854,7 +851,7 @@ export default function PatientRequestPage() {
                         } ${errors.dateOfBirth ? 'border-red-400 bg-red-50' : ''}`}
                       >
                         <option value="">Year</option>
-                        {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 16 - i).map(year => (
+                        {Array.from({ length: 120 }, (_, i) => new Date().getFullYear() - i).map(year => (
                           <option key={year} value={year.toString()}>
                             {year}
                           </option>
