@@ -54,6 +54,26 @@ export function formatDate(date, options = {}) {
       return 'Invalid date';
     }
     
+    // For service request times that end with Z (UTC), parse manually to preserve original time
+    if (typeof date === 'string' && date.endsWith('Z') && date.includes('T')) {
+      const [datePart, timePart] = date.replace('Z', '').split('T');
+      const [year, month, day] = datePart.split('-');
+      const [hours, minutes] = timePart.split(':');
+      
+      const hour24 = parseInt(hours);
+      const minute = parseInt(minutes);
+      const isPM = hour24 >= 12;
+      const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+      const minuteStr = minute.toString().padStart(2, '0');
+      const timeString = `${hour12}:${minuteStr} ${isPM ? 'PM' : 'AM'}`;
+      
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+      const monthName = monthNames[parseInt(month) - 1];
+      
+      return `${monthName} ${parseInt(day)}, ${year} at ${timeString}`;
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
