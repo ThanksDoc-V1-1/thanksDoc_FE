@@ -98,6 +98,48 @@ export default function AdminDashboard() {
     isPublic: false
   });
 
+  // Doctor edit form states
+  const [showEditDoctorForm, setShowEditDoctorForm] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState(null);
+  const [doctorEditFormData, setDoctorEditFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    specialization: '',
+    licenseNumber: '',
+    yearsOfExperience: '',
+    bio: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    hourlyRate: '',
+    isAvailable: true,
+    isVerified: false
+  });
+
+  // Business edit form states
+  const [showEditBusinessForm, setShowEditBusinessForm] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState(null);
+  const [businessEditFormData, setBusinessEditFormData] = useState({
+    businessName: '',
+    businessType: '',
+    contactPersonName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    businessLicense: '',
+    description: '',
+    isVerified: false
+  });
+
+  // Delete confirmation states
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
 
 
   const handleServiceFormChange = (e) => {
@@ -955,6 +997,126 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating business verification:', error);
       alert('Failed to update business verification.');
+    }
+  };
+
+  // Edit doctor handler
+  const handleEditDoctor = (doctor) => {
+    setEditingDoctor(doctor);
+    setDoctorEditFormData({
+      firstName: doctor.firstName || doctor.attributes?.firstName || '',
+      lastName: doctor.lastName || doctor.attributes?.lastName || '',
+      email: doctor.email || doctor.attributes?.email || '',
+      phone: doctor.phone || doctor.attributes?.phone || '',
+      specialization: doctor.specialization || doctor.attributes?.specialization || '',
+      licenseNumber: doctor.licenseNumber || doctor.attributes?.licenseNumber || '',
+      yearsOfExperience: doctor.yearsOfExperience || doctor.attributes?.yearsOfExperience || '',
+      bio: doctor.bio || doctor.attributes?.bio || '',
+      address: doctor.address || doctor.attributes?.address || '',
+      city: doctor.city || doctor.attributes?.city || '',
+      state: doctor.state || doctor.attributes?.state || '',
+      zipCode: doctor.zipCode || doctor.attributes?.zipCode || '',
+      hourlyRate: doctor.hourlyRate || doctor.attributes?.hourlyRate || '',
+      isAvailable: doctor.isAvailable !== undefined ? doctor.isAvailable : (doctor.attributes?.isAvailable || true),
+      isVerified: doctor.isVerified !== undefined ? doctor.isVerified : (doctor.attributes?.isVerified || false)
+    });
+    setShowEditDoctorForm(true);
+  };
+
+  // Edit business handler
+  const handleEditBusiness = (business) => {
+    setEditingBusiness(business);
+    setBusinessEditFormData({
+      businessName: business.businessName || business.attributes?.businessName || '',
+      businessType: business.businessType || business.attributes?.businessType || '',
+      contactPersonName: business.contactPersonName || business.attributes?.contactPersonName || '',
+      email: business.email || business.attributes?.email || '',
+      phone: business.phone || business.attributes?.phone || '',
+      address: business.address || business.attributes?.address || '',
+      city: business.city || business.attributes?.city || '',
+      state: business.state || business.attributes?.state || '',
+      zipCode: business.zipCode || business.attributes?.zipCode || '',
+      businessLicense: business.businessLicense || business.attributes?.businessLicense || '',
+      description: business.description || business.attributes?.description || '',
+      isVerified: business.isVerified !== undefined ? business.isVerified : (business.attributes?.isVerified || false)
+    });
+    setShowEditBusinessForm(true);
+  };
+
+  // Delete doctor handler
+  const handleDeleteDoctor = (doctor) => {
+    setDeleteTarget({
+      type: 'doctor',
+      item: doctor
+    });
+  };
+
+  // Delete business handler
+  const handleDeleteBusiness = (business) => {
+    setDeleteTarget({
+      type: 'business',
+      item: business
+    });
+  };
+
+  // Confirm delete handler
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    
+    try {
+      if (deleteTarget.type === 'doctor') {
+        await doctorAPI.delete(deleteTarget.item.id);
+        alert('Doctor deleted successfully!');
+      } else if (deleteTarget.type === 'business') {
+        await businessAPI.delete(deleteTarget.item.id);
+        alert('Business deleted successfully!');
+      }
+      
+      await fetchAllData();
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error(`Error deleting ${deleteTarget.type}:`, error);
+      alert(`Failed to delete ${deleteTarget.type}. They may have active service requests.`);
+    }
+  };
+
+  // Update doctor handler
+  const handleUpdateDoctor = async (e) => {
+    e.preventDefault();
+    if (!editingDoctor) return;
+    
+    setDataLoading(true);
+    try {
+      await doctorAPI.update(editingDoctor.id, doctorEditFormData);
+      await fetchAllData();
+      setShowEditDoctorForm(false);
+      setEditingDoctor(null);
+      alert('Doctor updated successfully!');
+    } catch (error) {
+      console.error('Error updating doctor:', error);
+      alert('Failed to update doctor.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  // Update business handler
+  const handleUpdateBusiness = async (e) => {
+    e.preventDefault();
+    if (!editingBusiness) return;
+    
+    setDataLoading(true);
+    try {
+      await businessAPI.update(editingBusiness.id, businessEditFormData);
+      await fetchAllData();
+      setShowEditBusinessForm(false);
+      setEditingBusiness(null);
+      alert('Business updated successfully!');
+    } catch (error) {
+      console.error('Error updating business:', error);
+      alert('Failed to update business.');
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -3167,6 +3329,28 @@ export default function AdminDashboard() {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
+                            <button 
+                              className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleEditDoctor(doctor);
+                              }}
+                              title="Edit doctor details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteDoctor(doctor);
+                              }}
+                              title="Delete doctor"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -3397,6 +3581,28 @@ export default function AdminDashboard() {
                               title="View business details"
                             >
                               <Eye className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className={`${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleEditBusiness(business);
+                              }}
+                              title="Edit business details"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button 
+                              className={`${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteBusiness(business);
+                              }}
+                              title="Delete business"
+                            >
+                              <X className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -7520,6 +7726,460 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+        {/* Doctor Edit Form Modal */}
+        {editingDoctor && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setEditingDoctor(null)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full relative z-50 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <form onSubmit={handleUpdateDoctor}>
+                  <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <div className="flex justify-between items-center">
+                          <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Edit Doctor Information
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setEditingDoctor(null)}
+                            className="text-gray-400 hover:text-gray-500"
+                          >
+                            <span className="sr-only">Close</span>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="mt-4 space-y-4 max-h-96 overflow-y-auto">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                First Name *
+                              </label>
+                              <input
+                                type="text"
+                                name="firstName"
+                                value={doctorFormData.firstName}
+                                onChange={(e) => setDoctorFormData({...doctorFormData, firstName: e.target.value})}
+                                required
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              />
+                            </div>
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Last Name *
+                              </label>
+                              <input
+                                type="text"
+                                name="lastName"
+                                value={doctorFormData.lastName}
+                                onChange={(e) => setDoctorFormData({...doctorFormData, lastName: e.target.value})}
+                                required
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Email *
+                            </label>
+                            <input
+                              type="email"
+                              name="email"
+                              value={doctorFormData.email}
+                              onChange={(e) => setDoctorFormData({...doctorFormData, email: e.target.value})}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Phone Number
+                            </label>
+                            <input
+                              type="tel"
+                              name="phoneNumber"
+                              value={doctorFormData.phoneNumber}
+                              onChange={(e) => setDoctorFormData({...doctorFormData, phoneNumber: e.target.value})}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Specialization
+                            </label>
+                            <input
+                              type="text"
+                              name="specialization"
+                              value={doctorFormData.specialization}
+                              onChange={(e) => setDoctorFormData({...doctorFormData, specialization: e.target.value})}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              License Number
+                            </label>
+                            <input
+                              type="text"
+                              name="licenseNumber"
+                              value={doctorFormData.licenseNumber}
+                              onChange={(e) => setDoctorFormData({...doctorFormData, licenseNumber: e.target.value})}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Availability Status
+                              </label>
+                              <select
+                                name="availabilityStatus"
+                                value={doctorFormData.availabilityStatus}
+                                onChange={(e) => setDoctorFormData({...doctorFormData, availabilityStatus: e.target.value})}
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="available">Available</option>
+                                <option value="busy">Busy</option>
+                                <option value="offline">Offline</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Verification Status
+                              </label>
+                              <select
+                                name="isVerified"
+                                value={doctorFormData.isVerified}
+                                onChange={(e) => setDoctorFormData({...doctorFormData, isVerified: e.target.value === 'true'})}
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="true">Verified</option>
+                                <option value="false">Not Verified</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`px-6 py-3 sm:px-6 sm:flex sm:flex-row-reverse ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <button
+                      type="submit"
+                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                    >
+                      Update Doctor
+                    </button>
+                    <button
+                      type="button"
+                      className={`mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setEditingDoctor(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Business Edit Form Modal */}
+        {editingBusiness && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setEditingBusiness(null)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full relative z-50 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <form onSubmit={handleUpdateBusiness}>
+                  <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <div className="flex justify-between items-center">
+                          <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Edit Business Information
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setEditingBusiness(null)}
+                            className="text-gray-400 hover:text-gray-500"
+                          >
+                            <span className="sr-only">Close</span>
+                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="mt-4 space-y-4 max-h-96 overflow-y-auto">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Business Name *
+                            </label>
+                            <input
+                              type="text"
+                              name="businessName"
+                              value={businessFormData.businessName}
+                              onChange={(e) => setBusinessFormData({...businessFormData, businessName: e.target.value})}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Email *
+                            </label>
+                            <input
+                              type="email"
+                              name="email"
+                              value={businessFormData.email}
+                              onChange={(e) => setBusinessFormData({...businessFormData, email: e.target.value})}
+                              required
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Phone Number
+                            </label>
+                            <input
+                              type="tel"
+                              name="phoneNumber"
+                              value={businessFormData.phoneNumber}
+                              onChange={(e) => setBusinessFormData({...businessFormData, phoneNumber: e.target.value})}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Address
+                            </label>
+                            <textarea
+                              name="address"
+                              value={businessFormData.address}
+                              onChange={(e) => setBusinessFormData({...businessFormData, address: e.target.value})}
+                              rows={3}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            />
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              Business Type
+                            </label>
+                            <select
+                              name="businessType"
+                              value={businessFormData.businessType}
+                              onChange={(e) => setBusinessFormData({...businessFormData, businessType: e.target.value})}
+                              className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                isDarkMode 
+                                  ? 'bg-gray-800 border-gray-700 text-white' 
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              }`}
+                            >
+                              <option value="">Select Business Type</option>
+                              {businessTypes.map((type) => (
+                                <option key={type.id} value={type.value}>
+                                  {type.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Verification Status
+                              </label>
+                              <select
+                                name="isVerified"
+                                value={businessFormData.isVerified}
+                                onChange={(e) => setBusinessFormData({...businessFormData, isVerified: e.target.value === 'true'})}
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="true">Verified</option>
+                                <option value="false">Not Verified</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Active Status
+                              </label>
+                              <select
+                                name="isActive"
+                                value={businessFormData.isActive}
+                                onChange={(e) => setBusinessFormData({...businessFormData, isActive: e.target.value === 'true'})}
+                                className={`mt-1 block w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                  isDarkMode 
+                                    ? 'bg-gray-800 border-gray-700 text-white' 
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                }`}
+                              >
+                                <option value="true">Active</option>
+                                <option value="false">Inactive</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`px-6 py-3 sm:px-6 sm:flex sm:flex-row-reverse ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                    <button
+                      type="submit"
+                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                    >
+                      Update Business
+                    </button>
+                    <button
+                      type="button"
+                      className={`mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setEditingBusiness(null)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setDeleteTarget(null)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                  <div className="sm:flex sm:items-start">
+                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                      <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                      <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Confirm Delete
+                      </h3>
+                      <div className="mt-2">
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                          Are you sure you want to delete this {deleteTarget.type}? This action cannot be undone.
+                        </p>
+                        <p className={`text-sm font-medium mt-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {deleteTarget.type === 'doctor' 
+                            ? `${deleteTarget.item.firstName} ${deleteTarget.item.lastName} (${deleteTarget.item.email})`
+                            : `${deleteTarget.item.businessName} (${deleteTarget.item.email})`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className={`px-6 py-3 sm:px-6 sm:flex sm:flex-row-reverse ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDelete}
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteTarget(null)}
+                    className={`mt-3 w-full inline-flex justify-center rounded-md border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
       </div>
     </div>
