@@ -99,25 +99,7 @@ export default function AdminDashboard() {
   });
 
   // Doctor edit form states
-  const [showEditDoctorForm, setShowEditDoctorForm] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
-  const [doctorEditFormData, setDoctorEditFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    specialization: '',
-    licenseNumber: '',
-    yearsOfExperience: '',
-    bio: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    hourlyRate: '',
-    isAvailable: true,
-    isVerified: false
-  });
 
   // Business edit form states
   const [showEditBusinessForm, setShowEditBusinessForm] = useState(false);
@@ -1003,24 +985,16 @@ export default function AdminDashboard() {
   // Edit doctor handler
   const handleEditDoctor = (doctor) => {
     setEditingDoctor(doctor);
-    setDoctorEditFormData({
+    setDoctorFormData({
       firstName: doctor.firstName || doctor.attributes?.firstName || '',
       lastName: doctor.lastName || doctor.attributes?.lastName || '',
       email: doctor.email || doctor.attributes?.email || '',
-      phone: doctor.phone || doctor.attributes?.phone || '',
+      phoneNumber: doctor.phone || doctor.phoneNumber || doctor.attributes?.phone || doctor.attributes?.phoneNumber || '',
       specialization: doctor.specialization || doctor.attributes?.specialization || '',
       licenseNumber: doctor.licenseNumber || doctor.attributes?.licenseNumber || '',
-      yearsOfExperience: doctor.yearsOfExperience || doctor.attributes?.yearsOfExperience || '',
-      bio: doctor.bio || doctor.attributes?.bio || '',
-      address: doctor.address || doctor.attributes?.address || '',
-      city: doctor.city || doctor.attributes?.city || '',
-      state: doctor.state || doctor.attributes?.state || '',
-      zipCode: doctor.zipCode || doctor.attributes?.zipCode || '',
-      hourlyRate: doctor.hourlyRate || doctor.attributes?.hourlyRate || '',
-      isAvailable: doctor.isAvailable !== undefined ? doctor.isAvailable : (doctor.attributes?.isAvailable || true),
+      availabilityStatus: doctor.isAvailable ? 'available' : 'offline',
       isVerified: doctor.isVerified !== undefined ? doctor.isVerified : (doctor.attributes?.isVerified || false)
     });
-    setShowEditDoctorForm(true);
   };
 
   // Edit business handler
@@ -1085,18 +1059,27 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editingDoctor) return;
     
-    setDataLoading(true);
     try {
-      await doctorAPI.update(editingDoctor.id, doctorEditFormData);
+      // Prepare the data for API call
+      const updateData = {
+        firstName: doctorFormData.firstName,
+        lastName: doctorFormData.lastName,
+        email: doctorFormData.email,
+        phone: doctorFormData.phoneNumber,
+        phoneNumber: doctorFormData.phoneNumber,
+        specialization: doctorFormData.specialization,
+        licenseNumber: doctorFormData.licenseNumber,
+        isAvailable: doctorFormData.availabilityStatus === 'available',
+        isVerified: doctorFormData.isVerified
+      };
+      
+      await doctorAPI.update(editingDoctor.id, updateData);
       await fetchAllData();
-      setShowEditDoctorForm(false);
       setEditingDoctor(null);
       alert('Doctor updated successfully!');
     } catch (error) {
       console.error('Error updating doctor:', error);
       alert('Failed to update doctor.');
-    } finally {
-      setDataLoading(false);
     }
   };
 
