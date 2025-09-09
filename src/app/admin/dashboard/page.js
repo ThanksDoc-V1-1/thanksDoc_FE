@@ -102,22 +102,7 @@ export default function AdminDashboard() {
   const [editingDoctor, setEditingDoctor] = useState(null);
 
   // Business edit form states
-  const [showEditBusinessForm, setShowEditBusinessForm] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState(null);
-  const [businessEditFormData, setBusinessEditFormData] = useState({
-    businessName: '',
-    businessType: '',
-    contactPersonName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    businessLicense: '',
-    description: '',
-    isVerified: false
-  });
 
   // Delete confirmation states
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -1000,21 +985,15 @@ export default function AdminDashboard() {
   // Edit business handler
   const handleEditBusiness = (business) => {
     setEditingBusiness(business);
-    setBusinessEditFormData({
+    setBusinessFormData({
       businessName: business.businessName || business.attributes?.businessName || '',
-      businessType: business.businessType || business.attributes?.businessType || '',
-      contactPersonName: business.contactPersonName || business.attributes?.contactPersonName || '',
       email: business.email || business.attributes?.email || '',
-      phone: business.phone || business.attributes?.phone || '',
+      phoneNumber: business.phone || business.phoneNumber || business.attributes?.phone || business.attributes?.phoneNumber || '',
       address: business.address || business.attributes?.address || '',
-      city: business.city || business.attributes?.city || '',
-      state: business.state || business.attributes?.state || '',
-      zipCode: business.zipCode || business.attributes?.zipCode || '',
-      businessLicense: business.businessLicense || business.attributes?.businessLicense || '',
-      description: business.description || business.attributes?.description || '',
-      isVerified: business.isVerified !== undefined ? business.isVerified : (business.attributes?.isVerified || false)
+      businessType: business.businessType || business.attributes?.businessType || '',
+      isVerified: business.isVerified !== undefined ? business.isVerified : (business.attributes?.isVerified || false),
+      isActive: business.isActive !== undefined ? business.isActive : (business.attributes?.isActive || true)
     });
-    setShowEditBusinessForm(true);
   };
 
   // Delete doctor handler
@@ -1088,18 +1067,26 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editingBusiness) return;
     
-    setDataLoading(true);
     try {
-      await businessAPI.update(editingBusiness.id, businessEditFormData);
+      // Prepare the data for API call
+      const updateData = {
+        businessName: businessFormData.businessName,
+        email: businessFormData.email,
+        phone: businessFormData.phoneNumber,
+        phoneNumber: businessFormData.phoneNumber,
+        address: businessFormData.address,
+        businessType: businessFormData.businessType,
+        isVerified: businessFormData.isVerified,
+        isActive: businessFormData.isActive
+      };
+      
+      await businessAPI.update(editingBusiness.id, updateData);
       await fetchAllData();
-      setShowEditBusinessForm(false);
       setEditingBusiness(null);
       alert('Business updated successfully!');
     } catch (error) {
       console.error('Error updating business:', error);
       alert('Failed to update business.');
-    } finally {
-      setDataLoading(false);
     }
   };
 
