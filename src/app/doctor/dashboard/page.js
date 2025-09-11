@@ -437,7 +437,6 @@ export default function DoctorDashboard() {
       const response = await subscriptionAPI.getByDoctorId(user.id);
       if (response.data) {
         setSubscriptionData(response.data);
-        console.log('✅ Subscription data:', response.data);
       }
     } catch (error) {
       console.error('❌ Error fetching subscription data:', error);
@@ -2243,7 +2242,7 @@ export default function DoctorDashboard() {
         )}
 
         {/* Subscription Warning Banner */}
-        {user && subscriptionData?.status !== 'active' && (
+        {user && subscriptionData?.data?.subscriptionStatus !== 'active' && (
           <div className={`${isDarkMode ? 'bg-yellow-900/30 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} rounded-lg border p-4 mb-6`}>
             <div className="flex items-center">
               <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3" />
@@ -2252,9 +2251,9 @@ export default function DoctorDashboard() {
                   Subscription Required
                 </h3>
                 <p className={`text-sm ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>
-                  {subscriptionData?.status === 'past_due' 
+                  {subscriptionData?.data?.subscriptionStatus === 'past_due' 
                     ? 'Your subscription payment is past due. Please update your payment to continue receiving service requests.'
-                    : subscriptionData?.status === 'cancelled'
+                    : subscriptionData?.data?.subscriptionStatus === 'cancelled'
                     ? 'Your subscription has been cancelled. You will not receive new service requests.'
                     : 'You need an active subscription to receive service requests from businesses.'
                   }
@@ -2268,7 +2267,7 @@ export default function DoctorDashboard() {
                     : 'bg-yellow-600 hover:bg-yellow-700 text-white'
                 }`}
               >
-                {subscriptionData?.status === 'past_due' ? 'Update Payment' : 'Subscribe Now'}
+                {subscriptionData?.data?.subscriptionStatus === 'past_due' ? 'Update Payment' : 'Subscribe Now'}
               </button>
             </div>
           </div>
@@ -2404,14 +2403,14 @@ export default function DoctorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className={`text-xs font-medium ${
-                      subscriptionData?.status === 'active' ? 'text-green-400' :
-                      subscriptionData?.status === 'past_due' ? 'text-yellow-400' :
-                      subscriptionData?.status === 'cancelled' ? 'text-red-400' :
+                      subscriptionData?.data?.subscriptionStatus === 'active' ? 'text-green-400' :
+                      subscriptionData?.data?.subscriptionStatus === 'past_due' ? 'text-yellow-400' :
+                      subscriptionData?.data?.subscriptionStatus === 'cancelled' ? 'text-red-400' :
                       'text-gray-400'
                     }`}>
-                      {subscriptionData?.status === 'active' ? 'Active' :
-                       subscriptionData?.status === 'past_due' ? 'Past Due' :
-                       subscriptionData?.status === 'cancelled' ? 'Cancelled' :
+                      {subscriptionData?.data?.subscriptionStatus === 'active' ? 'Active' :
+                       subscriptionData?.data?.subscriptionStatus === 'past_due' ? 'Past Due' :
+                       subscriptionData?.data?.subscriptionStatus === 'cancelled' ? 'Cancelled' :
                        'No Sub'
                       }
                     </p>
@@ -2420,11 +2419,11 @@ export default function DoctorDashboard() {
                     }`}>Subscription</p>
                   </div>
                   <div className={`p-1.5 lg:p-2 rounded-lg ${
-                    subscriptionData?.status === 'active' ? 
+                    subscriptionData?.data?.subscriptionStatus === 'active' ? 
                       (isDarkMode ? 'bg-green-900/30' : 'bg-green-600') :
-                    subscriptionData?.status === 'past_due' ? 
+                    subscriptionData?.data?.subscriptionStatus === 'past_due' ? 
                       (isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-600') :
-                    subscriptionData?.status === 'cancelled' ? 
+                    subscriptionData?.data?.subscriptionStatus === 'cancelled' ? 
                       (isDarkMode ? 'bg-red-900/30' : 'bg-red-600') :
                       (isDarkMode ? 'bg-gray-800' : 'bg-gray-400')
                   }`}>
@@ -3411,12 +3410,12 @@ export default function DoctorDashboard() {
                         Current Status
                       </h3>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                        subscriptionData?.status === 'active' ? 'bg-green-600 text-white' :
-                        subscriptionData?.status === 'past_due' ? 'bg-yellow-600 text-white' :
-                        subscriptionData?.status === 'cancelled' ? 'bg-red-600 text-white' :
+                        subscriptionData?.data?.subscriptionStatus === 'active' ? 'bg-green-600 text-white' :
+                        subscriptionData?.data?.subscriptionStatus === 'past_due' ? 'bg-yellow-600 text-white' :
+                        subscriptionData?.data?.subscriptionStatus === 'cancelled' ? 'bg-red-600 text-white' :
                         'bg-gray-600 text-white'
                       }`}>
-                        {subscriptionData?.status?.replace('_', ' ').toUpperCase() || 'NO SUBSCRIPTION'}
+                        {subscriptionData?.data?.subscriptionStatus?.replace('_', ' ').toUpperCase() || 'NO SUBSCRIPTION'}
                       </span>
                     </div>
                     
