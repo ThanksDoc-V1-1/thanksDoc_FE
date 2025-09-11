@@ -12,6 +12,7 @@ import NotificationCenter from '../../../components/NotificationCenter';
 import NotificationBanner from '../../../components/NotificationBanner';
 import DistanceSlider from '../../../components/DistanceSlider';
 import CountryCodePicker from '../../../components/CountryCodePicker';
+import SubscriptionPaymentForm from '../../../components/SubscriptionPaymentForm';
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -78,6 +79,7 @@ export default function DoctorDashboard() {
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   // Pagination and filtering states for Recent Service Requests
   const [currentPage, setCurrentPage] = useState(1);
@@ -445,6 +447,24 @@ export default function DoctorDashboard() {
       }
     } finally {
       setSubscriptionLoading(false);
+    }
+  };
+
+  const handleSubscriptionPaymentSuccess = async (subscriptionData) => {
+    try {
+      console.log('✅ Subscription payment successful:', subscriptionData);
+      setShowPaymentForm(false);
+      setShowSubscriptionModal(false);
+      
+      // Refresh subscription data
+      await fetchSubscriptionData();
+      
+      // Show success message
+      alert('Subscription activated successfully! You can now receive service requests.');
+      
+    } catch (error) {
+      console.error('❌ Error handling payment success:', error);
+      alert('Subscription created but there was an error refreshing data. Please refresh the page.');
     }
   };
 
@@ -3374,6 +3394,14 @@ export default function DoctorDashboard() {
                     Loading subscription details...
                   </p>
                 </div>
+              ) : showPaymentForm ? (
+                <SubscriptionPaymentForm
+                  doctorData={doctorData || user}
+                  subscriptionAmount={getMonthlySubscriptionAmount()}
+                  onPaymentSuccess={handleSubscriptionPaymentSuccess}
+                  onCancel={() => setShowPaymentForm(false)}
+                  isDarkMode={isDarkMode}
+                />
               ) : subscriptionData ? (
                 <div className="space-y-6">
                   {/* Subscription Status */}
@@ -3490,10 +3518,7 @@ export default function DoctorDashboard() {
                         You need an active subscription to receive service requests from businesses.
                       </p>
                       <button
-                        onClick={() => {
-                          // TODO: Implement subscription signup flow
-                          alert('Subscription signup coming soon!');
-                        }}
+                        onClick={() => setShowPaymentForm(true)}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
                       >
                         Subscribe Now
@@ -3511,10 +3536,7 @@ export default function DoctorDashboard() {
                     Subscribe to start receiving service requests from businesses.
                   </p>
                   <button
-                    onClick={() => {
-                      // TODO: Implement subscription signup flow
-                      alert('Subscription signup coming soon!');
-                    }}
+                    onClick={() => setShowPaymentForm(true)}
                     className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
                   >
                     Subscribe Now
