@@ -626,6 +626,16 @@ export const systemSettingsAPI = {
   delete: (id) => api.delete(`/system-settings/${id}`),
 };
 
+// Doctor Subscription API calls
+export const subscriptionAPI = {
+  getAll: () => api.get('/doctor-subscriptions'),
+  getById: (id) => api.get(`/doctor-subscriptions/${id}`),
+  getByDoctorId: (doctorId) => api.get(`/doctor-subscriptions/doctor/${doctorId}`),
+  create: (data) => api.post('/doctor-subscriptions/create', data),
+  cancel: (id) => api.put(`/doctor-subscriptions/${id}/cancel`),
+  getStats: () => api.get('/doctor-subscriptions/stats'),
+};
+
 // Admin API calls
 export const adminAPI = {
   changePassword: (currentPassword, newPassword) =>

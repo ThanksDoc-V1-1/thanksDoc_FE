@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu } from 'lucide-react';
-import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI } from '../../../lib/api';
+import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI, subscriptionAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -38,6 +38,15 @@ export default function AdminDashboard() {
   
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [systemSettings, setSystemSettings] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptionStats, setSubscriptionStats] = useState({
+    totalSubscriptions: 0,
+    activeSubscriptions: 0,
+    cancelledSubscriptions: 0,
+    pastDueSubscriptions: 0,
+    monthlyRevenue: 0,
+    conversionRate: 0
+  });
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -697,13 +706,14 @@ export default function AdminDashboard() {
         .then(res => res.json())
         .then(data => ({ data }));
         
-      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
         servicesPromise,
         businessAPI.getBusinessTypes(),
-        systemSettingsAPI.getAll()
+        systemSettingsAPI.getAll(),
+        subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })) // Handle if subscriptions API is not ready
       ]);
 
       ('🏥 Raw doctors response:', doctorsRes.data);
@@ -716,12 +726,22 @@ export default function AdminDashboard() {
       }
       ('🏗️ Raw business types response:', businessTypesRes.data);
       ('⚙️ Raw system settings response:', systemSettingsRes.data);
+      ('💳 Raw subscriptions response:', subscriptionsRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
       setServices(servicesRes.data?.data || []);
       setBusinessTypes(businessTypesRes.data?.data || []);
       setSystemSettings(systemSettingsRes.data?.data || []);
+      setSubscriptions(subscriptionsRes.data?.data || []);
+
+      // Load subscription stats
+      try {
+        const statsRes = await subscriptionAPI.getStats();
+        setSubscriptionStats(statsRes.data || subscriptionStats);
+      } catch (error) {
+        console.error('Error loading subscription stats:', error);
+      }
       
       // Sort service requests by date, with newest first
       const requests = requestsRes.data?.data || [];
@@ -787,6 +807,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAllData();
+    initializeSubscriptionSettings();
     
     // Handle URL parameters for navigation from notifications
     const urlParams = new URLSearchParams(window.location.search);
@@ -817,6 +838,32 @@ export default function AdminDashboard() {
     // Clean up the interval when the component unmounts
     return () => clearInterval(refreshInterval);
   }, []);
+
+  // Initialize default subscription settings
+  const initializeSubscriptionSettings = async () => {
+    try {
+      // Check if subscription amount setting exists
+      const existingSetting = systemSettings.find(setting => setting.key === 'doctor_subscription_amount');
+      
+      if (!existingSetting) {
+        // Create default subscription amount setting
+        await systemSettingsAPI.create({
+          key: 'doctor_subscription_amount',
+          value: '29',
+          dataType: 'number',
+          description: 'Monthly subscription amount for doctors in GBP',
+          category: 'subscription',
+          isPublic: false
+        });
+        
+        // Refresh system settings
+        const updatedSettings = await systemSettingsAPI.getAll();
+        setSystemSettings(updatedSettings.data?.data || []);
+      }
+    } catch (error) {
+      console.error('Error initializing subscription settings:', error);
+    }
+  };
 
   // Separate useEffect for document types with extended delay and retry logic
   useEffect(() => {
@@ -2525,6 +2572,7 @@ export default function AdminDashboard() {
               { id: 'requests', name: 'Service Requests', icon: Calendar },
               { id: 'transactions', name: 'Transactions', icon: CreditCard },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
+              { id: 'subscriptions', name: 'Doctor Subscriptions', icon: CreditCard },
               { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText },
               { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck },
               { id: 'settings', name: 'System Settings', icon: Settings },
@@ -4721,6 +4769,241 @@ export default function AdminDashboard() {
                     <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No earnings data available</p>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       Doctor earnings will appear here once service requests are completed with payment information.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Doctor Subscriptions Tab */}
+        {activeTab === 'subscriptions' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <CreditCard className="h-5 w-5 text-blue-500 mr-2" />
+                  Doctor Subscriptions
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage doctor subscription payments and status</p>
+              </div>
+              
+              {/* Subscription Stats Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div className={`px-3 py-2 rounded-lg ${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'} text-center`}>
+                  <div className="font-bold text-lg">{subscriptionStats.activeSubscriptions}</div>
+                  <div className="text-xs">Active</div>
+                </div>
+                <div className={`px-3 py-2 rounded-lg ${isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'} text-center`}>
+                  <div className="font-bold text-lg">{subscriptionStats.pastDueSubscriptions}</div>
+                  <div className="text-xs">Past Due</div>
+                </div>
+                <div className={`px-3 py-2 rounded-lg ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-700'} text-center`}>
+                  <div className="font-bold text-lg">{subscriptionStats.cancelledSubscriptions}</div>
+                  <div className="text-xs">Cancelled</div>
+                </div>
+                <div className={`px-3 py-2 rounded-lg ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} text-center`}>
+                  <div className="font-bold text-lg">£{subscriptionStats.monthlyRevenue.toFixed(0)}</div>
+                  <div className="text-xs">Monthly Revenue</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Subscription Settings Section */}
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4 flex items-center`}>
+                <Settings className="h-5 w-5 text-blue-500 mr-2" />
+                Subscription Settings
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Monthly Subscription Amount */}
+                <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg border p-4`}>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Monthly Subscription Amount (£)
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={systemSettings?.monthlySubscriptionAmount || 29}
+                      onChange={async (e) => {
+                        const amount = parseFloat(e.target.value);
+                        if (amount >= 0) {
+                          try {
+                            await systemSettingsAPI.updateByKey('monthlySubscriptionAmount', {
+                              value: amount,
+                              dataType: 'number',
+                              description: 'Monthly subscription amount for doctors in GBP',
+                              category: 'subscription',
+                              isPublic: false
+                            });
+                            await fetchAllData();
+                          } catch (error) {
+                            console.error('Error updating subscription amount:', error);
+                            alert('Failed to update subscription amount');
+                          }
+                        }
+                      }}
+                      className={`flex-1 px-3 py-2 rounded-lg border ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500' 
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                      placeholder="29.00"
+                    />
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      per month
+                    </span>
+                  </div>
+                  <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
+                    This amount will be charged to all new doctor subscriptions
+                  </p>
+                </div>
+                
+                {/* Subscription Requirements */}
+                <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg border p-4`}>
+                  <h4 className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
+                    Subscription Requirements
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className={`flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Check className="h-4 w-4 text-green-500 mr-2" />
+                      Valid medical license required
+                    </div>
+                    <div className={`flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Check className="h-4 w-4 text-green-500 mr-2" />
+                      All compliance documents uploaded
+                    </div>
+                    <div className={`flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Check className="h-4 w-4 text-green-500 mr-2" />
+                      Active subscription payment
+                    </div>
+                    <div className={`flex items-center ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <Check className="h-4 w-4 text-green-500 mr-2" />
+                      Automatic recurring billing
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {subscriptions.length > 0 ? (
+                <div className="space-y-6">
+                  {subscriptions
+                    .filter(subscription => {
+                      if (!searchTerm) return true;
+                      const doctorName = `${subscription.doctor?.firstName || ''} ${subscription.doctor?.lastName || ''}`.toLowerCase();
+                      const doctorEmail = subscription.doctor?.email?.toLowerCase() || '';
+                      const status = subscription.status?.toLowerCase() || '';
+                      const search = searchTerm.toLowerCase();
+                      
+                      return doctorName.includes(search) || doctorEmail.includes(search) || status.includes(search);
+                    })
+                    .map((subscription) => {
+                      const doctor = subscription.doctor;
+                      const isActive = subscription.status === 'active';
+                      const isPastDue = subscription.status === 'past_due';
+                      const isCancelled = subscription.status === 'cancelled';
+                      
+                      return (
+                        <div key={subscription.id} className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-xl border p-6`}>
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                isActive ? (isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700') :
+                                isPastDue ? (isDarkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-700') :
+                                isCancelled ? (isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700') :
+                                (isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-600')
+                              }`}>
+                                {doctor?.firstName?.charAt(0)}{doctor?.lastName?.charAt(0)}
+                              </div>
+                              
+                              <div className="flex-1">
+                                <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  Dr. {doctor?.firstName} {doctor?.lastName}
+                                </h3>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {doctor?.email}
+                                </p>
+                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  License: {doctor?.licenseNumber}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                              <div className="text-center lg:text-right">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                                    isActive ? 'bg-green-600 text-white' :
+                                    isPastDue ? 'bg-yellow-600 text-white' :
+                                    isCancelled ? 'bg-red-600 text-white' :
+                                    'bg-gray-600 text-white'
+                                  }`}>
+                                    {subscription.status.replace('_', ' ').toUpperCase()}
+                                  </span>
+                                </div>
+                                
+                                <div className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  £{subscription.amount}/month
+                                </div>
+                                
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  {subscription.nextPaymentDate && (
+                                    <div>Next: {formatDate(subscription.nextPaymentDate)}</div>
+                                  )}
+                                  {subscription.lastPaymentDate && (
+                                    <div>Last: {formatDate(subscription.lastPaymentDate)}</div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex space-x-2">
+                                {isActive && (
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('Are you sure you want to cancel this subscription?')) {
+                                        try {
+                                          await subscriptionAPI.cancel(subscription.id);
+                                          await fetchAllData();
+                                          alert('Subscription cancelled successfully');
+                                        } catch (error) {
+                                          console.error('Error cancelling subscription:', error);
+                                          alert('Failed to cancel subscription');
+                                        }
+                                      }
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {subscription.notes && (
+                            <div className={`mt-4 p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <strong>Notes:</strong> {subscription.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-xl p-8`}>
+                    <CreditCard className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                    <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>No subscriptions found</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Doctor subscriptions will appear here once doctors start subscribing to the service.
                     </p>
                   </div>
                 </div>

@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText } from 'lucide-react';
-import { serviceRequestAPI, doctorAPI, serviceAPI, testJWTToken } from '../../../lib/api';
+import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText, CreditCard, AlertTriangle } from 'lucide-react';
+import { serviceRequestAPI, doctorAPI, serviceAPI, subscriptionAPI, testJWTToken } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -73,6 +73,11 @@ export default function DoctorDashboard() {
 
   // Request filtering states
   const [requestFilter, setRequestFilter] = useState('all'); // 'all', 'pending', 'completed'
+
+  // Subscription management states
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Pagination and filtering states for Recent Service Requests
   const [currentPage, setCurrentPage] = useState(1);
@@ -150,6 +155,7 @@ export default function DoctorDashboard() {
       fetchNearbyRequests();
       fetchServices(); // Fetch services for pricing calculations
       loadAllServices(); // Load all services for manage services section
+      fetchSubscriptionData(); // Fetch subscription data
     }
   }, [user]);
 
@@ -418,6 +424,27 @@ export default function DoctorDashboard() {
       ('🔄 Falling back to user data from auth context');
       // Fallback to user data from auth context
       setDoctorData(user);
+    }
+  };
+
+  const fetchSubscriptionData = async () => {
+    if (!user?.id) return;
+    
+    setSubscriptionLoading(true);
+    try {
+      const response = await subscriptionAPI.getByDoctorId(user.id);
+      if (response.data) {
+        setSubscriptionData(response.data);
+        console.log('✅ Subscription data:', response.data);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching subscription data:', error);
+      // Don't show error for non-existent subscriptions
+      if (error.response?.status !== 404) {
+        console.error('Subscription fetch error:', error);
+      }
+    } finally {
+      setSubscriptionLoading(false);
     }
   };
 
@@ -2194,12 +2221,44 @@ export default function DoctorDashboard() {
             className="mb-6"
           />
         )}
+
+        {/* Subscription Warning Banner */}
+        {user && subscriptionData?.status !== 'active' && (
+          <div className={`${isDarkMode ? 'bg-yellow-900/30 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} rounded-lg border p-4 mb-6`}>
+            <div className="flex items-center">
+              <AlertTriangle className="h-5 w-5 text-yellow-500 mr-3" />
+              <div className="flex-1">
+                <h3 className={`font-semibold ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                  Subscription Required
+                </h3>
+                <p className={`text-sm ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'}`}>
+                  {subscriptionData?.status === 'past_due' 
+                    ? 'Your subscription payment is past due. Please update your payment to continue receiving service requests.'
+                    : subscriptionData?.status === 'cancelled'
+                    ? 'Your subscription has been cancelled. You will not receive new service requests.'
+                    : 'You need an active subscription to receive service requests from businesses.'
+                  }
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSubscriptionModal(true)}
+                className={`ml-4 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+                    : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                }`}
+              >
+                {subscriptionData?.status === 'past_due' ? 'Update Payment' : 'Subscribe Now'}
+              </button>
+            </div>
+          </div>
+        )}
         
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards - Mobile responsive */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 lg:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
       <button 
                 onClick={handlePendingRequestsClick}
                 className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
@@ -2264,11 +2323,6 @@ export default function DoctorDashboard() {
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>{formatCurrency(stats.totalEarnings || 0)}</p>
                   </div>
-                  <div className={`p-1.5 lg:p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                    <TrendingUp className={`h-4 w-4 ${
-                      isDarkMode ? 'text-white' : 'text-white'
-                    }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
-                  </div>
                 </div>
               </button>
       <button 
@@ -2288,8 +2342,8 @@ export default function DoctorDashboard() {
                   </div>
                   <div className={`p-1.5 lg:p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
                     <Settings className={`h-4 w-4 ${
-                      isDarkMode ? 'text-white' : 'text-white'
-                    }`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                      isDarkMode ? 'text-cyan-400' : 'text-white'
+                    }`} />
                   </div>
                 </div>
               </button>
@@ -2314,6 +2368,54 @@ export default function DoctorDashboard() {
                   }`}>
                     <FileText className={`h-4 w-4 ${
                       isDarkMode ? 'text-red-400' : 'text-white'
+                    }`} />
+                  </div>
+                </div>
+              </button>
+              
+              {/* Subscription Status Card */}
+              <button 
+                onClick={() => setShowSubscriptionModal(true)}
+                className={`p-3 lg:p-4 rounded-lg shadow-sm border transition-all duration-300 hover:shadow-md cursor-pointer text-left ${
+                  isDarkMode 
+                    ? 'bg-gray-900 border-gray-800 hover:bg-gray-800' 
+                    : 'bg-white/90 border-blue-100 hover:bg-blue-50/40'
+                }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={`text-xs font-medium ${
+                      subscriptionData?.status === 'active' ? 'text-green-400' :
+                      subscriptionData?.status === 'past_due' ? 'text-yellow-400' :
+                      subscriptionData?.status === 'cancelled' ? 'text-red-400' :
+                      'text-gray-400'
+                    }`}>
+                      {subscriptionData?.status === 'active' ? 'Active' :
+                       subscriptionData?.status === 'past_due' ? 'Past Due' :
+                       subscriptionData?.status === 'cancelled' ? 'Cancelled' :
+                       'No Sub'
+                      }
+                    </p>
+                    <p className={`text-xs ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>Subscription</p>
+                  </div>
+                  <div className={`p-1.5 lg:p-2 rounded-lg ${
+                    subscriptionData?.status === 'active' ? 
+                      (isDarkMode ? 'bg-green-900/30' : 'bg-green-600') :
+                    subscriptionData?.status === 'past_due' ? 
+                      (isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-600') :
+                    subscriptionData?.status === 'cancelled' ? 
+                      (isDarkMode ? 'bg-red-900/30' : 'bg-red-600') :
+                      (isDarkMode ? 'bg-gray-800' : 'bg-gray-400')
+                  }`}>
+                    <CreditCard className={`h-4 w-4 ${
+                      subscriptionData?.status === 'active' ? 
+                        (isDarkMode ? 'text-green-400' : 'text-white') :
+                      subscriptionData?.status === 'past_due' ? 
+                        (isDarkMode ? 'text-yellow-400' : 'text-white') :
+                      subscriptionData?.status === 'cancelled' ? 
+                        (isDarkMode ? 'text-red-400' : 'text-white') :
+                        (isDarkMode ? 'text-gray-400' : 'text-white')
                     }`} />
                   </div>
                 </div>
@@ -3244,6 +3346,180 @@ export default function DoctorDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Subscription Management Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow-xl border max-w-md w-full max-h-[90vh] overflow-y-auto`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex items-center justify-between`}>
+              <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                <CreditCard className="h-5 w-5 text-blue-500 mr-2" />
+                Subscription Management
+              </h2>
+              <button
+                onClick={() => setShowSubscriptionModal(false)}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
+                }`}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {subscriptionLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Loading subscription details...
+                  </p>
+                </div>
+              ) : subscriptionData ? (
+                <div className="space-y-6">
+                  {/* Subscription Status */}
+                  <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg border p-4`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Current Status
+                      </h3>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                        subscriptionData.status === 'active' ? 'bg-green-600 text-white' :
+                        subscriptionData.status === 'past_due' ? 'bg-yellow-600 text-white' :
+                        subscriptionData.status === 'cancelled' ? 'bg-red-600 text-white' :
+                        'bg-gray-600 text-white'
+                      }`}>
+                        {subscriptionData.status.replace('_', ' ').toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Amount</p>
+                        <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          £{subscriptionData.amount}/month
+                        </p>
+                      </div>
+                      {subscriptionData.nextPaymentDate && (
+                        <div>
+                          <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Next Payment</p>
+                          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {formatDate(subscriptionData.nextPaymentDate)}
+                          </p>
+                        </div>
+                      )}
+                      {subscriptionData.lastPaymentDate && (
+                        <div>
+                          <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Last Payment</p>
+                          <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {formatDate(subscriptionData.lastPaymentDate)}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Billing Cycle</p>
+                        <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {subscriptionData.billingCycle || 'Monthly'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subscription Benefits */}
+                  <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg border p-4`}>
+                    <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
+                      Subscription Benefits
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Check className="h-4 w-4 text-green-500 mr-2" />
+                        Receive service requests from businesses
+                      </div>
+                      <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Check className="h-4 w-4 text-green-500 mr-2" />
+                        Access to all platform features
+                      </div>
+                      <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Check className="h-4 w-4 text-green-500 mr-2" />
+                        Priority customer support
+                      </div>
+                      <div className={`flex items-center ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <Check className="h-4 w-4 text-green-500 mr-2" />
+                        Real-time payment processing
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  {subscriptionData.status === 'active' && (
+                    <div className="space-y-3">
+                      <button
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to cancel your subscription? You will not be able to receive new service requests after cancellation.')) {
+                            try {
+                              await subscriptionAPI.cancel(subscriptionData.id);
+                              await fetchSubscriptionData();
+                              setShowSubscriptionModal(false);
+                              alert('Subscription cancelled successfully');
+                            } catch (error) {
+                              console.error('Error cancelling subscription:', error);
+                              alert('Failed to cancel subscription. Please try again.');
+                            }
+                          }
+                        }}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                      >
+                        Cancel Subscription
+                      </button>
+                    </div>
+                  )}
+
+                  {subscriptionData.status !== 'active' && (
+                    <div className={`${isDarkMode ? 'bg-yellow-900/20 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} rounded-lg border p-4`}>
+                      <div className="flex items-center mb-2">
+                        <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
+                        <h4 className={`font-medium ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                          Subscription Required
+                        </h4>
+                      </div>
+                      <p className={`text-sm ${isDarkMode ? 'text-yellow-200' : 'text-yellow-700'} mb-3`}>
+                        You need an active subscription to receive service requests from businesses.
+                      </p>
+                      <button
+                        onClick={() => {
+                          // TODO: Implement subscription signup flow
+                          alert('Subscription signup coming soon!');
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                      >
+                        Subscribe Now
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <CreditCard className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-300'}`} />
+                  <h3 className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    No Active Subscription
+                  </h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>
+                    Subscribe to start receiving service requests from businesses.
+                  </p>
+                  <button
+                    onClick={() => {
+                      // TODO: Implement subscription signup flow
+                      alert('Subscription signup coming soon!');
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    Subscribe Now
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
