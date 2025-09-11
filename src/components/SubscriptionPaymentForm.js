@@ -43,6 +43,57 @@ function SubscriptionCheckoutForm({
   const [paymentError, setPaymentError] = useState(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [saveCard, setSaveCard] = useState(true); // Default to saving card for subscriptions
+  
+  // Saved payment methods state
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState([]);
+  const [loadingSavedMethods, setLoadingSavedMethods] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [showNewCardForm, setShowNewCardForm] = useState(true);
+
+  // Fetch saved payment methods on component mount
+  useEffect(() => {
+    if (doctorData?.id) {
+      fetchSavedPaymentMethods();
+    }
+  }, [doctorData?.id]);
+
+  const fetchSavedPaymentMethods = async () => {
+    try {
+      setLoadingSavedMethods(true);
+      const response = await fetch(`http://localhost:1337/api/doctor-subscriptions/payment-methods/saved?doctorId=${doctorData.id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.paymentMethods) {
+          setSavedPaymentMethods(data.paymentMethods);
+          
+          // If there are saved methods, select the first one
+          if (data.paymentMethods.length > 0) {
+            setSelectedPaymentMethod(data.paymentMethods[0].id);
+            setShowNewCardForm(false); // Don't show new card form by default if we have saved cards
+          } else {
+            setShowNewCardForm(true); // Show new card form if no saved cards
+          }
+        } else {
+          setSavedPaymentMethods([]);
+          setShowNewCardForm(true);
+        }
+      } else {
+        setSavedPaymentMethods([]);
+        setShowNewCardForm(true);
+      }
+    } catch (error) {
+      console.error('Error fetching saved payment methods:', error);
+      setSavedPaymentMethods([]);
+      setShowNewCardForm(true);
+    } finally {
+      setLoadingSavedMethods(false);
+    }
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -54,81 +105,65 @@ function SubscriptionCheckoutForm({
     setLoading(true);
     setPaymentError(null);
 
-    const card = elements.getElement(CardElement);
-
     try {
-      // 1. Create payment intent for subscription (like the existing payment flow)
-      console.log('Creating subscription payment intent for doctor:', doctorData.id);
-      const paymentIntentResponse = await fetch('/api/doctor-subscriptions/create-payment-intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          doctorId: doctorData.id,
-          amount: subscriptionAmount,
-          savePaymentMethod: saveCard,
-        }),
-      });
-
-      const paymentIntentData = await paymentIntentResponse.json();
-
-      if (!paymentIntentResponse.ok) {
-        throw new Error(paymentIntentData.error || 'Failed to create payment intent');
-      }
-
-      console.log('Payment intent created:', paymentIntentData);
-
-      // 2. Confirm payment with card details (same as existing payment form)
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-        paymentIntentData.clientSecret,
-        {
-          payment_method: {
-            card: card,
-            billing_details: {
-              name: `Dr. ${doctorData.firstName} ${doctorData.lastName}`,
-              email: doctorData.email,
-            },
+      // Check if using saved payment method or new card
+      if (selectedPaymentMethod && !showNewCardForm) {
+        // Using saved payment method
+        console.log('Creating subscription with saved payment method:', selectedPaymentMethod);
+        
+        const subscriptionResponse = await fetch('/api/doctor-subscriptions/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
-          setup_future_usage: saveCard ? 'off_session' : undefined,
+          body: JSON.stringify({
+            doctorId: doctorData.id,
+            paymentMethodId: selectedPaymentMethod,
+            useSavedPaymentMethod: true,
+            savePaymentMethod: false, // Already saved
+          }),
+        });
+
+        const subscriptionData = await subscriptionResponse.json();
+
+        if (!subscriptionResponse.ok) {
+          throw new Error(subscriptionData.error || 'Failed to create subscription');
         }
-      );
 
-      if (confirmError) {
-        throw new Error(confirmError.message);
-      }
+        console.log('Subscription created successfully with saved payment method');
+        onSuccess();
+        
+      } else {
+        // Using new card - existing flow
+        const card = elements.getElement(CardElement);
 
-      console.log('Payment confirmed:', paymentIntent);
+        // 1. Create payment intent for subscription
+        console.log('Creating subscription payment intent for doctor:', doctorData.id);
+        const paymentIntentResponse = await fetch('/api/doctor-subscriptions/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            doctorId: doctorData.id,
+            amount: subscriptionAmount,
+            savePaymentMethod: saveCard,
+          }),
+        });
 
-      // 3. Create subscription record after successful payment
-      const subscriptionResponse = await fetch('/api/doctor-subscriptions/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          doctorId: doctorData.id,
-          paymentIntentId: paymentIntent.id,
-          paymentMethodId: paymentIntent.payment_method,
-          amount: subscriptionAmount,
-          savePaymentMethod: saveCard,
-        }),
-      });
+        const paymentIntentData = await paymentIntentResponse.json();
 
-      const subscriptionData = await subscriptionResponse.json();
+        if (!paymentIntentResponse.ok) {
+          throw new Error(paymentIntentData.error || 'Failed to create payment intent');
+        }
 
-      if (!subscriptionResponse.ok) {
-        throw new Error(subscriptionData.error || 'Failed to create subscription');
-      }
+        console.log('Payment intent created:', paymentIntentData);
 
-      console.log('Subscription created:', subscriptionData);
-
-      // Confirm payment if needed
-      if (subscriptionData.requiresPaymentConfirmation) {
-        const { error: confirmError } = await stripe.confirmCardPayment(
-          subscriptionData.clientSecret,
+        // 2. Confirm payment with card details
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+          paymentIntentData.clientSecret,
           {
             payment_method: {
               card: card,
@@ -137,16 +172,43 @@ function SubscriptionCheckoutForm({
                 email: doctorData.email,
               },
             },
+            setup_future_usage: saveCard ? 'off_session' : undefined,
           }
         );
 
         if (confirmError) {
           throw new Error(confirmError.message);
         }
-      }
 
-      // Success!
-      onPaymentSuccess(subscriptionData);
+        console.log('Payment confirmed:', paymentIntent);
+
+        // 3. Create subscription record after successful payment
+        const subscriptionResponse = await fetch('/api/doctor-subscriptions/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            doctorId: doctorData.id,
+            paymentIntentId: paymentIntent.id,
+            paymentMethodId: paymentIntent.payment_method,
+            amount: subscriptionAmount,
+            savePaymentMethod: saveCard,
+          }),
+        });
+
+        const subscriptionData = await subscriptionResponse.json();
+
+        if (!subscriptionResponse.ok) {
+          throw new Error(subscriptionData.error || 'Failed to create subscription');
+        }
+
+        console.log('Subscription created:', subscriptionData);
+
+        // Success!
+        onSuccess();
+      }
       
     } catch (error) {
       console.error('Payment error:', error);
@@ -183,45 +245,127 @@ function SubscriptionCheckoutForm({
         </div>
       </div>
 
-      {/* Card Details */}
+      {/* Payment Method */}
       <div className="space-y-4">
         <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
           Payment Method
         </h4>
         
-        <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} rounded-lg border p-4`}>
-          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
-            Card Information
-          </label>
-          
-          <div className={`p-3 rounded-md border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'}`}>
-            <CardElement
-              options={cardElementOptions}
-              onChange={(event) => {
-                setCardComplete(event.complete);
-                if (event.error) {
-                  setPaymentError(event.error.message);
-                } else {
-                  setPaymentError(null);
-                }
-              }}
-            />
+        {/* Loading saved methods */}
+        {loadingSavedMethods && (
+          <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} rounded-lg border p-4`}>
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Loading saved payment methods...
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Save Card Option */}
-        <div className="flex items-center space-x-3">
-          <input
-            type="checkbox"
-            id="saveCard"
-            checked={saveCard}
-            onChange={(e) => setSaveCard(e.target.checked)}
-            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-          />
-          <label htmlFor="saveCard" className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-            Save this payment method for future payments
-          </label>
-        </div>
+        {/* Saved Payment Methods */}
+        {!loadingSavedMethods && savedPaymentMethods.length > 0 && (
+          <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} rounded-lg border p-4 space-y-3`}>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Saved Cards
+            </label>
+            
+            {savedPaymentMethods.map((method) => (
+              <div key={method.id} className="flex items-center space-x-3">
+                <input
+                  type="radio"
+                  id={`payment-${method.id}`}
+                  name="paymentMethod"
+                  value={method.id}
+                  checked={selectedPaymentMethod === method.id}
+                  onChange={(e) => {
+                    setSelectedPaymentMethod(e.target.value);
+                    setShowNewCardForm(false);
+                  }}
+                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor={`payment-${method.id}`} className={`flex-1 cursor-pointer ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">
+                        **** **** **** {method.card.last4}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                        {method.card.brand.toUpperCase()}
+                      </span>
+                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {method.card.exp_month}/{method.card.exp_year}
+                      </span>
+                      {method.isDefault && (
+                        <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </label>
+              </div>
+            ))}
+            
+            {/* Option to add new card */}
+            <div className="flex items-center space-x-3 pt-2 border-t border-gray-300 dark:border-gray-600">
+              <input
+                type="radio"
+                id="new-payment-method"
+                name="paymentMethod"
+                value="new"
+                checked={showNewCardForm}
+                onChange={(e) => {
+                  setShowNewCardForm(e.target.checked);
+                  setSelectedPaymentMethod('');
+                }}
+                className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="new-payment-method" className={`cursor-pointer text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Use a new card
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* New Card Form - Show if no saved cards or user selects "new card" */}
+        {(showNewCardForm || (!loadingSavedMethods && savedPaymentMethods.length === 0)) && (
+          <div className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'} rounded-lg border p-4`}>
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
+              Card Information
+            </label>
+            
+            <div className={`p-3 rounded-md border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-white'}`}>
+              <CardElement
+                options={cardElementOptions}
+                onChange={(event) => {
+                  setCardComplete(event.complete);
+                  if (event.error) {
+                    setPaymentError(event.error.message);
+                  } else {
+                    setPaymentError(null);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Save Card Option - Only show for new cards */}
+        {(showNewCardForm || (!loadingSavedMethods && savedPaymentMethods.length === 0)) && (
+          <div className="flex items-center space-x-3">
+            <input
+              type="checkbox"
+              id="saveCard"
+              checked={saveCard}
+              onChange={(e) => setSaveCard(e.target.checked)}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+            <label htmlFor="saveCard" className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+              Save this payment method for future payments
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Payment Error */}
@@ -253,7 +397,7 @@ function SubscriptionCheckoutForm({
         
         <button
           type="submit"
-          disabled={!stripe || loading || !cardComplete}
+          disabled={!stripe || loading || (showNewCardForm && !cardComplete) || (!showNewCardForm && !selectedPaymentMethod)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
         >
           {loading ? (
