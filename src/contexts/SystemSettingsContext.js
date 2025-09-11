@@ -24,7 +24,8 @@ export const SystemSettingsProvider = ({ children }) => {
     currency_symbol: '£',
     platform_name: 'Uber Doc',
     min_service_duration: 1,
-    max_service_duration: 12
+    max_service_duration: 12,
+    doctor_subscription_amount: 29.00
   };
 
   const fetchPublicSettings = async () => {
@@ -81,6 +82,11 @@ export const SystemSettingsProvider = ({ children }) => {
     return typeof duration === 'number' ? duration : parseInt(duration) || defaultSettings.max_service_duration;
   };
 
+  const getMonthlySubscriptionAmount = () => {
+    const amount = settings.doctor_subscription_amount; // Use the correct key
+    return typeof amount === 'number' ? amount : parseFloat(amount) || defaultSettings.doctor_subscription_amount;
+  };
+
   // Refresh settings (useful for admin changes)
   const refreshSettings = () => {
     fetchPublicSettings();
@@ -95,6 +101,7 @@ export const SystemSettingsProvider = ({ children }) => {
     getPlatformName,
     getMinServiceDuration,
     getMaxServiceDuration,
+    getMonthlySubscriptionAmount,
     refreshSettings
   };
 

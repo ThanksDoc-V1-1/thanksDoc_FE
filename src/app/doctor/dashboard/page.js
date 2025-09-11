@@ -17,7 +17,7 @@ export default function DoctorDashboard() {
   const router = useRouter();
   const { user, logout, isAuthenticated, authLoading } = useAuth();
   const { isDarkMode } = useTheme();
-  const { getBookingFee } = useSystemSettings();
+  const { getBookingFee, getMonthlySubscriptionAmount, settings } = useSystemSettings();
   const [doctorData, setDoctorData] = useState(null);
   const [serviceRequests, setServiceRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
@@ -3383,12 +3383,12 @@ export default function DoctorDashboard() {
                         Current Status
                       </h3>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                        subscriptionData.status === 'active' ? 'bg-green-600 text-white' :
-                        subscriptionData.status === 'past_due' ? 'bg-yellow-600 text-white' :
-                        subscriptionData.status === 'cancelled' ? 'bg-red-600 text-white' :
+                        subscriptionData?.status === 'active' ? 'bg-green-600 text-white' :
+                        subscriptionData?.status === 'past_due' ? 'bg-yellow-600 text-white' :
+                        subscriptionData?.status === 'cancelled' ? 'bg-red-600 text-white' :
                         'bg-gray-600 text-white'
                       }`}>
-                        {subscriptionData.status.replace('_', ' ').toUpperCase()}
+                        {subscriptionData?.status?.replace('_', ' ').toUpperCase() || 'NO SUBSCRIPTION'}
                       </span>
                     </div>
                     
@@ -3396,7 +3396,12 @@ export default function DoctorDashboard() {
                       <div>
                         <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Amount</p>
                         <p className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          £{subscriptionData.amount}/month
+                          £{subscriptionData?.amount || getMonthlySubscriptionAmount()}/month
+                          {console.log('🔍 Subscription amount debug:', {
+                            subscriptionDataAmount: subscriptionData?.amount,
+                            systemSettingsAmount: getMonthlySubscriptionAmount(),
+                            allSettings: settings
+                          })}
                         </p>
                       </div>
                       {subscriptionData.nextPaymentDate && (
@@ -3450,13 +3455,13 @@ export default function DoctorDashboard() {
                   </div>
 
                   {/* Action Buttons */}
-                  {subscriptionData.status === 'active' && (
+                  {subscriptionData?.status === 'active' && (
                     <div className="space-y-3">
                       <button
                         onClick={async () => {
                           if (confirm('Are you sure you want to cancel your subscription? You will not be able to receive new service requests after cancellation.')) {
                             try {
-                              await subscriptionAPI.cancel(subscriptionData.id);
+                              await subscriptionAPI.cancel(subscriptionData?.id);
                               await fetchSubscriptionData();
                               setShowSubscriptionModal(false);
                               alert('Subscription cancelled successfully');
@@ -3473,7 +3478,7 @@ export default function DoctorDashboard() {
                     </div>
                   )}
 
-                  {subscriptionData.status !== 'active' && (
+                  {subscriptionData?.status !== 'active' && (
                     <div className={`${isDarkMode ? 'bg-yellow-900/20 border-yellow-800' : 'bg-yellow-50 border-yellow-200'} rounded-lg border p-4`}>
                       <div className="flex items-center mb-2">
                         <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />

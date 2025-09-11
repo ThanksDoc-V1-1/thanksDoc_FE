@@ -4828,17 +4828,26 @@ export default function AdminDashboard() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={systemSettings?.monthlySubscriptionAmount || 29}
+                      value={systemSettings?.doctor_subscription_amount || 29}
                       onChange={async (e) => {
                         const amount = parseFloat(e.target.value);
                         if (amount >= 0) {
                           try {
-                            await systemSettingsAPI.updateByKey('monthlySubscriptionAmount', {
+                            // Delete the old monthlySubscriptionAmount record if it exists
+                            try {
+                              await systemSettingsAPI.deleteByKey('monthlySubscriptionAmount');
+                            } catch (deleteError) {
+                              // Ignore error if record doesn't exist
+                              console.log('No monthlySubscriptionAmount record to delete');
+                            }
+                            
+                            // Save with the correct key
+                            await systemSettingsAPI.updateByKey('doctor_subscription_amount', {
                               value: amount,
                               dataType: 'number',
                               description: 'Monthly subscription amount for doctors in GBP',
                               category: 'subscription',
-                              isPublic: false
+                              isPublic: true
                             });
                             await fetchAllData();
                           } catch (error) {

@@ -624,6 +624,7 @@ export const systemSettingsAPI = {
   update: (id, data) => api.put(`/system-settings/${id}`, { data }),
   updateByKey: (key, data) => api.put(`/system-settings/key/${key}`, data),
   delete: (id) => api.delete(`/system-settings/${id}`),
+  deleteByKey: (key) => api.delete(`/system-settings/key/${key}`),
 };
 
 // Doctor Subscription API calls
