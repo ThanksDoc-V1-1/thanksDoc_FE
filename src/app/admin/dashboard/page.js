@@ -107,6 +107,12 @@ export default function AdminDashboard() {
     isPublic: false
   });
 
+  // Helper function to get a system setting value
+  const getSystemSettingValue = (key, defaultValue = null) => {
+    const setting = systemSettings.find(setting => setting.key === key);
+    return setting ? setting.value : defaultValue;
+  };
+
   // Doctor edit form states
   const [editingDoctor, setEditingDoctor] = useState(null);
 
@@ -747,9 +753,9 @@ export default function AdminDashboard() {
         const subscriptionsData = subscriptionsRes.data?.data || [];
         const basicStats = {
           totalSubscriptions: subscriptionsData.length,
-          activeSubscriptions: subscriptionsData.filter(sub => sub.status === 'active').length,
-          cancelledSubscriptions: subscriptionsData.filter(sub => sub.status === 'canceled').length,
-          pastDueSubscriptions: subscriptionsData.filter(sub => sub.status === 'past_due').length,
+          activeSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'active').length,
+          cancelledSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'canceled').length,
+          pastDueSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'past_due').length,
           monthlyRevenue: 0, // Add missing property
           conversionRate: 0 // Add missing property
         };
@@ -4867,7 +4873,7 @@ export default function AdminDashboard() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={systemSettings?.doctor_subscription_amount || 29}
+                      value={getSystemSettingValue('doctor_subscription_amount', '29')}
                       onChange={async (e) => {
                         const amount = parseFloat(e.target.value);
                         if (amount >= 0) {
@@ -4947,16 +4953,17 @@ export default function AdminDashboard() {
                       if (!searchTerm) return true;
                       const doctorName = `${subscription.doctor?.firstName || ''} ${subscription.doctor?.lastName || ''}`.toLowerCase();
                       const doctorEmail = subscription.doctor?.email?.toLowerCase() || '';
-                      const status = subscription.status?.toLowerCase() || '';
+                      const status = (subscription.subscriptionStatus || subscription.status || '')?.toLowerCase();
                       const search = searchTerm.toLowerCase();
                       
                       return doctorName.includes(search) || doctorEmail.includes(search) || status.includes(search);
                     })
                     .map((subscription) => {
                       const doctor = subscription.doctor;
-                      const isActive = subscription.status === 'active';
-                      const isPastDue = subscription.status === 'past_due';
-                      const isCancelled = subscription.status === 'cancelled';
+                      const actualStatus = subscription.subscriptionStatus || subscription.status;
+                      const isActive = actualStatus === 'active';
+                      const isPastDue = actualStatus === 'past_due';
+                      const isCancelled = actualStatus === 'cancelled';
                       
                       return (
                         <div key={subscription.id} className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-xl border p-6`}>
@@ -4993,7 +5000,7 @@ export default function AdminDashboard() {
                                     isCancelled ? 'bg-red-600 text-white' :
                                     'bg-gray-600 text-white'
                                   }`}>
-                                    {(subscription.status || 'unknown').replace('_', ' ').toUpperCase()}
+                                    {(actualStatus || 'unknown').replace('_', ' ').toUpperCase()}
                                   </span>
                                 </div>
                                 
