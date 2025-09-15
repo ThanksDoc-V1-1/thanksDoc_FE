@@ -522,6 +522,7 @@ export default function AdminDashboard() {
   // Email verification update states
   const [updatingDoctorEmailVerifiedId, setUpdatingDoctorEmailVerifiedId] = useState(null);
   const [updatingBusinessEmailVerifiedId, setUpdatingBusinessEmailVerifiedId] = useState(null);
+  const [updatingDoctorSubscriptionExemptionId, setUpdatingDoctorSubscriptionExemptionId] = useState(null);
   
   // Compliance document types management
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -1218,6 +1219,24 @@ export default function AdminDashboard() {
       alert('Failed to update email verification for business.');
     } finally {
       setUpdatingBusinessEmailVerifiedId(null);
+    }
+  };
+
+  const handleToggleDoctorSubscriptionExemption = async (doctor) => {
+    try {
+      const id = doctor.id || doctor.documentId;
+      const current = (doctor.allowWithoutSubscription !== undefined ? doctor.allowWithoutSubscription : doctor.attributes?.allowWithoutSubscription) || false;
+      setUpdatingDoctorSubscriptionExemptionId(id);
+      await doctorAPI.update(id, { allowWithoutSubscription: !current });
+      // Update doctors list
+      setSelectedDoctor((prev) => (prev && prev.id === id ? { ...prev, allowWithoutSubscription: !current } : prev));
+      // Refresh the doctors list
+      const response = await doctorAPI.list();
+      setDoctors(response);
+    } catch (error) {
+      console.error('Error updating doctor subscription exemption:', error);
+    } finally {
+      setUpdatingDoctorSubscriptionExemptionId(null);
     }
   };
 
@@ -6580,6 +6599,32 @@ export default function AdminDashboard() {
                               {updatingDoctorEmailVerifiedId === selectedDoctor.id
                                 ? 'Updating...'
                                 : emailVerified ? 'Set Unverified' : 'Mark Verified'}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    {/* Subscription Exemption Toggle */}
+                    <div className="flex justify-between items-center">
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Allow Without Subscription:</span>
+                      {(() => {
+                        const allowWithoutSubscription = (selectedDoctor.allowWithoutSubscription !== undefined ? selectedDoctor.allowWithoutSubscription : selectedDoctor.attributes?.allowWithoutSubscription) || false;
+                        return (
+                          <div className="flex items-center space-x-3">
+                            <span className={`font-medium ${allowWithoutSubscription ? 'text-green-600' : 'text-red-600'}`}>{allowWithoutSubscription ? 'Yes' : 'No'}</span>
+                            <button
+                              onClick={() => handleToggleDoctorSubscriptionExemption(selectedDoctor)}
+                              disabled={updatingDoctorSubscriptionExemptionId === selectedDoctor.id}
+                              className={`px-3 py-1.5 rounded font-medium text-xs transition-colors ${
+                                allowWithoutSubscription
+                                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                              title={allowWithoutSubscription ? 'Require subscription' : 'Allow without subscription'}
+                            >
+                              {updatingDoctorSubscriptionExemptionId === selectedDoctor.id
+                                ? 'Updating...'
+                                : allowWithoutSubscription ? 'Require Subscription' : 'Allow Without Subscription'}
                             </button>
                           </div>
                         );
