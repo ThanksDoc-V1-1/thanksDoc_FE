@@ -126,9 +126,12 @@ function SubscriptionCheckoutForm({
         });
 
         const subscriptionData = await subscriptionResponse.json();
+        console.log('Subscription response:', subscriptionData);
 
         if (!subscriptionResponse.ok) {
-          throw new Error(subscriptionData.error || 'Failed to create subscription');
+          const errorMessage = subscriptionData.error?.message || subscriptionData.message || subscriptionData.error || 'Failed to create subscription';
+          console.error('Subscription creation failed:', errorMessage);
+          throw new Error(errorMessage);
         }
 
         console.log('Subscription created successfully with saved payment method');
