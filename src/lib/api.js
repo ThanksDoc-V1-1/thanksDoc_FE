@@ -638,7 +638,7 @@ export const subscriptionAPI = {
   getById: (id) => api.get(`/doctor-subscriptions/${id}`),
   getByDoctorId: (doctorId) => api.get(`/doctor-subscriptions/doctor/${doctorId}`),
   create: (data) => api.post('/doctor-subscriptions/create', data),
-  cancel: (id) => api.put(`/doctor-subscriptions/${id}/cancel`),
+  cancel: (id, data = {}) => api.put(`/doctor-subscriptions/${id}/cancel`, data),
   getStats: () => api.get('/doctor-subscriptions/stats'),
 };
 

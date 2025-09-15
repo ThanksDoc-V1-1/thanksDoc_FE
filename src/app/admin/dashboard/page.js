@@ -754,7 +754,10 @@ export default function AdminDashboard() {
         const basicStats = {
           totalSubscriptions: subscriptionsData.length,
           activeSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'active').length,
-          cancelledSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'canceled').length,
+          cancelledSubscriptions: subscriptionsData.filter(sub => {
+            const status = sub.subscriptionStatus || sub.status;
+            return status === 'canceled' || status === 'cancelled';
+          }).length,
           pastDueSubscriptions: subscriptionsData.filter(sub => (sub.subscriptionStatus || sub.status) === 'past_due').length,
           monthlyRevenue: 0, // Add missing property
           conversionRate: 0 // Add missing property
@@ -4963,7 +4966,7 @@ export default function AdminDashboard() {
                       const actualStatus = subscription.subscriptionStatus || subscription.status;
                       const isActive = actualStatus === 'active';
                       const isPastDue = actualStatus === 'past_due';
-                      const isCancelled = actualStatus === 'cancelled';
+                      const isCancelled = actualStatus === 'cancelled' || actualStatus === 'canceled';
                       
                       return (
                         <div key={subscription.id} className={`${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-xl border p-6`}>
@@ -5024,7 +5027,10 @@ export default function AdminDashboard() {
                                     onClick={async () => {
                                       if (confirm('Are you sure you want to cancel this subscription?')) {
                                         try {
-                                          await subscriptionAPI.cancel(subscription.id);
+                                          await subscriptionAPI.cancel(subscription.id, { 
+                                            cancelledBy: 'admin',
+                                            reason: 'Cancelled by admin via dashboard'
+                                          });
                                           await fetchAllData();
                                           alert('Subscription cancelled successfully');
                                         } catch (error) {
