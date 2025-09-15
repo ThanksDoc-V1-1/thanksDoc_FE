@@ -735,12 +735,26 @@ export default function AdminDashboard() {
       setSystemSettings(systemSettingsRes.data?.data || []);
       setSubscriptions(subscriptionsRes.data?.data || []);
 
-      // Load subscription stats
+      // Load subscription stats (only if the endpoint exists)
       try {
         const statsRes = await subscriptionAPI.getStats();
         setSubscriptionStats(statsRes.data || subscriptionStats);
+        console.log('✅ Subscription stats loaded:', statsRes.data);
       } catch (error) {
-        console.error('Error loading subscription stats:', error);
+        console.warn('⚠️ Subscription stats endpoint not available:', error.response?.status);
+        console.log('📊 Using default subscription stats');
+        // Calculate basic stats from subscriptions data
+        const subscriptionsData = subscriptionsRes.data?.data || [];
+        const basicStats = {
+          totalSubscriptions: subscriptionsData.length,
+          activeSubscriptions: subscriptionsData.filter(sub => sub.status === 'active').length,
+          cancelledSubscriptions: subscriptionsData.filter(sub => sub.status === 'canceled').length,
+          pastDueSubscriptions: subscriptionsData.filter(sub => sub.status === 'past_due').length,
+          monthlyRevenue: 0, // Add missing property
+          conversionRate: 0 // Add missing property
+        };
+        setSubscriptionStats(basicStats);
+        console.log('📊 Calculated subscription stats:', basicStats);
       }
       
       // Sort service requests by date, with newest first
@@ -764,6 +778,9 @@ export default function AdminDashboard() {
       
       // Calculate doctor earnings
       calculateDoctorEarnings(doctorsRes.data?.data || [], requestsRes.data?.data || [], businessesRes.data?.data || []);
+      
+      // Initialize subscription settings after system settings are loaded
+      await initializeSubscriptionSettings(systemSettingsRes.data?.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -807,7 +824,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAllData();
-    initializeSubscriptionSettings();
     
     // Handle URL parameters for navigation from notifications
     const urlParams = new URLSearchParams(window.location.search);
@@ -840,14 +856,25 @@ export default function AdminDashboard() {
   }, []);
 
   // Initialize default subscription settings
-  const initializeSubscriptionSettings = async () => {
+  const initializeSubscriptionSettings = async (currentSystemSettings = null) => {
+    console.log('🔄 Initializing subscription settings...');
+    
+    // Use passed settings or current state
+    const settingsToCheck = currentSystemSettings || systemSettings;
+    console.log('📊 Using system settings:', settingsToCheck);
+    
     try {
+      // Ensure systemSettings is an array before trying to find
+      const settingsArray = Array.isArray(settingsToCheck) ? settingsToCheck : [];
+      
       // Check if subscription amount setting exists
-      const existingSetting = systemSettings.find(setting => setting.key === 'doctor_subscription_amount');
+      const existingSetting = settingsArray.find(setting => setting.key === 'doctor_subscription_amount');
+      console.log('🔍 Existing subscription setting found:', existingSetting);
       
       if (!existingSetting) {
+        console.log('➕ Creating default subscription amount setting...');
         // Create default subscription amount setting
-        await systemSettingsAPI.create({
+        const createResponse = await systemSettingsAPI.create({
           key: 'doctor_subscription_amount',
           value: '29',
           dataType: 'number',
@@ -855,13 +882,25 @@ export default function AdminDashboard() {
           category: 'subscription',
           isPublic: false
         });
+        console.log('✅ Created subscription setting:', createResponse);
         
         // Refresh system settings
+        console.log('🔄 Refreshing system settings...');
         const updatedSettings = await systemSettingsAPI.getAll();
+        console.log('📊 Updated settings response:', updatedSettings);
         setSystemSettings(updatedSettings.data?.data || []);
+      } else {
+        console.log('✅ Subscription setting already exists, no action needed');
       }
     } catch (error) {
-      console.error('Error initializing subscription settings:', error);
+      console.error('❌ Error initializing subscription settings:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response,
+        data: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
     }
   };
 
@@ -4804,7 +4843,7 @@ export default function AdminDashboard() {
                   <div className="text-xs">Cancelled</div>
                 </div>
                 <div className={`px-3 py-2 rounded-lg ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} text-center`}>
-                  <div className="font-bold text-lg">£{subscriptionStats.monthlyRevenue.toFixed(0)}</div>
+                  <div className="font-bold text-lg">£{(subscriptionStats.monthlyRevenue || 0).toFixed(0)}</div>
                   <div className="text-xs">Monthly Revenue</div>
                 </div>
               </div>
@@ -4903,6 +4942,7 @@ export default function AdminDashboard() {
               {subscriptions.length > 0 ? (
                 <div className="space-y-6">
                   {subscriptions
+                    .filter(subscription => subscription && typeof subscription === 'object') // Filter out null/undefined subscriptions
                     .filter(subscription => {
                       if (!searchTerm) return true;
                       const doctorName = `${subscription.doctor?.firstName || ''} ${subscription.doctor?.lastName || ''}`.toLowerCase();
@@ -4953,7 +4993,7 @@ export default function AdminDashboard() {
                                     isCancelled ? 'bg-red-600 text-white' :
                                     'bg-gray-600 text-white'
                                   }`}>
-                                    {subscription.status.replace('_', ' ').toUpperCase()}
+                                    {(subscription.status || 'unknown').replace('_', ' ').toUpperCase()}
                                   </span>
                                 </div>
                                 
@@ -6966,7 +7006,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex justify-between">
                       <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>File Size:</span>
-                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{(selectedDocument.fileSize / 1024).toFixed(1)} KB</span>
+                      <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{((selectedDocument.fileSize || 0) / 1024).toFixed(1)} KB</span>
                     </div>
                     {selectedDocument.issueDate && (
                       <div className="flex justify-between">

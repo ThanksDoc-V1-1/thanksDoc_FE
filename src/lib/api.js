@@ -44,12 +44,17 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('❌ API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    });
+    const errorDetails = {
+      url: error.config?.url || 'Unknown URL',
+      method: error.config?.method?.toUpperCase() || 'Unknown Method',
+      status: error.response?.status || 'No Status',
+      statusText: error.response?.statusText || 'No Status Text',
+      message: error.message || 'No Error Message',
+      data: error.response?.data || 'No Response Data',
+      code: error.code || 'No Error Code'
+    };
+    
+    console.error('❌ API Error:', errorDetails);
 
     // Handle network errors (backend not reachable)
     if (error.code === 'ECONNABORTED' || error.message === 'Network Error' || !error.response) {
