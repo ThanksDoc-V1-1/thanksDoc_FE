@@ -135,7 +135,7 @@ function SubscriptionCheckoutForm({
         }
 
         console.log('Subscription created successfully with saved payment method');
-        onSuccess();
+        onPaymentSuccess();
         
       } else {
         // Using new card - existing flow
@@ -210,7 +210,7 @@ function SubscriptionCheckoutForm({
         console.log('Subscription created:', subscriptionData);
 
         // Success!
-        onSuccess();
+        onPaymentSuccess();
       }
       
     } catch (error) {
