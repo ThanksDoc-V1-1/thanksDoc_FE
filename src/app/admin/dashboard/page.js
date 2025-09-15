@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI, subscriptionAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -53,6 +53,8 @@ export default function AdminDashboard() {
   const [focusedDoctorId, setFocusedDoctorId] = useState(null);
   // Mobile sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Collapsible (desktop) sidebar state
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // start collapsed by default
   // Change password UI state
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [changePwdLoading, setChangePwdLoading] = useState(false);
@@ -2606,26 +2608,37 @@ export default function AdminDashboard() {
         />
       )}
       {/* Side Navigation */}
-      <div className={`fixed inset-y-0 left-0 z-30 w-64 ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} border-r flex flex-col shadow-lg transform transition-transform duration-300 -translate-x-full md:translate-x-0 md:h-screen ${isSidebarOpen ? 'translate-x-0' : ''}`}>
+  <div className={`fixed inset-y-0 left-0 z-30 ${isSidebarCollapsed ? 'w-20' : 'w-64'} ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} border-r flex flex-col shadow-lg transform transition-transform duration-300 -translate-x-full md:translate-x-0 md:h-screen ${isSidebarOpen ? 'translate-x-0' : ''}`}>
         {/* Logo/Header */}
-        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-lg shadow-lg">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+          <div className="flex items-center space-x-3 w-full">
+            <div className="p-2 rounded-lg shadow-lg flex-shrink-0">
               <img src="/logo.png" alt="ThanksDoc Logo" className="h-8 w-8 object-contain" />
             </div>
-            <div>
-              <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h1>
-              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Management Dashboard</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="overflow-hidden transition-all duration-300">
+                <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin Panel</h1>
+                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Management Dashboard</p>
+              </div>
+            )}
           </div>
-          {/* Close on mobile */}
-          <button
-            className="md:hidden p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-label="Close sidebar"
-          >
-            <X className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              className="hidden md:inline-flex p-2 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setIsSidebarCollapsed(v => !v)}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isSidebarCollapsed ? <ChevronsRight className="h-5 w-5" /> : <ChevronsLeft className="h-5 w-5" />}
+            </button>
+            {/* Close on mobile */}
+            <button
+              className="md:hidden p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <X className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Menu */}
@@ -2654,7 +2667,7 @@ export default function AdminDashboard() {
                     setSearchTerm('');
                     setIsSidebarOpen(false); // close on mobile after navigation
                   }}
-                  className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'px-4'} py-3 text-sm font-medium rounded-lg transition-colors group ${
                     activeTab === tab.id
                       ? isDarkMode
                         ? 'bg-blue-900 text-blue-100 border border-blue-800 shadow-lg'
@@ -2664,8 +2677,11 @@ export default function AdminDashboard() {
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
-                  <span className="truncate">{tab.name}</span>
+                  <Icon className={`h-5 w-5 flex-shrink-0 ${!isSidebarCollapsed ? 'mr-3' : ''}`} />
+                  {!isSidebarCollapsed && <span className="truncate">{tab.name}</span>}
+                  {isSidebarCollapsed && (
+                    <span className="absolute left-full ml-2 px-2 py-1 rounded bg-gray-900 text-white text-xs opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap shadow-lg border border-gray-700">{tab.name}</span>
+                  )}
                 </button>
               );
             })}
@@ -2673,58 +2689,56 @@ export default function AdminDashboard() {
         </nav>
 
         {/* Fixed Bottom Section - User Info and Actions */}
-        <div className={`mt-auto p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} bg-inherit`}>
+        <div className={`mt-auto p-4 border-t ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} bg-inherit`}>          
           {/* User Profile Section */}
-          <div className="flex items-center space-x-3 mb-4">
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'} mb-4`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
               <User className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Admin User
-              </p>
-              <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                {user?.email || 'admin@gmail.com'}
-              </p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin User</p>
+                <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user?.email || 'admin@gmail.com'}</p>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="space-y-2">
             <button
               onClick={fetchAllData}
-              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-center'} px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isDarkMode
                   ? 'bg-blue-900/30 text-blue-300 hover:bg-blue-800/50'
                   : 'bg-blue-600 text-white hover:bg-blue-700'
               }`}
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh Data
+              <RefreshCw className={`h-4 w-4 ${!isSidebarCollapsed ? 'mr-2' : ''}`} />
+              {!isSidebarCollapsed && 'Refresh Data'}
             </button>
 
             <button
               onClick={() => setShowChangePassword(v => !v)}
-              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-center'} px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isDarkMode
                   ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/50'
                   : 'bg-purple-600 text-white hover:bg-purple-700'
               }`}
             >
-              <Shield className="h-4 w-4 mr-2" />
-              {showChangePassword ? 'Cancel' : 'Change Password'}
+              <Shield className={`h-4 w-4 ${!isSidebarCollapsed ? 'mr-2' : ''}`} />
+              {!isSidebarCollapsed && (showChangePassword ? 'Cancel' : 'Change Password')}
             </button>
 
             <button
               onClick={logout}
-              className={`w-full flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-center'} px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isDarkMode
                   ? 'bg-red-900/30 text-red-300 hover:bg-red-800/50'
                   : 'bg-red-600 text-white hover:bg-red-700'
               }`}
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              <LogOut className={`h-4 w-4 ${!isSidebarCollapsed ? 'mr-2' : ''}`} />
+              {!isSidebarCollapsed && 'Logout'}
             </button>
           </div>
 
@@ -2796,7 +2810,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 flex-1 flex flex-col min-w-0 ml-0 md:ml-64">
+  <div className={`relative z-10 flex-1 flex flex-col min-w-0 ml-0 transition-[margin] duration-300 ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         {/* Top Header */}
   <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/80 supports-[backdrop-filter]:backdrop-blur-md backdrop-blur border-blue-200'} relative z-40 border-b px-4 sm:px-6 py-4 shadow-sm`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -6522,8 +6536,8 @@ export default function AdminDashboard() {
 
       {/* Doctor Details Modal */}
       {showDoctorDetails && selectedDoctor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow w-full border max-h-[95vh] flex flex-col max-w-5xl xl:max-w-6xl`}>          
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -7189,8 +7203,8 @@ export default function AdminDashboard() {
 
       {/* Business Details Modal */}
       {showBusinessDetails && selectedBusiness && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow max-w-4xl w-full border max-h-[90vh] flex flex-col`}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow w-full border max-h-[95vh] flex flex-col max-w-5xl xl:max-w-6xl`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-gray-200 bg-gray-50'} rounded-t-lg`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
