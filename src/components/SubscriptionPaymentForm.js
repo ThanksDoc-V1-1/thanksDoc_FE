@@ -60,7 +60,8 @@ function SubscriptionCheckoutForm({
   const fetchSavedPaymentMethods = async () => {
     try {
       setLoadingSavedMethods(true);
-      const response = await fetch(`http://localhost:1337/api/doctor-subscriptions/payment-methods/saved?doctorId=${doctorData.id}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/doctor-subscriptions/payment-methods/saved?doctorId=${doctorData.id}`, {
         headers: {
           'Content-Type': 'application/json',
         },
