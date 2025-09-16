@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const [doctorEarnings, setDoctorEarnings] = useState([]);
   const [systemSettings, setSystemSettings] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [subscriptionStats, setSubscriptionStats] = useState({
     totalSubscriptions: 0,
     activeSubscriptions: 0,
@@ -49,7 +50,6 @@ export default function AdminDashboard() {
   });
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
   const [focusedDoctorId, setFocusedDoctorId] = useState(null);
   // Mobile sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -68,10 +68,14 @@ export default function AdminDashboard() {
   const [businessTypesCurrentPage, setBusinessTypesCurrentPage] = useState(1);
   const [doctorsCurrentPage, setDoctorsCurrentPage] = useState(1);
   const [businessesCurrentPage, setBusinessesCurrentPage] = useState(1);
-  const servicesPerPage = 5;
-  const businessTypesPerPage = 5;
-  const doctorsPerPage = 5;
-  const businessesPerPage = 5;
+  const [serviceRequestsCurrentPage, setServiceRequestsCurrentPage] = useState(1);
+  const [transactionsCurrentPage, setTransactionsCurrentPage] = useState(1);
+  const servicesPerPage = 20;
+  const businessTypesPerPage = 20;
+  const doctorsPerPage = 20;
+  const businessesPerPage = 20;
+  const serviceRequestsPerPage = 20;
+  const transactionsPerPage = 20;
   
   // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -500,7 +504,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const requestsPerPage = 5;
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [showDoctorPassword, setShowDoctorPassword] = useState(false);
@@ -734,6 +737,9 @@ export default function AdminDashboard() {
         systemSettingsAPI.getAll(),
         subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })) // Handle if subscriptions API is not ready
       ]);
+
+      // Initialize transactions as empty array (placeholder for future transactions API)
+      setTransactions([]);
 
       ('🏥 Raw doctors response:', doctorsRes.data);
       ('🏢 Raw businesses response:', businessesRes.data);
@@ -1678,6 +1684,20 @@ export default function AdminDashboard() {
            `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower);
   });
 
+  const filteredTransactions = transactions.filter(transaction => {
+    // Handle both direct properties and nested attributes structure  
+    const paymentId = transaction.paymentId || transaction.attributes?.paymentId || '';
+    const doctorId = transaction.doctorId || transaction.attributes?.doctorId || '';
+    const amount = transaction.amount || transaction.attributes?.amount || '';
+    
+    if (searchTerm === '') return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return paymentId.toLowerCase().includes(searchLower) ||
+           doctorId.toString().toLowerCase().includes(searchLower) ||
+           amount.toString().toLowerCase().includes(searchLower);
+  });
+
   const filteredDoctorEarnings = doctorEarnings.filter(earning => {
     const doctorFirstName = earning.doctor?.firstName || earning.doctor?.attributes?.firstName || '';
     const doctorLastName = earning.doctor?.lastName || earning.doctor?.attributes?.lastName || '';
@@ -1688,14 +1708,41 @@ export default function AdminDashboard() {
     return `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower);
   });
 
-  // Pagination for service requests
-  const totalPages = Math.ceil(filteredRequests.length / requestsPerPage);
-  const startIndex = (currentPage - 1) * requestsPerPage;
-  const endIndex = startIndex + requestsPerPage;
-  const currentRequests = filteredRequests.slice(startIndex, endIndex);
+  // Service Requests Pagination
+  const totalServiceRequestsPages = Math.ceil(filteredRequests.length / serviceRequestsPerPage);
+  const serviceRequestsStartIndex = (serviceRequestsCurrentPage - 1) * serviceRequestsPerPage;
+  const serviceRequestsEndIndex = serviceRequestsStartIndex + serviceRequestsPerPage;
+  const paginatedServiceRequests = filteredRequests.slice(serviceRequestsStartIndex, serviceRequestsEndIndex);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  // Transactions Pagination
+  const totalTransactionsPages = Math.ceil(filteredTransactions.length / transactionsPerPage);
+  const transactionsStartIndex = (transactionsCurrentPage - 1) * transactionsPerPage;
+  const transactionsEndIndex = transactionsStartIndex + transactionsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(transactionsStartIndex, transactionsEndIndex);
+
+  // Pagination handlers
+  const handleServicesPageChange = (page) => {
+    setServicesCurrentPage(page);
+  };
+
+  const handleBusinessTypesPageChange = (page) => {
+    setBusinessTypesCurrentPage(page);
+  };
+
+  const handleDoctorsPageChange = (page) => {
+    setDoctorsCurrentPage(page);
+  };
+
+  const handleBusinessesPageChange = (page) => {
+    setBusinessesCurrentPage(page);
+  };
+
+  const handleServiceRequestsPageChange = (page) => {
+    setServiceRequestsCurrentPage(page);
+  };
+
+  const handleTransactionsPageChange = (page) => {
+    setTransactionsCurrentPage(page);
   };
 
   // View detail handlers
@@ -4758,7 +4805,7 @@ export default function AdminDashboard() {
             </div>
             
             <div className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
-              {currentRequests.length > 0 ? currentRequests.map((request, index) => {
+              {paginatedServiceRequests.length > 0 ? paginatedServiceRequests.map((request, index) => {
                 // Handle both direct properties and nested attributes
                 const id = request.id || request.attributes?.id;
                 const serviceType = request.serviceType || request.attributes?.serviceType;
@@ -4935,14 +4982,14 @@ export default function AdminDashboard() {
               <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t`}>
                 <div className="flex items-center justify-between">
                   <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Showing {startIndex + 1}-{Math.min(endIndex, filteredRequests.length)} of {filteredRequests.length} filtered requests ({serviceRequests.length} total)
+                    Showing {serviceRequestsStartIndex + 1}-{Math.min(serviceRequestsEndIndex, filteredRequests.length)} of {filteredRequests.length} filtered requests ({serviceRequests.length} total)
                   </div>
                   
-                  {totalPages > 1 && (
+                  {totalServiceRequestsPages > 1 && (
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
+                        onClick={() => handleServiceRequestsPageChange(serviceRequestsCurrentPage - 1)}
+                        disabled={serviceRequestsCurrentPage === 1}
                         className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                         }`}
@@ -4951,12 +4998,12 @@ export default function AdminDashboard() {
                       </button>
                       
                       <div className="flex space-x-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        {Array.from({ length: totalServiceRequestsPages }, (_, i) => i + 1).map((page) => (
                           <button
                             key={page}
-                            onClick={() => handlePageChange(page)}
+                            onClick={() => handleServiceRequestsPageChange(page)}
                             className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                              currentPage === page
+                              serviceRequestsCurrentPage === page
                                 ? 'bg-blue-600 text-white shadow-sm'
                                 : isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                             }`}
@@ -4967,8 +5014,8 @@ export default function AdminDashboard() {
                       </div>
                       
                       <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
+                        onClick={() => handleServiceRequestsPageChange(serviceRequestsCurrentPage + 1)}
+                        disabled={serviceRequestsCurrentPage === totalServiceRequestsPages}
                         className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                         }`}
