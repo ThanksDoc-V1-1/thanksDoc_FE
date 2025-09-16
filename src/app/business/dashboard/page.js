@@ -153,6 +153,8 @@ export default function BusinessDashboard() {
   });
   const [previousDoctors, setPreviousDoctors] = useState([]);
   const [loadingPreviousDoctors, setLoadingPreviousDoctors] = useState(false);
+  const [assignedDoctors, setAssignedDoctors] = useState([]);
+  const [loadingAssignedDoctors, setLoadingAssignedDoctors] = useState(false);
   
   // New states for service selection and service-based doctor filtering
   const [availableServices, setAvailableServices] = useState([]);
@@ -287,6 +289,15 @@ export default function BusinessDashboard() {
     return availablePrevious;
   };
 
+  // Helper function to get available assigned doctors for current service
+  const getAvailableAssignedDoctors = () => {
+    let availableAssigned = assignedDoctors.filter(doctor => doctor.isAvailable);
+    if (formData.serviceId) {
+      availableAssigned = getDoctorsForService(availableAssigned, formData.serviceId);
+    }
+    return availableAssigned;
+  };
+
   // Authentication check - redirect if not authenticated or not business
   useEffect(() => {
     ('🔍 Business Dashboard - Auth state check:', {
@@ -415,6 +426,13 @@ export default function BusinessDashboard() {
     // Apply service filter when service changes
     applyServiceFilter(formData.serviceId);
   }, [businessData, nearbyDoctors, previousDoctors, formData.serviceId, showEditProfile]);
+
+  // Fetch assigned doctors when business data is available
+  useEffect(() => {
+    if (businessData?.id && !loadingAssignedDoctors) {
+      fetchAssignedDoctors();
+    }
+  }, [businessData?.id]);
 
   // Show loading screen while authentication is being checked
   if (authLoading) {
@@ -634,6 +652,67 @@ export default function BusinessDashboard() {
       setPreviousDoctors([]);
     } finally {
       setLoadingPreviousDoctors(false);
+    }
+  };
+
+  // Fetch assigned doctors for this business
+  const fetchAssignedDoctors = async () => {
+    if (!businessData?.id) {
+      ('⚠️ No business ID available for fetching assigned doctors');
+      return;
+    }
+
+    try {
+      setLoadingAssignedDoctors(true);
+      ('🔍 Fetching assigned doctors for business:', businessData.id);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/businesses/${businessData.id}/assigned-doctors`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch assigned doctors: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const doctors = data.data || [];
+      
+      ('👨‍⚕️ Raw assigned doctors response:', doctors);
+
+      // Check current availability and services for each assigned doctor
+      const assignedDoctorsList = [];
+      for (const doctor of doctors) {
+        try {
+          // Check if doctor is currently available
+          const availabilityResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctors/${doctor.id}/availability`);
+          const availabilityData = await availabilityResponse.ok ? await availabilityResponse.json() : { isAvailable: false };
+          
+          // Get doctor's services
+          const servicesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctors/${doctor.id}?populate=services`);
+          const doctorData = await servicesResponse.ok ? await servicesResponse.json() : { services: [] };
+          
+          assignedDoctorsList.push({
+            ...doctor,
+            isAvailable: availabilityData.isAvailable || false,
+            services: doctorData.data?.services || doctorData.services || []
+          });
+        } catch (err) {
+          console.error(`Error checking availability for assigned doctor ${doctor.id}:`, err);
+          // Include doctor but mark as unavailable if we can't check
+          assignedDoctorsList.push({
+            ...doctor,
+            isAvailable: false,
+            services: []
+          });
+        }
+      }
+
+      ('👨‍⚕️ Assigned doctors with availability:', assignedDoctorsList);
+      ('✅ Available assigned doctors:', assignedDoctorsList.filter(d => d.isAvailable));
+      setAssignedDoctors(assignedDoctorsList);
+    } catch (error) {
+      console.error('❌ Error fetching assigned doctors:', error);
+      setAssignedDoctors([]);
+    } finally {
+      setLoadingAssignedDoctors(false);
     }
   };
 
@@ -1019,7 +1098,7 @@ export default function BusinessDashboard() {
       [name]: processedValue
     }));
 
-    // If doctor selection type changes, reset preferred doctor and fetch previous doctors if needed
+    // If doctor selection type changes, reset preferred doctor and fetch doctors if needed
     if (name === 'doctorSelectionType') {
       setFormData(prev => ({
         ...prev,
@@ -1028,6 +1107,10 @@ export default function BusinessDashboard() {
       
       if (value === 'previous' && previousDoctors.length === 0) {
         fetchPreviousDoctors();
+      }
+      
+      if (value === 'assigned' && assignedDoctors.length === 0) {
+        fetchAssignedDoctors();
       }
       
       // For 'any' doctor selection, also load previous doctors and service-based doctors if service is selected
@@ -1058,10 +1141,16 @@ export default function BusinessDashboard() {
         willUseServiceDefaultDuration: true
       });
       
-      // Check if currently selected doctor still offers the new service (for previous doctor selection)
+      // Check if currently selected doctor still offers the new service (for previous or assigned doctor selection)
       let shouldResetDoctor = false;
-      if (formData.preferredDoctorId && formData.doctorSelectionType === 'previous' && value) {
-        const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+      if (formData.preferredDoctorId && (formData.doctorSelectionType === 'previous' || formData.doctorSelectionType === 'assigned') && value) {
+        let selectedDoctor = null;
+        if (formData.doctorSelectionType === 'previous') {
+          selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+        } else if (formData.doctorSelectionType === 'assigned') {
+          selectedDoctor = assignedDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+        }
+        
         if (selectedDoctor && !doctorOffersService(selectedDoctor, value)) {
           shouldResetDoctor = true;
           ('🔄 Selected doctor no longer offers the new service, resetting selection');
@@ -1146,9 +1235,12 @@ export default function BusinessDashboard() {
 
   const handleOpenRequestForm = () => {
     setShowRequestForm(true);
-    // Fetch previous doctors when form opens for the first time
+    // Fetch previous doctors and assigned doctors when form opens for the first time
     if (previousDoctors.length === 0) {
       fetchPreviousDoctors();
+    }
+    if (assignedDoctors.length === 0) {
+      fetchAssignedDoctors();
     }
     // If a service is already selected (from quick actions), fetch doctors for that service
     if (formData.serviceId && serviceBasedDoctors.length === 0) {
@@ -1175,11 +1267,28 @@ export default function BusinessDashboard() {
         return;
       }
 
+      // Validation: If assigned doctors option is selected, a doctor must be chosen
+      if (formData.doctorSelectionType === 'assigned' && !formData.preferredDoctorId) {
+        alert('Please select a doctor from your assigned doctors, or choose "Any available doctor" option.');
+        setIsSendingDoctorRequest(false);
+        return;
+      }
+
       // Additional validation: Ensure the selected doctor is available if previous option is chosen
       if (formData.doctorSelectionType === 'previous' && formData.preferredDoctorId) {
         const selectedDoctor = previousDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
         if (!selectedDoctor || !selectedDoctor.isAvailable) {
           alert('The selected doctor is no longer available. Please choose another doctor or refresh the list.');
+          setIsSendingDoctorRequest(false);
+          return;
+        }
+      }
+
+      // Additional validation: Ensure the selected doctor is available if assigned option is chosen
+      if (formData.doctorSelectionType === 'assigned' && formData.preferredDoctorId) {
+        const selectedDoctor = assignedDoctors.find(d => d.id.toString() === formData.preferredDoctorId.toString());
+        if (!selectedDoctor || !selectedDoctor.isAvailable) {
+          alert('The selected assigned doctor is no longer available. Please choose another doctor or refresh the list.');
           setIsSendingDoctorRequest(false);
           return;
         }
@@ -2489,6 +2598,7 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 >
                   <option value="any">Any available doctor</option>
                   <option value="previous">Previously worked with doctors</option>
+                  <option value="assigned">My assigned doctors</option>
                 </select>
               </div>
 
@@ -2576,6 +2686,89 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                 </div>
               )}
 
+              {formData.doctorSelectionType === 'assigned' && (
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                    Select Assigned Doctor *
+                  </label>
+                  {loadingAssignedDoctors ? (
+                    <div className={`flex items-center justify-center py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      Loading assigned doctors...
+                    </div>
+                  ) : assignedDoctors.filter(doctor => {
+                      // Filter by availability and service if service is selected
+                      const isAvailable = doctor.isAvailable;
+                      const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                      return isAvailable && offersService;
+                    }).length > 0 ? (
+                    <>
+                      <select
+                        name="preferredDoctorId"
+                        value={formData.preferredDoctorId || ''}
+                        onChange={handleInputChange}
+                        required
+                        className={`w-full px-3 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      >
+                        <option value="">Select an assigned doctor</option>
+                        {assignedDoctors
+                          .filter(doctor => {
+                            // Filter by availability and service if service is selected
+                            const isAvailable = doctor.isAvailable;
+                            const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                            return isAvailable && offersService;
+                          })
+                          .map((doctor) => (
+                            <option key={doctor.id} value={doctor.id}>
+                              Dr. {doctor.firstName} {doctor.lastName}
+                            </option>
+                          ))}
+                      </select>
+                      <div className={`mt-2 p-2 rounded ${isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+                        <p className={`text-xs ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
+                          ✅ Showing {assignedDoctors.filter(doctor => {
+                            const isAvailable = doctor.isAvailable;
+                            const offersService = !formData.serviceId || doctorOffersService(doctor, formData.serviceId);
+                            return isAvailable && offersService;
+                          }).length} available doctor(s) assigned to your business{formData.serviceId ? ' who offer the selected service' : ''}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-gray-50 border border-gray-200'}`}>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {assignedDoctors.length === 0 
+                          ? "No doctors have been assigned to your business by the admin yet."
+                          : formData.serviceId 
+                            ? `None of your assigned doctors who offer the selected service are currently available. ${assignedDoctors.filter(d => d.isAvailable && !doctorOffersService(d, formData.serviceId)).length > 0 ? 'Some of your assigned doctors are available but don\'t offer this service.' : ''} Please try the 'Any available doctor' option instead.`
+                            : "None of your assigned doctors are currently available. Please try the 'Any available doctor' option instead."
+                        }
+                      </p>
+                      {assignedDoctors.length > 0 && (
+                        <div className="mt-2">
+                          <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            Assigned doctors ({assignedDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length} unavailable{formData.serviceId ? '/don\'t offer this service' : ''}):
+                          </p>
+                          <ul className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
+                            {assignedDoctors
+                              .filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId)))
+                              .slice(0, 3)
+                              .map((doctor) => (
+                                <li key={doctor.id}>
+                                  • Dr. {doctor.firstName} {doctor.lastName}
+                                  {!doctor.isAvailable ? ' (unavailable)' : formData.serviceId && !doctorOffersService(doctor, formData.serviceId) ? ' (doesn\'t offer this service)' : ''}
+                                </li>
+                              ))}
+                            {assignedDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length > 3 && (
+                              <li>... and {assignedDoctors.filter(doctor => !doctor.isAvailable || (formData.serviceId && !doctorOffersService(doctor, formData.serviceId))).length - 3} more</li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
 
               <div>

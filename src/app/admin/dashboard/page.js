@@ -124,6 +124,16 @@ export default function AdminDashboard() {
   // Delete confirmation states
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // Doctor Assignment states
+  const [doctorAssignments, setDoctorAssignments] = useState([]);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [assignmentFormData, setAssignmentFormData] = useState({
+    doctorId: '',
+    businessId: '',
+    notes: ''
+  });
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+
 
 
   const handleServiceFormChange = (e) => {
@@ -767,6 +777,17 @@ export default function AdminDashboard() {
         };
         setSubscriptionStats(basicStats);
         console.log('📊 Calculated subscription stats:', basicStats);
+      }
+
+      // Load doctor assignments
+      try {
+        const assignmentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor-business-assignments?populate[doctor]=*&populate[business]=*&populate[assignedBy]=*`)
+          .then(res => res.json());
+        setDoctorAssignments(assignmentsRes.data || []);
+        console.log('✅ Doctor assignments loaded:', assignmentsRes.data?.length || 0);
+      } catch (error) {
+        console.warn('⚠️ Doctor assignments endpoint not available:', error);
+        setDoctorAssignments([]);
       }
       
       // Sort service requests by date, with newest first
@@ -1482,6 +1503,75 @@ export default function AdminDashboard() {
     } finally {
       setBusinessLocationLoading(false);
     }
+  };
+
+  // Doctor Assignment functions
+  const handleCreateAssignment = async (e) => {
+    e.preventDefault();
+    setLoadingAssignments(true);
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor-business-assignments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: {
+            doctorId: assignmentFormData.doctorId,
+            businessId: assignmentFormData.businessId,
+            notes: assignmentFormData.notes,
+            assignedBy: user?.id || 1 // Use current admin user ID
+          }
+        })
+      });
+
+      if (response.ok) {
+        await fetchAllData(); // Refresh all data
+        setShowAssignmentForm(false);
+        setAssignmentFormData({ doctorId: '', businessId: '', notes: '' });
+        alert('Doctor assigned to business successfully!');
+      } else {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to create assignment');
+      }
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      alert(`Error creating assignment: ${error.message}`);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  const handleRemoveAssignment = async (assignmentId) => {
+    if (!confirm('Are you sure you want to remove this assignment?')) return;
+    
+    setLoadingAssignments(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor-business-assignments/${assignmentId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        await fetchAllData(); // Refresh all data
+        alert('Assignment removed successfully!');
+      } else {
+        throw new Error('Failed to remove assignment');
+      }
+    } catch (error) {
+      console.error('Error removing assignment:', error);
+      alert(`Error removing assignment: ${error.message}`);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  const handleAssignmentFormChange = (e) => {
+    const { name, value } = e.target;
+    setAssignmentFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   // Filter functions for search functionality only
@@ -2648,6 +2738,7 @@ export default function AdminDashboard() {
               { id: 'overview', name: 'Overview', icon: Shield },
               { id: 'doctors', name: 'Doctors', icon: Stethoscope },
               { id: 'businesses', name: 'Businesses', icon: Building2 },
+              { id: 'doctor-assignments', name: 'Doctor Assignments', icon: Users },
               { id: 'services', name: 'Services', icon: Package },
               { id: 'requests', name: 'Service Requests', icon: Calendar },
               { id: 'transactions', name: 'Transactions', icon: CreditCard },
@@ -2852,6 +2943,7 @@ export default function AdminDashboard() {
             {activeTab === 'overview' ? 'Dashboard overview and statistics' :
              activeTab === 'doctors' ? 'Manage registered doctors and their verification status' :
              activeTab === 'businesses' ? 'Manage registered businesses and their profiles' :
+             activeTab === 'doctor-assignments' ? 'Assign doctors to specific businesses for exclusive access' :
              activeTab === 'services' ? 'Configure available medical services' :
              activeTab === 'settings' ? 'System-wide configuration settings' :
              activeTab === 'requests' ? 'Monitor and manage service requests' :
@@ -3766,6 +3858,149 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Doctor Assignments Tab */}
+        {activeTab === 'doctor-assignments' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <Users className="h-5 w-5 text-indigo-500 mr-2" />
+                  Doctor Assignments
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Assign doctors to specific businesses</p>
+              </div>
+              <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
+                <button
+                  onClick={() => setShowAssignmentForm(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                  disabled={loadingAssignments}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {loadingAssignments ? 'Loading...' : 'New Assignment'}
+                </button>
+                <span className={`${isDarkMode ? 'bg-indigo-900/30 text-indigo-400' : 'bg-indigo-100 text-indigo-700'} px-3 py-1 rounded-full flex items-center`}>
+                  <Users className="h-3.5 w-3.5 mr-1 stroke-2" />
+                  <span className="font-medium">{doctorAssignments.filter(a => a.isActive).length}</span> Active
+                </span>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} sticky top-0 z-10`}>
+                  <tr>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
+                      Doctor
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
+                      Business
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
+                      Assigned Date
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
+                      Status
+                    </th>
+                    <th className={`px-6 py-3.5 text-left text-xs font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} uppercase tracking-wider`}>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-800' : 'divide-gray-200'}`}>
+                  {doctorAssignments.filter(assignment => assignment.isActive).length > 0 ? (
+                    doctorAssignments
+                      .filter(assignment => assignment.isActive)
+                      .map((assignment, index) => {
+                        const doctor = assignment.doctor;
+                        const business = assignment.business;
+                        
+                        return (
+                          <tr key={assignment.id} className={`transition-colors ${
+                            index % 2 === 0 
+                              ? isDarkMode ? 'bg-gray-900/50 hover:bg-gray-800/70' : 'bg-gray-50 hover:bg-gray-100' 
+                              : isDarkMode ? 'bg-gray-900 hover:bg-gray-800/50' : 'bg-white hover:bg-gray-50'
+                          }`}>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-900/40' : 'bg-blue-100'} mr-3`}>
+                                  <Stethoscope className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                                </div>
+                                <div>
+                                  <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    Dr. {doctor?.firstName} {doctor?.lastName}
+                                  </div>
+                                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {doctor?.specialization || 'General Practice'}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-purple-900/40' : 'bg-purple-100'} mr-3`}>
+                                  <Building2 className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                                </div>
+                                <div>
+                                  <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {business?.businessName}
+                                  </div>
+                                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {business?.businessType}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                {formatDate(assignment.assignedAt)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                assignment.isActive
+                                  ? isDarkMode ? 'bg-green-900/40 text-green-400' : 'bg-green-100 text-green-700'
+                                  : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {assignment.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => handleRemoveAssignment(assignment.id)}
+                                disabled={loadingAssignments}
+                                className={`text-red-400 hover:text-red-300 p-2 rounded-lg hover:bg-red-900/20 transition-colors ${loadingAssignments ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Remove Assignment"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-12 text-center">
+                        <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          <Users className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mb-4`} />
+                          <h3 className="text-sm font-medium mb-2">No doctor assignments</h3>
+                          <p className="text-sm mb-4">Get started by assigning doctors to businesses.</p>
+                          <button
+                            onClick={() => setShowAssignmentForm(true)}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create First Assignment
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -8554,6 +8789,130 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Doctor Assignment Form Modal */}
+        {showAssignmentForm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowAssignmentForm(false)}></div>
+              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+              <div className={`inline-block align-bottom rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-50 ${
+                isDarkMode ? 'bg-gray-900' : 'bg-white'
+              }`}>
+                <form onSubmit={handleCreateAssignment}>
+                  <div className={`px-6 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className={`text-lg font-semibold leading-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            Assign Doctor to Business
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => setShowAssignmentForm(false)}
+                            className={`rounded-full p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                          >
+                            <X className="h-5 w-5" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                              Select Doctor *
+                            </label>
+                            <select
+                              name="doctorId"
+                              value={assignmentFormData.doctorId}
+                              onChange={handleAssignmentFormChange}
+                              required
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                                isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'
+                              }`}
+                            >
+                              <option value="">Choose a doctor...</option>
+                              {doctors.filter(doctor => doctor.isVerified).map((doctor) => (
+                                <option key={doctor.id} value={doctor.id}>
+                                  Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization || 'General Practice'}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                              Select Business *
+                            </label>
+                            <select
+                              name="businessId"
+                              value={assignmentFormData.businessId}
+                              onChange={handleAssignmentFormChange}
+                              required
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                                isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300 bg-white text-gray-900'
+                              }`}
+                            >
+                              <option value="">Choose a business...</option>
+                              {businesses.filter(business => business.isVerified).map((business) => (
+                                <option key={business.id} value={business.id}>
+                                  {business.businessName} - {business.businessType}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                              Notes (Optional)
+                            </label>
+                            <textarea
+                              name="notes"
+                              value={assignmentFormData.notes}
+                              onChange={handleAssignmentFormChange}
+                              rows={3}
+                              placeholder="Add any notes about this assignment..."
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                                isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                              }`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border-t`}>
+                    <button
+                      type="submit"
+                      disabled={loadingAssignments || !assignmentFormData.doctorId || !assignmentFormData.businessId}
+                      className={`w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
+                        loadingAssignments || !assignmentFormData.doctorId || !assignmentFormData.businessId
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500'
+                      }`}
+                    >
+                      {loadingAssignments ? 'Creating...' : 'Create Assignment'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAssignmentForm(false)}
+                      disabled={loadingAssignments}
+                      className={`mt-3 w-full inline-flex justify-center rounded-lg border shadow-sm px-4 py-2 text-base font-medium sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                          : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
         </div>
       </div>
     </div>
