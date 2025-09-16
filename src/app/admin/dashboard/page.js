@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu, ChevronsLeft, ChevronsRight } from 'lucide-react';
-import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI, subscriptionAPI } from '../../../lib/api';
+import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI, subscriptionAPI, authAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [systemSettings, setSystemSettings] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [complianceUsers, setComplianceUsers] = useState([]);
   const [subscriptionStats, setSubscriptionStats] = useState({
     totalSubscriptions: 0,
     activeSubscriptions: 0,
@@ -70,12 +71,14 @@ export default function AdminDashboard() {
   const [businessesCurrentPage, setBusinessesCurrentPage] = useState(1);
   const [serviceRequestsCurrentPage, setServiceRequestsCurrentPage] = useState(1);
   const [transactionsCurrentPage, setTransactionsCurrentPage] = useState(1);
+  const [complianceUsersCurrentPage, setComplianceUsersCurrentPage] = useState(1);
   const servicesPerPage = 20;
   const businessTypesPerPage = 20;
   const doctorsPerPage = 20;
   const businessesPerPage = 20;
   const serviceRequestsPerPage = 20;
   const transactionsPerPage = 20;
+  const complianceUsersPerPage = 20;
   
   // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -111,6 +114,18 @@ export default function AdminDashboard() {
     description: '',
     category: 'general',
     isPublic: false
+  });
+
+  // Compliance User form states and handlers
+  const [showComplianceUserForm, setShowComplianceUserForm] = useState(false);
+  const [editingComplianceUser, setEditingComplianceUser] = useState(null);
+  const [complianceUserFormData, setComplianceUserFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    isActive: true
   });
 
   // Helper function to get a system setting value
@@ -504,6 +519,137 @@ export default function AdminDashboard() {
     }
   };
 
+  // Compliance User handlers
+  const handleComplianceUserFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setComplianceUserFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleComplianceUserSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      // Validate password confirmation for new users
+      if (!editingComplianceUser && complianceUserFormData.password !== complianceUserFormData.confirmPassword) {
+        alert('Passwords do not match');
+        setDataLoading(false);
+        return;
+      }
+
+      const userData = {
+        firstName: complianceUserFormData.firstName.trim(),
+        lastName: complianceUserFormData.lastName.trim(),
+        email: complianceUserFormData.email.trim(),
+        role: 'compliance',
+        isActive: complianceUserFormData.isActive
+      };
+
+      // Only include password for new users
+      if (!editingComplianceUser) {
+        userData.password = complianceUserFormData.password;
+      }
+
+      let response;
+      if (editingComplianceUser) {
+        // Update existing compliance user
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${editingComplianceUser.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(userData)
+        });
+        
+        if (!response.ok) throw new Error('Failed to update compliance user');
+        
+        const result = await response.json();
+        setComplianceUsers(prev => prev.map(user => 
+          user.id === editingComplianceUser.id ? result : user
+        ));
+      } else {
+        // Create new compliance user using the API
+        const userData = {
+          email: complianceUserFormData.email,
+          password: complianceUserFormData.password,
+          firstName: complianceUserFormData.firstName,
+          lastName: complianceUserFormData.lastName,
+          name: `${complianceUserFormData.firstName} ${complianceUserFormData.lastName}`
+        };
+        
+        console.log('Creating compliance user with data:', userData);
+        
+        const result = await authAPI.register('compliance', userData);
+        console.log('Registration successful:', result);
+        
+        // Add the user with the compliance role explicitly set
+        const newUser = {
+          ...result.user,
+          firstName: complianceUserFormData.firstName,
+          lastName: complianceUserFormData.lastName,
+          role: 'compliance',
+          isActive: complianceUserFormData.isActive
+        };
+        setComplianceUsers(prev => [...prev, newUser]);
+      }
+
+      setShowComplianceUserForm(false);
+      setEditingComplianceUser(null);
+      setComplianceUserFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        isActive: true
+      });
+      
+      alert(editingComplianceUser ? 'Compliance user updated successfully!' : 'Compliance user created successfully!');
+    } catch (error) {
+      console.error('Error saving compliance user:', error);
+      alert(`Failed to save compliance user. Error: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditComplianceUser = (user) => {
+    setEditingComplianceUser(user);
+    setComplianceUserFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      password: '',
+      confirmPassword: '',
+      isActive: user.isActive !== false
+    });
+    setShowComplianceUserForm(true);
+  };
+
+  const handleDeleteComplianceUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this compliance user? This action cannot be undone.')) return;
+
+    setDataLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) throw new Error('Failed to delete compliance user');
+      
+      setComplianceUsers(prev => prev.filter(user => user.id !== userId));
+      alert('Compliance user deleted successfully');
+    } catch (error) {
+      console.error('Error deleting compliance user:', error);
+      alert(`Failed to delete compliance user. Error: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [showDoctorPassword, setShowDoctorPassword] = useState(false);
@@ -728,14 +874,17 @@ export default function AdminDashboard() {
         .then(res => res.json())
         .then(data => ({ data }));
         
-      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes, complianceUsersRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
         servicesPromise,
         businessAPI.getBusinessTypes(),
         systemSettingsAPI.getAll(),
-        subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })) // Handle if subscriptions API is not ready
+        subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })), // Handle if subscriptions API is not ready
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users?filters[role][$eq]=compliance&populate=*`)
+          .then(res => res.json())
+          .catch(err => ({ data: [] })) // Handle if compliance users endpoint is not ready
       ]);
 
       // Initialize transactions as empty array (placeholder for future transactions API)
@@ -752,6 +901,7 @@ export default function AdminDashboard() {
       ('🏗️ Raw business types response:', businessTypesRes.data);
       ('⚙️ Raw system settings response:', systemSettingsRes.data);
       ('💳 Raw subscriptions response:', subscriptionsRes.data);
+      ('👥 Raw compliance users response:', complianceUsersRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
@@ -759,6 +909,7 @@ export default function AdminDashboard() {
       setBusinessTypes(businessTypesRes.data?.data || []);
       setSystemSettings(systemSettingsRes.data?.data || []);
       setSubscriptions(subscriptionsRes.data?.data || []);
+      setComplianceUsers(complianceUsersRes.data || []);
 
       // Load subscription stats (only if the endpoint exists)
       try {
@@ -1643,6 +1794,19 @@ export default function AdminDashboard() {
            status.includes(search);
   });
 
+  const filteredComplianceUsers = complianceUsers.filter(user => {
+    if (!searchTerm) return true;
+    const firstName = user.firstName || '';
+    const lastName = user.lastName || '';
+    const email = user.email || '';
+    const status = user.isActive ? 'active' : 'inactive';
+    const search = searchTerm.toLowerCase();
+    
+    return `${firstName} ${lastName}`.toLowerCase().includes(search) ||
+           email.toLowerCase().includes(search) ||
+           status.includes(search);
+  });
+
   // Pagination calculations for services
   const totalServicesPages = Math.ceil(filteredServices.length / servicesPerPage);
   const servicesStartIndex = (servicesCurrentPage - 1) * servicesPerPage;
@@ -1666,6 +1830,12 @@ export default function AdminDashboard() {
   const businessesStartIndex = (businessesCurrentPage - 1) * businessesPerPage;
   const businessesEndIndex = businessesStartIndex + businessesPerPage;
   const paginatedBusinesses = filteredBusinesses.slice(businessesStartIndex, businessesEndIndex);
+
+  // Pagination calculations for compliance users
+  const totalComplianceUsersPages = Math.ceil(filteredComplianceUsers.length / complianceUsersPerPage);
+  const complianceUsersStartIndex = (complianceUsersCurrentPage - 1) * complianceUsersPerPage;
+  const complianceUsersEndIndex = complianceUsersStartIndex + complianceUsersPerPage;
+  const paginatedComplianceUsers = filteredComplianceUsers.slice(complianceUsersStartIndex, complianceUsersEndIndex);
 
   const filteredRequests = serviceRequests.filter(request => {
     // Handle both direct properties and nested attributes structure
@@ -1743,6 +1913,10 @@ export default function AdminDashboard() {
 
   const handleTransactionsPageChange = (page) => {
     setTransactionsCurrentPage(page);
+  };
+
+  const handleComplianceUsersPageChange = (page) => {
+    setComplianceUsersCurrentPage(page);
   };
 
   // View detail handlers
@@ -2793,6 +2967,7 @@ export default function AdminDashboard() {
               { id: 'subscriptions', name: 'Doctor Subscriptions', icon: CreditCard },
               { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText },
               { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck },
+              { id: 'compliance-users', name: 'Compliance Users', icon: User },
               { id: 'settings', name: 'System Settings', icon: Settings },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -2997,6 +3172,7 @@ export default function AdminDashboard() {
              activeTab === 'transactions' ? 'View payment transactions and financial data' :
              activeTab === 'earnings' ? 'Track doctor earnings and payments' :
              activeTab === 'compliance-documents' ? 'Manage compliance document types and verification' :
+             activeTab === 'compliance-users' ? 'Manage compliance officers who review documents' :
              'Manage your platform'}
           </p>
         </div>
@@ -3023,6 +3199,7 @@ export default function AdminDashboard() {
                       activeTab === 'transactions' ? "Search transactions by payment ID, doctor ID..." :
                       activeTab === 'earnings' ? "Search by doctor name..." :
                       activeTab === 'compliance-documents' ? "Search document types by name..." :
+                      activeTab === 'compliance-users' ? "Search compliance users by name, email..." :
                       "Search..."
                     }
                     value={searchTerm}
@@ -3905,6 +4082,205 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Compliance Users Tab */}
+        {activeTab === 'compliance-users' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <User className="h-5 w-5 text-purple-500 mr-2" />
+                  Compliance Users
+                  <button 
+                    onClick={fetchAllData}
+                    className={`ml-3 p-1.5 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'} rounded-md transition-colors`} 
+                    title="Refresh data"
+                  >
+                    <RefreshCw className="h-4 w-4 text-purple-400" />
+                  </button>
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage compliance officers who can review and approve/reject documents</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className={`text-sm px-3 py-1 rounded-full ${isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
+                  <span className="font-medium">{complianceUsers.length}</span> Users
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingComplianceUser(null);
+                    setComplianceUserFormData({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                      isActive: true
+                    });
+                    setShowComplianceUserForm(true);
+                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isDarkMode 
+                      ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                      : 'bg-purple-600 text-white hover:bg-purple-700'
+                  } flex items-center space-x-2`}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Compliance User</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {filteredComplianceUsers.length > 0 ? (
+                <>
+                  <div className="grid gap-4">
+                  {paginatedComplianceUsers.map((user) => (
+                    <div key={user.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} border rounded-lg p-4`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 rounded-full ${isDarkMode ? 'bg-purple-900/30' : 'bg-purple-100'} flex items-center justify-center`}>
+                            <User className={`h-5 w-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                          </div>
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {user.firstName} {user.lastName}
+                              </h3>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                user.isActive 
+                                  ? isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
+                                  : isDarkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {user.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {user.email}
+                            </p>
+                            <div className="flex items-center space-x-4 text-xs mt-1">
+                              <span className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                Role: Compliance Officer
+                              </span>
+                              {user.createdAt && (
+                                <span className={`${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                  Created: {formatDate(user.createdAt)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleEditComplianceUser(user)}
+                            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                              isDarkMode 
+                                ? 'bg-blue-900/30 text-blue-400 hover:bg-blue-900/50' 
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            } flex items-center space-x-1`}
+                          >
+                            <Edit className="h-3 w-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComplianceUser(user.id)}
+                            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                              isDarkMode 
+                                ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50' 
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            } flex items-center space-x-1`}
+                          >
+                            <X className="h-3 w-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Pagination for Compliance Users */}
+                {totalComplianceUsersPages > 1 && (
+                  <div className={`px-6 py-4 ${isDarkMode ? 'bg-gray-800/50 border-gray-800' : 'bg-gray-50 border-gray-200'} border-t mt-6 rounded-b-lg`}>
+                    <div className="flex items-center justify-between">
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Showing {complianceUsersStartIndex + 1}-{Math.min(complianceUsersEndIndex, filteredComplianceUsers.length)} of {filteredComplianceUsers.length} filtered users ({complianceUsers.length} total)
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleComplianceUsersPageChange(complianceUsersCurrentPage - 1)}
+                          disabled={complianceUsersCurrentPage === 1}
+                          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          Previous
+                        </button>
+                        
+                        <div className="flex space-x-1">
+                          {Array.from({ length: totalComplianceUsersPages }, (_, i) => i + 1).map((page) => (
+                            <button
+                              key={page}
+                              onClick={() => handleComplianceUsersPageChange(page)}
+                              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                                complianceUsersCurrentPage === page
+                                  ? 'bg-purple-600 text-white shadow-sm'
+                                  : isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        <button
+                          onClick={() => handleComplianceUsersPageChange(complianceUsersCurrentPage + 1)}
+                          disabled={complianceUsersCurrentPage === totalComplianceUsersPages}
+                          className={`px-3 py-1 text-sm font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isDarkMode ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                </>
+              ) : (
+              <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <User className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No compliance users found</h3>
+                <p className="text-sm mb-4">Create compliance users to manage document approvals</p>
+                <button
+                  onClick={() => {
+                    setEditingComplianceUser(null);
+                    setComplianceUserFormData({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                      isActive: true
+                    });
+                    setShowComplianceUserForm(true);
+                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isDarkMode 
+                      ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                      : 'bg-purple-600 text-white hover:bg-purple-700'
+                  } flex items-center space-x-2 mx-auto`}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add First Compliance User</span>
+                </button>
+              </div>
+            )} 
+
+            </div>
           </div>
         )}
 
@@ -8013,6 +8389,160 @@ export default function AdminDashboard() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium"
                 >
                   {editingSystemSetting ? 'Update Setting' : 'Create Setting'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Compliance User Form Modal */}
+      {showComplianceUserForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleComplianceUserSubmit} className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {editingComplianceUser ? 'Edit Compliance User' : 'Add Compliance User'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowComplianceUserForm(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="complianceUserFirstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="complianceUserFirstName"
+                    name="firstName"
+                    value={complianceUserFormData.firstName}
+                    onChange={handleComplianceUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter first name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="complianceUserLastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="complianceUserLastName"
+                    name="lastName"
+                    value={complianceUserFormData.lastName}
+                    onChange={handleComplianceUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter last name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="complianceUserEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="complianceUserEmail"
+                    name="email"
+                    value={complianceUserFormData.email}
+                    onChange={handleComplianceUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                {!editingComplianceUser && (
+                  <>
+                    <div>
+                      <label htmlFor="complianceUserPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Password *
+                      </label>
+                      <input
+                        type="password"
+                        id="complianceUserPassword"
+                        name="password"
+                        value={complianceUserFormData.password}
+                        onChange={handleComplianceUserFormChange}
+                        required={!editingComplianceUser}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                        placeholder="Enter password"
+                        minLength="8"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Password must be at least 8 characters long.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label htmlFor="complianceUserConfirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Confirm Password *
+                      </label>
+                      <input
+                        type="password"
+                        id="complianceUserConfirmPassword"
+                        name="confirmPassword"
+                        value={complianceUserFormData.confirmPassword}
+                        onChange={handleComplianceUserFormChange}
+                        required={!editingComplianceUser}
+                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                        placeholder="Confirm password"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="complianceUserIsActive"
+                    name="isActive"
+                    checked={complianceUserFormData.isActive}
+                    onChange={handleComplianceUserFormChange}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-700 rounded"
+                  />
+                  <label htmlFor="complianceUserIsActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Active User
+                  </label>
+                </div>
+
+                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mt-4">
+                  <h4 className="text-sm font-medium text-purple-900 dark:text-purple-200 mb-2">Compliance User Permissions</h4>
+                  <ul className="text-xs text-purple-700 dark:text-purple-300 space-y-1">
+                    <li>• View doctor compliance documents</li>
+                    <li>• View business compliance documents</li>
+                    <li>• Approve or reject documents</li>
+                    <li>• Add comments to document reviews</li>
+                    <li>• No access to other admin functions</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowComplianceUserForm(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors font-medium disabled:opacity-50"
+                >
+                  {dataLoading ? 'Saving...' : (editingComplianceUser ? 'Update User' : 'Create User')}
                 </button>
               </div>
             </form>
