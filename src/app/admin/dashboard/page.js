@@ -548,25 +548,38 @@ export default function AdminDashboard() {
         isActive: complianceUserFormData.isActive
       };
 
-      // Only include password for new users
+      // Include password for new users or if password is provided for existing users
       if (!editingComplianceUser) {
+        userData.password = complianceUserFormData.password;
+      } else if (complianceUserFormData.password.trim()) {
+        // Only include password in update if a new password is provided
         userData.password = complianceUserFormData.password;
       }
 
       let response;
       if (editingComplianceUser) {
         // Update existing compliance user
+        console.log('Updating compliance user with data:', userData);
+        
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${editingComplianceUser.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(userData)
+          body: JSON.stringify({ data: userData })
         });
         
-        if (!response.ok) throw new Error('Failed to update compliance user');
+        console.log('Update response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Update response error:', errorText);
+          throw new Error('Failed to update compliance user');
+        }
         
         const result = await response.json();
+        console.log('Update result:', result);
+        
         setComplianceUsers(prev => prev.map(user => 
           user.id === editingComplianceUser.id ? result.data : user
         ));
@@ -8476,44 +8489,43 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {!editingComplianceUser && (
-                  <>
-                    <div>
-                      <label htmlFor="complianceUserPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Password *
-                      </label>
-                      <input
-                        type="password"
-                        id="complianceUserPassword"
-                        name="password"
-                        value={complianceUserFormData.password}
-                        onChange={handleComplianceUserFormChange}
-                        required={!editingComplianceUser}
-                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                        placeholder="Enter password"
-                        minLength="8"
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Password must be at least 8 characters long.
-                      </p>
-                    </div>
+                <div>
+                  <label htmlFor="complianceUserPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {editingComplianceUser ? 'New Password (leave blank to keep current)' : 'Password *'}
+                  </label>
+                  <input
+                    type="password"
+                    id="complianceUserPassword"
+                    name="password"
+                    value={complianceUserFormData.password}
+                    onChange={handleComplianceUserFormChange}
+                    required={!editingComplianceUser}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                    placeholder={editingComplianceUser ? "Leave blank to keep current password" : "Enter password"}
+                    minLength="8"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {editingComplianceUser ? 'Leave blank to keep the current password.' : 'Password must be at least 8 characters long.'}
+                  </p>
+                </div>
 
-                    <div>
-                      <label htmlFor="complianceUserConfirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type="password"
-                        id="complianceUserConfirmPassword"
-                        name="confirmPassword"
-                        value={complianceUserFormData.confirmPassword}
-                        onChange={handleComplianceUserFormChange}
-                        required={!editingComplianceUser}
-                        className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
-                        placeholder="Confirm password"
-                      />
-                    </div>
-                  </>
+                {!editingComplianceUser && (
+                  <div>
+                    <label htmlFor="complianceUserConfirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Confirm Password *
+                    </label>
+                    <input
+                      type="password"
+                      id="complianceUserConfirmPassword"
+                      name="confirmPassword"
+                      value={complianceUserFormData.confirmPassword}
+                      onChange={handleComplianceUserFormChange}
+                      required={!editingComplianceUser}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-500"
+                      placeholder="Confirm password"
+                      minLength="8"
+                    />
+                  </div>
                 )}
 
                 <div className="flex items-center">
