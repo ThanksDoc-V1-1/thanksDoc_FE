@@ -677,37 +677,54 @@ export default function BusinessDashboard() {
       
       ('👨‍⚕️ Raw assigned doctors response:', doctors);
 
-      // Check current availability and services for each assigned doctor
-      const assignedDoctorsList = [];
-      for (const doctor of doctors) {
-        try {
-          // Check if doctor is currently available
-          const availabilityResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctors/${doctor.id}/availability`);
-          const availabilityData = await availabilityResponse.ok ? await availabilityResponse.json() : { isAvailable: false };
+      // Use the same availability checking logic as previous doctors
+      try {
+        // Get current available doctors list
+        const availableResponse = await doctorAPI.getAvailable();
+        const availableDoctors = availableResponse.data || [];
+        
+        // Check each assigned doctor against the available doctors list
+        const assignedDoctorsWithAvailability = doctors.map(doctor => {
+          const currentDoctor = availableDoctors.find(d => d.id.toString() === doctor.id.toString());
           
-          // Get doctor's services
-          const servicesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctors/${doctor.id}?populate=services`);
-          const doctorData = await servicesResponse.ok ? await servicesResponse.json() : { services: [] };
+          (`🔍 Checking assigned doctor ${doctor.id}:`, {
+            foundInAvailable: !!currentDoctor,
+            currentDoctorServices: currentDoctor?.services,
+            availableDoctorsCount: availableDoctors.length
+          });
           
-          assignedDoctorsList.push({
-            ...doctor,
-            isAvailable: availabilityData.isAvailable || false,
-            services: doctorData.data?.services || doctorData.services || []
-          });
-        } catch (err) {
-          console.error(`Error checking availability for assigned doctor ${doctor.id}:`, err);
-          // Include doctor but mark as unavailable if we can't check
-          assignedDoctorsList.push({
-            ...doctor,
-            isAvailable: false,
-            services: []
-          });
-        }
-      }
+          if (currentDoctor) {
+            // Doctor is available, use current data
+            return {
+              ...doctor,
+              isAvailable: true,
+              hourlyRate: currentDoctor.hourlyRate || doctor.hourlyRate,
+              specialization: currentDoctor.specialisation || doctor.specialization,
+              services: currentDoctor.services || doctor.services || []
+            };
+          } else {
+            // Doctor is not in available list, mark as unavailable
+            return {
+              ...doctor,
+              isAvailable: false,
+              services: doctor.services || []
+            };
+          }
+        });
 
-      ('👨‍⚕️ Assigned doctors with availability:', assignedDoctorsList);
-      ('✅ Available assigned doctors:', assignedDoctorsList.filter(d => d.isAvailable));
-      setAssignedDoctors(assignedDoctorsList);
+        ('👨‍⚕️ Assigned doctors with availability:', assignedDoctorsWithAvailability);
+        ('✅ Available assigned doctors:', assignedDoctorsWithAvailability.filter(d => d.isAvailable));
+        setAssignedDoctors(assignedDoctorsWithAvailability);
+      } catch (availabilityError) {
+        console.error('Error checking doctor availability:', availabilityError);
+        // If we can't check availability, just use the doctors as is but mark them unavailable
+        const doctorsWithUnavailable = doctors.map(doctor => ({
+          ...doctor,
+          isAvailable: false,
+          services: doctor.services || []
+        }));
+        setAssignedDoctors(doctorsWithUnavailable);
+      }
     } catch (error) {
       console.error('❌ Error fetching assigned doctors:', error);
       setAssignedDoctors([]);
