@@ -1527,7 +1527,7 @@ Payment ID: ${paymentIntent.id}`);
             const requestId = response.data.id || response.data.data?.id;
             
             let notificationMessage;
-            if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
+            if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'assigned' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
               notificationMessage = `Payment successful! Service request created and your selected doctor has been notified.
               
 ⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
