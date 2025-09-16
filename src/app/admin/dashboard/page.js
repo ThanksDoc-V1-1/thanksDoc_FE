@@ -781,7 +781,7 @@ export default function AdminDashboard() {
 
       // Load doctor assignments
       try {
-        const assignmentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor-business-assignments?populate[doctor]=*&populate[business]=*&populate[assignedBy]=*`)
+        const assignmentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/doctor-business-assignments`)
           .then(res => res.json());
         setDoctorAssignments(assignmentsRes.data || []);
         console.log('✅ Doctor assignments loaded:', assignmentsRes.data?.length || 0);
