@@ -556,7 +556,7 @@ export default function AdminDashboard() {
       let response;
       if (editingComplianceUser) {
         // Update existing compliance user
-        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${editingComplianceUser.id}`, {
+        response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${editingComplianceUser.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -568,7 +568,7 @@ export default function AdminDashboard() {
         
         const result = await response.json();
         setComplianceUsers(prev => prev.map(user => 
-          user.id === editingComplianceUser.id ? result : user
+          user.id === editingComplianceUser.id ? result.data : user
         ));
       } else {
         // Create new compliance user using the API
@@ -634,7 +634,7 @@ export default function AdminDashboard() {
 
     setDataLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${userId}`, {
         method: 'DELETE'
       });
       
@@ -882,9 +882,22 @@ export default function AdminDashboard() {
         businessAPI.getBusinessTypes(),
         systemSettingsAPI.getAll(),
         subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })), // Handle if subscriptions API is not ready
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users?filters[role][$eq]=compliance&populate=*`)
-          .then(res => res.json())
-          .catch(err => ({ data: [] })) // Handle if compliance users endpoint is not ready
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins`)
+          .then(res => {
+            console.log('All admins fetch response status:', res.status);
+            return res.json();
+          })
+          .then(data => {
+            console.log('All admins fetch response data:', data);
+            // Filter for compliance users on the frontend
+            const complianceUsers = data.data?.filter(admin => admin.role === 'compliance') || [];
+            console.log('Filtered compliance users:', complianceUsers);
+            return { data: { data: complianceUsers } };
+          })
+          .catch(err => {
+            console.error('Admins fetch error:', err);
+            return { data: { data: [] } };
+          }) // Handle if compliance users endpoint is not ready
       ]);
 
       // Initialize transactions as empty array (placeholder for future transactions API)
@@ -909,7 +922,7 @@ export default function AdminDashboard() {
       setBusinessTypes(businessTypesRes.data?.data || []);
       setSystemSettings(systemSettingsRes.data?.data || []);
       setSubscriptions(subscriptionsRes.data?.data || []);
-      setComplianceUsers(complianceUsersRes.data || []);
+      setComplianceUsers(complianceUsersRes.data?.data || []);
 
       // Load subscription stats (only if the endpoint exists)
       try {
