@@ -8834,7 +8834,7 @@ export default function AdminDashboard() {
                               <option value="">Choose a doctor...</option>
                               {doctors.filter(doctor => doctor.isVerified).map((doctor) => (
                                 <option key={doctor.id} value={doctor.id}>
-                                  Dr. {doctor.firstName} {doctor.lastName} - {doctor.specialization || 'General Practice'}
+                                  Dr. {doctor.firstName} {doctor.lastName}
                                 </option>
                               ))}
                             </select>
