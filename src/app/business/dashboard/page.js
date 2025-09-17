@@ -3091,15 +3091,17 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   onClick={() => handleCalendarDateClick(dateStr)}
                                   className={`relative p-2 text-sm rounded-lg border transition-all duration-200 min-h-[40px] ${
                                     isSelected
-                                      ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-blue-600 border-blue-500 text-white font-bold')
+                                      ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white font-bold shadow-xl ring-2 ring-blue-400' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300 font-bold')
+                                      : isToday && hasSlots && !isPastDate && isCurrentMonth
+                                      ? (isDarkMode ? 'bg-gradient-to-br from-blue-800 to-blue-900 border-blue-500 text-blue-100 shadow-lg ring-2 ring-blue-400' : 'bg-gradient-to-br from-blue-400 to-cyan-500 text-white border-2 border-blue-300 shadow-lg')
+                                      : isToday && isCurrentMonth
+                                      ? (isDarkMode ? 'bg-blue-900/50 border-blue-600 text-blue-200 ring-2 ring-blue-500' : 'bg-blue-400/20 border-blue-300 text-blue-700 ring-2 ring-blue-400')
                                       : hasSlots && !isPastDate && isCurrentMonth
-                                      ? (isDarkMode ? 'bg-green-800/30 border-green-600 text-green-300 hover:bg-green-700/40' : 'bg-emerald-100 border-emerald-300 text-emerald-800 hover:bg-emerald-200')
+                                      ? (isDarkMode ? 'bg-green-800/40 border-green-500 text-green-200 hover:bg-green-700/50' : 'bg-gradient-to-br from-emerald-400 to-green-500 text-white hover:from-emerald-500 hover:to-green-600 shadow-md')
                                       : isCurrentMonth
                                       ? (isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-gray-100 border-gray-200 text-gray-500')
-                                      : (isDarkMode ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed hover:bg-gray-100')
-                                    }
-                                    ${isToday ? 'ring-2 ring-blue-400' : ''}
-                                  `}
+                                      : (isDarkMode ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed')
+                                  }`}
                                 >
                                   <span className="block text-lg font-bold">{date.getDate()}</span>
                                   {hasSlots && !isPastDate && (
@@ -3712,15 +3714,17 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                                   onClick={() => handleCalendarDateClick(dateStr)}
                                   className={`relative p-2 text-sm rounded-lg border transition-all duration-200 min-h-[40px] ${
                                     isSelected
-                                      ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white font-bold' : 'bg-blue-600 border-blue-500 text-white font-bold')
+                                      ? (isDarkMode ? 'bg-blue-600 border-blue-500 text-white font-bold shadow-xl ring-2 ring-blue-400' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300 font-bold')
+                                      : isToday && hasSlots && !isPastDate && isCurrentMonth
+                                      ? (isDarkMode ? 'bg-gradient-to-br from-blue-800 to-blue-900 border-blue-500 text-blue-100 shadow-lg ring-2 ring-blue-400' : 'bg-gradient-to-br from-blue-400 to-cyan-500 text-white border-2 border-blue-300 shadow-lg')
+                                      : isToday && isCurrentMonth
+                                      ? (isDarkMode ? 'bg-blue-900/50 border-blue-600 text-blue-200 ring-2 ring-blue-500' : 'bg-blue-400/20 border-blue-300 text-blue-700 ring-2 ring-blue-400')
                                       : hasSlots && !isPastDate && isCurrentMonth
-                                      ? (isDarkMode ? 'bg-green-800/30 border-green-600 text-green-300 hover:bg-green-700/40' : 'bg-emerald-100 border-emerald-300 text-emerald-800 hover:bg-emerald-200')
+                                      ? (isDarkMode ? 'bg-green-800/40 border-green-500 text-green-200 hover:bg-green-700/50' : 'bg-gradient-to-br from-emerald-400 to-green-500 text-white hover:from-emerald-500 hover:to-green-600 shadow-md')
                                       : isCurrentMonth
                                       ? (isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-400' : 'bg-gray-100 border-gray-200 text-gray-500')
-                                      : (isDarkMode ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed hover:bg-gray-100')
-                                    }
-                                    ${isToday ? 'ring-2 ring-blue-400' : ''}
-                                  `}
+                                      : (isDarkMode ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed')
+                                  }`}
                                 >
                                   <span className="block text-lg font-bold">{date.getDate()}</span>
                                   {hasSlots && !isPastDate && (
