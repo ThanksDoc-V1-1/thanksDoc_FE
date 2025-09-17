@@ -183,7 +183,43 @@ export default function AdminDashboard() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [calendarView, setCalendarView] = useState('week'); // 'week' or 'month'
+  const [calendarView, setCalendarView] = useState('month'); // 'week' or 'month'
+  const [showDateSlots, setShowDateSlots] = useState(false);
+  const [selectedDateSlots, setSelectedDateSlots] = useState([]);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState('');
+
+  // Helper function to get dates with slots
+  const getDatesWithSlots = () => {
+    const datesWithSlots = new Set();
+    availabilitySlots.forEach(slot => {
+      const slotData = slot.attributes || slot;
+      if (slotData.date && slotData.serviceType === 'online') {
+        datesWithSlots.add(slotData.date);
+      }
+    });
+    return datesWithSlots;
+  };
+
+  // Helper function to get slots for a specific date
+  const getSlotsForDate = (dateStr) => {
+    return availabilitySlots.filter(slot => {
+      const slotData = slot.attributes || slot;
+      return slotData.date === dateStr && slotData.serviceType === 'online';
+    }).sort((a, b) => {
+      const aData = a.attributes || a;
+      const bData = b.attributes || b;
+      return aData.startTime.localeCompare(bData.startTime);
+    });
+  };
+
+  // Handle calendar date click
+  const handleCalendarDateClick = (dateStr) => {
+    setSelectedCalendarDate(dateStr);
+    setSelectedDate(dateStr);
+    const slotsForDate = getSlotsForDate(dateStr);
+    setSelectedDateSlots(slotsForDate);
+    setShowDateSlots(true);
+  };
 
 
 
@@ -518,6 +554,40 @@ export default function AdminDashboard() {
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  // Month calendar helper functions
+  const getMonthDates = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // First day of the month
+    const firstDay = new Date(year, month, 1);
+    // Last day of the month
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Start from the Sunday of the week containing the first day
+    const startDate = new Date(firstDay);
+    startDate.setDate(firstDay.getDate() - firstDay.getDay());
+    
+    // End on the Saturday of the week containing the last day
+    const endDate = new Date(lastDay);
+    endDate.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+    
+    const dates = [];
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      dates.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  };
+
+  const isDateInCurrentMonth = (date, currentMonth) => {
+    return date.getMonth() === currentMonth.getMonth() && 
+           date.getFullYear() === currentMonth.getFullYear();
   };
 
   // Business Type form handlers
@@ -6085,197 +6155,245 @@ export default function AdminDashboard() {
                 </button>
               </div>
 
-              {/* Calendar Grid */}
-              {calendarView === 'week' && (
-                <div className="grid grid-cols-8 gap-2 mb-6">
-                  <div></div> {/* Empty cell for time column */}
-                  {getWeekDates(currentWeek).map((date, index) => (
-                    <div key={index} className={`text-center p-2 rounded-lg ${
-                      date.toDateString() === new Date().toDateString() 
-                        ? (isDarkMode ? 'bg-blue-900 text-blue-100' : 'bg-blue-100 text-blue-900')
-                        : (isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700')
-                    }`}>
-                      <div className="text-xs font-medium">
-                        {date.toLocaleDateString('en-US', { weekday: 'short' })}
+              {/* Interactive Calendar */}
+              {calendarView === 'month' && (
+                <div className="mb-6">
+                  {/* Month Calendar Grid */}
+                  <div className="grid grid-cols-7 gap-1 mb-4">
+                    {/* Weekday Headers */}
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className={`p-2 text-center text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {day}
                       </div>
-                      <div className="text-lg font-bold">
-                        {date.getDate()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Time Slots Display */}
-              <div className="space-y-4">
-                {calendarView === 'week' ? (
-                  // Week view with time slots
-                  <div className="space-y-2">
-                    {getWeekDates(currentWeek).map((date, dateIndex) => {
+                    ))}
+                    
+                    {/* Calendar Dates */}
+                    {getMonthDates(currentWeek).map((date, index) => {
                       const dateStr = date.toISOString().split('T')[0];
-                      const daySlots = availabilitySlots.filter(slot => {
-                        const slotData = slot.attributes || slot;
-                        return slotData.date === dateStr && slotData.serviceType === 'online';
-                      }).sort((a, b) => {
-                        const aData = a.attributes || a;
-                        const bData = b.attributes || b;
-                        return aData.startTime.localeCompare(bData.startTime);
-                      });
-
-                      if (daySlots.length === 0) return null;
-
+                      const isCurrentMonth = isDateInCurrentMonth(date, currentWeek);
+                      const isToday = date.toDateString() === new Date().toDateString();
+                      const isSelected = dateStr === selectedCalendarDate;
+                      const datesWithSlots = getDatesWithSlots();
+                      const hasSlots = datesWithSlots.has(dateStr);
+                      const slotsCount = getSlotsForDate(dateStr).length;
+                      
                       return (
-                        <div key={dateIndex} className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg p-4`}>
-                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
-                            {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                          </h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {daySlots.map((slot) => {
-                              const slotData = slot.attributes || slot;
-                              return (
-                                <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-3`}>
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <Clock className="h-4 w-4 text-blue-500" />
-                                      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                        {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center space-x-1">
-                                      <button
-                                        onClick={() => handleEditSlot(slot)}
-                                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
-                                      >
-                                        <Edit className="h-3 w-3 text-blue-500" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteSlot(slot)}
-                                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
-                                      >
-                                        <X className="h-3 w-3 text-red-500" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 flex items-center justify-between text-xs">
-                                    <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      Max: {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
-                                    </span>
-                                    <span className={`px-2 py-1 rounded-full ${
-                                      slotData.isActive 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-red-100 text-red-800'
-                                    }`}>
-                                      {slotData.isActive ? 'Active' : 'Inactive'}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <button
+                          key={index}
+                          onClick={() => handleCalendarDateClick(dateStr)}
+                          className={`
+                            relative p-2 h-12 text-sm rounded-lg transition-all duration-200 
+                            ${!isCurrentMonth 
+                              ? (isDarkMode ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600')
+                              : isSelected
+                              ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                              : isToday
+                              ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-blue-100 text-blue-900 border border-blue-300')
+                              : hasSlots
+                              ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-green-100 text-green-900 hover:bg-green-200')
+                              : (isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')
+                            }
+                          `}
+                        >
+                          <span className="block">{date.getDate()}</span>
+                          {hasSlots && (
+                            <div className={`absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
+                              isSelected ? 'bg-white' : isDarkMode ? 'bg-green-400' : 'bg-green-600'
+                            }`}>
+                            </div>
+                          )}
+                          {slotsCount > 0 && (
+                            <div className={`absolute top-1 right-1 text-xs ${
+                              isSelected ? 'text-white' : isDarkMode ? 'text-green-400' : 'text-green-600'
+                            }`}>
+                              {slotsCount}
+                            </div>
+                          )}
+                        </button>
                       );
                     })}
                   </div>
-                ) : (
-                  // Month view - simple list
-                  <div className="space-y-3">
-                    {availabilitySlots
-                      .filter(slot => {
-                        const slotData = slot.attributes || slot;
-                        const slotDate = new Date(slotData.date);
-                        return slotDate.getMonth() === currentWeek.getMonth() && 
-                               slotDate.getFullYear() === currentWeek.getFullYear() &&
-                               slotData.serviceType === 'online';
-                      })
-                      .sort((a, b) => {
-                        const aData = a.attributes || a;
-                        const bData = b.attributes || b;
-                        const dateCompare = aData.date.localeCompare(bData.date);
-                        if (dateCompare !== 0) return dateCompare;
-                        return aData.startTime.localeCompare(bData.startTime);
-                      })
-                      .map((slot) => {
+                </div>
+              )}
+
+              {/* Week View Calendar */}
+              {calendarView === 'week' && (
+                <div className="grid grid-cols-8 gap-2 mb-6">
+                  <div></div> {/* Empty cell for time column */}
+                  {getWeekDates(currentWeek).map((date, index) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const isToday = date.toDateString() === new Date().toDateString();
+                    const isSelected = dateStr === selectedCalendarDate;
+                    const hasSlots = getDatesWithSlots().has(dateStr);
+                    const slotsCount = getSlotsForDate(dateStr).length;
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleCalendarDateClick(dateStr)}
+                        className={`
+                          relative text-center p-3 rounded-lg transition-all duration-200
+                          ${isSelected
+                            ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                            : isToday 
+                            ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-blue-100 text-blue-900 border border-blue-300')
+                            : hasSlots
+                            ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-green-100 text-green-900 hover:bg-green-200')
+                            : (isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100')
+                          }
+                        `}
+                      >
+                        <div className="text-xs font-medium">
+                          {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </div>
+                        <div className="text-lg font-bold">
+                          {date.getDate()}
+                        </div>
+                        {slotsCount > 0 && (
+                          <div className={`absolute top-1 right-1 text-xs ${
+                            isSelected ? 'text-white' : isDarkMode ? 'text-green-400' : 'text-green-600'
+                          }`}>
+                            {slotsCount}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Selected Date Slots Panel */}
+              {showDateSlots && selectedCalendarDate && (
+                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-6`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {new Date(selectedCalendarDate).toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          month: 'long', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </h3>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {selectedDateSlots.length} slot{selectedDateSlots.length !== 1 ? 's' : ''} available
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingSlot(null);
+                          setSlotFormData({
+                            date: selectedCalendarDate,
+                            startTime: '',
+                            endTime: '',
+                            serviceType: 'online',
+                            maxBookings: 1,
+                            isActive: true
+                          });
+                          setShowSlotForm(true);
+                        }}
+                        className={`px-3 py-1 rounded-lg text-white text-sm ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-1`}
+                      >
+                        <Plus className="h-3 w-3" />
+                        <span>Add Slot</span>
+                      </button>
+                      <button
+                        onClick={() => setShowDateSlots(false)}
+                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {selectedDateSlots.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {selectedDateSlots.map((slot) => {
                         const slotData = slot.attributes || slot;
                         return (
-                          <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg p-4 flex items-center justify-between`}>
-                            <div className="flex items-center space-x-4">
-                              <div className={`${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-lg p-2`}>
-                                <Calendar className="h-4 w-4 text-blue-500" />
+                          <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-3`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4 text-blue-500" />
+                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
+                                </span>
                               </div>
-                              <div>
-                                <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                                  {new Date(slotData.date).toLocaleDateString('en-US', { 
-                                    weekday: 'long', 
-                                    month: 'long', 
-                                    day: 'numeric' 
-                                  })}
-                                </div>
-                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)} • Max {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
-                                </div>
+                              <div className="flex items-center space-x-1">
+                                <button
+                                  onClick={() => handleEditSlot(slot)}
+                                  className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                >
+                                  <Edit className="h-3 w-3 text-blue-500" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSlot(slot)}
+                                  className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                >
+                                  <X className="h-3 w-3 text-red-500" />
+                                </button>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
+                            <div className="mt-2 flex items-center justify-between text-xs">
+                              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Max: {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
+                              </span>
+                              <span className={`px-2 py-1 rounded-full ${
                                 slotData.isActive 
                                   ? 'bg-green-100 text-green-800' 
                                   : 'bg-red-100 text-red-800'
                               }`}>
                                 {slotData.isActive ? 'Active' : 'Inactive'}
                               </span>
-                              <button
-                                onClick={() => handleEditSlot(slot)}
-                                className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                              >
-                                <Edit className="h-4 w-4 text-blue-500" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteSlot(slot)}
-                                className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
-                              >
-                                <X className="h-4 w-4 text-red-500" />
-                              </button>
                             </div>
                           </div>
                         );
                       })}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-sm">No slots available for this date</p>
+                      <p className="text-xs mt-1">Click "Add Slot" to create your first time slot</p>
+                    </div>
+                  )}
+                </div>
+              )}
                 
-                {/* Empty state */}
-                {availabilitySlots.filter(slot => {
-                  const slotData = slot.attributes || slot;
-                  return slotData.serviceType === 'online';
-                }).length === 0 && (
-                  <div className="text-center py-12">
-                    <Clock className={`h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
-                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'} mb-2`}>
-                      No availability slots yet
-                    </h3>
-                    <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-600'} mb-4`}>
-                      Create time slots for patients to book online consultations
-                    </p>
-                    <button
-                      onClick={() => {
-                        setEditingSlot(null);
-                        setSlotFormData({
-                          date: new Date().toISOString().split('T')[0],
-                          startTime: '',
-                          endTime: '',
-                          serviceType: 'online',
-                          maxBookings: 1,
-                          isActive: true
-                        });
-                        setShowSlotForm(true);
-                      }}
-                      className={`px-4 py-2 rounded-lg text-white ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-2`}
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Create First Slot</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* Empty state */}
+              {!showDateSlots && availabilitySlots.filter(slot => {
+                const slotData = slot.attributes || slot;
+                return slotData.serviceType === 'online';
+              }).length === 0 && (
+                <div className="text-center py-12">
+                  <Clock className={`h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
+                  <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'} mb-2`}>
+                    No availability slots yet
+                  </h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-600'} mb-4`}>
+                    Create time slots for patients to book online consultations
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEditingSlot(null);
+                      setSlotFormData({
+                        date: new Date().toISOString().split('T')[0],
+                        startTime: '',
+                        endTime: '',
+                        serviceType: 'online',
+                        maxBookings: 1,
+                        isActive: true
+                      });
+                      setShowSlotForm(true);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-white ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-2`}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Create First Slot</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
