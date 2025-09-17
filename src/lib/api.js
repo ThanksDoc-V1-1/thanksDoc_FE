@@ -646,6 +646,24 @@ export const subscriptionAPI = {
 export const adminAPI = {
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
+  
+  // Availability Slots
+  getAvailabilitySlots: () => api.get('/availability-slots?sort=date:asc,startTime:asc'),
+  createAvailabilitySlot: (data) => api.post('/availability-slots', { data }),
+  updateAvailabilitySlot: (id, data) => api.put(`/availability-slots/${id}`, { data }),
+  deleteAvailabilitySlot: (id) => api.delete(`/availability-slots/${id}`),
+  getAvailabilitySlotsByDate: (startDate, endDate) => 
+    api.get(`/availability-slots?filters[date][$gte]=${startDate}&filters[date][$lte]=${endDate}&sort=date:asc,startTime:asc`),
+  getAvailableSlots: (serviceType, date) => 
+    api.get(`/availability-slots/available?serviceType=${serviceType}&date=${date}`),
+};
+
+// Availability Slots API calls (public access for patients)
+export const availabilitySlotsAPI = {
+  getAvailableSlots: (serviceType, date) => 
+    publicAPI.get(`/availability-slots/available?serviceType=${serviceType}&date=${date}`),
+  bookSlot: (slotId) => 
+    publicAPI.post(`/availability-slots/${slotId}/book`),
 };
 
 export default api;

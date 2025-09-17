@@ -168,6 +168,23 @@ export default function AdminDashboard() {
   });
   const [loadingAssignments, setLoadingAssignments] = useState(false);
 
+  // Availability Slots states
+  const [availabilitySlots, setAvailabilitySlots] = useState([]);
+  const [showSlotForm, setShowSlotForm] = useState(false);
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [slotFormData, setSlotFormData] = useState({
+    date: '',
+    startTime: '',
+    endTime: '',
+    serviceType: 'online',
+    maxBookings: 1,
+    isActive: true
+  });
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [calendarView, setCalendarView] = useState('week'); // 'week' or 'month'
+
 
 
   const handleServiceFormChange = (e) => {
@@ -339,6 +356,155 @@ export default function AdminDashboard() {
     } finally {
       setDataLoading(false);
     }
+  };
+
+  // Availability Slots handlers
+  const handleSlotFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setSlotFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : (name === 'maxBookings' ? parseInt(value) || 1 : value)
+    }));
+  };
+
+  const handleSlotSubmit = async (e) => {
+    e.preventDefault();
+    setLoadingSlots(true);
+
+    try {
+      const slotData = {
+        date: slotFormData.date,
+        startTime: slotFormData.startTime,
+        endTime: slotFormData.endTime,
+        serviceType: slotFormData.serviceType,
+        maxBookings: parseInt(slotFormData.maxBookings) || 1,
+        isActive: slotFormData.isActive
+      };
+
+      // Validate that end time is after start time
+      if (slotData.startTime >= slotData.endTime) {
+        alert('End time must be after start time');
+        return;
+      }
+
+      let response;
+      if (editingSlot) {
+        // Update existing slot
+        const slotId = editingSlot.documentId || editingSlot.id;
+        response = await adminAPI.updateAvailabilitySlot(slotId, slotData);
+        setAvailabilitySlots(prev => prev.map(slot => 
+          (slot.id === editingSlot.id || slot.documentId === editingSlot.documentId) 
+            ? response.data.data : slot
+        ));
+        alert('Availability slot updated successfully!');
+      } else {
+        // Create new slot
+        response = await adminAPI.createAvailabilitySlot(slotData);
+        if (response.data) {
+          const newSlot = response.data.data || response.data;
+          setAvailabilitySlots(prev => [...prev, newSlot]);
+          alert('Availability slot created successfully!');
+        }
+      }
+
+      // Reset form
+      setShowSlotForm(false);
+      setEditingSlot(null);
+      setSlotFormData({
+        date: '',
+        startTime: '',
+        endTime: '',
+        serviceType: 'online',
+        maxBookings: 1,
+        isActive: true
+      });
+
+      await fetchAvailabilitySlots(); // Refresh slots data
+      
+    } catch (error) {
+      console.error('❌ Error saving availability slot:', error);
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error occurred';
+      alert(`Error ${editingSlot ? 'updating' : 'creating'} availability slot: ${errorMessage}`);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const handleEditSlot = (slot) => {
+    setEditingSlot(slot);
+    const slotData = slot.attributes || slot;
+    
+    setSlotFormData({
+      date: slotData.date || '',
+      startTime: slotData.startTime || '',
+      endTime: slotData.endTime || '',
+      serviceType: slotData.serviceType || 'online',
+      maxBookings: slotData.maxBookings || 1,
+      isActive: slotData.isActive !== undefined ? slotData.isActive : true
+    });
+    setShowSlotForm(true);
+  };
+
+  const handleDeleteSlot = async (slot) => {
+    const slotTime = `${slot.attributes?.date || slot.date} ${slot.attributes?.startTime || slot.startTime}-${slot.attributes?.endTime || slot.endTime}`;
+    if (!confirm(`Are you sure you want to delete the slot on ${slotTime}?`)) {
+      return;
+    }
+
+    try {
+      setLoadingSlots(true);
+      const slotId = slot.documentId || slot.id;
+      
+      await adminAPI.deleteAvailabilitySlot(slotId);
+      
+      setAvailabilitySlots(prev => prev.filter(s => 
+        s.id !== slot.id && s.documentId !== slot.documentId
+      ));
+      
+      alert('Availability slot deleted successfully!');
+      
+    } catch (error) {
+      console.error('❌ Error deleting availability slot:', error);
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error occurred';
+      alert(`Error deleting availability slot: ${errorMessage}`);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const fetchAvailabilitySlots = async () => {
+    try {
+      setLoadingSlots(true);
+      const response = await adminAPI.getAvailabilitySlots();
+      setAvailabilitySlots(response.data?.data || response.data || []);
+    } catch (error) {
+      console.error('❌ Error fetching availability slots:', error);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const getWeekDates = (date) => {
+    const week = [];
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+    startOfWeek.setDate(diff);
+
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      week.push(day);
+    }
+    return week;
+  };
+
+  const formatTime = (time) => {
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   // Business Type form handlers
@@ -1085,7 +1251,7 @@ export default function AdminDashboard() {
         .then(res => res.json())
         .then(data => ({ data }));
         
-      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes, complianceUsersRes, executiveUsersRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes, complianceUsersRes, executiveUsersRes, availabilitySlotsRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
@@ -1134,7 +1300,19 @@ export default function AdminDashboard() {
           .catch(err => {
             console.error('Executive users fetch error:', err);
             return { data: { data: [] } };
-          }) // Handle if executive users endpoint is not ready
+          }), // Handle if executive users endpoint is not ready
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/availability-slots?sort=date:asc,startTime:asc`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(res => res.json())
+          .then(data => ({ data }))
+          .catch(err => {
+            console.error('Availability slots fetch error:', err);
+            return { data: { data: [] } };
+          }) // Handle if availability slots endpoint is not ready
       ]);
 
       // Initialize transactions as empty array (placeholder for future transactions API)
@@ -1153,6 +1331,7 @@ export default function AdminDashboard() {
       ('💳 Raw subscriptions response:', subscriptionsRes.data);
       ('👥 Raw compliance users response:', complianceUsersRes.data);
       ('👔 Raw executive users response:', executiveUsersRes.data);
+      ('🕒 Raw availability slots response:', availabilitySlotsRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
@@ -1162,6 +1341,7 @@ export default function AdminDashboard() {
       setSubscriptions(subscriptionsRes.data?.data || []);
       setComplianceUsers(complianceUsersRes.data?.data || []);
       setExecutiveUsers(executiveUsersRes.data?.data || []);
+      setAvailabilitySlots(availabilitySlotsRes.data?.data || []);
 
       // Load subscription stats (only if the endpoint exists)
       try {
@@ -3222,6 +3402,7 @@ export default function AdminDashboard() {
               { id: 'businesses', name: 'Businesses', icon: Building2, adminOnly: false },
               { id: 'doctor-assignments', name: 'Doctor Assignments', icon: Users, adminOnly: true },
               { id: 'services', name: 'Services', icon: Package, adminOnly: true },
+              { id: 'availability-slots', name: 'Availability Slots', icon: Clock, adminOnly: true },
               { id: 'requests', name: 'Service Requests', icon: Calendar, adminOnly: true },
               { id: 'transactions', name: 'Transactions', icon: CreditCard, adminOnly: true },
               { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign, adminOnly: true },
@@ -3415,6 +3596,7 @@ export default function AdminDashboard() {
                  activeTab === 'earnings' ? 'Doctor Earnings' :
                  activeTab === 'compliance-documents' ? 'Doctor Compliance Documents' :
                  activeTab === 'business-compliance-documents' ? 'Business Compliance Documents' :
+                 activeTab === 'availability-slots' ? 'Availability Slots' :
                  activeTab}
               </h2>
             </div>
@@ -3441,6 +3623,7 @@ export default function AdminDashboard() {
              activeTab === 'businesses' ? 'Manage registered businesses and their profiles' :
              activeTab === 'doctor-assignments' ? 'Assign doctors to specific businesses for exclusive access' :
              activeTab === 'services' ? 'Configure available medical services' :
+             activeTab === 'availability-slots' ? 'Manage appointment time slots for online consultations' :
              activeTab === 'settings' ? 'System-wide configuration settings' :
              activeTab === 'requests' ? 'Monitor and manage service requests' :
              activeTab === 'transactions' ? 'View payment transactions and financial data' :
@@ -5465,6 +5648,172 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Availability Slot Form Modal */}
+        {showSlotForm && (
+          <div className="fixed inset-0 z-[9999] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style={{ zIndex: 9999 }}>
+            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setShowSlotForm(false)}></div>
+              <div className={`relative inline-block align-middle rounded-lg text-left overflow-visible shadow-xl transform transition-all max-w-lg w-full mx-4 ${
+                isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+              }`} style={{ zIndex: 10000 }}>
+                <div className={`px-4 pt-5 pb-4 sm:p-6 sm:pb-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-lg leading-6 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`} id="modal-title">
+                      {editingSlot ? 'Edit Availability Slot' : 'Add New Availability Slot'}
+                    </h3>
+                    <button
+                      type="button"
+                      className={`rounded-md p-2 hover:bg-gray-100 ${isDarkMode ? 'hover:bg-gray-700 text-gray-400' : 'text-gray-400'}`}
+                      onClick={() => setShowSlotForm(false)}
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handleSlotSubmit} className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                        Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={slotFormData.date}
+                        onChange={handleSlotFormChange}
+                        min={new Date().toISOString().split('T')[0]}
+                        required
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          isDarkMode
+                            ? 'border-gray-600 bg-gray-700 text-gray-100'
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                          Start Time *
+                        </label>
+                        <input
+                          type="time"
+                          name="startTime"
+                          value={slotFormData.startTime}
+                          onChange={handleSlotFormChange}
+                          required
+                          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            isDarkMode
+                              ? 'border-gray-600 bg-gray-700 text-gray-100'
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                          End Time *
+                        </label>
+                        <input
+                          type="time"
+                          name="endTime"
+                          value={slotFormData.endTime}
+                          onChange={handleSlotFormChange}
+                          required
+                          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            isDarkMode
+                              ? 'border-gray-600 bg-gray-700 text-gray-100'
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                        Service Type *
+                      </label>
+                      <select
+                        name="serviceType"
+                        value={slotFormData.serviceType}
+                        onChange={handleSlotFormChange}
+                        required
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          isDarkMode
+                            ? 'border-gray-600 bg-gray-700 text-gray-100'
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      >
+                        <option value="online">Online Consultation</option>
+                        <option value="in-person">In-Person Visit</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                        Maximum Bookings *
+                      </label>
+                      <input
+                        type="number"
+                        name="maxBookings"
+                        value={slotFormData.maxBookings}
+                        onChange={handleSlotFormChange}
+                        min="1"
+                        max="10"
+                        required
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          isDarkMode
+                            ? 'border-gray-600 bg-gray-700 text-gray-100'
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      />
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>
+                        Number of patients that can book this time slot
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        name="isActive"
+                        checked={slotFormData.isActive}
+                        onChange={handleSlotFormChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Active (Available for booking)
+                      </label>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <button
+                        type="submit"
+                        disabled={loadingSlots}
+                        className={`inline-flex justify-center rounded-lg px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                          loadingSlots
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                      >
+                        {loadingSlots ? 'Saving...' : editingSlot ? 'Update Slot' : 'Create Slot'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowSlotForm(false)}
+                        className={`inline-flex justify-center rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                          isDarkMode
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-800 focus:ring-gray-500'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-500'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Business Type Form Modal */}
         {showBusinessTypeForm && (
           <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -5611,6 +5960,308 @@ export default function AdminDashboard() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Availability Slots Tab */}
+        {activeTab === 'availability-slots' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <Clock className="h-5 w-5 text-blue-500 mr-2" />
+                  Availability Slots
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage appointment time slots for online consultations</p>
+              </div>
+              <div className="flex items-center space-x-3 text-sm">
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCalendarView('week')}
+                    className={`px-3 py-1 rounded-md ${calendarView === 'week' 
+                      ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                      : (isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700')
+                    }`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    onClick={() => setCalendarView('month')}
+                    className={`px-3 py-1 rounded-md ${calendarView === 'month' 
+                      ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                      : (isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700')
+                    }`}
+                  >
+                    Month
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingSlot(null);
+                    setSlotFormData({
+                      date: selectedDate,
+                      startTime: '',
+                      endTime: '',
+                      serviceType: 'online',
+                      maxBookings: 1,
+                      isActive: true
+                    });
+                    setShowSlotForm(true);
+                  }}
+                  className={`px-4 py-2 rounded-lg text-white ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-2`}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Slot</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Calendar Navigation */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => {
+                      if (calendarView === 'week') {
+                        const newWeek = new Date(currentWeek);
+                        newWeek.setDate(currentWeek.getDate() - 7);
+                        setCurrentWeek(newWeek);
+                      } else {
+                        const newMonth = new Date(currentWeek);
+                        newMonth.setMonth(currentWeek.getMonth() - 1);
+                        setCurrentWeek(newMonth);
+                      }
+                    }}
+                    className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </button>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {calendarView === 'week' 
+                      ? `Week of ${currentWeek.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                      : currentWeek.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                    }
+                  </h3>
+                  <button
+                    onClick={() => {
+                      if (calendarView === 'week') {
+                        const newWeek = new Date(currentWeek);
+                        newWeek.setDate(currentWeek.getDate() + 7);
+                        setCurrentWeek(newWeek);
+                      } else {
+                        const newMonth = new Date(currentWeek);
+                        newMonth.setMonth(currentWeek.getMonth() + 1);
+                        setCurrentWeek(newMonth);
+                      }
+                    }}
+                    className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'}`}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setCurrentWeek(new Date());
+                    setSelectedDate(new Date().toISOString().split('T')[0]);
+                  }}
+                  className={`px-3 py-1 text-sm rounded-md ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
+                  Today
+                </button>
+              </div>
+
+              {/* Calendar Grid */}
+              {calendarView === 'week' && (
+                <div className="grid grid-cols-8 gap-2 mb-6">
+                  <div></div> {/* Empty cell for time column */}
+                  {getWeekDates(currentWeek).map((date, index) => (
+                    <div key={index} className={`text-center p-2 rounded-lg ${
+                      date.toDateString() === new Date().toDateString() 
+                        ? (isDarkMode ? 'bg-blue-900 text-blue-100' : 'bg-blue-100 text-blue-900')
+                        : (isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-50 text-gray-700')
+                    }`}>
+                      <div className="text-xs font-medium">
+                        {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </div>
+                      <div className="text-lg font-bold">
+                        {date.getDate()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Time Slots Display */}
+              <div className="space-y-4">
+                {calendarView === 'week' ? (
+                  // Week view with time slots
+                  <div className="space-y-2">
+                    {getWeekDates(currentWeek).map((date, dateIndex) => {
+                      const dateStr = date.toISOString().split('T')[0];
+                      const daySlots = availabilitySlots.filter(slot => {
+                        const slotData = slot.attributes || slot;
+                        return slotData.date === dateStr && slotData.serviceType === 'online';
+                      }).sort((a, b) => {
+                        const aData = a.attributes || a;
+                        const bData = b.attributes || b;
+                        return aData.startTime.localeCompare(bData.startTime);
+                      });
+
+                      if (daySlots.length === 0) return null;
+
+                      return (
+                        <div key={dateIndex} className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg p-4`}>
+                          <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>
+                            {date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {daySlots.map((slot) => {
+                              const slotData = slot.attributes || slot;
+                              return (
+                                <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-3`}>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <Clock className="h-4 w-4 text-blue-500" />
+                                      <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <button
+                                        onClick={() => handleEditSlot(slot)}
+                                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                      >
+                                        <Edit className="h-3 w-3 text-blue-500" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteSlot(slot)}
+                                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                      >
+                                        <X className="h-3 w-3 text-red-500" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 flex items-center justify-between text-xs">
+                                    <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                      Max: {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
+                                    </span>
+                                    <span className={`px-2 py-1 rounded-full ${
+                                      slotData.isActive 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {slotData.isActive ? 'Active' : 'Inactive'}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Month view - simple list
+                  <div className="space-y-3">
+                    {availabilitySlots
+                      .filter(slot => {
+                        const slotData = slot.attributes || slot;
+                        const slotDate = new Date(slotData.date);
+                        return slotDate.getMonth() === currentWeek.getMonth() && 
+                               slotDate.getFullYear() === currentWeek.getFullYear() &&
+                               slotData.serviceType === 'online';
+                      })
+                      .sort((a, b) => {
+                        const aData = a.attributes || a;
+                        const bData = b.attributes || b;
+                        const dateCompare = aData.date.localeCompare(bData.date);
+                        if (dateCompare !== 0) return dateCompare;
+                        return aData.startTime.localeCompare(bData.startTime);
+                      })
+                      .map((slot) => {
+                        const slotData = slot.attributes || slot;
+                        return (
+                          <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border rounded-lg p-4 flex items-center justify-between`}>
+                            <div className="flex items-center space-x-4">
+                              <div className={`${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-lg p-2`}>
+                                <Calendar className="h-4 w-4 text-blue-500" />
+                              </div>
+                              <div>
+                                <div className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  {new Date(slotData.date).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                  })}
+                                </div>
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)} • Max {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                slotData.isActive 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {slotData.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                              <button
+                                onClick={() => handleEditSlot(slot)}
+                                className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                              >
+                                <Edit className="h-4 w-4 text-blue-500" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSlot(slot)}
+                                className={`p-2 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                              >
+                                <X className="h-4 w-4 text-red-500" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+                
+                {/* Empty state */}
+                {availabilitySlots.filter(slot => {
+                  const slotData = slot.attributes || slot;
+                  return slotData.serviceType === 'online';
+                }).length === 0 && (
+                  <div className="text-center py-12">
+                    <Clock className={`h-12 w-12 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mx-auto mb-4`} />
+                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'} mb-2`}>
+                      No availability slots yet
+                    </h3>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-600'} mb-4`}>
+                      Create time slots for patients to book online consultations
+                    </p>
+                    <button
+                      onClick={() => {
+                        setEditingSlot(null);
+                        setSlotFormData({
+                          date: new Date().toISOString().split('T')[0],
+                          startTime: '',
+                          endTime: '',
+                          serviceType: 'online',
+                          maxBookings: 1,
+                          isActive: true
+                        });
+                        setShowSlotForm(true);
+                      }}
+                      className={`px-4 py-2 rounded-lg text-white ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-2`}
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Create First Slot</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

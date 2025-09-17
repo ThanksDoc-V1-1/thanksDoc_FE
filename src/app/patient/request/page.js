@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Plus, Clock, Phone, CreditCard, ArrowRight, Heart, CheckCircle } from 'lucide-react';
-import { serviceRequestAPI, serviceAPI } from '../../../lib/api';
+import { serviceRequestAPI, serviceAPI, availabilitySlotsAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
@@ -41,6 +41,7 @@ export default function PatientRequestPage() {
     description: '',
     serviceDate: '',
     serviceTime: '',
+    selectedSlotId: '', // For online services with pre-defined slots
   });
   
   // Doctor-related states
@@ -53,6 +54,12 @@ export default function PatientRequestPage() {
   const [selectedService, setSelectedService] = useState(null);
   const [servicePrice, setServicePrice] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
+  
+  // Availability slots states (for online services)
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [isOnlineService, setIsOnlineService] = useState(false);
   
   // UI states
   const [loading, setLoading] = useState(false);
@@ -277,6 +284,13 @@ export default function PatientRequestPage() {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle service selection separately to manage online/offline logic
+    if (name === 'serviceId') {
+      handleServiceChange(e);
+      return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear specific field error when user starts typing
@@ -367,6 +381,87 @@ export default function PatientRequestPage() {
         setShowCitySuggestions(false);
         setSelectedCityIndex(-1);
         break;
+    }
+  };
+  
+  // Fetch available slots for a specific date and service type
+  const fetchAvailableSlots = async (date, serviceType) => {
+    if (!date || !serviceType) return;
+    
+    try {
+      setLoadingSlots(true);
+      const response = await availabilitySlotsAPI.getAvailableSlots(serviceType, date);
+      const slots = response.data?.data || response.data || [];
+      setAvailableSlots(slots);
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+  
+  // Handle slot selection
+  const handleSlotSelect = (slot) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedSlotId: slot.id || slot.documentId,
+      serviceDate: slot.date || slot.attributes?.date,
+      serviceTime: `${slot.startTime || slot.attributes?.startTime}-${slot.endTime || slot.attributes?.endTime}`
+    }));
+  };
+  
+  // Handle date change for online services
+  const handleDateChangeForSlots = (date) => {
+    setSelectedDate(date);
+    setFormData(prev => ({
+      ...prev,
+      serviceDate: date,
+      serviceTime: '',
+      selectedSlotId: ''
+    }));
+    
+    if (isOnlineService && date) {
+      fetchAvailableSlots(date, 'online');
+    }
+  };
+  
+  // Handle service selection change
+  const handleServiceChange = (e) => {
+    const { value } = e.target;
+    const service = availableServices.find(s => s.id.toString() === value);
+    const serviceData = service?.attributes || service;
+    const isOnline = serviceData?.category === 'online';
+    
+    setIsOnlineService(isOnline);
+    setFormData(prev => ({
+      ...prev,
+      serviceId: value,
+      serviceDate: '',
+      serviceTime: '',
+      selectedSlotId: ''
+    }));
+    
+    // Clear slots when changing service
+    setAvailableSlots([]);
+    setSelectedDate('');
+    
+    // Clear errors for service selection
+    if (errors.serviceId) {
+      setErrors(prev => ({ ...prev, serviceId: '' }));
+    }
+  };
+  
+  // Format time for display
+  const formatTime = (time) => {
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return time;
     }
   };
   
@@ -473,8 +568,15 @@ export default function PatientRequestPage() {
       }
     }
     
-    if (!formData.serviceTime) {
-      newErrors.serviceTime = 'Service time is required';
+    // For online services, validate slot selection; for others, validate time input
+    if (isOnlineService) {
+      if (!formData.selectedSlotId) {
+        newErrors.serviceTime = 'Please select an available time slot';
+      }
+    } else {
+      if (!formData.serviceTime) {
+        newErrors.serviceTime = 'Service time is required';
+      }
     }
     
     // Validate doctor selection
@@ -541,6 +643,17 @@ export default function PatientRequestPage() {
       const patientData = paymentRequest._patientData;
       const charge = paymentIntent.charges?.data?.[0];
       
+      // If this is an online service with a selected slot, book the slot first
+      if (isOnlineService && patientData.selectedSlotId) {
+        try {
+          await availabilitySlotsAPI.bookSlot(patientData.selectedSlotId);
+          console.log('Slot booked successfully:', patientData.selectedSlotId);
+        } catch (slotError) {
+          console.error('Error booking slot:', slotError);
+          // Continue with the request even if slot booking fails - this can be handled manually
+        }
+      }
+      
       // Create service request data matching the backend structure
       const requestData = {
         // Patient information (not business)
@@ -568,6 +681,7 @@ export default function PatientRequestPage() {
         preferredDoctorId: patientData.preferredDoctorId || null,
         serviceDateTime: patientData.serviceDate && patientData.serviceTime ? 
           `${patientData.serviceDate}T${patientData.serviceTime}:00` : null,
+        availabilitySlotId: patientData.selectedSlotId || null, // Reference to booked slot
         
         // Payment information
         isPaid: true,
@@ -1203,48 +1317,140 @@ export default function PatientRequestPage() {
                 </div>
 
                 {/* Service Date and Time */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
-                      Service Date *
-                    </label>
-                    <input
-                      type="date"
-                      name="serviceDate"
-                      value={formData.serviceDate}
-                      onChange={handleInputChange}
-                      min={new Date().toISOString().split('T')[0]} // Today or later
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'border-gray-600 bg-gray-700 text-white' 
-                          : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
-                      } ${errors.serviceDate ? 'border-red-400 bg-red-50' : ''}`}
-                    />
-                    {errors.serviceDate && (
-                      <p className="text-red-500 text-xs mt-1">{errors.serviceDate}</p>
-                    )}
-                  </div>
+                {isOnlineService ? (
+                  /* Online Service - Show Date Picker and Available Slots */
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                        Service Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="serviceDate"
+                        value={selectedDate}
+                        onChange={(e) => handleDateChangeForSlots(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]} // Today or later
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.serviceDate ? 'border-red-400 bg-red-50' : ''}`}
+                      />
+                      {errors.serviceDate && (
+                        <p className="text-red-500 text-xs mt-1">{errors.serviceDate}</p>
+                      )}
+                    </div>
 
-                  <div>
-                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
-                      Service Time *
-                    </label>
-                    <input
-                      type="time"
-                      name="serviceTime"
-                      value={formData.serviceTime}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
-                        isDarkMode 
-                          ? 'border-gray-600 bg-gray-700 text-white' 
-                          : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
-                      } ${errors.serviceTime ? 'border-red-400 bg-red-50' : ''}`}
-                    />
-                    {errors.serviceTime && (
-                      <p className="text-red-500 text-xs mt-1">{errors.serviceTime}</p>
+                    {selectedDate && (
+                      <div>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                          Available Time Slots *
+                        </label>
+                        
+                        {loadingSlots ? (
+                          <div className={`p-4 rounded-xl border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-blue-200 bg-blue-50/50'} flex items-center space-x-2`}>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              Loading available slots...
+                            </span>
+                          </div>
+                        ) : availableSlots.length > 0 ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {availableSlots.map((slot) => {
+                              const slotData = slot.attributes || slot;
+                              const slotId = slot.id || slot.documentId;
+                              const isSelected = formData.selectedSlotId === slotId;
+                              const availableSpots = slotData.maxBookings - slotData.currentBookings;
+                              
+                              return (
+                                <button
+                                  key={slotId}
+                                  type="button"
+                                  onClick={() => handleSlotSelect(slot)}
+                                  className={`p-3 rounded-xl border text-left transition-all duration-200 ${
+                                    isSelected
+                                      ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200' : 'border-blue-500 bg-blue-50 text-blue-900')
+                                      : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-300 hover:bg-blue-50')
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                      <Clock className="h-4 w-4 text-blue-500" />
+                                      <span className="font-medium">
+                                        {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
+                                      </span>
+                                    </div>
+                                    {isSelected && (
+                                      <CheckCircle className="h-4 w-4 text-blue-500" />
+                                    )}
+                                  </div>
+                                  <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {availableSpots} spot{availableSpots !== 1 ? 's' : ''} available
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className={`p-4 rounded-xl border ${isDarkMode ? 'border-gray-600 bg-gray-700' : 'border-blue-200 bg-blue-50/50'} text-center`}>
+                            <Clock className={`h-8 w-8 mx-auto mb-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              No available slots for this date. Please select a different date.
+                            </p>
+                          </div>
+                        )}
+                        
+                        {errors.serviceTime && (
+                          <p className="text-red-500 text-xs mt-1">{errors.serviceTime}</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                </div>
+                ) : (
+                  /* Traditional Date & Time Inputs for In-Person Services */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                        Service Date *
+                      </label>
+                      <input
+                        type="date"
+                        name="serviceDate"
+                        value={formData.serviceDate}
+                        onChange={handleInputChange}
+                        min={new Date().toISOString().split('T')[0]} // Today or later
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.serviceDate ? 'border-red-400 bg-red-50' : ''}`}
+                      />
+                      {errors.serviceDate && (
+                        <p className="text-red-500 text-xs mt-1">{errors.serviceDate}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-blue-900'} mb-2`}>
+                        Service Time *
+                      </label>
+                      <input
+                        type="time"
+                        name="serviceTime"
+                        value={formData.serviceTime}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-blue-200 bg-blue-50/50 text-blue-900 hover:border-blue-300'
+                        } ${errors.serviceTime ? 'border-red-400 bg-red-50' : ''}`}
+                      />
+                      {errors.serviceTime && (
+                        <p className="text-red-500 text-xs mt-1">{errors.serviceTime}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Information Messages */}
                 <div className="space-y-3">
@@ -1255,7 +1461,10 @@ export default function PatientRequestPage() {
                       </svg>
                     </div>
                     <p className={`text-sm ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
-                      Please select when you need the medical service.
+                      {isOnlineService 
+                        ? 'Please select a date and then choose from the available time slots for your online consultation.'
+                        : 'Please select when you need the medical service.'
+                      }
                     </p>
                   </div>
 
