@@ -661,14 +661,25 @@ export const adminAPI = {
 // Availability Slots API calls (public access for patients)
 export const availabilitySlotsAPI = {
   getAvailableSlots: (serviceType, date, endDate) => {
-    let url = `/availability-slots/available?serviceType=${serviceType}`;
+    let url = `/availability-slots?populate=*`;
+    
+    if (serviceType) {
+      url += `&filters[serviceType][$eq]=${serviceType}`;
+    }
+    
     if (endDate) {
       // Date range query
-      url += `&startDate=${date}&endDate=${endDate}`;
+      url += `&filters[date][$gte]=${date}&filters[date][$lte]=${endDate}`;
     } else {
       // Single date query
-      url += `&date=${date}`;
+      url += `&filters[date][$eq]=${date}`;
     }
+    
+    // Only show active slots with available capacity
+    url += `&filters[isActive][$eq]=true`;
+    url += `&sort=date:asc,startTime:asc`;
+    
+    console.log('🔗 API URL:', url);
     return publicAPI.get(url);
   },
   bookSlot: (slotId) => 

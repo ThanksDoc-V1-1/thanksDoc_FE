@@ -187,6 +187,7 @@ export default function PatientRequestPage() {
   // Fetch availability when online service is selected or month changes
   useEffect(() => {
     if (isOnlineService) {
+      console.log('🔄 Fetching availability for month:', currentMonth.toLocaleDateString());
       fetchMonthAvailability(currentMonth);
     }
   }, [isOnlineService, currentMonth]);
@@ -237,6 +238,8 @@ export default function PatientRequestPage() {
   const fetchMonthAvailability = async (monthDate) => {
     if (!isOnlineService) return;
     
+    console.log('🔄 fetchMonthAvailability called for:', monthDate.toLocaleDateString(), 'isOnlineService:', isOnlineService);
+    
     try {
       setLoadingAvailability(true);
       const year = monthDate.getFullYear();
@@ -246,12 +249,18 @@ export default function PatientRequestPage() {
       const startDate = new Date(year, month, 1).toISOString().split('T')[0];
       const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
       
+      console.log('📅 Fetching slots from:', startDate, 'to:', endDate);
+      
       const response = await availabilitySlotsAPI.getAvailableSlots('online', startDate, endDate);
+      
+      console.log('📊 API Response:', response);
       
       if (response?.data) {
         // Group slots by date
         const slotsData = Array.isArray(response.data) ? response.data : 
                          response.data.data ? response.data.data : [];
+        
+        console.log('✅ Found slots data:', slotsData.length, 'slots');
         
         const groupedSlots = {};
         slotsData.forEach(slot => {
@@ -263,6 +272,7 @@ export default function PatientRequestPage() {
           groupedSlots[date].push(slot);
         });
         
+        console.log('📊 Grouped slots by date:', groupedSlots);
         setAvailabilityData(groupedSlots);
       }
     } catch (error) {
@@ -542,6 +552,12 @@ export default function PatientRequestPage() {
     const service = availableServices.find(s => s.id.toString() === value);
     const serviceData = service?.attributes || service;
     const isOnline = serviceData?.category === 'online';
+    
+    console.log('🔄 Service changed:', {
+      serviceId: value,
+      service: serviceData,
+      isOnline: isOnline
+    });
     
     setIsOnlineService(isOnline);
     setFormData(prev => ({
@@ -1504,7 +1520,7 @@ export default function PatientRequestPage() {
                                       : isSelected
                                       ? (isDarkMode ? 'bg-blue-600 text-white shadow-xl ring-2 ring-blue-400' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300 transform scale-105')
                                       : isToday
-                                      ? (isDarkMode ? 'bg-orange-900 text-orange-100 border border-orange-600' : 'bg-gradient-to-br from-orange-400 to-red-500 text-white border-2 border-orange-300 shadow-lg')
+                                      ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-gradient-to-br from-blue-400 to-cyan-500 text-white border-2 border-blue-300 shadow-lg')
                                       : hasSlots
                                       ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800 cursor-pointer' : 'bg-gradient-to-br from-emerald-400 to-green-500 text-white hover:from-emerald-500 hover:to-green-600 shadow-lg cursor-pointer transform hover:scale-105')
                                       : (isDarkMode ? 'text-gray-400 cursor-not-allowed' : 'text-gray-400 cursor-not-allowed hover:bg-gray-100')
