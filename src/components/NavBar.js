@@ -36,6 +36,8 @@ export default function NavBar() {
       return `Dr. ${user.firstName || ''} ${user.lastName || ''}`.trim() || user.name || user.email;
     } else if (user.role === 'admin') {
       return 'Admin';
+    } else if (user.role === 'compliance') {
+      return 'Compliance Officer';
     }
     
     return user.email;
@@ -50,6 +52,8 @@ export default function NavBar() {
     } else if (user.role === 'doctor') {
       return '/doctor/dashboard';
     } else if (user.role === 'admin') {
+      return '/admin/dashboard';
+    } else if (user.role === 'compliance') {
       return '/admin/dashboard';
     }
     

@@ -164,6 +164,7 @@ export default function Home() {
                 <Link 
                   href={
                     user.role === 'admin' ? '/admin/dashboard' : 
+                    user.role === 'compliance' ? '/admin/dashboard' : 
                     user.role === 'doctor' ? '/doctor/dashboard' : 
                     user.role === 'business' ? '/business/dashboard' : '/'
                   }
@@ -227,6 +228,7 @@ export default function Home() {
               <Link 
                 href={
                   user.role === 'admin' ? '/admin/dashboard' : 
+                  user.role === 'compliance' ? '/admin/dashboard' : 
                   user.role === 'doctor' ? '/doctor/dashboard' : 
                   user.role === 'business' ? '/business/dashboard' : '/'
                 }
