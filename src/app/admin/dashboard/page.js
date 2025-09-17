@@ -2678,8 +2678,8 @@ export default function AdminDashboard() {
 
   // Smart verification handler that detects document type
   const handleModalDocumentVerification = async (documentId, verificationStatus) => {
-    // Detect document type based on current tab context
-    if (activeTab === 'business-compliance-documents') {
+    // Detect document type based on current tab context or business details view
+    if (activeTab === 'business-compliance-documents' || (showBusinessDetails && selectedBusiness)) {
       // This is a business compliance document - use business handler
       await handleBusinessDocumentVerification(documentId, verificationStatus);
     } else {
