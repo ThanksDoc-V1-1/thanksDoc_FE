@@ -176,14 +176,14 @@ export default function PatientRequestPage() {
         setSelectedService(service);
         const price = parseFloat(service.price) || 0;
         setServicePrice(price);
-        setTotalAmount(price + SERVICE_CHARGE);
+        setTotalAmount(price); // Remove SERVICE_CHARGE from total
       }
     } else {
       setSelectedService(null);
       setServicePrice(0);
       setTotalAmount(0);
     }
-  }, [formData.serviceId, availableServices, SERVICE_CHARGE]);
+  }, [formData.serviceId, availableServices]); // Remove SERVICE_CHARGE dependency
 
   // Fetch availability when online service is selected or month changes
   useEffect(() => {
@@ -793,7 +793,7 @@ export default function PatientRequestPage() {
       id: `temp-patient-${Date.now()}`,
       totalAmount: totalAmount,
       servicePrice: servicePrice,
-      serviceCharge: SERVICE_CHARGE,
+      serviceCharge: 0, // Remove service charge
       serviceType: selectedService.name,
       estimatedDuration: selectedService.duration || 60,
       _isPatientRequest: true,
@@ -1806,7 +1806,7 @@ export default function PatientRequestPage() {
                       </svg>
                     </div>
                     <p className={`text-sm ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>
-                      Booking Fee: A £{SERVICE_CHARGE.toFixed(2)} booking fee will be added to your final payment.
+                      Please ensure you provide accurate information for the best service experience.
                     </p>
                   </div>
                 </div>
@@ -1874,15 +1874,6 @@ export default function PatientRequestPage() {
                           </span>
                           <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             {formatCurrency(servicePrice)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex justify-between">
-                          <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Booking Fee:
-                          </span>
-                          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {formatCurrency(SERVICE_CHARGE)}
                           </span>
                         </div>
                         
