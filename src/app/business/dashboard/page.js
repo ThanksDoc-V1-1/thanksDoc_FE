@@ -1134,11 +1134,21 @@ export default function BusinessDashboard() {
     const slotData = slot.attributes || slot;
     const slotId = slot.id || slot.documentId;
     
+    // Convert start time to HH:MM format for serviceTime
+    const startTime = slotData.startTime.split(':').slice(0, 2).join(':'); // Convert "09:00:00.000" to "09:00"
+    
+    console.log('🔍 handleIndividualSlotSelect Debug:', {
+      slotData,
+      originalStartTime: slotData.startTime,
+      convertedStartTime: startTime,
+      date: slotData.date
+    });
+    
     setFormData(prev => ({
       ...prev,
       selectedSlotId: slotId,
       serviceDate: slotData.date,
-      serviceTime: `${slotData.startTime}-${slotData.endTime}`,
+      serviceTime: startTime, // Use only start time in HH:MM format
       selectedTimeSlot: {
         start: slotData.startTime,
         end: slotData.endTime,
@@ -1579,6 +1589,14 @@ export default function BusinessDashboard() {
       const scaledServiceCost = baseServiceCost * (requestedDuration / serviceDuration);
       const totalCost = scaledServiceCost + SERVICE_CHARGE;
 
+      console.log('🔍 Form Submission Debug:', {
+        formData,
+        serviceDate: formData.serviceDate,
+        serviceTime: formData.serviceTime,
+        selectedSlotId: formData.selectedSlotId,
+        isOnlineService
+      });
+
       // Create a temporary request object for payment
       const tempRequest = {
         id: 'temp-' + Date.now(), // Temporary ID for payment
@@ -1691,6 +1709,13 @@ Payment ID: ${paymentIntent.id}`);
           const formDataFromTemp = paymentRequest._formData;
           const serviceDateTimeString = paymentRequest._serviceDateTime;
           
+          console.log('🔍 Service Request Creation Debug:', {
+            formDataFromTemp,
+            serviceDateTimeString,
+            serviceDate: formDataFromTemp.serviceDate,
+            serviceTime: formDataFromTemp.serviceTime
+          });
+          
           // Find the selected service to check if it's an online consultation
           const selectedService = availableServices.find(s => s.id.toString() === formDataFromTemp.serviceId.toString());
           const isOnlineConsultation = selectedService?.name?.toLowerCase().includes('online consultation') || 
@@ -1724,6 +1749,11 @@ Payment ID: ${paymentIntent.id}`);
             currency: paymentIntent.currency || 'gbp'
           };
 
+          // Add individual slot ID if using calendar system
+          if (formDataFromTemp.selectedSlotId) {
+            requestData.selectedSlotId = formDataFromTemp.selectedSlotId;
+          }
+
           // Add patient information for online consultations
           if (isOnlineConsultation) {
             requestData.patientFirstName = formDataFromTemp.patientFirstName;
@@ -1737,6 +1767,26 @@ Payment ID: ${paymentIntent.id}`);
           
           if (response.data) {
             const requestId = response.data.id || response.data.data?.id;
+            
+            // Book the individual slot if using calendar system
+            if (formDataFromTemp.selectedSlotId) {
+              try {
+                const bookedByName = isOnlineConsultation 
+                  ? `${formDataFromTemp.patientFirstName} ${formDataFromTemp.patientLastName} (${formDataFromTemp.patientEmail})`
+                  : 'Business User';
+                  
+                await individualTimeSlotsAPI.bookSlot(
+                  formDataFromTemp.selectedSlotId, 
+                  bookedByName,
+                  requestId
+                );
+                console.log('✅ Individual slot booked successfully');
+              } catch (slotError) {
+                console.error('❌ Failed to book individual slot:', slotError);
+                // Note: We don't fail the entire request if slot booking fails since payment is already processed
+                alert('Service request created successfully, but there was an issue booking the time slot. Please contact support if needed.');
+              }
+            }
             
             let notificationMessage;
             if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'assigned' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
@@ -1760,6 +1810,8 @@ Payment ID: ${paymentIntent.id}`;
               doctorSelectionType: 'any',
               serviceDate: '',
               serviceTime: '',
+              selectedSlotId: '', // Reset selected slot
+              selectedTimeSlot: null, // Reset selected time slot
               // Reset patient information fields
               patientFirstName: '',
               patientLastName: '',
@@ -1770,6 +1822,9 @@ Payment ID: ${paymentIntent.id}`;
             // Reset service-related states
             setSelectedServiceId('');
             setServiceBasedDoctors([]);
+            setIsOnlineService(false); // Reset online service state
+            setSelectedDate(''); // Reset selected date
+            setAvailableSlots([]); // Reset available slots
             ('🔄 Manually refreshing after creating paid service request');
             await fetchServiceRequests();
             await fetchNearbyDoctors();
