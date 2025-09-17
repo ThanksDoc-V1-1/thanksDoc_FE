@@ -6093,7 +6093,7 @@ export default function AdminDashboard() {
                     });
                     setShowSlotForm(true);
                   }}
-                  className={`px-4 py-2 rounded-lg text-white ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-2`}
+                  className={`px-4 py-2 rounded-lg text-white font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg'} transition-all duration-200 transform hover:scale-105 flex items-center space-x-2`}
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Slot</span>
@@ -6117,9 +6117,9 @@ export default function AdminDashboard() {
                         setCurrentWeek(newMonth);
                       }
                     }}
-                    className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    className={`p-3 rounded-lg transition-all duration-200 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gradient-to-br from-slate-100 to-blue-100 hover:from-blue-200 hover:to-purple-200 border border-blue-200 hover:border-purple-300 shadow-md hover:shadow-lg'} transform hover:scale-110`}
                   >
-                    <ChevronsLeft className="h-4 w-4" />
+                    <ChevronsLeft className="h-5 w-5" />
                   </button>
                   <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     {calendarView === 'week' 
@@ -6139,9 +6139,9 @@ export default function AdminDashboard() {
                         setCurrentWeek(newMonth);
                       }
                     }}
-                    className={`p-2 rounded-lg ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    className={`p-3 rounded-lg transition-all duration-200 ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-gradient-to-br from-slate-100 to-blue-100 hover:from-blue-200 hover:to-purple-200 border border-blue-200 hover:border-purple-300 shadow-md hover:shadow-lg'} transform hover:scale-110`}
                   >
-                    <ChevronsRight className="h-4 w-4" />
+                    <ChevronsRight className="h-5 w-5" />
                   </button>
                 </div>
                 <button
@@ -6149,7 +6149,7 @@ export default function AdminDashboard() {
                     setCurrentWeek(new Date());
                     setSelectedDate(new Date().toISOString().split('T')[0]);
                   }}
-                  className={`px-3 py-1 text-sm rounded-md ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                  className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gradient-to-r from-orange-400 to-red-500 text-white hover:from-orange-500 hover:to-red-600 shadow-lg'} transform hover:scale-105`}
                 >
                   Today
                 </button>
@@ -6182,29 +6182,29 @@ export default function AdminDashboard() {
                           key={index}
                           onClick={() => handleCalendarDateClick(dateStr)}
                           className={`
-                            relative p-2 h-12 text-sm rounded-lg transition-all duration-200 
+                            relative p-2 h-12 text-sm rounded-lg transition-all duration-200 transform hover:scale-105
                             ${!isCurrentMonth 
                               ? (isDarkMode ? 'text-gray-600 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600')
                               : isSelected
-                              ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                              ? (isDarkMode ? 'bg-blue-600 text-white shadow-lg' : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-300')
                               : isToday
-                              ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-blue-100 text-blue-900 border border-blue-300')
+                              ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white border-2 border-orange-300 shadow-md')
                               : hasSlots
-                              ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-green-100 text-green-900 hover:bg-green-200')
-                              : (isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')
+                              ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-gradient-to-br from-emerald-400 to-green-500 text-white hover:from-emerald-500 hover:to-green-600 shadow-md')
+                              : (isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50 border border-transparent hover:border-purple-200')
                             }
                           `}
                         >
-                          <span className="block">{date.getDate()}</span>
+                          <span className="block font-medium">{date.getDate()}</span>
                           {hasSlots && (
-                            <div className={`absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
-                              isSelected ? 'bg-white' : isDarkMode ? 'bg-green-400' : 'bg-green-600'
+                            <div className={`absolute bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 rounded-full ${
+                              isSelected ? 'bg-white shadow-md' : isDarkMode ? 'bg-green-400' : 'bg-white shadow-lg ring-1 ring-emerald-300'
                             }`}>
                             </div>
                           )}
                           {slotsCount > 0 && (
-                            <div className={`absolute top-1 right-1 text-xs ${
-                              isSelected ? 'text-white' : isDarkMode ? 'text-green-400' : 'text-green-600'
+                            <div className={`absolute -top-1 -right-1 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
+                              isSelected ? 'bg-white text-blue-600 shadow-md' : isDarkMode ? 'bg-green-400 text-green-900' : 'bg-white text-emerald-600 shadow-lg ring-1 ring-emerald-200'
                             }`}>
                               {slotsCount}
                             </div>
@@ -6232,14 +6232,14 @@ export default function AdminDashboard() {
                         key={index}
                         onClick={() => handleCalendarDateClick(dateStr)}
                         className={`
-                          relative text-center p-3 rounded-lg transition-all duration-200
+                          relative text-center p-3 rounded-lg transition-all duration-200 transform hover:scale-105
                           ${isSelected
-                            ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white')
+                            ? (isDarkMode ? 'bg-blue-600 text-white shadow-lg' : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg ring-2 ring-blue-300')
                             : isToday 
-                            ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-blue-100 text-blue-900 border border-blue-300')
+                            ? (isDarkMode ? 'bg-blue-900 text-blue-100 border border-blue-600' : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white border-2 border-orange-300 shadow-md')
                             : hasSlots
-                            ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-green-100 text-green-900 hover:bg-green-200')
-                            : (isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100')
+                            ? (isDarkMode ? 'bg-green-900 text-green-100 hover:bg-green-800' : 'bg-gradient-to-br from-emerald-400 to-green-500 text-white hover:from-emerald-500 hover:to-green-600 shadow-md')
+                            : (isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gradient-to-br from-slate-50 to-gray-100 text-gray-700 hover:from-purple-50 hover:to-blue-50 border border-gray-200 hover:border-purple-200')
                           }
                         `}
                       >
@@ -6250,8 +6250,8 @@ export default function AdminDashboard() {
                           {date.getDate()}
                         </div>
                         {slotsCount > 0 && (
-                          <div className={`absolute top-1 right-1 text-xs ${
-                            isSelected ? 'text-white' : isDarkMode ? 'text-green-400' : 'text-green-600'
+                          <div className={`absolute -top-1 -right-1 text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
+                            isSelected ? 'bg-white text-blue-600 shadow-md' : isDarkMode ? 'bg-green-400 text-green-900' : 'bg-white text-emerald-600 shadow-lg ring-1 ring-emerald-200'
                           }`}>
                             {slotsCount}
                           </div>
@@ -6264,7 +6264,7 @@ export default function AdminDashboard() {
 
               {/* Selected Date Slots Panel */}
               {showDateSlots && selectedCalendarDate && (
-                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-6`}>
+                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300 shadow-lg'} rounded-xl p-6 mb-6`}>
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -6279,7 +6279,7 @@ export default function AdminDashboard() {
                         {selectedDateSlots.length} slot{selectedDateSlots.length !== 1 ? 's' : ''} available
                       </p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-3">
                       <button
                         onClick={() => {
                           setEditingSlot(null);
@@ -6293,14 +6293,14 @@ export default function AdminDashboard() {
                           });
                           setShowSlotForm(true);
                         }}
-                        className={`px-3 py-1 rounded-lg text-white text-sm ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} transition-colors flex items-center space-x-1`}
+                        className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg'} transition-all duration-200 transform hover:scale-105 flex items-center space-x-2`}
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-4 w-4" />
                         <span>Add Slot</span>
                       </button>
                       <button
                         onClick={() => setShowDateSlots(false)}
-                        className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                        className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-100 text-red-600 hover:text-red-700'} transition-colors`}
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -6308,41 +6308,43 @@ export default function AdminDashboard() {
                   </div>
                   
                   {selectedDateSlots.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {selectedDateSlots.map((slot) => {
                         const slotData = slot.attributes || slot;
                         return (
-                          <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg p-3`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <Clock className="h-4 w-4 text-blue-500" />
-                                <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <div key={slot.id || slot.documentId} className={`${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gradient-to-br from-white to-blue-50 border-2 border-blue-200 shadow-lg hover:shadow-xl'} rounded-xl p-4 transition-all duration-200 transform hover:scale-105`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center space-x-3">
+                                <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
+                                  <Clock className="h-4 w-4 text-white" />
+                                </div>
+                                <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                                   {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
                                 </span>
                               </div>
                               <div className="flex items-center space-x-1">
                                 <button
                                   onClick={() => handleEditSlot(slot)}
-                                  className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                  className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-blue-100 text-blue-600'} transition-colors`}
                                 >
-                                  <Edit className="h-3 w-3 text-blue-500" />
+                                  <Edit className="h-4 w-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteSlot(slot)}
-                                  className={`p-1 rounded ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-100'}`}
+                                  className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-600' : 'hover:bg-red-100 text-red-600'} transition-colors`}
                                 >
-                                  <X className="h-3 w-3 text-red-500" />
+                                  <X className="h-4 w-4" />
                                 </button>
                               </div>
                             </div>
-                            <div className="mt-2 flex items-center justify-between text-xs">
-                              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} font-medium`}>
                                 Max: {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
                               </span>
-                              <span className={`px-2 py-1 rounded-full ${
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                 slotData.isActive 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md' 
+                                  : 'bg-gradient-to-r from-red-400 to-pink-500 text-white shadow-md'
                               }`}>
                                 {slotData.isActive ? 'Active' : 'Inactive'}
                               </span>
