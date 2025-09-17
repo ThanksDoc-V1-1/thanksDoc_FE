@@ -1448,8 +1448,8 @@ export default function AdminDashboard() {
       
       // Set default tab for compliance users
       if (user.role === 'compliance' && activeTab === 'overview') {
-        console.log('🔧 Setting compliance user default tab to compliance-documents');
-        setActiveTab('compliance-documents');
+        console.log('🔧 Setting compliance user default tab to doctors');
+        setActiveTab('doctors');
       }
       
       console.log('✅ Admin/Compliance authenticated, loading dashboard', {
