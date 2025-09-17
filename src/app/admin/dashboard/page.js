@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, BarChart, Menu, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Shield, Users, Building2, Stethoscope, Check, X, Eye, EyeOff, Search, AlertTriangle, Calendar, Clock, MapPin, DollarSign, Phone, Mail, FileCheck, FileText, RefreshCw, LogOut, Plus, Package, Globe, CreditCard, Settings, Edit, User, UserCog, BarChart, Menu, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { doctorAPI, businessAPI, serviceRequestAPI, serviceAPI, systemSettingsAPI, adminAPI, subscriptionAPI, authAPI } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getCurrentLocation } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [complianceUsers, setComplianceUsers] = useState([]);
+  const [executiveUsers, setExecutiveUsers] = useState([]);
   const [subscriptionStats, setSubscriptionStats] = useState({
     totalSubscriptions: 0,
     activeSubscriptions: 0,
@@ -72,6 +73,7 @@ export default function AdminDashboard() {
   const [serviceRequestsCurrentPage, setServiceRequestsCurrentPage] = useState(1);
   const [transactionsCurrentPage, setTransactionsCurrentPage] = useState(1);
   const [complianceUsersCurrentPage, setComplianceUsersCurrentPage] = useState(1);
+  const [executiveUsersCurrentPage, setExecutiveUsersCurrentPage] = useState(1);
   const servicesPerPage = 20;
   const businessTypesPerPage = 20;
   const doctorsPerPage = 20;
@@ -79,6 +81,7 @@ export default function AdminDashboard() {
   const serviceRequestsPerPage = 20;
   const transactionsPerPage = 20;
   const complianceUsersPerPage = 20;
+  const executiveUsersPerPage = 20;
   
   // Service form states and handlers
   const [showServiceForm, setShowServiceForm] = useState(false);
@@ -120,6 +123,18 @@ export default function AdminDashboard() {
   const [showComplianceUserForm, setShowComplianceUserForm] = useState(false);
   const [editingComplianceUser, setEditingComplianceUser] = useState(null);
   const [complianceUserFormData, setComplianceUserFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    isActive: true
+  });
+
+  // Executive user states
+  const [showExecutiveUserForm, setShowExecutiveUserForm] = useState(false);
+  const [editingExecutiveUser, setEditingExecutiveUser] = useState(null);
+  const [executiveUserFormData, setExecutiveUserFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
@@ -685,6 +700,164 @@ export default function AdminDashboard() {
     }
   };
 
+  // Executive user form handlers
+  const handleExecutiveUserFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setExecutiveUserFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleExecutiveUserSubmit = async (e) => {
+    e.preventDefault();
+    setDataLoading(true);
+
+    try {
+      // Validate password confirmation for new users
+      if (!editingExecutiveUser && executiveUserFormData.password !== executiveUserFormData.confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+
+      const userData = {
+        firstName: executiveUserFormData.firstName.trim(),
+        lastName: executiveUserFormData.lastName.trim(),
+        email: executiveUserFormData.email.trim(),
+        role: 'executive',
+        isActive: executiveUserFormData.isActive
+      };
+
+      if (!editingExecutiveUser) {
+        // Creating new executive user
+        userData.password = executiveUserFormData.password;
+      } else if (executiveUserFormData.password.trim()) {
+        // Updating existing executive user with new password
+        userData.password = executiveUserFormData.password;
+      }
+
+      if (!editingExecutiveUser) {
+        console.log('Creating new executive user via auth API...');
+        
+        // Register the executive user via authAPI
+        const registrationData = {
+          email: executiveUserFormData.email,
+          password: executiveUserFormData.password,
+          firstName: executiveUserFormData.firstName,
+          lastName: executiveUserFormData.lastName,
+          name: `${executiveUserFormData.firstName} ${executiveUserFormData.lastName}`
+        };
+        
+        const result = await authAPI.register('executive', registrationData);
+        console.log('Registration successful:', result);
+        
+        // Add the user with the executive role explicitly set
+        const newUser = {
+          ...result.user,
+          firstName: executiveUserFormData.firstName,
+          lastName: executiveUserFormData.lastName,
+          role: 'executive',
+          isActive: executiveUserFormData.isActive
+        };
+        setExecutiveUsers(prev => [...prev, newUser]);
+      } else {
+        console.log('Updating existing executive user...');
+        
+        // Update existing executive user via admin API
+        const jwt = localStorage.getItem('jwt');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${editingExecutiveUser.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`
+          },
+          body: JSON.stringify({
+            firstName: executiveUserFormData.firstName,
+            lastName: executiveUserFormData.lastName,
+            email: executiveUserFormData.email,
+            isActive: executiveUserFormData.isActive,
+            ...(executiveUserFormData.password.trim() && { password: executiveUserFormData.password })
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update executive user');
+        }
+
+        const updatedUser = await response.json();
+        setExecutiveUsers(prev => prev.map(user => 
+          user.id === editingExecutiveUser.id 
+            ? { ...updatedUser, role: 'executive' }
+            : user
+        ));
+      }
+
+      setShowExecutiveUserForm(false);
+      setEditingExecutiveUser(null);
+      setExecutiveUserFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        isActive: true
+      });
+      
+      alert(editingExecutiveUser ? 'Executive user updated successfully!' : 'Executive user created successfully!');
+    } catch (error) {
+      console.error('Error saving executive user:', error);
+      alert(`Failed to save executive user. Error: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleEditExecutiveUser = (user) => {
+    setEditingExecutiveUser(user);
+    setExecutiveUserFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      password: '',
+      confirmPassword: '',
+      isActive: user.isActive !== false
+    });
+    setShowExecutiveUserForm(true);
+  };
+
+  const handleDeleteExecutiveUser = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this executive user? This action cannot be undone.')) return;
+
+    setDataLoading(true);
+    try {
+      console.log('🗑️ Deleting executive user with ID:', userId);
+      
+      const jwt = localStorage.getItem('jwt');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Delete response error:', errorText);
+        throw new Error(`Failed to delete executive user: ${response.status} ${errorText}`);
+      }
+      
+      setExecutiveUsers(prev => prev.filter(user => user.id !== userId));
+      console.log('✅ Executive user deleted successfully from UI');
+      
+    } catch (error) {
+      console.error('❌ Error deleting executive user:', error);
+      alert(`Failed to delete executive user. Error: ${error.message}`);
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   const [showDoctorForm, setShowDoctorForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
   const [showDoctorPassword, setShowDoctorPassword] = useState(false);
@@ -909,7 +1082,7 @@ export default function AdminDashboard() {
         .then(res => res.json())
         .then(data => ({ data }));
         
-      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes, complianceUsersRes] = await Promise.all([
+      const [doctorsRes, businessesRes, requestsRes, servicesRes, businessTypesRes, systemSettingsRes, subscriptionsRes, complianceUsersRes, executiveUsersRes] = await Promise.all([
         doctorAPI.getAll(),
         businessAPI.getAll(),
         serviceRequestAPI.getAll(),
@@ -937,7 +1110,28 @@ export default function AdminDashboard() {
           .catch(err => {
             console.error('Admins fetch error:', err);
             return { data: { data: [] } };
-          }) // Handle if compliance users endpoint is not ready
+          }), // Handle if compliance users endpoint is not ready
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(res => {
+            console.log('All admins fetch response for executive users status:', res.status);
+            return res.json();
+          })
+          .then(data => {
+            console.log('All admins fetch response for executive users data:', data);
+            // Filter for executive users on the frontend
+            const executiveUsers = data.data?.filter(admin => admin.role === 'executive') || [];
+            console.log('Filtered executive users:', executiveUsers);
+            return { data: { data: executiveUsers } };
+          })
+          .catch(err => {
+            console.error('Executive users fetch error:', err);
+            return { data: { data: [] } };
+          }) // Handle if executive users endpoint is not ready
       ]);
 
       // Initialize transactions as empty array (placeholder for future transactions API)
@@ -955,6 +1149,7 @@ export default function AdminDashboard() {
       ('⚙️ Raw system settings response:', systemSettingsRes.data);
       ('💳 Raw subscriptions response:', subscriptionsRes.data);
       ('👥 Raw compliance users response:', complianceUsersRes.data);
+      ('👔 Raw executive users response:', executiveUsersRes.data);
 
       setDoctors(doctorsRes.data?.data || []);
       setBusinesses(businessesRes.data?.data || []);
@@ -963,6 +1158,7 @@ export default function AdminDashboard() {
       setSystemSettings(systemSettingsRes.data?.data || []);
       setSubscriptions(subscriptionsRes.data?.data || []);
       setComplianceUsers(complianceUsersRes.data?.data || []);
+      setExecutiveUsers(executiveUsersRes.data?.data || []);
 
       // Load subscription stats (only if the endpoint exists)
       try {
@@ -1241,8 +1437,8 @@ export default function AdminDashboard() {
         return;
       }
       
-      if (user.role !== 'admin' && user.role !== 'compliance') {
-        console.log('🚫 Not admin or compliance role, redirecting to home');
+      if (user.role !== 'admin' && user.role !== 'compliance' && user.role !== 'executive') {
+        console.log('🚫 Not admin, compliance, or executive role, redirecting to home');
         window.location.href = '/';
         return;
       }
@@ -3030,12 +3226,17 @@ export default function AdminDashboard() {
               { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText, adminOnly: false },
               { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck, adminOnly: false },
               { id: 'compliance-users', name: 'Compliance Users', icon: User, adminOnly: true },
+              { id: 'executive-users', name: 'Executive Users', icon: UserCog, adminOnly: true },
               { id: 'settings', name: 'System Settings', icon: Settings, adminOnly: true },
             ].filter(tab => {
               // Show all tabs for admin users
               if (user?.role === 'admin') return true;
               // Show only compliance tabs for compliance users
               if (user?.role === 'compliance') return !tab.adminOnly;
+              // Show all tabs except user management for executive users
+              if (user?.role === 'executive') {
+                return tab.id !== 'compliance-users' && tab.id !== 'executive-users';
+              }
               return false;
             }).map((tab) => {
               const Icon = tab.icon;
@@ -3243,6 +3444,7 @@ export default function AdminDashboard() {
              activeTab === 'earnings' ? 'Track doctor earnings and payments' :
              activeTab === 'compliance-documents' ? 'Manage compliance document types and verification' :
              activeTab === 'compliance-users' ? 'Manage compliance officers who review documents' :
+             activeTab === 'executive-users' ? 'Manage executive users with full platform access' :
              'Manage your platform'}
           </p>
         </div>
@@ -3270,6 +3472,7 @@ export default function AdminDashboard() {
                       activeTab === 'earnings' ? "Search by doctor name..." :
                       activeTab === 'compliance-documents' ? "Search document types by name..." :
                       activeTab === 'compliance-users' ? "Search compliance users by name, email..." :
+                      activeTab === 'executive-users' ? "Search executive users by name, email..." :
                       "Search..."
                     }
                     value={searchTerm}
@@ -4372,6 +4575,190 @@ export default function AdminDashboard() {
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add First Compliance User</span>
+                </button>
+              </div>
+            )} 
+
+            </div>
+          </div>
+        )}
+
+        {/* Executive Users Tab */}
+        {activeTab === 'executive-users' && (
+          <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} rounded-2xl shadow border`}>
+            <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                  <UserCog className="h-5 w-5 text-blue-500 mr-2" />
+                  Executive Users
+                </h2>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Manage executive users with full platform access</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingExecutiveUser(null);
+                  setExecutiveUserFormData({
+                    firstName: '',
+                    lastName: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    isActive: true
+                  });
+                  setShowExecutiveUserForm(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center font-medium"
+                disabled={dataLoading}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Executive User
+              </button>
+            </div>
+
+            <div className="p-6">
+            {executiveUsers.length > 0 ? (
+              <>
+                <div className="grid gap-4">
+                  {(() => {
+                    const filteredUsers = executiveUsers.filter(user => {
+                      if (!searchTerm) return true;
+                      return user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                    });
+
+                    const startIndex = (executiveUsersCurrentPage - 1) * executiveUsersPerPage;
+                    const endIndex = startIndex + executiveUsersPerPage;
+                    const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
+                    return paginatedUsers.map((user) => (
+                      <div key={user.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-lg p-4 border`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-blue-600' : 'bg-blue-100'}`}>
+                              <UserCog className={`h-5 w-5 ${isDarkMode ? 'text-white' : 'text-blue-600'}`} />
+                            </div>
+                            <div>
+                              <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {user.firstName} {user.lastName}
+                              </h3>
+                              <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {user.email}
+                              </p>
+                              <div className="flex items-center space-x-3 mt-1">
+                                <span className={`text-xs px-2 py-1 rounded-full ${isDarkMode ? 'bg-blue-900 text-blue-300' : 'bg-blue-100 text-blue-800'}`}>
+                                  Executive
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  user.isActive !== false 
+                                    ? (isDarkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800')
+                                    : (isDarkMode ? 'bg-red-900 text-red-300' : 'bg-red-100 text-red-800')
+                                }`}>
+                                  {user.isActive !== false ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditExecutiveUser(user)}
+                              disabled={dataLoading}
+                              className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-white hover:bg-gray-50 text-gray-600'} border border-gray-300 dark:border-gray-600`}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteExecutiveUser(user.id)}
+                              disabled={dataLoading}
+                              className="p-2 rounded-lg border border-red-300 dark:border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Pagination for Executive Users */}
+                {(() => {
+                  const filteredUsers = executiveUsers.filter(user => {
+                    if (!searchTerm) return true;
+                    return user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+                  });
+                  const totalPages = Math.ceil(filteredUsers.length / executiveUsersPerPage);
+
+                  if (totalPages <= 1) return null;
+
+                  return (
+                    <div className="flex items-center justify-between mt-6">
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        Showing {((executiveUsersCurrentPage - 1) * executiveUsersPerPage) + 1} to {Math.min(executiveUsersCurrentPage * executiveUsersPerPage, filteredUsers.length)} of {filteredUsers.length} users
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setExecutiveUsersCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={executiveUsersCurrentPage === 1}
+                          className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                            executiveUsersCurrentPage === 1
+                              ? 'opacity-50 cursor-not-allowed'
+                              : isDarkMode 
+                                ? 'border-gray-700 text-gray-300 hover:bg-gray-800' 
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Previous
+                        </button>
+                        <span className={`px-3 py-1.5 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          Page {executiveUsersCurrentPage} of {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setExecutiveUsersCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={executiveUsersCurrentPage === totalPages}
+                          className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                            executiveUsersCurrentPage === totalPages
+                              ? 'opacity-50 cursor-not-allowed'
+                              : isDarkMode 
+                                ? 'border-gray-700 text-gray-300 hover:bg-gray-800' 
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
+              <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <UserCog className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No executive users found</h3>
+                <p className="text-sm mb-4">Create executive users with full platform access except user creation</p>
+                <button
+                  onClick={() => {
+                    setEditingExecutiveUser(null);
+                    setExecutiveUserFormData({
+                      firstName: '',
+                      lastName: '',
+                      email: '',
+                      password: '',
+                      confirmPassword: '',
+                      isActive: true
+                    });
+                    setShowExecutiveUserForm(true);
+                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isDarkMode 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  } flex items-center space-x-2 mx-auto`}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add First Executive User</span>
                 </button>
               </div>
             )} 
@@ -8638,6 +9025,159 @@ export default function AdminDashboard() {
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors font-medium disabled:opacity-50"
                 >
                   {dataLoading ? 'Saving...' : (editingComplianceUser ? 'Update User' : 'Create User')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Executive User Form Modal */}
+      {showExecutiveUserForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleExecutiveUserSubmit} className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  {editingExecutiveUser ? 'Edit Executive User' : 'Add Executive User'}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowExecutiveUserForm(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="executiveUserFirstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="executiveUserFirstName"
+                    name="firstName"
+                    value={executiveUserFormData.firstName}
+                    onChange={handleExecutiveUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter first name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="executiveUserLastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="executiveUserLastName"
+                    name="lastName"
+                    value={executiveUserFormData.lastName}
+                    onChange={handleExecutiveUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter last name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="executiveUserEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="executiveUserEmail"
+                    name="email"
+                    value={executiveUserFormData.email}
+                    onChange={handleExecutiveUserFormChange}
+                    required
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="executiveUserPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {editingExecutiveUser ? 'New Password (leave blank to keep current)' : 'Password *'}
+                  </label>
+                  <input
+                    type="password"
+                    id="executiveUserPassword"
+                    name="password"
+                    value={executiveUserFormData.password}
+                    onChange={handleExecutiveUserFormChange}
+                    required={!editingExecutiveUser}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                    placeholder={editingExecutiveUser ? "Leave blank to keep current password" : "Enter password"}
+                    minLength="8"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {editingExecutiveUser ? 'Leave blank to keep the current password.' : 'Password must be at least 8 characters long.'}
+                  </p>
+                </div>
+
+                {!editingExecutiveUser && (
+                  <div>
+                    <label htmlFor="executiveUserConfirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Confirm Password *
+                    </label>
+                    <input
+                      type="password"
+                      id="executiveUserConfirmPassword"
+                      name="confirmPassword"
+                      value={executiveUserFormData.confirmPassword}
+                      onChange={handleExecutiveUserFormChange}
+                      required={!editingExecutiveUser}
+                      className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
+                      placeholder="Confirm password"
+                      minLength="8"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="executiveUserIsActive"
+                    name="isActive"
+                    checked={executiveUserFormData.isActive}
+                    onChange={handleExecutiveUserFormChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-700 rounded"
+                  />
+                  <label htmlFor="executiveUserIsActive" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Active User
+                  </label>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">Executive User Permissions</h4>
+                  <ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                    <li>• Full access to all platform features</li>
+                    <li>• View and manage doctors and businesses</li>
+                    <li>• Access all compliance documents</li>
+                    <li>• View analytics and system settings</li>
+                    <li>• Cannot create compliance or executive users</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowExecutiveUserForm(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={dataLoading}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors font-medium disabled:opacity-50"
+                >
+                  {dataLoading ? 'Saving...' : (editingExecutiveUser ? 'Update User' : 'Create User')}
                 </button>
               </div>
             </form>

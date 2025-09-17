@@ -38,6 +38,8 @@ export default function NavBar() {
       return 'Admin';
     } else if (user.role === 'compliance') {
       return 'Compliance Officer';
+    } else if (user.role === 'executive') {
+      return 'Executive';
     }
     
     return user.email;
@@ -54,6 +56,8 @@ export default function NavBar() {
     } else if (user.role === 'admin') {
       return '/admin/dashboard';
     } else if (user.role === 'compliance') {
+      return '/admin/dashboard';
+    } else if (user.role === 'executive') {
       return '/admin/dashboard';
     }
     
