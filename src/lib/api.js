@@ -660,8 +660,17 @@ export const adminAPI = {
 
 // Availability Slots API calls (public access for patients)
 export const availabilitySlotsAPI = {
-  getAvailableSlots: (serviceType, date) => 
-    publicAPI.get(`/availability-slots/available?serviceType=${serviceType}&date=${date}`),
+  getAvailableSlots: (serviceType, date, endDate) => {
+    let url = `/availability-slots/available?serviceType=${serviceType}`;
+    if (endDate) {
+      // Date range query
+      url += `&startDate=${date}&endDate=${endDate}`;
+    } else {
+      // Single date query
+      url += `&date=${date}`;
+    }
+    return publicAPI.get(url);
+  },
   bookSlot: (slotId) => 
     publicAPI.post(`/availability-slots/${slotId}/book`),
 };
