@@ -686,4 +686,29 @@ export const availabilitySlotsAPI = {
     publicAPI.post(`/availability-slots/${slotId}/book`),
 };
 
+// Individual Time Slots API calls (for precise 30-minute slot tracking)
+export const individualTimeSlotsAPI = {
+  getAvailableSlots: (serviceType, date, endDate) => {
+    let url = `/individual-time-slots/available?serviceType=${serviceType}`;
+    
+    if (endDate) {
+      // Date range query
+      url += `&startDate=${date}&endDate=${endDate}`;
+    } else {
+      // Single date query
+      url += `&date=${date}`;
+    }
+    
+    console.log('🔗 Individual Slots API URL:', url);
+    return publicAPI.get(url);
+  },
+  bookSlot: (slotId, bookedBy, serviceRequestId) => 
+    publicAPI.post(`/individual-time-slots/${slotId}/book`, { 
+      bookedBy, 
+      serviceRequestId 
+    }),
+  unbookSlot: (slotId) => 
+    publicAPI.post(`/individual-time-slots/${slotId}/unbook`),
+};
+
 export default api;

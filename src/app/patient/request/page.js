@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Plus, Clock, Phone, CreditCard, ArrowRight, Heart, CheckCircle } from 'lucide-react';
-import { serviceRequestAPI, serviceAPI, availabilitySlotsAPI } from '../../../lib/api';
+import { serviceRequestAPI, serviceAPI, availabilitySlotsAPI, individualTimeSlotsAPI } from '../../../lib/api';
 import { formatCurrency, formatDate } from '../../../lib/utils';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useSystemSettings } from '../../../contexts/SystemSettingsContext';
@@ -250,18 +250,18 @@ export default function PatientRequestPage() {
       const startDate = new Date(year, month, 1).toISOString().split('T')[0];
       const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
       
-      console.log('📅 Fetching slots from:', startDate, 'to:', endDate);
+      console.log('📅 Fetching individual slots from:', startDate, 'to:', endDate);
       
-      const response = await availabilitySlotsAPI.getAvailableSlots('online', startDate, endDate);
+      const response = await individualTimeSlotsAPI.getAvailableSlots('online', startDate, endDate);
       
-      console.log('📊 API Response:', response);
+      console.log('📊 Individual Slots API Response:', response);
       
       if (response?.data) {
-        // Group slots by date
+        // Group individual slots by date
         const slotsData = Array.isArray(response.data) ? response.data : 
                          response.data.data ? response.data.data : [];
         
-        console.log('✅ Found slots data:', slotsData.length, 'slots');
+        console.log('✅ Found individual slots data:', slotsData.length, 'slots');
         
         const groupedSlots = {};
         slotsData.forEach(slot => {
@@ -273,7 +273,7 @@ export default function PatientRequestPage() {
           groupedSlots[date].push(slot);
         });
         
-        console.log('📊 Grouped slots by date:', groupedSlots);
+        console.log('📊 Grouped individual slots by date:', groupedSlots);
         setAvailabilityData(groupedSlots);
       }
     } catch (error) {
@@ -494,24 +494,30 @@ export default function PatientRequestPage() {
     
     try {
       setLoadingSlots(true);
-      const response = await availabilitySlotsAPI.getAvailableSlots(serviceType, date);
+      const response = await individualTimeSlotsAPI.getAvailableSlots(serviceType, date);
       const slots = response.data?.data || response.data || [];
       setAvailableSlots(slots);
     } catch (error) {
-      console.error('Error fetching available slots:', error);
+      console.error('Error fetching available individual slots:', error);
       setAvailableSlots([]);
     } finally {
       setLoadingSlots(false);
     }
   };
   
-  // Handle slot selection
+  // Handle individual slot selection
   const handleSlotSelect = (slot) => {
+    const slotData = slot.attributes || slot;
     setFormData(prev => ({
       ...prev,
       selectedSlotId: slot.id || slot.documentId,
-      serviceDate: slot.date || slot.attributes?.date,
-      serviceTime: `${slot.startTime || slot.attributes?.startTime}-${slot.endTime || slot.attributes?.endTime}`
+      serviceDate: slotData.date,
+      serviceTime: `${slotData.startTime}-${slotData.endTime}`,
+      selectedTimeSlot: {
+        start: slotData.startTime,
+        end: slotData.endTime,
+        display: `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`
+      }
     }));
   };
   
@@ -619,17 +625,21 @@ export default function PatientRequestPage() {
     return slots;
   };
 
-  // Handle time slot selection
-  const handleTimeSlotSelect = (originalSlot, timeSlot) => {
-    const slotData = originalSlot.attributes || originalSlot;
-    const slotId = originalSlot.id || originalSlot.documentId;
+  // Handle individual time slot selection (direct selection, no need for parent slot)
+  const handleTimeSlotSelect = (individualSlot) => {
+    const slotData = individualSlot.attributes || individualSlot;
+    const slotId = individualSlot.id || individualSlot.documentId;
     
     setFormData(prev => ({
       ...prev,
       selectedSlotId: slotId,
       serviceDate: slotData.date,
-      serviceTime: `${timeSlot.start}-${timeSlot.end}`,
-      selectedTimeSlot: timeSlot
+      serviceTime: `${slotData.startTime}-${slotData.endTime}`,
+      selectedTimeSlot: {
+        start: slotData.startTime,
+        end: slotData.endTime,
+        display: `${formatTime(slotData.startTime)} - ${formatTime(slotData.endTime)}`
+      }
     }));
   };
   
@@ -811,13 +821,17 @@ export default function PatientRequestPage() {
       const patientData = paymentRequest._patientData;
       const charge = paymentIntent.charges?.data?.[0];
       
-      // If this is an online service with a selected slot, book the slot first
+      // If this is an online service with a selected slot, book the individual slot first
       if (isOnlineService && patientData.selectedSlotId) {
         try {
-          await availabilitySlotsAPI.bookSlot(patientData.selectedSlotId);
-          console.log('Slot booked successfully:', patientData.selectedSlotId);
+          await individualTimeSlotsAPI.bookSlot(
+            patientData.selectedSlotId, 
+            patientData.email, 
+            null // serviceRequestId will be updated later
+          );
+          console.log('Individual slot booked successfully:', patientData.selectedSlotId);
         } catch (slotError) {
-          console.error('Error booking slot:', slotError);
+          console.error('Error booking individual slot:', slotError);
           // Continue with the request even if slot booking fails - this can be handled manually
         }
       }
@@ -1638,61 +1652,72 @@ export default function PatientRequestPage() {
                             </div>
                           </div>
 
-                          {/* Time Slots Grid */}
+                          {/* Individual Time Slots Grid */}
                           {availableSlots.length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                               {availableSlots.map((slot) => {
                                 const slotData = slot.attributes || slot;
                                 const slotId = slot.id || slot.documentId;
-                                const timeSlots = generateTimeSlots(slotData.startTime, slotData.endTime);
+                                const isSelected = formData.selectedSlotId === slotId;
+                                const isBooked = slotData.isBooked;
                                 
                                 return (
-                                  <div key={slotId} className="space-y-3">
-                                    {/* Slot Period Header */}
-                                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} border`}>
-                                      <div className="flex items-center space-x-2">
-                                        <Clock className="h-4 w-4 text-blue-500" />
-                                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
-                                          Available from {formatTime(slotData.startTime)} to {formatTime(slotData.endTime)}
-                                        </span>
+                                  <button
+                                    key={slotId}
+                                    type="button"
+                                    onClick={() => !isBooked && handleTimeSlotSelect(slot)}
+                                    disabled={isBooked}
+                                    className={`p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
+                                      isBooked 
+                                        ? (isDarkMode ? 'border-red-500 bg-red-900/20 text-red-400 cursor-not-allowed' : 'border-red-300 bg-red-50 text-red-600 cursor-not-allowed')
+                                        : isSelected
+                                          ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200 shadow-xl ring-2 ring-blue-400' : 'border-blue-500 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300')
+                                          : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-md hover:shadow-lg')
+                                    }`}
+                                  >
+                                    <div className="flex flex-col items-center justify-center space-y-1.5">
+                                      <div className={`p-1.5 rounded-md ${
+                                        isBooked 
+                                          ? (isDarkMode ? 'bg-red-800' : 'bg-red-500')
+                                          : isSelected 
+                                            ? 'bg-white/20' 
+                                            : isDarkMode 
+                                              ? 'bg-blue-600' 
+                                              : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                      }`}>
+                                        <Clock className={`h-4 w-4 ${
+                                          isBooked 
+                                            ? 'text-white' 
+                                            : isSelected 
+                                              ? 'text-white' 
+                                              : 'text-white'
+                                        }`} />
                                       </div>
+                                      <div className="text-center">
+                                        <div className={`font-medium text-xs leading-tight ${
+                                          isBooked
+                                            ? (isDarkMode ? 'text-red-400' : 'text-red-600')
+                                            : isSelected 
+                                              ? (isDarkMode ? 'text-blue-100' : 'text-white') 
+                                              : (isDarkMode ? 'text-gray-200' : 'text-gray-900')
+                                        }`}>
+                                          {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
+                                        </div>
+                                        <div className={`text-xs mt-1 font-semibold ${
+                                          isBooked
+                                            ? (isDarkMode ? 'text-red-400' : 'text-red-600')
+                                            : isSelected 
+                                              ? (isDarkMode ? 'text-blue-200' : 'text-blue-100') 
+                                              : (isDarkMode ? 'text-green-400' : 'text-green-600')
+                                        }`}>
+                                          {isBooked ? 'BOOKED' : 'Available'}
+                                        </div>
+                                      </div>
+                                      {isSelected && !isBooked && (
+                                        <CheckCircle className={`h-4 w-4 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
+                                      )}
                                     </div>
-                                    
-                                    {/* 30-minute intervals */}
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                                      {timeSlots.map((timeSlot, index) => {
-                                        const isSelected = formData.selectedSlotId === slotId && 
-                                                         formData.selectedTimeSlot?.start === timeSlot.start;
-                                        
-                                        return (
-                                          <button
-                                            key={index}
-                                            type="button"
-                                            onClick={() => handleTimeSlotSelect(slot, timeSlot)}
-                                            className={`p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
-                                              isSelected
-                                                ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200 shadow-xl ring-2 ring-blue-400' : 'border-blue-500 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300')
-                                                : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-md hover:shadow-lg')
-                                            }`}
-                                          >
-                                            <div className="flex flex-col items-center justify-center space-y-1.5">
-                                              <div className={`p-1.5 rounded-md ${isSelected ? 'bg-white/20' : isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
-                                                <Clock className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-white'}`} />
-                                              </div>
-                                              <div className="text-center">
-                                                <div className={`font-medium text-xs leading-tight ${isSelected ? (isDarkMode ? 'text-blue-100' : 'text-white') : (isDarkMode ? 'text-gray-200' : 'text-gray-900')}`}>
-                                                  {timeSlot.display}
-                                                </div>
-                                              </div>
-                                              {isSelected && (
-                                                <CheckCircle className={`h-4 w-4 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
-                                              )}
-                                            </div>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
+                                  </button>
                                 );
                               })}
                             </div>
