@@ -42,6 +42,7 @@ export default function PatientRequestPage() {
     serviceDate: '',
     serviceTime: '',
     selectedSlotId: '', // For online services with pre-defined slots
+    selectedTimeSlot: null, // For 30-minute intervals
   });
   
   // Doctor-related states
@@ -537,7 +538,8 @@ export default function PatientRequestPage() {
         ...prev,
         serviceDate: dateStr,
         serviceTime: '',
-        selectedSlotId: ''
+        selectedSlotId: '',
+        selectedTimeSlot: null
       }));
       
       // Set available slots for the selected date
@@ -589,6 +591,46 @@ export default function PatientRequestPage() {
     } catch {
       return time;
     }
+  };
+
+  // Generate 30-minute intervals from start to end time
+  const generateTimeSlots = (startTime, endTime) => {
+    const slots = [];
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    
+    let current = new Date(start);
+    
+    while (current < end) {
+      const slotStart = current.toTimeString().slice(0, 5);
+      current.setMinutes(current.getMinutes() + 30);
+      const slotEnd = current.toTimeString().slice(0, 5);
+      
+      // Don't add slot if it exceeds the end time
+      if (current <= end) {
+        slots.push({
+          start: slotStart,
+          end: slotEnd,
+          display: `${formatTime(slotStart)} - ${formatTime(slotEnd)}`
+        });
+      }
+    }
+    
+    return slots;
+  };
+
+  // Handle time slot selection
+  const handleTimeSlotSelect = (originalSlot, timeSlot) => {
+    const slotData = originalSlot.attributes || originalSlot;
+    const slotId = originalSlot.id || originalSlot.documentId;
+    
+    setFormData(prev => ({
+      ...prev,
+      selectedSlotId: slotId,
+      serviceDate: slotData.date,
+      serviceTime: `${timeSlot.start}-${timeSlot.end}`,
+      selectedTimeSlot: timeSlot
+    }));
   };
   
   // Validate form
@@ -1600,52 +1642,57 @@ export default function PatientRequestPage() {
 
                           {/* Time Slots Grid */}
                           {availableSlots.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="space-y-4">
                               {availableSlots.map((slot) => {
                                 const slotData = slot.attributes || slot;
                                 const slotId = slot.id || slot.documentId;
-                                const isSelected = formData.selectedSlotId === slotId;
-                                const availableSpots = slotData.maxBookings - (slotData.currentBookings || 0);
+                                const timeSlots = generateTimeSlots(slotData.startTime, slotData.endTime);
                                 
                                 return (
-                                  <button
-                                    key={slotId}
-                                    type="button"
-                                    onClick={() => handleSlotSelect(slot)}
-                                    className={`p-4 rounded-xl border-2 text-left transition-all duration-200 transform hover:scale-105 ${
-                                      isSelected
-                                        ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200 shadow-xl ring-2 ring-blue-400' : 'border-blue-500 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300')
-                                        : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-md hover:shadow-lg')
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center space-x-3">
-                                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-white/20' : isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
-                                          <Clock className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-white'}`} />
-                                        </div>
-                                        <span className="font-bold text-lg">
-                                          {formatTime(slotData.startTime)} - {formatTime(slotData.endTime)}
+                                  <div key={slotId} className="space-y-3">
+                                    {/* Slot Period Header */}
+                                    <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} border`}>
+                                      <div className="flex items-center space-x-2">
+                                        <Clock className="h-4 w-4 text-blue-500" />
+                                        <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                          Available from {formatTime(slotData.startTime)} to {formatTime(slotData.endTime)}
                                         </span>
                                       </div>
-                                      {isSelected && (
-                                        <CheckCircle className={`h-6 w-6 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
-                                      )}
                                     </div>
-                                    <div className={`text-sm ${isDarkMode ? 'text-gray-400' : isSelected ? 'text-blue-100' : 'text-gray-600'} flex items-center justify-between`}>
-                                      <span>
-                                        {availableSpots} spot{availableSpots !== 1 ? 's' : ''} available
-                                      </span>
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                        isSelected 
-                                          ? 'bg-white/20 text-white' 
-                                          : isDarkMode 
-                                          ? 'bg-green-900 text-green-300' 
-                                          : 'bg-green-100 text-green-800'
-                                      }`}>
-                                        Available
-                                      </span>
+                                    
+                                    {/* 30-minute intervals */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                      {timeSlots.map((timeSlot, index) => {
+                                        const isSelected = formData.selectedSlotId === slotId && 
+                                                         formData.selectedTimeSlot?.start === timeSlot.start;
+                                        
+                                        return (
+                                          <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() => handleTimeSlotSelect(slot, timeSlot)}
+                                            className={`p-4 rounded-xl border-2 text-center transition-all duration-200 transform hover:scale-105 ${
+                                              isSelected
+                                                ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200 shadow-xl ring-2 ring-blue-400' : 'border-blue-500 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300')
+                                                : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-md hover:shadow-lg')
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-center space-x-2">
+                                              <div className={`p-2 rounded-lg ${isSelected ? 'bg-white/20' : isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
+                                                <Clock className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-white'}`} />
+                                              </div>
+                                              <span className="font-bold text-lg">
+                                                {timeSlot.display}
+                                              </span>
+                                              {isSelected && (
+                                                <CheckCircle className={`h-5 w-5 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
                                     </div>
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
