@@ -1603,8 +1603,6 @@ export default function PatientRequestPage() {
                               🟢 <strong>Green dates</strong> have available slots - click to select
                               <br />
                               🔵 <strong>Blue outline</strong> shows today's date
-                              <br />
-                              ⚪ <strong>Numbers</strong> show how many slots are available
                             </p>
                           </div>
                         </div>
@@ -1661,7 +1659,7 @@ export default function PatientRequestPage() {
                                     </div>
                                     
                                     {/* 30-minute intervals */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                                       {timeSlots.map((timeSlot, index) => {
                                         const isSelected = formData.selectedSlotId === slotId && 
                                                          formData.selectedTimeSlot?.start === timeSlot.start;
@@ -1671,21 +1669,23 @@ export default function PatientRequestPage() {
                                             key={index}
                                             type="button"
                                             onClick={() => handleTimeSlotSelect(slot, timeSlot)}
-                                            className={`p-4 rounded-xl border-2 text-center transition-all duration-200 transform hover:scale-105 ${
+                                            className={`p-3 rounded-lg border-2 transition-all duration-200 transform hover:scale-105 ${
                                               isSelected
                                                 ? (isDarkMode ? 'border-blue-500 bg-blue-900/50 text-blue-200 shadow-xl ring-2 ring-blue-400' : 'border-blue-500 bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl ring-2 ring-blue-300')
                                                 : (isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300 hover:border-blue-500 hover:bg-gray-600' : 'border-blue-200 bg-white text-gray-900 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 shadow-md hover:shadow-lg')
                                             }`}
                                           >
-                                            <div className="flex items-center justify-center space-x-2">
-                                              <div className={`p-2 rounded-lg ${isSelected ? 'bg-white/20' : isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
+                                            <div className="flex flex-col items-center justify-center space-y-1.5">
+                                              <div className={`p-1.5 rounded-md ${isSelected ? 'bg-white/20' : isDarkMode ? 'bg-blue-600' : 'bg-gradient-to-br from-blue-500 to-purple-600'}`}>
                                                 <Clock className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-white'}`} />
                                               </div>
-                                              <span className="font-bold text-lg">
-                                                {timeSlot.display}
-                                              </span>
+                                              <div className="text-center">
+                                                <div className={`font-medium text-xs leading-tight ${isSelected ? (isDarkMode ? 'text-blue-100' : 'text-white') : (isDarkMode ? 'text-gray-200' : 'text-gray-900')}`}>
+                                                  {timeSlot.display}
+                                                </div>
+                                              </div>
                                               {isSelected && (
-                                                <CheckCircle className={`h-5 w-5 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
+                                                <CheckCircle className={`h-4 w-4 ${isDarkMode ? 'text-blue-300' : 'text-white'}`} />
                                               )}
                                             </div>
                                           </button>
