@@ -3989,8 +3989,8 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {/* Admin-only actions: Verify/Unverify */}
-                            {user?.role === 'admin' && (
+                            {/* Admin and Executive actions: Verify/Unverify */}
+                            {(user?.role === 'admin' || user?.role === 'executive') && (
                               <>
                                 {!isVerified ? (
                                   <button
@@ -4025,8 +4025,8 @@ export default function AdminDashboard() {
                               <Eye className="h-4 w-4" />
                             </button>
                             
-                            {/* Admin-only actions: Edit and Delete */}
-                            {user?.role === 'admin' && (
+                            {/* Admin and Executive actions: Edit and Delete */}
+                            {(user?.role === 'admin' || user?.role === 'executive') && (
                               <>
                                 <button 
                                   className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
@@ -4255,8 +4255,8 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {/* Admin-only actions: Verify/Unverify */}
-                            {user?.role === 'admin' && (
+                            {/* Admin and Executive actions: Verify/Unverify */}
+                            {(user?.role === 'admin' || user?.role === 'executive') && (
                               <>
                                 {!isVerified ? (
                                   <button
@@ -4291,8 +4291,8 @@ export default function AdminDashboard() {
                               <Eye className="h-4 w-4" />
                             </button>
                             
-                            {/* Admin-only actions: Edit and Delete */}
-                            {user?.role === 'admin' && (
+                            {/* Admin and Executive actions: Edit and Delete */}
+                            {(user?.role === 'admin' || user?.role === 'executive') && (
                               <>
                                 <button 
                                   className={`${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
