@@ -647,16 +647,38 @@ export default function AdminDashboard() {
 
     setDataLoading(true);
     try {
+      console.log('🗑️ Deleting compliance user with ID:', userId);
+      
+      const jwt = localStorage.getItem('jwt');
+      console.log('🔑 JWT token exists:', !!jwt);
+      console.log('🌐 API URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.log('🎯 Full delete URL:', `${process.env.NEXT_PUBLIC_API_URL}/admins/${userId}`);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${userId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${jwt}`
+        }
       });
       
-      if (!response.ok) throw new Error('Failed to delete compliance user');
+      console.log('📥 Delete response status:', response.status);
+      console.log('📥 Delete response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Delete response error:', errorText);
+        throw new Error(`Failed to delete compliance user: ${response.status} ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Delete result:', result);
       
       setComplianceUsers(prev => prev.filter(user => user.id !== userId));
-      alert('Compliance user deleted successfully');
+      console.log('✅ Compliance user deleted successfully from UI');
+      
     } catch (error) {
-      console.error('Error deleting compliance user:', error);
+      console.error('❌ Error deleting compliance user:', error);
       alert(`Failed to delete compliance user. Error: ${error.message}`);
     } finally {
       setDataLoading(false);
@@ -895,7 +917,12 @@ export default function AdminDashboard() {
         businessAPI.getBusinessTypes(),
         systemSettingsAPI.getAll(),
         subscriptionAPI.getAll().catch(err => ({ data: { data: [] } })), // Handle if subscriptions API is not ready
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('jwt')}`,
+            'Content-Type': 'application/json'
+          }
+        })
           .then(res => {
             console.log('All admins fetch response status:', res.status);
             return res.json();
