@@ -576,10 +576,13 @@ export default function AdminDashboard() {
         // Update existing compliance user
         console.log('Updating compliance user with data:', userData);
         
+        const jwt = localStorage.getItem('jwt');
+        
         response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/${editingComplianceUser.id}`, {
           method: 'PUT',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwt}`
           },
           body: JSON.stringify({ data: userData })
         });
