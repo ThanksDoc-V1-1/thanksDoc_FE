@@ -3786,23 +3786,30 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {!isVerified ? (
-                              <button
-                                onClick={() => handleVerifyDoctor(id, true)}
-                                className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
-                              >
-                                <Check className="h-4 w-4 mr-1.5 stroke-2" />
-                                <span>Verify</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleVerifyDoctor(id, false)}
-                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
-                              >
-                                <X className="h-4 w-4 mr-1.5 stroke-2" />
-                                <span>Unverify</span>
-                              </button>
+                            {/* Admin-only actions: Verify/Unverify */}
+                            {user?.role === 'admin' && (
+                              <>
+                                {!isVerified ? (
+                                  <button
+                                    onClick={() => handleVerifyDoctor(id, true)}
+                                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
+                                  >
+                                    <Check className="h-4 w-4 mr-1.5 stroke-2" />
+                                    <span>Verify</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleVerifyDoctor(id, false)}
+                                    className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
+                                  >
+                                    <X className="h-4 w-4 mr-1.5 stroke-2" />
+                                    <span>Unverify</span>
+                                  </button>
+                                )}
+                              </>
                             )}
+                            
+                            {/* View button - available to all users */}
                             <button 
                               className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                               onClick={(e) => {
@@ -3814,28 +3821,34 @@ export default function AdminDashboard() {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button 
-                              className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleEditDoctor(doctor);
-                              }}
-                              title="Edit doctor details"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button 
-                              className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteDoctor(doctor);
-                              }}
-                              title="Delete doctor"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
+                            
+                            {/* Admin-only actions: Edit and Delete */}
+                            {user?.role === 'admin' && (
+                              <>
+                                <button 
+                                  className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEditDoctor(doctor);
+                                  }}
+                                  title="Edit doctor details"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button 
+                                  className={`px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm ${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteDoctor(doctor);
+                                  }}
+                                  title="Delete doctor"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -4039,23 +4052,30 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {!isVerified ? (
-                              <button
-                                onClick={() => handleVerifyBusiness(id, true)}
-                                className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
-                              >
-                                <Check className="h-4 w-4 mr-1.5 stroke-2" />
-                                <span>Verify</span>
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleVerifyBusiness(id, false)}
-                                className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
-                              >
-                                <X className="h-4 w-4 mr-1.5 stroke-2" />
-                                <span>Unverify</span>
-                              </button>
+                            {/* Admin-only actions: Verify/Unverify */}
+                            {user?.role === 'admin' && (
+                              <>
+                                {!isVerified ? (
+                                  <button
+                                    onClick={() => handleVerifyBusiness(id, true)}
+                                    className="bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors flex items-center font-medium shadow-sm"
+                                  >
+                                    <Check className="h-4 w-4 mr-1.5 stroke-2" />
+                                    <span>Verify</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleVerifyBusiness(id, false)}
+                                    className="bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors flex items-center font-medium shadow-sm"
+                                  >
+                                    <X className="h-4 w-4 mr-1.5 stroke-2" />
+                                    <span>Unverify</span>
+                                  </button>
+                                )}
+                              </>
                             )}
+                            
+                            {/* View button - available to all users */}
                             <button 
                               className={`${isDarkMode ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} px-3 py-1.5 rounded-lg transition-colors`}
                               onClick={(e) => {
@@ -4067,28 +4087,34 @@ export default function AdminDashboard() {
                             >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button 
-                              className={`${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleEditBusiness(business);
-                              }}
-                              title="Edit business details"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button 
-                              className={`${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteBusiness(business);
-                              }}
-                              title="Delete business"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
+                            
+                            {/* Admin-only actions: Edit and Delete */}
+                            {user?.role === 'admin' && (
+                              <>
+                                <button 
+                                  className={`${isDarkMode ? 'bg-blue-700 text-blue-200 hover:bg-blue-600' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEditBusiness(business);
+                                  }}
+                                  title="Edit business details"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button 
+                                  className={`${isDarkMode ? 'bg-red-700 text-red-200 hover:bg-red-600' : 'bg-red-100 text-red-700 hover:bg-red-200'} px-3 py-1.5 rounded-lg transition-colors font-medium shadow-sm`}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteBusiness(business);
+                                  }}
+                                  title="Delete business"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
