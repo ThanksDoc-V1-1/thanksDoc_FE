@@ -22,8 +22,22 @@ function HomeContent() {
   
   // But if user is authenticated and lands on home page, redirect them
   useEffect(() => {
-    // Removed automatic redirection logic to prevent intermediate page
-  }, [loading, isAuthenticated, user]);
+    if (!loading && isAuthenticated && user) {
+      console.log('🔄 User is authenticated, checking for redirect...', user.role);
+      
+      // Redirect based on user role
+      if (user.role === 'admin' || user.role === 'compliance' || user.role === 'executive') {
+        console.log('🚀 Redirecting to admin dashboard for role:', user.role);
+        router.push('/admin/dashboard');
+      } else if (user.role === 'doctor') {
+        console.log('🚀 Redirecting to doctor dashboard');
+        router.push('/doctor/dashboard');
+      } else if (user.role === 'business') {
+        console.log('🚀 Redirecting to business dashboard');
+        router.push('/business/dashboard');
+      }
+    }
+  }, [loading, isAuthenticated, user, router]);
   
   useEffect(() => {
     const registered = searchParams.get('registered');
