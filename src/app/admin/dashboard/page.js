@@ -3019,8 +3019,8 @@ export default function AdminDashboard() {
           <div className="space-y-2">
             {[
               { id: 'overview', name: 'Overview', icon: Shield, adminOnly: true },
-              { id: 'doctors', name: 'Doctors', icon: Stethoscope, adminOnly: true },
-              { id: 'businesses', name: 'Businesses', icon: Building2, adminOnly: true },
+              { id: 'doctors', name: 'Doctors', icon: Stethoscope, adminOnly: false },
+              { id: 'businesses', name: 'Businesses', icon: Building2, adminOnly: false },
               { id: 'doctor-assignments', name: 'Doctor Assignments', icon: Users, adminOnly: true },
               { id: 'services', name: 'Services', icon: Package, adminOnly: true },
               { id: 'requests', name: 'Service Requests', icon: Calendar, adminOnly: true },
