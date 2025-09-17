@@ -1205,24 +1205,33 @@ export default function AdminDashboard() {
     ('🏢 BusinessComplianceDocumentTypes is array:', Array.isArray(businessComplianceDocumentTypes));
   }, [businessComplianceDocumentTypes]);
 
-  // Authentication check - redirect if not authenticated or not admin
+  // Authentication check - redirect if not authenticated or not admin/compliance
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated || !user) {
-        ('🚫 No authentication, redirecting to home');
+        console.log('🚫 No authentication, redirecting to home');
         window.location.href = '/';
         return;
       }
       
-      if (user.role !== 'admin') {
-        ('🚫 Not admin role, redirecting to home');
+      if (user.role !== 'admin' && user.role !== 'compliance') {
+        console.log('🚫 Not admin or compliance role, redirecting to home');
         window.location.href = '/';
         return;
       }
       
-      ('✅ Admin authenticated, loading dashboard');
+      // Set default tab for compliance users
+      if (user.role === 'compliance' && activeTab === 'overview') {
+        console.log('🔧 Setting compliance user default tab to compliance-documents');
+        setActiveTab('compliance-documents');
+      }
+      
+      console.log('✅ Admin/Compliance authenticated, loading dashboard', {
+        role: user.role,
+        activeTab: activeTab
+      });
     }
-  }, [loading, isAuthenticated, user]);
+  }, [loading, isAuthenticated, user, activeTab]);
 
   // Don't render anything if not authenticated
   if (loading) {
@@ -1236,7 +1245,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAuthenticated || !user || user.role !== 'admin') {
+  if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'compliance')) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
@@ -2982,20 +2991,26 @@ export default function AdminDashboard() {
         <nav className="flex-1 p-4 overflow-y-auto">
           <div className="space-y-2">
             {[
-              { id: 'overview', name: 'Overview', icon: Shield },
-              { id: 'doctors', name: 'Doctors', icon: Stethoscope },
-              { id: 'businesses', name: 'Businesses', icon: Building2 },
-              { id: 'doctor-assignments', name: 'Doctor Assignments', icon: Users },
-              { id: 'services', name: 'Services', icon: Package },
-              { id: 'requests', name: 'Service Requests', icon: Calendar },
-              { id: 'transactions', name: 'Transactions', icon: CreditCard },
-              { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign },
-              { id: 'subscriptions', name: 'Doctor Subscriptions', icon: CreditCard },
-              { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText },
-              { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck },
-              { id: 'compliance-users', name: 'Compliance Users', icon: User },
-              { id: 'settings', name: 'System Settings', icon: Settings },
-            ].map((tab) => {
+              { id: 'overview', name: 'Overview', icon: Shield, adminOnly: true },
+              { id: 'doctors', name: 'Doctors', icon: Stethoscope, adminOnly: true },
+              { id: 'businesses', name: 'Businesses', icon: Building2, adminOnly: true },
+              { id: 'doctor-assignments', name: 'Doctor Assignments', icon: Users, adminOnly: true },
+              { id: 'services', name: 'Services', icon: Package, adminOnly: true },
+              { id: 'requests', name: 'Service Requests', icon: Calendar, adminOnly: true },
+              { id: 'transactions', name: 'Transactions', icon: CreditCard, adminOnly: true },
+              { id: 'earnings', name: 'Doctor Earnings', icon: DollarSign, adminOnly: true },
+              { id: 'subscriptions', name: 'Doctor Subscriptions', icon: CreditCard, adminOnly: true },
+              { id: 'compliance-documents', name: 'Doctor Compliance Documents', icon: FileText, adminOnly: false },
+              { id: 'business-compliance-documents', name: 'Business Compliance Documents', icon: FileCheck, adminOnly: false },
+              { id: 'compliance-users', name: 'Compliance Users', icon: User, adminOnly: true },
+              { id: 'settings', name: 'System Settings', icon: Settings, adminOnly: true },
+            ].filter(tab => {
+              // Show all tabs for admin users
+              if (user?.role === 'admin') return true;
+              // Show only compliance tabs for compliance users
+              if (user?.role === 'compliance') return !tab.adminOnly;
+              return false;
+            }).map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
@@ -3036,7 +3051,9 @@ export default function AdminDashboard() {
             </div>
             {!isSidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Admin User</p>
+                <p className={`text-sm font-medium truncate ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {user?.role === 'compliance' ? 'Compliance Officer' : 'Admin User'}
+                </p>
                 <p className={`text-xs truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user?.email || 'admin@gmail.com'}</p>
               </div>
             )}
