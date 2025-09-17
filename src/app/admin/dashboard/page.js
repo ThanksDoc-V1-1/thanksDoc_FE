@@ -372,17 +372,23 @@ export default function AdminDashboard() {
     setLoadingSlots(true);
 
     try {
+      // Convert time format from HH:mm to HH:mm:ss.SSS for Strapi
+      const formatTimeForStrapi = (time) => {
+        if (!time) return time;
+        return `${time}:00.000`;
+      };
+
       const slotData = {
         date: slotFormData.date,
-        startTime: slotFormData.startTime,
-        endTime: slotFormData.endTime,
+        startTime: formatTimeForStrapi(slotFormData.startTime),
+        endTime: formatTimeForStrapi(slotFormData.endTime),
         serviceType: slotFormData.serviceType,
         maxBookings: parseInt(slotFormData.maxBookings) || 1,
         isActive: slotFormData.isActive
       };
 
       // Validate that end time is after start time
-      if (slotData.startTime >= slotData.endTime) {
+      if (slotFormData.startTime >= slotFormData.endTime) {
         alert('End time must be after start time');
         return;
       }
@@ -434,10 +440,17 @@ export default function AdminDashboard() {
     setEditingSlot(slot);
     const slotData = slot.attributes || slot;
     
+    // Convert time format from HH:mm:ss.SSS to HH:mm for HTML input
+    const formatTimeForInput = (time) => {
+      if (!time) return '';
+      // Extract HH:mm part from HH:mm:ss.SSS
+      return time.split(':').slice(0, 2).join(':');
+    };
+    
     setSlotFormData({
       date: slotData.date || '',
-      startTime: slotData.startTime || '',
-      endTime: slotData.endTime || '',
+      startTime: formatTimeForInput(slotData.startTime) || '',
+      endTime: formatTimeForInput(slotData.endTime) || '',
       serviceType: slotData.serviceType || 'online',
       maxBookings: slotData.maxBookings || 1,
       isActive: slotData.isActive !== undefined ? slotData.isActive : true
