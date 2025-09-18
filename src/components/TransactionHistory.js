@@ -24,7 +24,7 @@ export default function TransactionHistory() {
 
   useEffect(() => {
     fetchTransactionHistory();
-  }, [selectedDoctor, dateRange]);
+  }, [selectedDoctor]); // Fetch when doctor changes or on initial mount
 
   const fetchTransactionHistory = async () => {
     setLoading(true);
@@ -417,6 +417,7 @@ export default function TransactionHistory() {
                 type="date"
                 value={dateRange.startDate}
                 onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                onKeyDown={(e) => e.key === 'Enter' && fetchTransactionHistory()}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -427,6 +428,7 @@ export default function TransactionHistory() {
                 type="date"
                 value={dateRange.endDate}
                 onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                onKeyDown={(e) => e.key === 'Enter' && fetchTransactionHistory()}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -434,10 +436,11 @@ export default function TransactionHistory() {
             <div className="flex items-end">
               <button
                 onClick={fetchTransactionHistory}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
               >
                 <Filter className="h-4 w-4 mr-2 inline" />
-                Apply Filters
+                {loading ? 'Applying...' : 'Apply Filters'}
               </button>
             </div>
           </div>
