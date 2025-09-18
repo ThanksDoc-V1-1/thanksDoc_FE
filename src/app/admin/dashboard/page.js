@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [serviceRequests, setServiceRequests] = useState([]);
+  const [requestStatusFilter, setRequestStatusFilter] = useState('all'); // 'all', 'pending', 'accepted', 'completed'
   const [services, setServices] = useState([]);
   const [businessTypes, setBusinessTypes] = useState([]);
   const [businessComplianceDocumentTypes, setBusinessComplianceDocumentTypes] = useState([]);
@@ -1556,6 +1557,30 @@ export default function AdminDashboard() {
     }
   };
 
+  // Function to filter service requests based on status
+  const getFilteredServiceRequests = () => {
+    if (requestStatusFilter === 'all') {
+      return serviceRequests;
+    }
+    
+    return serviceRequests.filter(request => {
+      const status = request.status || request.attributes?.status;
+      const completedAt = request.completedAt || request.attributes?.completedAt;
+      const acceptedAt = request.acceptedAt || request.attributes?.acceptedAt;
+      
+      switch (requestStatusFilter) {
+        case 'pending':
+          return status === 'pending' && !completedAt && !acceptedAt;
+        case 'accepted':
+          return (status === 'accepted' || (status === 'pending' && acceptedAt)) && !completedAt;
+        case 'completed':
+          return completedAt !== null && completedAt !== undefined;
+        default:
+          return true;
+      }
+    });
+  };
+
   // Load business compliance document types from API
   const loadBusinessComplianceDocumentTypes = async () => {
     ('🏢 Starting business compliance document types loading...');
@@ -1784,6 +1809,11 @@ export default function AdminDashboard() {
       });
     }
   }, [loading, isAuthenticated, user, activeTab]);
+
+  // Reset pagination when status filter changes
+  useEffect(() => {
+    setServiceRequestsCurrentPage(1);
+  }, [requestStatusFilter]);
 
   // Don't render anything if not authenticated
   if (loading) {
@@ -2424,7 +2454,7 @@ export default function AdminDashboard() {
   const complianceUsersEndIndex = complianceUsersStartIndex + complianceUsersPerPage;
   const paginatedComplianceUsers = filteredComplianceUsers.slice(complianceUsersStartIndex, complianceUsersEndIndex);
 
-  const filteredRequests = serviceRequests.filter(request => {
+  const filteredRequests = getFilteredServiceRequests().filter(request => {
     // Handle both direct properties and nested attributes structure
     const serviceType = request.serviceType || request.attributes?.serviceType || '';
     const description = request.description || request.attributes?.description || '';
@@ -6447,7 +6477,14 @@ export default function AdminDashboard() {
                 <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>Monitor all service requests in the system</p>
               </div>
               <div className="flex items-center space-x-3 text-sm self-end sm:self-auto">
-                <span className={`${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-full`}>
+                <button
+                  onClick={() => setRequestStatusFilter('pending')}
+                  className={`px-3 py-1 rounded-full transition-colors cursor-pointer hover:opacity-80 ${
+                    requestStatusFilter === 'pending'
+                      ? isDarkMode ? 'bg-yellow-900/50 text-yellow-300 ring-2 ring-yellow-400' : 'bg-yellow-200 text-yellow-800 ring-2 ring-yellow-500'
+                      : isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const status = r.status || r.attributes?.status;
@@ -6456,8 +6493,15 @@ export default function AdminDashboard() {
                       return status === 'pending' && !completedAt && !acceptedAt;
                     }).length}
                   </span> Pending
-                </span>
-                <span className={`${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'} px-3 py-1 rounded-full`}>
+                </button>
+                <button
+                  onClick={() => setRequestStatusFilter('accepted')}
+                  className={`px-3 py-1 rounded-full transition-colors cursor-pointer hover:opacity-80 ${
+                    requestStatusFilter === 'accepted'
+                      ? isDarkMode ? 'bg-blue-900/50 text-blue-300 ring-2 ring-blue-400' : 'bg-blue-200 text-blue-800 ring-2 ring-blue-500'
+                      : isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
+                  }`}
+                >
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const status = r.status || r.attributes?.status;
@@ -6466,15 +6510,32 @@ export default function AdminDashboard() {
                       return (status === 'accepted' || (status === 'pending' && acceptedAt)) && !completedAt;
                     }).length}
                   </span> Accepted
-                </span>
-                <span className={`${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full`}>
+                </button>
+                <button
+                  onClick={() => setRequestStatusFilter('completed')}
+                  className={`px-3 py-1 rounded-full transition-colors cursor-pointer hover:opacity-80 ${
+                    requestStatusFilter === 'completed'
+                      ? isDarkMode ? 'bg-green-900/50 text-green-300 ring-2 ring-green-400' : 'bg-green-200 text-green-800 ring-2 ring-green-500'
+                      : isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
+                  }`}
+                >
                   <span className="font-medium">
                     {serviceRequests.filter(r => {
                       const completedAt = r.completedAt || r.attributes?.completedAt;
                       return completedAt !== null && completedAt !== undefined;
                     }).length}
                   </span> Completed
-                </span>
+                </button>
+                <button
+                  onClick={() => setRequestStatusFilter('all')}
+                  className={`px-3 py-1 rounded-full transition-colors cursor-pointer hover:opacity-80 ${
+                    requestStatusFilter === 'all'
+                      ? isDarkMode ? 'bg-gray-600 text-gray-200 ring-2 ring-gray-400' : 'bg-gray-200 text-gray-800 ring-2 ring-gray-500'
+                      : isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <span className="font-medium">{serviceRequests.length}</span> All
+                </button>
               </div>
             </div>
             
