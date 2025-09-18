@@ -988,7 +988,34 @@ export default function AdminDashboard() {
       alert(editingComplianceUser ? 'Compliance user updated successfully!' : 'Compliance user created successfully! Login credentials have been sent to their email.');
     } catch (error) {
       console.error('Error saving compliance user:', error);
-      alert(`Failed to save compliance user. Error: ${error.message}`);
+      
+      // Check if the error is related to email already existing
+      let errorMessage = 'Failed to save compliance user';
+      
+      // Check error message for email conflicts
+      const errorText = error.message?.toLowerCase() || '';
+      
+      if (errorText.includes('account with this email address already exists') ||
+          errorText.includes('user already exists with this email') ||
+          (errorText.includes('email') && 
+           (errorText.includes('already') || 
+            errorText.includes('exist') ||
+            errorText.includes('taken') ||
+            errorText.includes('duplicate') ||
+            errorText.includes('unique') ||
+            errorText.includes('constraint')))) {
+        errorMessage = 'A user with this email address already exists. Please use a different email.';
+      } else if (errorText.includes('validation') || errorText.includes('invalid')) {
+        errorMessage = 'Please check that all fields are filled correctly.';
+      } else if (errorText.includes('password') && errorText.includes('length')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message && error.message !== 'Registration failed') {
+        errorMessage = `Failed to save compliance user: ${error.message}`;
+      } else {
+        errorMessage = 'Failed to save compliance user. Please check all fields and try again.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setDataLoading(false);
     }
@@ -1185,7 +1212,34 @@ export default function AdminDashboard() {
       alert(editingExecutiveUser ? 'Executive user updated successfully!' : 'Executive user created successfully! Login credentials have been sent to their email.');
     } catch (error) {
       console.error('Error saving executive user:', error);
-      alert(`Failed to save executive user. Error: ${error.message}`);
+      
+      // Check if the error is related to email already existing
+      let errorMessage = 'Failed to save executive user';
+      
+      // Check error message for email conflicts
+      const errorText = error.message?.toLowerCase() || '';
+      
+      if (errorText.includes('account with this email address already exists') ||
+          errorText.includes('user already exists with this email') ||
+          (errorText.includes('email') && 
+           (errorText.includes('already') || 
+            errorText.includes('exist') ||
+            errorText.includes('taken') ||
+            errorText.includes('duplicate') ||
+            errorText.includes('unique') ||
+            errorText.includes('constraint')))) {
+        errorMessage = 'A user with this email address already exists. Please use a different email.';
+      } else if (errorText.includes('validation') || errorText.includes('invalid')) {
+        errorMessage = 'Please check that all fields are filled correctly.';
+      } else if (errorText.includes('password') && errorText.includes('length')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message && error.message !== 'Registration failed') {
+        errorMessage = `Failed to save executive user: ${error.message}`;
+      } else {
+        errorMessage = 'Failed to save executive user. Please check all fields and try again.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setDataLoading(false);
     }

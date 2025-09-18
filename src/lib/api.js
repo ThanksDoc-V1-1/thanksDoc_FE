@@ -377,19 +377,35 @@ export const authAPI = {
   // New unified register function
   register: async (type, userData) => {
     try {
-      ('� Starting registration process for:', userData.email, 'as', type);
+      console.log('🔄 Starting registration process for:', userData.email, 'as', type);
       
       const response = await api.post('/auth/register', {
         type,
         ...userData
       });
       
-      ('✅ Registration successful:', response.data);
+      console.log('✅ Registration successful:', response.data);
       return response.data;
       
     } catch (error) {
-      console.error('� Registration error:', error);
-      throw new Error(error.response?.data?.message || 'Registration failed');
+      console.error('❌ Registration error:', error);
+      console.error('❌ Error response data:', error.response?.data);
+      
+      // Extract detailed error message
+      let errorMessage = 'Registration failed';
+      
+      if (error.response?.data?.error?.message) {
+        errorMessage = error.response.data.error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error?.details) {
+        errorMessage = error.response.data.error.details;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('❌ Final error message:', errorMessage);
+      throw new Error(errorMessage);
     }
   },
 
