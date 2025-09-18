@@ -3853,7 +3853,13 @@ export default function AdminDashboard() {
             </button>
 
             <button
-              onClick={() => setShowChangePassword(v => !v)}
+              onClick={() => {
+                // If sidebar is collapsed and we're trying to show password fields, expand it first
+                if (isSidebarCollapsed && !showChangePassword) {
+                  setIsSidebarCollapsed(false);
+                }
+                setShowChangePassword(v => !v);
+              }}
               className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-center'} px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 isDarkMode
                   ? 'bg-purple-900/30 text-purple-300 hover:bg-purple-800/50'
