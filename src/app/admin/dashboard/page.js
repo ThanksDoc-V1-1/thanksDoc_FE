@@ -45,6 +45,11 @@ export default function AdminDashboard() {
   });
   
   const [doctorEarnings, setDoctorEarnings] = useState([]);
+  const [earningsDateFilter, setEarningsDateFilter] = useState({ startDate: '', endDate: '' });
+  const [showPatientDetailsModal, setShowPatientDetailsModal] = useState(false);
+  const [selectedPatientRequests, setSelectedPatientRequests] = useState([]);
+  const [selectedPatientDetails, setSelectedPatientDetails] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [systemSettings, setSystemSettings] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -1350,7 +1355,29 @@ export default function AdminDashboard() {
     
     // Calculate earnings from completed service requests
     requestsData
-      .filter(request => request.status === 'completed' && request.doctor && request.totalAmount)
+      .filter(request => {
+        // Filter by completion status, doctor, and amount
+        if (!(request.status === 'completed' && request.doctor && request.totalAmount)) {
+          return false;
+        }
+        
+        // Apply date filter if set
+        if (earningsDateFilter.startDate || earningsDateFilter.endDate) {
+          const completedAt = request.completedAt;
+          if (!completedAt) return false;
+          
+          const requestDate = new Date(completedAt).toISOString().split('T')[0];
+          
+          if (earningsDateFilter.startDate && requestDate < earningsDateFilter.startDate) {
+            return false;
+          }
+          if (earningsDateFilter.endDate && requestDate > earningsDateFilter.endDate) {
+            return false;
+          }
+        }
+        
+        return true;
+      })
       .forEach(request => {
         const doctorId = request.doctor.id;
         const businessId = request.business?.id;
@@ -1579,6 +1606,102 @@ export default function AdminDashboard() {
           return true;
       }
     });
+  };
+
+  // Function to handle patient requests click and show details
+  const handlePatientRequestsClick = async (businessEarning) => {
+    try {
+      console.log('🔍 Fetching patient requests for business:', businessEarning.business);
+      
+      // Try a broader search first - get all service requests for this business
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/service-requests?populate=business,doctor,service&filters[business][id][$eq]=${businessEarning.business.id}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 All service requests data:', data);
+        const allRequests = data.data || [];
+        
+        // Debug: Log structure of first request
+        if (allRequests.length > 0) {
+          console.log('🔍 First request structure:', {
+            id: allRequests[0].id,
+            directProps: Object.keys(allRequests[0]),
+            isPatientRequest: allRequests[0].isPatientRequest,
+            isPaid: allRequests[0].isPaid,
+            patientFirstName: allRequests[0].patientFirstName,
+            patientLastName: allRequests[0].patientLastName,
+            patientEmail: allRequests[0].patientEmail
+          });
+        }
+        
+        // Filter for patient requests that are paid
+        const patientRequests = allRequests.filter(request => {
+          if (!request) {
+            console.log('⚠️ Invalid request:', request);
+            return false;
+          }
+          return request.isPatientRequest === true && request.isPaid === true;
+        });
+        
+        console.log('👥 Filtered patient requests:', patientRequests);
+        
+        if (patientRequests.length > 0) {
+          // Show details of the first patient request
+          const firstRequest = patientRequests[0];
+          
+          console.log('🔍 First patient request details:', {
+            id: firstRequest.id,
+            patientFirstName: firstRequest.patientFirstName,
+            patientLastName: firstRequest.patientLastName,
+            patientEmail: firstRequest.patientEmail,
+            serviceType: firstRequest.serviceType,
+            service: firstRequest.service,
+            status: firstRequest.status,
+            requestedServiceDateTime: firstRequest.requestedServiceDateTime
+          });
+          
+          // Extract patient name from the patient fields
+          const patientFirstName = firstRequest.patientFirstName || '';
+          const patientLastName = firstRequest.patientLastName || '';
+          const patientFullName = `${patientFirstName} ${patientLastName}`.trim() || 'N/A';
+          
+          // Extract service name from populated service data or serviceType
+          const serviceName = firstRequest.service?.name || 
+                              firstRequest.serviceType || 'N/A';
+          
+          const patientDetails = {
+            patientName: patientFullName,
+            patientEmail: firstRequest.patientEmail || 'N/A',
+            serviceName: serviceName,
+            requestedDate: firstRequest.requestedServiceDateTime || firstRequest.createdAt,
+            requestedTime: firstRequest.requestedServiceDateTime ? 
+              new Date(firstRequest.requestedServiceDateTime).toLocaleTimeString() : 'N/A',
+            status: firstRequest.status || 'N/A'
+          };
+          
+          console.log('✅ Final patient details to display:', patientDetails);
+          
+          setSelectedPatientDetails(patientDetails);
+          setShowPatientDetailsModal(true);
+        } else {
+          console.log('❌ No patient requests found. All requests:', allRequests.map(r => ({
+            id: r.id,
+            isPatientRequest: r.isPatientRequest,
+            isPaid: r.isPaid,
+            status: r.status
+          })));
+          alert('No paid patient requests found for this business');
+        }
+      } else {
+        console.error('❌ Failed to fetch service requests. Status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        alert('Failed to fetch patient requests');
+      }
+    } catch (error) {
+      console.error('💥 Error fetching patient requests:', error);
+      alert('Error fetching patient requests');
+    }
   };
 
   // Load business compliance document types from API
@@ -2493,6 +2616,11 @@ export default function AdminDashboard() {
     
     const searchLower = searchTerm.toLowerCase();
     return `${doctorFirstName} ${doctorLastName}`.toLowerCase().includes(searchLower);
+  }).sort((a, b) => {
+    // Sort alphabetically by doctor name
+    const nameA = `${a.doctor?.firstName || ''} ${a.doctor?.lastName || ''}`.toLowerCase();
+    const nameB = `${b.doctor?.firstName || ''} ${b.doctor?.lastName || ''}`.toLowerCase();
+    return nameA.localeCompare(nameB);
   });
 
   // Service Requests Pagination
@@ -6776,13 +6904,45 @@ export default function AdminDashboard() {
         {activeTab === 'earnings' && (
           <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
             <div className={`p-6 ${isDarkMode ? 'border-gray-800' : 'border-gray-200'} border-b`}>
-              <div className="flex items-center space-x-3">
-                <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} p-2 rounded-lg`}>
-                  <Users className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`${isDarkMode ? 'bg-green-900/30' : 'bg-green-100'} p-2 rounded-lg`}>
+                    <Users className={`h-5 w-5 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Earnings</h2>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Track earnings and revenue per doctor from completed service requests</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className={`text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Doctor Earnings</h2>
-                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Track earnings and revenue per doctor from completed service requests</p>
+                
+                {/* Date Filter */}
+                <div className="flex items-center space-x-3">
+                  <div>
+                    <label className={`block text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Start Date</label>
+                    <input
+                      type="date"
+                      value={earningsDateFilter.startDate}
+                      onChange={(e) => setEarningsDateFilter(prev => ({ ...prev, startDate: e.target.value }))}
+                      className={`px-3 py-2 text-sm rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>End Date</label>
+                    <input
+                      type="date"
+                      value={earningsDateFilter.endDate}
+                      onChange={(e) => setEarningsDateFilter(prev => ({ ...prev, endDate: e.target.value }))}
+                      className={`px-3 py-2 text-sm rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500`}
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <button
+                      onClick={() => fetchAllData()}
+                      className={`px-4 py-2 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                    >
+                      Apply Filter
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -6823,8 +6983,16 @@ export default function AdminDashboard() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {earning.businesses.map((businessEarning) => {
                                 const business = businessEarning.business;
+                                const isPatientCard = business.businessType === 'patient';
+                                
                                 return (
-                                  <div key={business.id} className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white/90 border-blue-200'} rounded-lg p-4 border`}>
+                                  <div 
+                                    key={business.id} 
+                                    className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white/90 border-blue-200'} rounded-lg p-4 border ${
+                                      isPatientCard ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''
+                                    }`}
+                                    onClick={isPatientCard ? () => handlePatientRequestsClick(businessEarning) : undefined}
+                                  >
                                     <div className="flex items-center space-x-3 mb-2">
                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-indigo-900/30 to-indigo-800/30' : 'bg-gradient-to-br from-indigo-100 to-indigo-200'}`}>
                                         <Building2 className={`h-4 w-4 ${isDarkMode ? 'text-indigo-400' : 'text-indigo-600'}`} />
@@ -11101,6 +11269,90 @@ export default function AdminDashboard() {
               <div className={`pt-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} flex justify-end`}>
                 <button
                   onClick={() => setShowIndividualSlots(false)}
+                  className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'} transition-colors`}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Patient Details Modal */}
+        {showPatientDetailsModal && selectedPatientDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Patient Details
+                </h3>
+                <button
+                  onClick={() => setShowPatientDetailsModal(false)}
+                  className={`p-2 rounded-full ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} transition-colors`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Patient Name
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.patientName || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Email
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.patientEmail || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Service Ordered
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.serviceName || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Date
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.requestedDate ? new Date(selectedPatientDetails.requestedDate).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Time
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.requestedTime || 'N/A'}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                    Status
+                  </label>
+                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {selectedPatientDetails.status || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowPatientDetailsModal(false)}
                   className={`px-4 py-2 rounded-lg ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'} transition-colors`}
                 >
                   Close
