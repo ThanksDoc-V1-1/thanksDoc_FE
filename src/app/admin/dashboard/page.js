@@ -9,6 +9,13 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import TransactionHistory from '../../../components/TransactionHistory';
 import AdminNotificationCenter from '../../../components/AdminNotificationCenter';
 
+// Helper function to format date as YYYY-MM-DD in local timezone
+const formatDateLocal = (date) => {
+  return date.getFullYear() + '-' + 
+    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(date.getDate()).padStart(2, '0');
+};
+
 export default function AdminDashboard() {
   const { logout, user, isAuthenticated, loading } = useAuth();
   const { isDarkMode } = useTheme();
@@ -181,7 +188,7 @@ export default function AdminDashboard() {
     isActive: true
   });
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => formatDateLocal(new Date()));
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [calendarView, setCalendarView] = useState('month'); // 'week' or 'month'
   const [showDateSlots, setShowDateSlots] = useState(false);
@@ -6208,8 +6215,9 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => {
-                    setCurrentWeek(new Date());
-                    setSelectedDate(new Date().toISOString().split('T')[0]);
+                    const today = new Date();
+                    setCurrentWeek(today);
+                    setSelectedDate(formatDateLocal(today));
                   }}
                   className={`px-4 py-2 text-sm rounded-lg font-medium transition-all duration-200 ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gradient-to-r from-orange-400 to-red-500 text-white hover:from-orange-500 hover:to-red-600 shadow-lg'} transform hover:scale-105`}
                 >
@@ -6231,7 +6239,7 @@ export default function AdminDashboard() {
                     
                     {/* Calendar Dates */}
                     {getMonthDates(currentWeek).map((date, index) => {
-                      const dateStr = date.toISOString().split('T')[0];
+                      const dateStr = formatDateLocal(date);
                       const isCurrentMonth = isDateInCurrentMonth(date, currentWeek);
                       const isToday = date.toDateString() === new Date().toDateString();
                       const isSelected = dateStr === selectedCalendarDate;
@@ -6283,7 +6291,7 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-8 gap-2 mb-6">
                   <div></div> {/* Empty cell for time column */}
                   {getWeekDates(currentWeek).map((date, index) => {
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = formatDateLocal(date);
                     const isToday = date.toDateString() === new Date().toDateString();
                     const isSelected = dateStr === selectedCalendarDate;
                     const hasSlots = getDatesWithSlots().has(dateStr);
@@ -6449,7 +6457,7 @@ export default function AdminDashboard() {
                     onClick={() => {
                       setEditingSlot(null);
                       setSlotFormData({
-                        date: new Date().toISOString().split('T')[0],
+                        date: formatDateLocal(new Date()),
                         startTime: '',
                         endTime: '',
                         serviceType: 'online',
