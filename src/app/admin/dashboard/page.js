@@ -7032,7 +7032,13 @@ export default function AdminDashboard() {
                                         {formatCurrency(businessEarning.earnings)}
                                       </div>
                                       <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        {businessEarning.requestCount} requests
+                                        {(() => {
+                                          // Show different text for Patient Requests vs regular businesses
+                                          if (business.businessName === 'Patient Requests') {
+                                            return `${businessEarning.requestCount} completed requests`;
+                                          }
+                                          return `${businessEarning.requestCount} requests`;
+                                        })()}
                                       </p>
                                     </div>
                                   </div>
@@ -11307,7 +11313,10 @@ export default function AdminDashboard() {
             <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Patient Requests ({selectedPatientDetails.allPatientRequests?.length || 1})
+                  All Patient Requests ({selectedPatientDetails.allPatientRequests?.length || 1})
+                  <span className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-2`}>
+                    (All statuses: completed, accepted, pending)
+                  </span>
                 </h3>
                 <button
                   onClick={() => setShowPatientDetailsModal(false)}
