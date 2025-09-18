@@ -934,6 +934,35 @@ export default function AdminDashboard() {
         const result = await authAPI.register('compliance', userData);
         console.log('Registration successful:', result);
         
+        // Send credentials email after successful registration
+        try {
+          console.log('Sending credentials email...');
+          const jwt = localStorage.getItem('jwt');
+          
+          const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/send-credentials`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            },
+            body: JSON.stringify({
+              email: complianceUserFormData.email,
+              password: complianceUserFormData.password,
+              firstName: complianceUserFormData.firstName,
+              lastName: complianceUserFormData.lastName
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log('Credentials email sent successfully');
+          } else {
+            console.warn('Failed to send credentials email, but user was created successfully');
+          }
+        } catch (emailError) {
+          console.error('Error sending credentials email:', emailError);
+          // Don't fail the entire operation if email fails
+        }
+        
         // Add the user with the compliance role explicitly set
         const newUser = {
           ...result.user,
@@ -956,7 +985,7 @@ export default function AdminDashboard() {
         isActive: true
       });
       
-      alert(editingComplianceUser ? 'Compliance user updated successfully!' : 'Compliance user created successfully!');
+      alert(editingComplianceUser ? 'Compliance user updated successfully!' : 'Compliance user created successfully! Login credentials have been sent to their email.');
     } catch (error) {
       console.error('Error saving compliance user:', error);
       alert(`Failed to save compliance user. Error: ${error.message}`);
