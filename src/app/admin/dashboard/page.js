@@ -1721,12 +1721,23 @@ export default function AdminDashboard() {
   };
 
   // Function to handle patient requests click and show details
-  const handlePatientRequestsClick = async (businessEarning) => {
+  const handlePatientRequestsClick = async (businessEarning, doctorId = null) => {
     try {
       console.log('🔍 Fetching patient requests for business:', businessEarning.business);
+      console.log('🔍 Filtering by doctor ID:', doctorId);
       
-      // Try a broader search first - get all service requests for this business
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/service-requests?populate=business,doctor,service&filters[business][id][$eq]=${businessEarning.business.id}`);
+      // Build the API URL with both business and doctor filters
+      let apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/service-requests?populate=business,doctor,service&filters[business][id][$eq]=${businessEarning.business.id}`;
+      
+      // Add doctor filter if specified (when called from doctor earnings)
+      if (doctorId) {
+        apiUrl += `&filters[doctor][id][$eq]=${doctorId}`;
+      }
+      
+      console.log('🌐 API URL:', apiUrl);
+      
+      // Try a broader search first - get all service requests for this business (and doctor if specified)
+      const response = await fetch(apiUrl);
       
       if (response.ok) {
         const data = await response.json();
@@ -1742,7 +1753,9 @@ export default function AdminDashboard() {
             isPaid: allRequests[0].isPaid,
             patientFirstName: allRequests[0].patientFirstName,
             patientLastName: allRequests[0].patientLastName,
-            patientEmail: allRequests[0].patientEmail
+            patientEmail: allRequests[0].patientEmail,
+            doctorId: allRequests[0].doctor?.id,
+            doctorName: allRequests[0].doctor?.firstName + ' ' + allRequests[0].doctor?.lastName
           });
         }
         
@@ -1756,6 +1769,7 @@ export default function AdminDashboard() {
         });
         
         console.log('👥 Filtered patient requests:', patientRequests);
+        console.log('👥 Patient requests count:', patientRequests.length);
         
         if (patientRequests.length > 0) {
           // Show details of the first patient request
@@ -1773,7 +1787,9 @@ export default function AdminDashboard() {
             requestedServiceDateTimeType: typeof firstRequest.requestedServiceDateTime,
             createdAt: firstRequest.createdAt,
             createdAtType: typeof firstRequest.createdAt,
-            updatedAt: firstRequest.updatedAt
+            updatedAt: firstRequest.updatedAt,
+            doctorId: firstRequest.doctor?.id,
+            doctorName: firstRequest.doctor ? `${firstRequest.doctor.firstName} ${firstRequest.doctor.lastName}` : 'N/A'
           });
           
           // Extract patient name from the patient fields
@@ -1846,6 +1862,7 @@ export default function AdminDashboard() {
                 hour12: false
               }) : 'N/A',
             status: firstRequest.status || 'N/A',
+            doctorName: firstRequest.doctor ? `${firstRequest.doctor.firstName} ${firstRequest.doctor.lastName}` : 'N/A',
             allPatientRequests: patientRequests // Store all requests for potential display
           };
           
@@ -1858,9 +1875,11 @@ export default function AdminDashboard() {
             id: r.id,
             isPatientRequest: r.isPatientRequest,
             isPaid: r.isPaid,
-            status: r.status
+            status: r.status,
+            doctorId: r.doctor?.id
           })));
-          alert('No paid patient requests found for this business');
+          const doctorText = doctorId ? ' for this doctor' : '';
+          alert(`No paid patient requests found for this business${doctorText}`);
         }
       } else {
         console.error('❌ Failed to fetch service requests. Status:', response.status);
@@ -7183,7 +7202,7 @@ export default function AdminDashboard() {
                                     className={`${isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white/90 border-blue-200'} rounded-lg p-4 border ${
                                       isPatientCard ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''
                                     }`}
-                                    onClick={isPatientCard ? () => handlePatientRequestsClick(businessEarning) : undefined}
+                                    onClick={isPatientCard ? () => handlePatientRequestsClick(businessEarning, earning.doctor.id) : undefined}
                                   >
                                     <div className="flex items-center space-x-3 mb-2">
                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gradient-to-br from-indigo-900/30 to-indigo-800/30' : 'bg-gradient-to-br from-indigo-100 to-indigo-200'}`}>
@@ -11482,7 +11501,10 @@ export default function AdminDashboard() {
             <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  All Patient Requests ({selectedPatientDetails.allPatientRequests?.length || 1})
+                  {selectedPatientDetails.doctorName && selectedPatientDetails.doctorName !== 'N/A' ? 
+                    `Patient Requests for Dr. ${selectedPatientDetails.doctorName}` : 
+                    'All Patient Requests'
+                  } ({selectedPatientDetails.allPatientRequests?.length || 1})
                   <span className={`text-sm font-normal ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-2`}>
                     (All statuses: completed, accepted, pending)
                   </span>
