@@ -1657,7 +1657,11 @@ export default function AdminDashboard() {
             serviceType: firstRequest.serviceType,
             service: firstRequest.service,
             status: firstRequest.status,
-            requestedServiceDateTime: firstRequest.requestedServiceDateTime
+            requestedServiceDateTime: firstRequest.requestedServiceDateTime,
+            requestedServiceDateTimeType: typeof firstRequest.requestedServiceDateTime,
+            createdAt: firstRequest.createdAt,
+            createdAtType: typeof firstRequest.createdAt,
+            updatedAt: firstRequest.updatedAt
           });
           
           // Extract patient name from the patient fields
@@ -1669,13 +1673,27 @@ export default function AdminDashboard() {
           const serviceName = firstRequest.service?.name || 
                               firstRequest.serviceType || 'N/A';
           
+          // Handle the special time range format in requestedServiceDateTime
+          let processedDateTime = null;
+          if (firstRequest.requestedServiceDateTime) {
+            const timeRange = firstRequest.requestedServiceDateTime;
+            if (timeRange.includes('-') && timeRange.includes('T')) {
+              // Extract just the start time from range format like "2025-09-18T08:00-08:30:00"
+              const datePart = timeRange.split('T')[0];
+              const timePart = timeRange.split('T')[1].split('-')[0];
+              processedDateTime = datePart + 'T' + timePart + ':00.000Z';
+            } else {
+              processedDateTime = timeRange;
+            }
+          }
+          
           const patientDetails = {
             patientName: patientFullName,
             patientEmail: firstRequest.patientEmail || 'N/A',
             serviceName: serviceName,
-            requestedDate: firstRequest.requestedServiceDateTime || firstRequest.createdAt,
-            requestedTime: firstRequest.requestedServiceDateTime ? 
-              new Date(firstRequest.requestedServiceDateTime).toLocaleTimeString('en-GB', {
+            requestedDate: processedDateTime || firstRequest.createdAt,
+            requestedTime: processedDateTime ? 
+              new Date(processedDateTime).toLocaleTimeString('en-GB', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
@@ -11343,9 +11361,69 @@ export default function AdminDashboard() {
                               Date
                             </label>
                             <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {request.requestedServiceDateTime ? 
-                                new Date(request.requestedServiceDateTime).toLocaleDateString('en-GB') : 
-                                (request.createdAt ? new Date(request.createdAt).toLocaleDateString('en-GB') : 'N/A')}
+                              {(() => {
+                                // Handle special time range format in requestedServiceDateTime
+                                let dateToTry = null;
+                                
+                                if (request.requestedServiceDateTime) {
+                                  // Extract just the start time from range format like "2025-09-18T08:00-08:30:00"
+                                  const timeRange = request.requestedServiceDateTime;
+                                  if (timeRange.includes('-') && timeRange.includes('T')) {
+                                    // Split on the range separator and take the start time
+                                    const startTime = timeRange.split('-')[0] + '-' + timeRange.split('-')[1];
+                                    // Try to construct a proper ISO date
+                                    const datePart = startTime.split('T')[0];
+                                    const timePart = startTime.split('T')[1];
+                                    if (timePart && !timePart.includes(':')) {
+                                      // If time doesn't have proper format, use just the date
+                                      dateToTry = datePart + 'T00:00:00.000Z';
+                                    } else {
+                                      dateToTry = datePart + 'T' + timePart + ':00.000Z';
+                                    }
+                                  } else {
+                                    dateToTry = timeRange;
+                                  }
+                                }
+                                
+                                // Fallback to createdAt or updatedAt
+                                if (!dateToTry) {
+                                  dateToTry = request.createdAt || request.updatedAt;
+                                }
+                                
+                                console.log('🗓️ Date processing for request', request.id, ':', {
+                                  original: request.requestedServiceDateTime,
+                                  processed: dateToTry,
+                                  fallback: request.createdAt
+                                });
+                                
+                                if (!dateToTry) return 'N/A';
+                                
+                                try {
+                                  const date = new Date(dateToTry);
+                                  console.log('📅 Final parsed date:', date, 'isValid:', !isNaN(date.getTime()));
+                                  if (isNaN(date.getTime())) {
+                                    // If still invalid, use createdAt as absolute fallback
+                                    const fallbackDate = new Date(request.createdAt);
+                                    if (!isNaN(fallbackDate.getTime())) {
+                                      return fallbackDate.toLocaleDateString('en-GB');
+                                    }
+                                    return 'N/A';
+                                  }
+                                  return date.toLocaleDateString('en-GB');
+                                } catch (error) {
+                                  console.error('Date parsing error:', error, 'for date:', dateToTry);
+                                  // Try createdAt as absolute fallback
+                                  try {
+                                    const fallbackDate = new Date(request.createdAt);
+                                    if (!isNaN(fallbackDate.getTime())) {
+                                      return fallbackDate.toLocaleDateString('en-GB');
+                                    }
+                                  } catch (fallbackError) {
+                                    console.error('Fallback date parsing failed:', fallbackError);
+                                  }
+                                  return 'N/A';
+                                }
+                              })()}
                             </p>
                           </div>
                           
@@ -11354,12 +11432,44 @@ export default function AdminDashboard() {
                               Time
                             </label>
                             <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                              {request.requestedServiceDateTime ? 
-                                new Date(request.requestedServiceDateTime).toLocaleTimeString('en-GB', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: false
-                                }) : 'N/A'}
+                              {(() => {
+                                // Handle special time range format in requestedServiceDateTime
+                                let dateToTry = null;
+                                
+                                if (request.requestedServiceDateTime) {
+                                  // Extract just the start time from range format
+                                  const timeRange = request.requestedServiceDateTime;
+                                  if (timeRange.includes('-') && timeRange.includes('T')) {
+                                    const datePart = timeRange.split('T')[0];
+                                    const timePart = timeRange.split('T')[1].split('-')[0]; // Get start time before the range
+                                    dateToTry = datePart + 'T' + timePart + ':00.000Z';
+                                  } else {
+                                    dateToTry = timeRange;
+                                  }
+                                }
+                                
+                                // Fallback to createdAt
+                                if (!dateToTry) {
+                                  dateToTry = request.createdAt || request.updatedAt;
+                                }
+                                
+                                if (!dateToTry) return 'N/A';
+                                
+                                try {
+                                  const date = new Date(dateToTry);
+                                  if (isNaN(date.getTime())) {
+                                    return 'N/A';
+                                  }
+                                  return date.toLocaleTimeString('en-GB', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    hour12: false
+                                  });
+                                } catch (error) {
+                                  console.error('Time parsing error:', error, 'for date:', dateToTry);
+                                  return 'N/A';
+                                }
+                              })()}
                             </p>
                           </div>
                           
@@ -11416,8 +11526,20 @@ export default function AdminDashboard() {
                       Date
                     </label>
                     <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {selectedPatientDetails.requestedDate ? 
-                        new Date(selectedPatientDetails.requestedDate).toLocaleDateString('en-GB') : 'N/A'}
+                      {(() => {
+                        // Try multiple date sources and formats
+                        const dateToTry = selectedPatientDetails.requestedDate;
+                        if (!dateToTry) return 'N/A';
+                        
+                        try {
+                          const date = new Date(dateToTry);
+                          if (isNaN(date.getTime())) return 'N/A';
+                          return date.toLocaleDateString('en-GB');
+                        } catch (error) {
+                          console.error('Date parsing error:', error, 'for date:', dateToTry);
+                          return 'N/A';
+                        }
+                      })()}
                     </p>
                   </div>
                   
