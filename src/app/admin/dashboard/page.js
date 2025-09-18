@@ -1675,8 +1675,13 @@ export default function AdminDashboard() {
             serviceName: serviceName,
             requestedDate: firstRequest.requestedServiceDateTime || firstRequest.createdAt,
             requestedTime: firstRequest.requestedServiceDateTime ? 
-              new Date(firstRequest.requestedServiceDateTime).toLocaleTimeString() : 'N/A',
-            status: firstRequest.status || 'N/A'
+              new Date(firstRequest.requestedServiceDateTime).toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }) : 'N/A',
+            status: firstRequest.status || 'N/A',
+            allPatientRequests: patientRequests // Store all requests for potential display
           };
           
           console.log('✅ Final patient details to display:', patientDetails);
@@ -11281,10 +11286,10 @@ export default function AdminDashboard() {
         {/* Patient Details Modal */}
         {showPatientDetailsModal && selectedPatientDetails && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto`}>
+            <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto`}>
               <div className="flex justify-between items-center mb-4">
                 <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Patient Details
+                  Patient Requests ({selectedPatientDetails.allPatientRequests?.length || 1})
                 </h3>
                 <button
                   onClick={() => setShowPatientDetailsModal(false)}
@@ -11294,61 +11299,152 @@ export default function AdminDashboard() {
                 </button>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Patient Name
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.patientName || 'N/A'}
-                  </p>
+              {selectedPatientDetails.allPatientRequests && selectedPatientDetails.allPatientRequests.length > 1 ? (
+                // Multiple patient requests - show as a list
+                <div className="space-y-4">
+                  {selectedPatientDetails.allPatientRequests.map((request, index) => {
+                    const patientFirstName = request.patientFirstName || '';
+                    const patientLastName = request.patientLastName || '';
+                    const patientFullName = `${patientFirstName} ${patientLastName}`.trim() || 'N/A';
+                    const serviceName = request.service?.name || request.serviceType || 'N/A';
+                    
+                    return (
+                      <div key={request.id} className={`p-4 border rounded-lg ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-200 bg-gray-50'}`}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Patient Name
+                            </label>
+                            <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {patientFullName}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Email
+                            </label>
+                            <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {request.patientEmail || 'N/A'}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Service Ordered
+                            </label>
+                            <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {serviceName}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Date
+                            </label>
+                            <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {request.requestedServiceDateTime ? 
+                                new Date(request.requestedServiceDateTime).toLocaleDateString('en-GB') : 
+                                (request.createdAt ? new Date(request.createdAt).toLocaleDateString('en-GB') : 'N/A')}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Time
+                            </label>
+                            <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                              {request.requestedServiceDateTime ? 
+                                new Date(request.requestedServiceDateTime).toLocaleTimeString('en-GB', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  hour12: false
+                                }) : 'N/A'}
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                              Status
+                            </label>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              request.status === 'completed' ? 'bg-green-100 text-green-800' :
+                              request.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                              request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {request.status || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Email
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.patientEmail || 'N/A'}
-                  </p>
+              ) : (
+                // Single patient request - show detailed view
+                <div className="space-y-4">
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Patient Name
+                    </label>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedPatientDetails.patientName || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Email
+                    </label>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedPatientDetails.patientEmail || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Service Ordered
+                    </label>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedPatientDetails.serviceName || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Date
+                    </label>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedPatientDetails.requestedDate ? 
+                        new Date(selectedPatientDetails.requestedDate).toLocaleDateString('en-GB') : 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Time
+                    </label>
+                    <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedPatientDetails.requestedTime || 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                      Status
+                    </label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      selectedPatientDetails.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      selectedPatientDetails.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                      selectedPatientDetails.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedPatientDetails.status || 'N/A'}
+                    </span>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Service Ordered
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.serviceName || 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Date
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.requestedDate ? new Date(selectedPatientDetails.requestedDate).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Time
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.requestedTime || 'N/A'}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
-                    Status
-                  </label>
-                  <p className={`text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedPatientDetails.status || 'N/A'}
-                  </p>
-                </div>
-              </div>
+              )}
               
               <div className="mt-6 flex justify-end">
                 <button
