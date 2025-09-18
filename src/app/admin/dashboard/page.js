@@ -1677,14 +1677,49 @@ export default function AdminDashboard() {
           let processedDateTime = null;
           if (firstRequest.requestedServiceDateTime) {
             const timeRange = firstRequest.requestedServiceDateTime;
+            console.log('🕐 Processing single request time range:', timeRange);
+            
             if (timeRange.includes('-') && timeRange.includes('T')) {
-              // Extract just the start time from range format like "2025-09-18T08:00-08:30:00"
-              const datePart = timeRange.split('T')[0];
-              const timePart = timeRange.split('T')[1].split('-')[0];
-              processedDateTime = datePart + 'T' + timePart + ':00.000Z';
+              // Split by 'T' to get date and time parts
+              const parts = timeRange.split('T');
+              const datePart = parts[0]; // "2025-09-18"
+              const timePart = parts[1]; // "08:00-08:30:00" or "08:00:00.000-08:30:00.000:00"
+              
+              if (timePart) {
+                // Extract start time before the range separator
+                let startTime;
+                if (timePart.includes('-')) {
+                  startTime = timePart.split('-')[0]; // "08:00" or "08:00:00.000"
+                } else {
+                  startTime = timePart;
+                }
+                
+                // Ensure proper time format
+                if (startTime && !startTime.includes(':')) {
+                  startTime = '00:00:00';
+                } else if (startTime && startTime.split(':').length === 2) {
+                  startTime = startTime + ':00'; // Add seconds if missing
+                }
+                
+                // Construct the final datetime string, avoiding double milliseconds
+                if (startTime.includes('.')) {
+                  // Already has milliseconds, just add Z
+                  processedDateTime = `${datePart}T${startTime}Z`;
+                } else {
+                  // Add milliseconds and Z
+                  processedDateTime = `${datePart}T${startTime}.000Z`;
+                }
+                console.log('🔧 Single request constructed date:', processedDateTime);
+              }
             } else {
               processedDateTime = timeRange;
             }
+          }
+          
+          // Fallback to createdAt if processing failed
+          if (!processedDateTime || processedDateTime.includes('undefined')) {
+            processedDateTime = firstRequest.createdAt;
+            console.log('📅 Using fallback for single request:', processedDateTime);
           }
           
           const patientDetails = {
@@ -1786,13 +1821,18 @@ export default function AdminDashboard() {
     
     // Set up automatic refresh every 30 seconds
     const refreshInterval = setInterval(() => {
-      ('🔄 Auto-refreshing data...');
-      fetchAllData();
+      // Only auto-refresh if no date filter is active to avoid disrupting user's filtered view
+      if (!earningsDateFilter.startDate && !earningsDateFilter.endDate) {
+        console.log('🔄 Auto-refreshing data...');
+        fetchAllData();
+      } else {
+        console.log('🔄 Skipping auto-refresh due to active date filter');
+      }
     }, 30000);
     
     // Clean up the interval when the component unmounts
     return () => clearInterval(refreshInterval);
-  }, []);
+  }, [earningsDateFilter.startDate, earningsDateFilter.endDate]); // Re-create interval when date filter changes
 
   // Initialize default subscription settings
   const initializeSubscriptionSettings = async (currentSystemSettings = null) => {
@@ -6958,13 +6998,24 @@ export default function AdminDashboard() {
                       className={`px-3 py-2 text-sm rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:ring-2 focus:ring-blue-500`}
                     />
                   </div>
-                  <div className="pt-6">
+                  <div className="pt-6 flex gap-3">
                     <button
                       onClick={() => fetchAllData()}
                       className={`px-4 py-2 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                     >
                       Apply Filter
                     </button>
+                    {(earningsDateFilter.startDate || earningsDateFilter.endDate) && (
+                      <button
+                        onClick={() => {
+                          setEarningsDateFilter({ startDate: '', endDate: '' });
+                          fetchAllData();
+                        }}
+                        className={`px-4 py-2 text-sm rounded-lg transition-colors ${isDarkMode ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-gray-500 hover:bg-gray-600 text-white'}`}
+                      >
+                        Clear Filter
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -11377,17 +11428,39 @@ export default function AdminDashboard() {
                                 if (request.requestedServiceDateTime) {
                                   // Extract just the start time from range format like "2025-09-18T08:00-08:30:00"
                                   const timeRange = request.requestedServiceDateTime;
+                                  console.log('🕐 Processing time range:', timeRange);
+                                  
                                   if (timeRange.includes('-') && timeRange.includes('T')) {
-                                    // Split on the range separator and take the start time
-                                    const startTime = timeRange.split('-')[0] + '-' + timeRange.split('-')[1];
-                                    // Try to construct a proper ISO date
-                                    const datePart = startTime.split('T')[0];
-                                    const timePart = startTime.split('T')[1];
-                                    if (timePart && !timePart.includes(':')) {
-                                      // If time doesn't have proper format, use just the date
-                                      dateToTry = datePart + 'T00:00:00.000Z';
-                                    } else {
-                                      dateToTry = datePart + 'T' + timePart + ':00.000Z';
+                                    // Split by 'T' to get date and time parts
+                                    const parts = timeRange.split('T');
+                                    const datePart = parts[0]; // "2025-09-18"
+                                    const timePart = parts[1]; // "08:00-08:30:00" or "08:00:00.000-08:30:00.000:00"
+                                    
+                                    if (timePart) {
+                                      // Extract start time before the range separator
+                                      let startTime;
+                                      if (timePart.includes('-')) {
+                                        startTime = timePart.split('-')[0]; // "08:00" or "08:00:00.000"
+                                      } else {
+                                        startTime = timePart;
+                                      }
+                                      
+                                      // Ensure proper time format
+                                      if (startTime && !startTime.includes(':')) {
+                                        startTime = '00:00:00';
+                                      } else if (startTime && startTime.split(':').length === 2) {
+                                        startTime = startTime + ':00'; // Add seconds if missing
+                                      }
+                                      
+                                      // Construct the final datetime string, avoiding double milliseconds
+                                      if (startTime.includes('.')) {
+                                        // Already has milliseconds, just add Z
+                                        dateToTry = `${datePart}T${startTime}Z`;
+                                      } else {
+                                        // Add milliseconds and Z
+                                        dateToTry = `${datePart}T${startTime}.000Z`;
+                                      }
+                                      console.log('🔧 Constructed date:', dateToTry);
                                     }
                                   } else {
                                     dateToTry = timeRange;
@@ -11395,8 +11468,9 @@ export default function AdminDashboard() {
                                 }
                                 
                                 // Fallback to createdAt or updatedAt
-                                if (!dateToTry) {
+                                if (!dateToTry || dateToTry.includes('undefined')) {
                                   dateToTry = request.createdAt || request.updatedAt;
+                                  console.log('📅 Using fallback date:', dateToTry);
                                 }
                                 
                                 console.log('🗓️ Date processing for request', request.id, ':', {
@@ -11448,17 +11522,45 @@ export default function AdminDashboard() {
                                 if (request.requestedServiceDateTime) {
                                   // Extract just the start time from range format
                                   const timeRange = request.requestedServiceDateTime;
+                                  
                                   if (timeRange.includes('-') && timeRange.includes('T')) {
-                                    const datePart = timeRange.split('T')[0];
-                                    const timePart = timeRange.split('T')[1].split('-')[0]; // Get start time before the range
-                                    dateToTry = datePart + 'T' + timePart + ':00.000Z';
+                                    // Split by 'T' to get date and time parts
+                                    const parts = timeRange.split('T');
+                                    const datePart = parts[0]; // "2025-09-18"
+                                    const timePart = parts[1]; // "08:00-08:30:00" or "08:00:00.000-08:30:00.000:00"
+                                    
+                                    if (timePart) {
+                                      // Extract start time before the range separator
+                                      let startTime;
+                                      if (timePart.includes('-')) {
+                                        startTime = timePart.split('-')[0]; // "08:00" or "08:00:00.000"
+                                      } else {
+                                        startTime = timePart;
+                                      }
+                                      
+                                      // Ensure proper time format
+                                      if (startTime && !startTime.includes(':')) {
+                                        startTime = '00:00:00';
+                                      } else if (startTime && startTime.split(':').length === 2) {
+                                        startTime = startTime + ':00'; // Add seconds if missing
+                                      }
+                                      
+                                      // Construct the final datetime string, avoiding double milliseconds
+                                      if (startTime.includes('.')) {
+                                        // Already has milliseconds, just add Z
+                                        dateToTry = `${datePart}T${startTime}Z`;
+                                      } else {
+                                        // Add milliseconds and Z
+                                        dateToTry = `${datePart}T${startTime}.000Z`;
+                                      }
+                                    }
                                   } else {
                                     dateToTry = timeRange;
                                   }
                                 }
                                 
                                 // Fallback to createdAt
-                                if (!dateToTry) {
+                                if (!dateToTry || dateToTry.includes('undefined')) {
                                   dateToTry = request.createdAt || request.updatedAt;
                                 }
                                 
