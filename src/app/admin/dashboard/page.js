@@ -1101,6 +1101,35 @@ export default function AdminDashboard() {
         const result = await authAPI.register('executive', registrationData);
         console.log('Registration successful:', result);
         
+        // Send credentials email after successful registration
+        try {
+          console.log('Sending executive credentials email...');
+          const jwt = localStorage.getItem('jwt');
+          
+          const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admins/send-executive-credentials`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${jwt}`
+            },
+            body: JSON.stringify({
+              email: executiveUserFormData.email,
+              password: executiveUserFormData.password,
+              firstName: executiveUserFormData.firstName,
+              lastName: executiveUserFormData.lastName
+            })
+          });
+          
+          if (emailResponse.ok) {
+            console.log('Executive credentials email sent successfully');
+          } else {
+            console.warn('Failed to send executive credentials email, but user was created successfully');
+          }
+        } catch (emailError) {
+          console.error('Error sending executive credentials email:', emailError);
+          // Don't fail the entire operation if email fails
+        }
+        
         // Add the user with the executive role explicitly set
         const newUser = {
           ...result.user,
@@ -1153,7 +1182,7 @@ export default function AdminDashboard() {
         isActive: true
       });
       
-      alert(editingExecutiveUser ? 'Executive user updated successfully!' : 'Executive user created successfully!');
+      alert(editingExecutiveUser ? 'Executive user updated successfully!' : 'Executive user created successfully! Login credentials have been sent to their email.');
     } catch (error) {
       console.error('Error saving executive user:', error);
       alert(`Failed to save executive user. Error: ${error.message}`);
