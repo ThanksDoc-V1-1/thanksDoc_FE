@@ -2745,11 +2745,6 @@ If the issue persists, contact support.`);
                             <div>Requested Duration: {(serviceCost.requestedDuration * 60).toFixed(0)} minutes (×{serviceCost.scalingFactor.toFixed(2)})</div>
                           )}
                           <div>Category: {selectedService.category === 'in-person' ? 'In-Person' : selectedService.category === 'online' ? 'Online' : 'NHS'}</div>
-                          {serviceCost && serviceCost.requestedDuration !== serviceCost.baseDuration && (
-                            <div className={`text-xs italic ${isDarkMode ? 'text-yellow-400' : 'text-orange-600'} mt-1`}>
-                              Price adjusted for extended duration
-                            </div>
-                          )}
                           <div className={`pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-blue-200'} space-y-1`}>
                             <div className="flex justify-between">
                               <span>Service fee:</span>
