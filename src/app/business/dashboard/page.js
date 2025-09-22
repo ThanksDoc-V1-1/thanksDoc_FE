@@ -1687,11 +1687,7 @@ export default function BusinessDashboard() {
           if (response.data) {
             const requestId = response.data.id || response.data.data?.id;
             
-            alert(`Payment successful! Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!
-            
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
-
-Payment ID: ${paymentIntent.id}`);
+            alert(`Payment successful! Service request sent to Dr. ${selectedDoctor.firstName} ${selectedDoctor.lastName} for ${requestHours} hour(s)!`);
             
             setShowHoursPopup(false);
             setSelectedDoctor(null);
@@ -1790,13 +1786,9 @@ Payment ID: ${paymentIntent.id}`);
             
             let notificationMessage;
             if ((formDataFromTemp.doctorSelectionType === 'previous' || formDataFromTemp.doctorSelectionType === 'assigned' || formDataFromTemp.doctorSelectionType === 'any') && formDataFromTemp.preferredDoctorId) {
-              notificationMessage = `Payment successful! Service request created and your selected doctor has been notified.
-              
-⏱️ Auto-fallback enabled: If the doctor doesn't respond within 24 hours, your request will be automatically sent to other available doctors.
-
-Payment ID: ${paymentIntent.id}`;
+              notificationMessage = `Payment successful! Service request created and your selected doctor has been notified.`;
             } else {
-              notificationMessage = `Payment successful! Service request created and ${response.data.notifiedDoctors} nearby doctors have been notified. Payment ID: ${paymentIntent.id}`;
+              notificationMessage = `Payment successful! Service request created and ${response.data.notifiedDoctors} nearby doctors have been notified.`;
             }
             
             alert(notificationMessage);
@@ -1856,7 +1848,7 @@ Payment ID: ${paymentIntent.id}`;
         ('💳 Card Payment Response:', response.data);
         
         if (response.data) {
-          alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee) Payment ID: ${paymentIntent.id}`);
+          alert(`Card payment of ${formatCurrency(calculateTotalAmount(paymentRequest))} processed successfully! (includes £${SERVICE_CHARGE} booking fee)`);
           
           // Force update the request in the local state too
           setServiceRequests(prev => 
@@ -1885,26 +1877,23 @@ Payment ID: ${paymentIntent.id}`;
       
       // Provide more specific error messages based on the error type
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        alert(`⏰ Service request is taking longer than expected to process. This usually happens when sending WhatsApp notifications to doctors.
+        alert(`⏰ Service request is taking longer than expected to process. This usually happens when sending notifications to doctors.
 
-✅ Your payment was successful: ${paymentIntent.id}
 🔄 The service request is likely being created - please check your requests list in a moment.
 
 If you don't see your request after 2 minutes, please contact support.`);
       } else if (error.response?.status >= 500) {
         alert(`❌ Server error occurred while creating your service request.
 
-✅ Your payment was successful: ${paymentIntent.id}
 🔄 Please check your requests list - the request might have been created despite the error.
 
-If you don't see your request, please contact support with payment ID: ${paymentIntent.id}`);
+If you don't see your request, please contact support.`);
       } else {
         alert(`❌ Service request creation failed.
 
-✅ Your payment was successful: ${paymentIntent.id}
 🔄 Please refresh the page and check your requests list.
 
-If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
+If the issue persists, contact support.`);
       }
     } finally {
       setIsSendingDoctorRequest(false); // Hide loading overlay
@@ -4301,12 +4290,6 @@ If the issue persists, contact support with payment ID: ${paymentIntent.id}`);
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse delay-75"></div>
                     <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
                       Finding available doctors
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse delay-150"></div>
-                    <span className={`${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                      Sending WhatsApp and email notifications
                     </span>
                   </div>
                 </div>
