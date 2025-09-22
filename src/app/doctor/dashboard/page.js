@@ -13,6 +13,7 @@ import NotificationBanner from '../../../components/NotificationBanner';
 import DistanceSlider from '../../../components/DistanceSlider';
 import CountryCodePicker from '../../../components/CountryCodePicker';
 import SubscriptionPaymentForm from '../../../components/SubscriptionPaymentForm';
+import RequestsAccordion from '../../../components/RequestsAccordion';
 
 export default function DoctorDashboard() {
   const router = useRouter();
@@ -1271,6 +1272,262 @@ export default function DoctorDashboard() {
     );
   }
 
+  // Helper function to render individual request
+  const renderRequest = (request) => (
+    <div key={request.id} className={`p-6 transition-colors ${
+      request.status === 'accepted' 
+        ? 'bg-green-900/10 border-l-4 border-green-400' 
+        : ''
+    } ${
+      isDarkMode 
+        ? 'hover:bg-gray-700/50' 
+        : 'hover:bg-gray-50'
+    }`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-2 mb-2">
+            {request.status === 'accepted' && (
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                isDarkMode 
+                  ? 'bg-green-900/30 text-green-400 border-green-700' 
+                  : 'bg-green-600 text-white border-green-500'
+              }`}>
+                ACCEPTED
+              </span>
+            )}
+            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
+                {request.urgencyLevel.toUpperCase()}
+              </span>
+            )}
+            <span className={`text-xs px-2 py-1 rounded ${
+              isDarkMode 
+                ? 'text-gray-400 bg-gray-700/50' 
+                : 'text-gray-600 bg-gray-100'
+            }`}>
+              {formatDate(request.requestedAt)}
+            </span>
+          </div>
+          
+          {/* Business Name - Made more prominent */}
+          <h2 className={`text-lg font-bold mb-2 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`} style={{color: '#0F9297'}}>{request.business?.businessName || 'Business'}</h2>
+          
+          {request.requestedServiceDateTime && (
+            <div className={`mb-3 p-2 rounded-lg border ${
+              isDarkMode 
+                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
+                : 'bg-blue-50 border-blue-200 text-blue-700'
+            }`}>
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Service Requested for: {formatDate(request.requestedServiceDateTime)}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          <h3 className={`font-medium mb-1 text-sm ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>{request.serviceType}</h3>
+          <p className={`text-sm mb-3 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>{request.description}</p>
+          
+          <div className="flex items-center space-x-4 text-sm">
+            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+              isDarkMode 
+                ? 'text-gray-400 bg-gray-700/50' 
+                : 'text-gray-600 bg-gray-100'
+            }`}>
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
+            </div>
+            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+              isDarkMode 
+                ? 'text-green-400 bg-green-900/20' 
+                : 'text-green-600 bg-green-50'
+            }`}>
+              <span className="font-semibold">{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
+            </div>
+          </div>
+          
+          {/* Display contact info when request is accepted */}
+          {request.status === 'accepted' && (
+            <div className={`mt-4 p-3 border rounded-lg ${
+              isDarkMode 
+                ? 'bg-green-900/10 border-green-800' 
+                : 'bg-green-50 border-green-200'
+            }`}>
+              {request.isPatientRequest ? (
+                // Patient request contact info
+                <div>
+                  <h4 className={`font-semibold text-sm mb-2 ${
+                    isDarkMode ? 'text-green-300' : 'text-green-800'
+                  }`}>Patient Contact Information:</h4>
+                  <div className="space-y-2">
+                    {(request.patientFirstName || request.patientLastName) && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>Patient:</span>
+                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ')}
+                        </span>
+                      </div>
+                    )}
+                    {request.patientPhone && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>Phone:</span>
+                        <a href={`tel:${request.patientPhone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
+                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
+                          {request.patientPhone}
+                        </a>
+                      </div>
+                    )}
+                    {request.patientEmail && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>Email:</span>
+                        <a href={`mailto:${request.patientEmail}`} className={`hover:underline`} style={{color: '#0F9297'}}>
+                          {request.patientEmail}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                // Business request contact info
+                <div>
+                  <h4 className={`font-semibold text-sm mb-2 ${
+                    isDarkMode ? 'text-green-300' : 'text-green-800'
+                  }`}>Business Contact Information:</h4>
+                  <div className="space-y-2">
+                    {request.business?.contactPersonName && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>Contact:</span>
+                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                          {request.business.contactPersonName}
+                        </span>
+                      </div>
+                    )}
+                    {request.business?.phone && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`font-medium ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>Phone:</span>
+                        <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
+                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
+                          {request.business.phone}
+                        </a>
+                      </div>
+                    )}
+                    {request.business?.address && (
+                      <div className="flex items-start space-x-2 text-sm">
+                        <span className="text-green-700 dark:text-green-400 font-medium">Address:</span>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <p>{request.business.address}</p>
+                          <p>
+                            {[
+                              request.business.city,
+                              request.business.state,
+                              request.business.zipCode
+                            ].filter(Boolean).join(', ')}
+                          </p>
+                          <a 
+                            href={`https://maps.google.com/?q=${encodeURIComponent(
+                              [
+                                request.business.address,
+                                request.business.city,
+                                request.business.state,
+                                request.business.zipCode
+                              ].filter(Boolean).join(', ')
+                            )}`}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className={`hover:underline text-xs inline-flex items-center mt-1`}
+                            style={{color: '#0F9297'}}
+                          >
+                            <MapPin className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />View on Map
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex space-x-2">
+          {request.status === 'pending' ? (
+            <>
+              <button
+                onClick={() => handleAcceptRequest(request.id)}
+                disabled={actionLoading === request.id || !isAvailable}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
+              >
+                {actionLoading === request.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span>Accept</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => handleRejectRequest(request.id)}
+                disabled={actionLoading === request.id}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
+              >
+                {actionLoading === request.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4" />
+                    <span>Reject</span>
+                  </>
+                )}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => handleCompleteRequest(request.id)}
+              disabled={actionLoading === request.id}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
+            >
+              {actionLoading === request.id ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span>Mark Complete</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className={`min-h-screen transition-colors duration-200 ${
       isDarkMode 
@@ -2479,372 +2736,15 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            {/* Available Requests */}
-            <div id="requests-section" className={`rounded-lg shadow border ${
-              isDarkMode 
-                ? 'bg-gray-900 border-gray-800' 
-                : 'bg-white/90 border-blue-200'
-            }`}>
-              <div className={`p-6 border-b rounded-t-lg ${
-                isDarkMode 
-                  ? 'border-gray-800 bg-gray-900' 
-                  : 'border-blue-200 bg-blue-100/60'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                      <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
-                    </div>
-                    <div>
-                      <h2 className={`text-xl font-semibold ${
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      }`}>
-                        {requestFilter === 'pending' ? 'Pending Service Requests' : 'Available Service Requests'}
-                      </h2>
-                      <p className={`text-sm font-medium`} style={{color: '#0F9297'}}>
-                        {requestFilter === 'pending' 
-                          ? 'Service requests waiting for response' 
-                          : 'Nearby businesses needing medical assistance'
-                        }
-                      </p>
-                      {requestFilter !== 'all' && (
-                        <button
-                          onClick={() => setRequestFilter('all')}
-                          className={`mt-2 text-xs px-3 py-1 rounded-full border transition-colors ${
-                            isDarkMode 
-                              ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          Show All Requests
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  {getAvailablePendingRequests().length > 0 && (
-                    <div className="relative">
-                      <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                      </span>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
-                        isDarkMode 
-                          ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' 
-                          : 'bg-yellow-600 text-white border-yellow-500'
-                      }`}>
-                        🔔 {getAvailablePendingRequests().length} New Request{getAvailablePendingRequests().length > 1 ? 's' : ''}
-                      </span>
-                      </div>
-                  )}
-                </div>
-              </div>
-              <div className={`divide-y ${
-                isDarkMode ? 'divide-gray-700' : 'divide-gray-200'
-              }`}>
-                {(() => {
-                  let filteredRequests = [];
-                  
-                  // Apply filter based on requestFilter state
-                  if (requestFilter === 'pending') {
-                    // Use the helper function to get available pending requests
-                    filteredRequests = getAvailablePendingRequests();
-                  } else if (requestFilter === 'completed') {
-                    // For completed requests, we should show from myRequests instead
-                    filteredRequests = myRequests.filter(req => req.status === 'completed');
-                  } else {
-                    // For 'all' filter, show only available pending requests (declined ones should be hidden)
-                    filteredRequests = getAvailablePendingRequests();
-                  }
-                  
-                  return filteredRequests.length > 0 ? (
-                    filteredRequests.map((request) => (
-                    <div key={request.id} className={`p-6 transition-colors ${
-                      request.status === 'accepted' 
-                        ? 'bg-green-900/10 border-l-4 border-green-400' 
-                        : ''
-                    } ${
-                      isDarkMode 
-                        ? 'hover:bg-gray-700/50' 
-                        : 'hover:bg-gray-50'
-                    }`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            {request.status === 'accepted' && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                                isDarkMode 
-                                  ? 'bg-green-900/30 text-green-400 border-green-700' 
-                                  : 'bg-green-600 text-white border-green-500'
-                              }`}>
-                                ACCEPTED
-                              </span>
-                            )}
-                            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
-                                {request.urgencyLevel.toUpperCase()}
-                              </span>
-                            )}
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'text-gray-400 bg-gray-700/50' 
-                                : 'text-gray-600 bg-gray-100'
-                            }`}>
-                              {formatDate(request.requestedAt)}
-                            </span>
-                          </div>
-                          
-                          {/* Service Date/Time Display */}
-                          {/* Business Name - Made more prominent */}
-                          <h2 className={`text-lg font-bold mb-2 ${
-                            isDarkMode ? 'text-white' : 'text-gray-900'
-                          }`} style={{color: '#0F9297'}}>{request.business?.businessName || 'Business'}</h2>
-                          
-                          {request.requestedServiceDateTime && (
-                            <div className={`mb-3 p-2 rounded-lg border ${
-                              isDarkMode 
-                                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
-                                : 'bg-blue-50 border-blue-200 text-blue-700'
-                            }`}>
-                              <div className="flex items-center space-x-2">
-                                <Clock className="h-4 w-4" />
-                                <span className="text-sm font-medium">
-                                  Service Requested for: {formatDate(request.requestedServiceDateTime)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <h3 className={`font-medium mb-1 text-sm ${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>{request.serviceType}</h3>
-                          <p className={`text-sm mb-3 ${
-                            isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                          }`}>{request.description}</p>
-                          
-                          <div className="flex items-center space-x-4 text-sm">
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'text-gray-400 bg-gray-700/50' 
-                                : 'text-gray-600 bg-gray-100'
-                            }`}>
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
-                            </div>
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'text-green-400 bg-green-900/20' 
-                                : 'text-green-600 bg-green-50'
-                            }`}>
-                              <span className="font-semibold">{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Display contact info when request is accepted */}
-                          {request.status === 'accepted' && (
-                            <div className={`mt-4 p-3 border rounded-lg ${
-                              isDarkMode 
-                                ? 'bg-green-900/10 border-green-800' 
-                                : 'bg-green-50 border-green-200'
-                            }`}>
-                              {request.isPatientRequest ? (
-                                // Patient request contact info
-                                <div>
-                                  <h4 className={`font-semibold text-sm mb-2 ${
-                                    isDarkMode ? 'text-green-300' : 'text-green-800'
-                                  }`}>Patient Contact Information:</h4>
-                                  <div className="space-y-2">
-                                    {(request.patientFirstName || request.patientLastName) && (
-                                      <div className="flex items-center space-x-2 text-sm">
-                                        <span className={`font-medium ${
-                                          isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        }`}>Patient:</span>
-                                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                                          {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ')}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {request.patientPhone && (
-                                      <div className="flex items-center space-x-2 text-sm">
-                                        <span className={`font-medium ${
-                                          isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        }`}>Phone:</span>
-                                        <a href={`tel:${request.patientPhone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
-                                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
-                                          {request.patientPhone}
-                                        </a>
-                                      </div>
-                                    )}
-                                    {request.patientEmail && (
-                                      <div className="flex items-center space-x-2 text-sm">
-                                        <span className={`font-medium ${
-                                          isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        }`}>Email:</span>
-                                        <a href={`mailto:${request.patientEmail}`} className={`hover:underline`} style={{color: '#0F9297'}}>
-                                          {request.patientEmail}
-                                        </a>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                // Business request contact info
-                                <div>
-                                  <h4 className={`font-semibold text-sm mb-2 ${
-                                    isDarkMode ? 'text-green-300' : 'text-green-800'
-                                  }`}>Business Contact Information:</h4>
-                                  <div className="space-y-2">
-                                    {request.business?.contactPersonName && (
-                                      <div className="flex items-center space-x-2 text-sm">
-                                        <span className={`font-medium ${
-                                          isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        }`}>Contact:</span>
-                                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                                          {request.business.contactPersonName}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {request.business?.phone && (
-                                      <div className="flex items-center space-x-2 text-sm">
-                                        <span className={`font-medium ${
-                                          isDarkMode ? 'text-green-400' : 'text-green-700'
-                                        }`}>Phone:</span>
-                                        <a href={`tel:${request.business.phone}`} className={`hover:underline inline-flex items-center`} style={{color: '#0F9297'}}>
-                                          <Phone className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />
-                                          {request.business.phone}
-                                        </a>
-                                      </div>
-                                    )}
-                                    {request.business?.address && (
-                                      <div className="flex items-start space-x-2 text-sm">
-                                        <span className="text-green-700 dark:text-green-400 font-medium">Address:</span>
-                                        <div className="text-gray-700 dark:text-gray-300">
-                                          <p>{request.business.address}</p>
-                                          <p>
-                                            {[
-                                              request.business.city,
-                                              request.business.state,
-                                              request.business.zipCode
-                                            ].filter(Boolean).join(', ')}
-                                          </p>
-                                          <a 
-                                            href={`https://maps.google.com/?q=${encodeURIComponent(
-                                              [
-                                                request.business.address,
-                                                request.business.city,
-                                                request.business.state,
-                                                request.business.zipCode
-                                              ].filter(Boolean).join(', ')
-                                            )}`}
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className={`hover:underline text-xs inline-flex items-center mt-1`}
-                                            style={{color: '#0F9297'}}
-                                          >
-                                            <MapPin className="h-3 w-3 mr-1" style={{color: '#0F9297'}} />View on Map
-                                          </a>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex space-x-2">
-                          {request.status === 'pending' ? (
-                            <>
-                              <button
-                                onClick={() => handleAcceptRequest(request.id)}
-                                disabled={actionLoading === request.id || !isAvailable}
-                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
-                              >
-                                {actionLoading === request.id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span>Processing...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="h-4 w-4" />
-                                    <span>Accept</span>
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleRejectRequest(request.id)}
-                                disabled={actionLoading === request.id}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
-                              >
-                                {actionLoading === request.id ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span>Processing...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <X className="h-4 w-4" />
-                                    <span>Reject</span>
-                                  </>
-                                )}
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => handleCompleteRequest(request.id)}
-                              disabled={actionLoading === request.id}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
-                            >
-                              {actionLoading === request.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span>Processing...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="h-4 w-4" />
-                                  <span>Mark Complete</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                  ) : (
-                    <div className={`p-8 text-center ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                      <div className={`rounded-lg p-6 ${
-                        isDarkMode ? 'bg-gray-800/50' : 'bg-gray-100/50'
-                      }`}>
-                        <Clock className={`h-12 w-12 mx-auto mb-4 ${
-                          isDarkMode ? 'text-gray-600' : 'text-gray-400'
-                        }`} />
-                        <p className={`text-lg font-medium mb-2 ${
-                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                        }`}>
-                          {requestFilter === 'pending' 
-                            ? 'No pending requests' 
-                            : requestFilter === 'completed' 
-                              ? 'No completed requests' 
-                              : 'No service requests available'
-                          }
-                        </p>
-                        <p className="text-sm">
-                          {requestFilter === 'pending' 
-                            ? 'No pending requests at the moment.' 
-                            : requestFilter === 'completed' 
-                              ? 'No completed requests to show.' 
-                              : 'Check back later for new requests from businesses in your area.'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
+            {/* Available Requests - Using Accordion */}
+            <div id="requests-section">
+              <RequestsAccordion
+                pendingRequests={getAvailablePendingRequests().filter(req => req.status === 'pending')}
+                acceptedRequests={[...serviceRequests, ...myRequests].filter(req => req.status === 'accepted')}
+                completedRequests={myRequests.filter(req => req.status === 'completed')}
+                isDarkMode={isDarkMode}
+                renderRequest={renderRequest}
+              />
             </div>
           </div>
 
