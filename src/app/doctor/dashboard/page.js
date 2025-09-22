@@ -592,15 +592,12 @@ export default function DoctorDashboard() {
   };
 
   const handleRejectRequest = async (requestId) => {
-    const reason = prompt('Please provide a reason for rejecting this request (optional):');
-    if (reason === null) return; // User cancelled
-
     ('🚫 Starting to reject request:', requestId);
     ('📊 Before reject - declinedRequests:', Array.from(declinedRequests));
 
     setActionLoading(requestId);
     try {
-      const response = await serviceRequestAPI.rejectRequest(requestId, user.id, reason);
+      const response = await serviceRequestAPI.rejectRequest(requestId, user.id, ''); // No reason provided
       if (response.data) {
         // Add the declined request to local state so it disappears from this doctor's view
         ('✅ API call successful, adding to declined requests');
