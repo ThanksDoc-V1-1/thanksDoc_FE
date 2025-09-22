@@ -1299,7 +1299,7 @@ export default function BusinessDashboard() {
     const confirmCancel = window.confirm('Are you sure you want to cancel this service request?');
     if (!confirmCancel) return;
 
-    const reason = window.prompt('Please provide a reason for cancellation (optional):') || 'Cancelled by business';
+    const reason = 'Cancelled by business';
 
     try {
       // Don't show the loading overlay for cancellation
