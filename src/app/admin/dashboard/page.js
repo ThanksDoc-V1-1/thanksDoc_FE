@@ -6822,6 +6822,27 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <button
+                        onClick={() => {
+                          setEditingSlot(null);
+                          setSlotFormData({
+                            date: selectedCalendarDate || formatDateLocal(new Date()),
+                            startTime: '',
+                            endTime: '',
+                            isActive: true,
+                            isRecurring: true,
+                            recurringPattern: 'weekly',
+                            dayOfWeek: '',
+                            occurrences: 10,
+                            endDate: ''
+                          });
+                          setShowSlotForm(true);
+                        }}
+                        className={`px-4 py-2 rounded-lg text-white font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg'} transition-all duration-200 transform hover:scale-105 flex items-center space-x-2`}
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add Slot</span>
+                      </button>
+                      <button
                         onClick={() => setShowDateSlots(false)}
                         className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-100 text-red-600 hover:text-red-700'} transition-colors`}
                       >
