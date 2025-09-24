@@ -4679,8 +4679,8 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {/* Admin and Executive actions: Verify/Unverify */}
-                            {(user?.role === 'admin' || user?.role === 'executive') && (
+                            {/* Admin, Executive, and Compliance actions: Verify/Unverify */}
+                            {(user?.role === 'admin' || user?.role === 'executive' || user?.role === 'compliance') && (
                               <>
                                 {!isVerified ? (
                                   <button
@@ -4945,8 +4945,8 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex justify-end space-x-2">
-                            {/* Admin and Executive actions: Verify/Unverify */}
-                            {(user?.role === 'admin' || user?.role === 'executive') && (
+                            {/* Admin, Executive, and Compliance actions: Verify/Unverify */}
+                            {(user?.role === 'admin' || user?.role === 'executive' || user?.role === 'compliance') && (
                               <>
                                 {!isVerified ? (
                                   <button
