@@ -3913,8 +3913,8 @@ export default function AdminDashboard() {
             ].filter(tab => {
               // Show all tabs for admin users
               if (user?.role === 'admin') return true;
-              // Show only compliance tabs for compliance users
-              if (user?.role === 'compliance') return !tab.adminOnly;
+              // Show only doctors and businesses tabs for compliance users
+              if (user?.role === 'compliance') return tab.id === 'doctors' || tab.id === 'businesses';
               // Show all tabs except user management for executive users
               if (user?.role === 'executive') {
                 return tab.id !== 'compliance-users' && tab.id !== 'executive-users';
