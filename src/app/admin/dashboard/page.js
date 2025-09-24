@@ -226,10 +226,17 @@ export default function AdminDashboard() {
   // Helper function to get dates with slots
   const getDatesWithSlots = () => {
     const datesWithSlots = new Set();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     availabilitySlots.forEach(slot => {
       const slotData = slot.attributes || slot;
       if (slotData.date && slotData.serviceType === 'online') {
-        datesWithSlots.add(slotData.date);
+        const slotDate = new Date(slotData.date);
+        // Only include future dates or today
+        if (slotDate >= today) {
+          datesWithSlots.add(slotData.date);
+        }
       }
     });
     return datesWithSlots;
@@ -237,8 +244,18 @@ export default function AdminDashboard() {
 
   // Helper function to get slots for a specific date
   const getSlotsForDate = (dateStr) => {
+    // Check if the date is in the past
+    const slotDate = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPastDate = slotDate < today;
+    
     return availabilitySlots.filter(slot => {
       const slotData = slot.attributes || slot;
+      // Return empty array for past dates to hide them from calendar
+      if (isPastDate && dateStr !== selectedCalendarDate) {
+        return false;
+      }
       return slotData.date === dateStr && slotData.serviceType === 'online';
     }).sort((a, b) => {
       const aData = a.attributes || a;
@@ -6613,27 +6630,6 @@ export default function AdminDashboard() {
                     Month
                   </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingSlot(null);
-                    setSlotFormData({
-                      date: formatDateLocal(new Date()),
-                      startTime: '',
-                      endTime: '',
-                      isActive: true,
-                      isRecurring: true,
-                      recurringPattern: 'weekly',
-                      dayOfWeek: '',
-                      occurrences: 10,
-                      endDate: ''
-                    });
-                    setShowSlotForm(true);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-white font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg'} transition-all duration-200 transform hover:scale-105 flex items-center space-x-2`}
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Slot</span>
-                </button>
               </div>
             </div>
 
@@ -6713,6 +6709,14 @@ export default function AdminDashboard() {
                       const datesWithSlots = getDatesWithSlots();
                       const hasSlots = datesWithSlots.has(dateStr);
                       const slotsCount = getSlotsForDate(dateStr).length;
+                      
+                      // Hide past dates with slots
+                      const isPastDate = date < new Date(new Date().setHours(0, 0, 0, 0));
+                      if (isPastDate && hasSlots) {
+                        return (
+                          <div key={index} className="p-2 h-12"></div>
+                        );
+                      }
                       
                       return (
                         <button
@@ -6818,27 +6822,6 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center space-x-3">
                       <button
-                        onClick={() => {
-                          setEditingSlot(null);
-                          setSlotFormData({
-                            date: selectedCalendarDate || formatDateLocal(new Date()),
-                            startTime: '',
-                            endTime: '',
-                            isActive: true,
-                            isRecurring: true,
-                            recurringPattern: 'weekly',
-                            dayOfWeek: '',
-                            occurrences: 10,
-                            endDate: ''
-                          });
-                          setShowSlotForm(true);
-                        }}
-                        className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg'} transition-all duration-200 transform hover:scale-105 flex items-center space-x-2`}
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Add Slot</span>
-                      </button>
-                      <button
                         onClick={() => setShowDateSlots(false)}
                         className={`p-2 rounded-lg ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-red-100 text-red-600 hover:text-red-700'} transition-colors`}
                       >
@@ -6904,7 +6887,7 @@ export default function AdminDashboard() {
                     <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
                       <p className="text-sm">No slots available for this date</p>
-                      <p className="text-xs mt-1">Click "Add Slot" to create your first time slot</p>
+                      <p className="text-xs mt-1">Use the form below to create availability slots</p>
                     </div>
                   )}
                 </div>
