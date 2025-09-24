@@ -186,10 +186,15 @@ export default function AdminDashboard() {
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
   const [slotFormData, setSlotFormData] = useState({
-    date: '',
+    date: formatDateLocal(new Date()),
     startTime: '',
     endTime: '',
-    isActive: true
+    isActive: true,
+    isRecurring: true,
+    recurringPattern: 'weekly', // 'weekly', 'daily'
+    dayOfWeek: '', // 0-6, Sunday=0
+    occurrences: 10, // Default to 10 occurrences
+    endDate: '' // Alternative to occurrences
   });
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => formatDateLocal(new Date()));
@@ -198,6 +203,19 @@ export default function AdminDashboard() {
   const [showDateSlots, setShowDateSlots] = useState(false);
   const [selectedDateSlots, setSelectedDateSlots] = useState([]);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState('');
+
+  // Auto-calculate dayOfWeek when date changes
+  useEffect(() => {
+    if (slotFormData.date && slotFormData.isRecurring && slotFormData.recurringPattern === 'weekly') {
+      const selectedDate = new Date(slotFormData.date);
+      const dayOfWeek = selectedDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      
+      setSlotFormData(prev => ({
+        ...prev,
+        dayOfWeek: dayOfWeek.toString()
+      }));
+    }
+  }, [slotFormData.date, slotFormData.isRecurring, slotFormData.recurringPattern]);
 
   // Individual slots states
   const [showIndividualSlots, setShowIndividualSlots] = useState(false);
@@ -487,38 +505,90 @@ export default function AdminDashboard() {
         return `${time}:00.000`;
       };
 
-      const slotData = {
-        date: slotFormData.date,
-        startTime: formatTimeForStrapi(slotFormData.startTime),
-        endTime: formatTimeForStrapi(slotFormData.endTime),
-        serviceType: 'online',
-        maxBookings: 1,
-        isActive: slotFormData.isActive
-      };
-
       // Validate that end time is after start time
       if (slotFormData.startTime >= slotFormData.endTime) {
         alert('End time must be after start time');
         return;
       }
 
-      let response;
+      // Generate dates based on recurring settings
+      const generateRecurringDates = () => {
+        if (!slotFormData.isRecurring) {
+          return [slotFormData.date];
+        }
+
+        const dates = [];
+        const startDate = new Date(slotFormData.date);
+        const dayOfWeek = startDate.getDay();
+
+        if (slotFormData.recurringPattern === 'weekly') {
+          for (let i = 0; i < slotFormData.occurrences; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + (i * 7));
+            dates.push(formatDateLocal(currentDate));
+          }
+        } else if (slotFormData.recurringPattern === 'daily') {
+          for (let i = 0; i < slotFormData.occurrences; i++) {
+            const currentDate = new Date(startDate);
+            currentDate.setDate(startDate.getDate() + i);
+            dates.push(formatDateLocal(currentDate));
+          }
+        }
+
+        return dates;
+      };
+
       if (editingSlot) {
-        // Update existing slot
+        // Update existing slot (no recurring for edits)
+        const slotData = {
+          date: slotFormData.date,
+          startTime: formatTimeForStrapi(slotFormData.startTime),
+          endTime: formatTimeForStrapi(slotFormData.endTime),
+          serviceType: 'online',
+          maxBookings: 1,
+          isActive: slotFormData.isActive
+        };
+
         const slotId = editingSlot.documentId || editingSlot.id;
-        response = await adminAPI.updateAvailabilitySlot(slotId, slotData);
+        const response = await adminAPI.updateAvailabilitySlot(slotId, slotData);
         setAvailabilitySlots(prev => prev.map(slot => 
           (slot.id === editingSlot.id || slot.documentId === editingSlot.documentId) 
             ? response.data.data : slot
         ));
         alert('Availability slot updated successfully!');
       } else {
-        // Create new slot
-        response = await adminAPI.createAvailabilitySlot(slotData);
-        if (response.data) {
-          const newSlot = response.data.data || response.data;
-          setAvailabilitySlots(prev => [...prev, newSlot]);
-          alert('Availability slot created successfully!');
+        // Create new slot(s)
+        const datesToCreate = generateRecurringDates();
+        const createdSlots = [];
+
+        for (const date of datesToCreate) {
+          const slotData = {
+            date: date,
+            startTime: formatTimeForStrapi(slotFormData.startTime),
+            endTime: formatTimeForStrapi(slotFormData.endTime),
+            serviceType: 'online',
+            maxBookings: 1,
+            isActive: slotFormData.isActive
+          };
+
+          try {
+            const response = await adminAPI.createAvailabilitySlot(slotData);
+            if (response.data) {
+              const newSlot = response.data.data || response.data;
+              createdSlots.push(newSlot);
+            }
+          } catch (error) {
+            console.error(`Error creating slot for date ${date}:`, error);
+            // Continue with other dates even if one fails
+          }
+        }
+
+        if (createdSlots.length > 0) {
+          setAvailabilitySlots(prev => [...prev, ...createdSlots]);
+          const message = slotFormData.isRecurring 
+            ? `${createdSlots.length} recurring availability slots created successfully!`
+            : 'Availability slot created successfully!';
+          alert(message);
         }
       }
 
@@ -526,10 +596,15 @@ export default function AdminDashboard() {
       setShowSlotForm(false);
       setEditingSlot(null);
       setSlotFormData({
-        date: '',
+        date: formatDateLocal(new Date()),
         startTime: '',
         endTime: '',
-        isActive: true
+        isActive: true,
+        isRecurring: true,
+        recurringPattern: 'weekly',
+        dayOfWeek: '',
+        occurrences: 10,
+        endDate: ''
       });
 
       await fetchAvailabilitySlots(); // Refresh slots data
@@ -558,7 +633,12 @@ export default function AdminDashboard() {
       date: slotData.date || '',
       startTime: formatTimeForInput(slotData.startTime) || '',
       endTime: formatTimeForInput(slotData.endTime) || '',
-      isActive: slotData.isActive !== undefined ? slotData.isActive : true
+      isActive: slotData.isActive !== undefined ? slotData.isActive : true,
+      isRecurring: false, // Don't allow editing as recurring
+      recurringPattern: 'weekly',
+      dayOfWeek: '',
+      occurrences: 1,
+      endDate: ''
     });
     setShowSlotForm(true);
   };
@@ -6231,6 +6311,74 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
+                    {/* Recurring Options */}
+                    {!editingSlot && (
+                      <div className={`border rounded-lg p-4 ${isDarkMode ? 'border-gray-600 bg-gray-700/30' : 'border-gray-300 bg-gray-50'}`}>
+                        <div className="flex items-center space-x-3 mb-4">
+                          <input
+                            type="checkbox"
+                            name="isRecurring"
+                            checked={slotFormData.isRecurring}
+                            onChange={handleSlotFormChange}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                            Create recurring availability
+                          </label>
+                        </div>
+
+                        {slotFormData.isRecurring && (
+                          <div className="space-y-4">
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                                Repeat Pattern
+                              </label>
+                              <select
+                                name="recurringPattern"
+                                value={slotFormData.recurringPattern}
+                                onChange={handleSlotFormChange}
+                                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                  isDarkMode
+                                    ? 'border-gray-600 bg-gray-700 text-gray-100'
+                                    : 'border-gray-300 bg-white text-gray-900'
+                                }`}
+                              >
+                                <option value="weekly">Weekly (Same day each week)</option>
+                                <option value="daily">Daily (Every day)</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>
+                                Number of occurrences
+                              </label>
+                              <input
+                                type="number"
+                                name="occurrences"
+                                value={slotFormData.occurrences}
+                                onChange={handleSlotFormChange}
+                                min="1"
+                                max="52"
+                                required={slotFormData.isRecurring}
+                                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                  isDarkMode
+                                    ? 'border-gray-600 bg-gray-700 text-gray-100'
+                                    : 'border-gray-300 bg-white text-gray-900'
+                                }`}
+                                placeholder="e.g., 10 for next 10 weeks"
+                              />
+                              <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {slotFormData.recurringPattern === 'weekly' 
+                                  ? `Will create ${slotFormData.occurrences} slots, every ${new Date(slotFormData.date).toLocaleDateString('en-US', { weekday: 'long' })}`
+                                  : `Will create ${slotFormData.occurrences} daily slots starting from selected date`
+                                }
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
@@ -6254,7 +6402,14 @@ export default function AdminDashboard() {
                             : 'bg-blue-600 hover:bg-blue-700'
                         }`}
                       >
-                        {loadingSlots ? 'Saving...' : editingSlot ? 'Update Slot' : 'Create Slot'}
+                        {loadingSlots 
+                          ? 'Saving...' 
+                          : editingSlot 
+                            ? 'Update Slot' 
+                            : slotFormData.isRecurring 
+                              ? `Create ${slotFormData.occurrences} Slots`
+                              : 'Create Slot'
+                        }
                       </button>
                       <button
                         type="button"
@@ -6462,12 +6617,15 @@ export default function AdminDashboard() {
                   onClick={() => {
                     setEditingSlot(null);
                     setSlotFormData({
-                      date: selectedDate,
+                      date: formatDateLocal(new Date()),
                       startTime: '',
                       endTime: '',
-                      serviceType: 'online',
-                      maxBookings: 1,
-                      isActive: true
+                      isActive: true,
+                      isRecurring: true,
+                      recurringPattern: 'weekly',
+                      dayOfWeek: '',
+                      occurrences: 10,
+                      endDate: ''
                     });
                     setShowSlotForm(true);
                   }}
@@ -6663,12 +6821,15 @@ export default function AdminDashboard() {
                         onClick={() => {
                           setEditingSlot(null);
                           setSlotFormData({
-                            date: selectedCalendarDate,
+                            date: selectedCalendarDate || formatDateLocal(new Date()),
                             startTime: '',
                             endTime: '',
-                            serviceType: 'online',
-                            maxBookings: 1,
-                            isActive: true
+                            isActive: true,
+                            isRecurring: true,
+                            recurringPattern: 'weekly',
+                            dayOfWeek: '',
+                            occurrences: 10,
+                            endDate: ''
                           });
                           setShowSlotForm(true);
                         }}
