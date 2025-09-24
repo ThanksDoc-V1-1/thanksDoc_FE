@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText, CreditCard, AlertTriangle } from 'lucide-react';
+import { Stethoscope, Clock, Building2, MapPin, Check, X, LogOut, Phone, Edit, User, Banknote, TrendingUp, Plus, Minus, Settings, FileText, CreditCard, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { serviceRequestAPI, doctorAPI, serviceAPI, subscriptionAPI, testJWTToken } from '../../../lib/api';
 import { formatCurrency, formatDate, formatDuration, getUrgencyColor, getStatusColor } from '../../../lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -87,6 +87,9 @@ export default function DoctorDashboard() {
   const [dateFromFilter, setDateFromFilter] = useState('');
   const [dateToFilter, setDateToFilter] = useState('');
   const itemsPerPage = 5;
+
+  // Accordion state for Recent Service Requests
+  const [isRecentRequestsExpanded, setIsRecentRequestsExpanded] = useState(false);
 
   // Authentication check - redirect if not authenticated or not doctor
   useEffect(() => {
@@ -2743,6 +2746,413 @@ export default function DoctorDashboard() {
                 renderRequest={renderRequest}
               />
             </div>
+
+            {/* Recent Service Requests Section - Accordion */}
+            <div id="recent-requests-section">
+              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
+                {/* Accordion Header */}
+                <div 
+                  className={`p-4 lg:p-6 border-b cursor-pointer transition-colors hover:opacity-80 ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-blue-200 bg-blue-100/60'} rounded-t-lg`}
+                  onClick={() => setIsRecentRequestsExpanded(!isRecentRequestsExpanded)}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
+                        <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h2 className={`text-lg lg:text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {requestFilter === 'completed' ? 'Completed Service Requests' : 'Recent Service Requests'}
+                          </h2>
+                          {isRecentRequestsExpanded ? (
+                            <ChevronUp className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                          ) : (
+                            <ChevronDown className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                          )}
+                        </div>
+                        {requestFilter !== 'all' && isRecentRequestsExpanded && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRequestFilter('all');
+                            }}
+                            className={`mt-1 text-xs px-3 py-1 rounded-full border transition-colors ${
+                              isDarkMode 
+                                ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Show All Requests
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {(() => {
+                      const { totalItems } = getFilteredAndPaginatedRequests();
+                      return totalItems > 0 && (
+                        <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {totalItems} {requestFilter === 'completed' ? 'completed' : 'total'} requests
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  
+                  {/* Date Filter Controls - Mobile responsive */}
+                  {isRecentRequestsExpanded && (
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          From:
+                        </label>
+                        <input
+                          type="date"
+                          value={dateFromFilter}
+                          onChange={(e) => setDateFromFilter(e.target.value)}
+                          className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
+                            isDarkMode 
+                              ? 'bg-gray-800 border-gray-600 text-white' 
+                              : 'bg-white border-gray-300 text-gray-900'
+                          } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2 w-full sm:w-auto">
+                        <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          To:
+                        </label>
+                        <input
+                          type="date"
+                          value={dateToFilter}
+                          onChange={(e) => setDateToFilter(e.target.value)}
+                          className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
+                            isDarkMode 
+                              ? 'bg-gray-800 border-gray-600 text-white' 
+                              : 'bg-white border-gray-300 text-gray-900'
+                          } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                        />
+                      </div>
+                      {(dateFromFilter || dateToFilter) && (
+                        <button
+                          onClick={clearDateFilters}
+                          className={`w-full sm:w-auto px-3 py-1 text-sm rounded border transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {isRecentRequestsExpanded && (
+                  <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                    {(() => {
+                      const { requests, totalItems, totalPages, currentPage, hasNextPage, hasPrevPage } = getFilteredAndPaginatedRequests();
+                      
+                      return totalItems > 0 ? (
+                        <>
+                          {/* Service Request List */}
+                          {requests.map((request) => (
+                          <div key={request.id} className={`p-6 ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status, isDarkMode)}`}>
+                                    {request.status.replace('_', ' ').toUpperCase()}
+                                  </span>
+                                  {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
+                                      {request.urgencyLevel.toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                                <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>{request.serviceType}</h3>
+                                <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-2`}>{request.description}</p>
+                                
+                                {/* Service Date/Time Display */}
+                                {request.requestedServiceDateTime && (
+                                  <div className={`mb-2 p-2 rounded border ${
+                                    isDarkMode 
+                                      ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
+                                      : 'bg-blue-50 border-blue-200 text-blue-700'
+                                  }`}>
+                                    <div className="flex items-center space-x-1">
+                                      <Clock className="h-3 w-3" />
+                                      <span className="text-xs font-medium">
+                                        Service for: {formatDate(request.requestedServiceDateTime)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  Requested: {formatDate(request.requestedAt)}
+                                </p>
+                                {request.isPatientRequest ? (
+                                  // Patient request display
+                                  <div className="mt-2">
+                                    <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
+                                      Patient: {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ') || 'Private Patient'}
+                                    </p>
+                                    
+                                    {/* Show patient contact info when request is accepted */}
+                                    {request.status === 'accepted' && request.patientPhone && (
+                                      <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
+                                        <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Patient Contact Information:</h4>
+                                        <div className="flex items-center space-x-2 text-sm">
+                                          <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
+                                          <a href={`tel:${request.patientPhone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
+                                            {request.patientPhone}
+                                          </a>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  // Business request display
+                                  <div className="mt-2">
+                                    <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
+                                      Business: {request.business?.businessName || 'Business'}
+                                    </p>
+                                    
+                                    {/* Show business contact info when request is accepted */}
+                                    {request.status === 'accepted' && request.business?.phone && (
+                                      <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
+                                        <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Business Contact Information:</h4>
+                                        <div className="flex items-center space-x-2 text-sm">
+                                          <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
+                                          <a href={`tel:${request.business.phone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
+                                            {request.business.phone}
+                                          </a>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-4 text-sm">
+                                  <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                                    isDarkMode 
+                                      ? 'text-gray-400 bg-gray-700/50' 
+                                      : 'text-gray-600 bg-gray-100'
+                                  }`}>
+                                    <Clock className="h-4 w-4" />
+                                    <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
+                                  </div>
+                                </div>
+                                {request.status === 'completed' && (
+                                  <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
+                                    <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
+                                    <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
+                                      COMPLETED
+                                    </div>
+                                  </div>
+                                )}
+                                {(request.status === 'accepted' || request.status === 'in_progress') && (
+                                  <button
+                                    onClick={() => handleCompleteRequest(request.id)}
+                                    disabled={actionLoading === request.id}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
+                                  >
+                                    {actionLoading === request.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                        <span>Processing...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Check className="h-4 w-4" />
+                                        <span>Mark Complete</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          ))}
+                          
+                          {/* Pagination Controls */}
+                          {totalPages > 1 && (
+                            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} order-2 sm:order-1`}>
+                                  Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} requests
+                                </div>
+                                <div className="flex items-center space-x-2 order-1 sm:order-2">
+                                  <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={!hasPrevPage}
+                                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                      !hasPrevPage
+                                        ? isDarkMode 
+                                          ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
+                                          : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
+                                        : isDarkMode 
+                                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
+                                          : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
+                                    } disabled:opacity-50`}
+                                  >
+                                    Previous
+                                  </button>
+                                  
+                                  {/* Page Numbers - Mobile optimized with simplified display */}
+                                  <div className="flex items-center space-x-1">
+                                    {/* Simple mobile pagination - show only current page info and basic controls */}
+                                    <div className="hidden sm:flex space-x-1 overflow-x-auto max-w-sm scrollbar-hide">
+                                      {(() => {
+                                        const maxVisiblePages = 3; // Reduced further for better mobile fit
+                                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                                        
+                                        // Adjust start page if we're near the end
+                                        if (endPage - startPage + 1 < maxVisiblePages) {
+                                          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                                        }
+                                        
+                                        const pages = [];
+                                        
+                                        // Add first page if not in visible range
+                                        if (startPage > 1) {
+                                          pages.push(
+                                            <button
+                                              key={1}
+                                              onClick={() => handlePageChange(1)}
+                                              className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                                currentPage === 1
+                                                  ? 'bg-blue-600 text-white'
+                                                  : isDarkMode 
+                                                    ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                                    : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                              }`}
+                                            >
+                                              1
+                                            </button>
+                                          );
+                                          
+                                          if (startPage > 2) {
+                                            pages.push(
+                                              <span key="ellipsis1" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                ...
+                                              </span>
+                                            );
+                                          }
+                                        }
+                                        
+                                        // Add visible page range
+                                        for (let i = startPage; i <= endPage; i++) {
+                                          if (i !== 1 && i !== totalPages) {
+                                            pages.push(
+                                              <button
+                                                key={i}
+                                                onClick={() => handlePageChange(i)}
+                                                className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                                  currentPage === i
+                                                    ? 'bg-blue-600 text-white'
+                                                    : isDarkMode 
+                                                      ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                                      : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                                }`}
+                                              >
+                                                {i}
+                                              </button>
+                                            );
+                                          }
+                                        }
+                                        
+                                        // Add last page if not in visible range
+                                        if (endPage < totalPages) {
+                                          if (endPage < totalPages - 1) {
+                                            pages.push(
+                                              <span key="ellipsis2" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                                ...
+                                              </span>
+                                            );
+                                          }
+                                          
+                                          pages.push(
+                                            <button
+                                              key={totalPages}
+                                              onClick={() => handlePageChange(totalPages)}
+                                              className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
+                                                currentPage === totalPages
+                                                  ? 'bg-blue-600 text-white'
+                                                  : isDarkMode 
+                                                    ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
+                                                    : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
+                                              }`}
+                                            >
+                                              {totalPages}
+                                            </button>
+                                          );
+                                        }
+                                        
+                                        return pages;
+                                      })()}
+                                    </div>
+                                    
+                                    {/* Mobile-only simple page indicator */}
+                                    <div className={`sm:hidden px-3 py-1 text-sm rounded border ${
+                                      isDarkMode 
+                                        ? 'bg-gray-800 border-gray-600 text-gray-300' 
+                                        : 'bg-gray-100 border-gray-300 text-gray-600'
+                                    }`}>
+                                      {currentPage} / {totalPages}
+                                    </div>
+                                  </div>
+                                  
+                                  <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={!hasNextPage}
+                                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                                      !hasNextPage
+                                        ? isDarkMode 
+                                          ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
+                                          : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
+                                        : isDarkMode 
+                                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
+                                          : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
+                                    } disabled:opacity-50`}
+                                  >
+                                    Next
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="p-8 text-center">
+                          <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
+                            <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
+                            <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              {(dateFromFilter || dateToFilter) 
+                                ? 'No requests found for the selected date range' 
+                                : requestFilter === 'completed' 
+                                  ? 'No completed requests yet' 
+                                  : 'No service requests yet'
+                              }
+                            </p>
+                            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {(dateFromFilter || dateToFilter) 
+                                ? 'Try adjusting your date filters to see more results.' 
+                                : requestFilter === 'completed' 
+                                  ? 'Completed service requests will appear here.' 
+                                  : 'Service requests you accept will appear here.'
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Doctor Profile Sidebar */}
@@ -2868,399 +3278,7 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        {/* Recent Service Requests Section - Side by side with My Services */}
-        <div id="recent-requests-section" className="mt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
-            {/* Recent Service Requests - Takes 2 columns on desktop, full width on mobile */}
-            <div className="lg:col-span-2 order-1 lg:order-1">
-              <div className={`${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white/90 border-blue-200'} rounded-lg shadow border`}>
-            <div className={`p-4 lg:p-6 border-b ${isDarkMode ? 'border-gray-800 bg-gray-900' : 'border-blue-200 bg-blue-100/60'} rounded-t-lg`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg`} style={{backgroundColor: isDarkMode ? 'rgba(15, 146, 151, 0.3)' : '#0F9297'}}>
-                    <Clock className={`h-5 w-5`} style={{color: isDarkMode ? '#0F9297' : 'white'}} />
-                  </div>
-                  <div>
-                    <h2 className={`text-lg lg:text-xl font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {requestFilter === 'completed' ? 'Completed Service Requests' : 'Recent Service Requests'}
-                    </h2>
-                    {requestFilter !== 'all' && (
-                      <button
-                        onClick={() => setRequestFilter('all')}
-                        className={`mt-1 text-xs px-3 py-1 rounded-full border transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        Show All Requests
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {(() => {
-                  const { totalItems } = getFilteredAndPaginatedRequests();
-                  return totalItems > 0 && (
-                    <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {totalItems} {requestFilter === 'completed' ? 'completed' : 'total'} requests
-                    </div>
-                  );
-                })()}
-              </div>
-              
-              {/* Date Filter Controls - Mobile responsive */}
-              <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-3 sm:gap-4 mb-4">
-                <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    From:
-                  </label>
-                  <input
-                    type="date"
-                    value={dateFromFilter}
-                    onChange={(e) => setDateFromFilter(e.target.value)}
-                    className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-                <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  <label className={`text-sm font-medium whitespace-nowrap ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    To:
-                  </label>
-                  <input
-                    type="date"
-                    value={dateToFilter}
-                    onChange={(e) => setDateToFilter(e.target.value)}
-                    className={`flex-1 sm:flex-none px-3 py-1 text-sm rounded border ${
-                      isDarkMode 
-                        ? 'bg-gray-800 border-gray-600 text-white' 
-                        : 'bg-white border-gray-300 text-gray-900'
-                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-                {(dateFromFilter || dateToFilter) && (
-                  <button
-                    onClick={clearDateFilters}
-                    className={`w-full sm:w-auto px-3 py-1 text-sm rounded border transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-                        : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            <div className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-              {(() => {
-                const { requests, totalItems, totalPages, currentPage, hasNextPage, hasPrevPage } = getFilteredAndPaginatedRequests();
-                
-                return totalItems > 0 ? (
-                  <>
-                    {/* Service Request List */}
-                    {requests.map((request) => (
-                    <div key={request.id} className={`p-6 ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'} transition-colors`}>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(request.status, isDarkMode)}`}>
-                              {request.status.replace('_', ' ').toUpperCase()}
-                            </span>
-                            {request.urgencyLevel && request.urgencyLevel !== 'medium' && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(request.urgencyLevel, isDarkMode)}`}>
-                                {request.urgencyLevel.toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-1`}>{request.serviceType}</h3>
-                          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} text-sm mb-2`}>{request.description}</p>
-                          
-                          {/* Service Date/Time Display */}
-                          {request.requestedServiceDateTime && (
-                            <div className={`mb-2 p-2 rounded border ${
-                              isDarkMode 
-                                ? 'bg-blue-900/20 border-blue-800 text-blue-300' 
-                                : 'bg-blue-50 border-blue-200 text-blue-700'
-                            }`}>
-                              <div className="flex items-center space-x-1">
-                                <Clock className="h-3 w-3" />
-                                <span className="text-xs font-medium">
-                                  Service for: {formatDate(request.requestedServiceDateTime)}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Requested: {formatDate(request.requestedAt)}
-                          </p>
-                          {request.isPatientRequest ? (
-                            // Patient request display
-                            <div className="mt-2">
-                              <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
-                                Patient: {[request.patientFirstName, request.patientLastName].filter(Boolean).join(' ') || 'Private Patient'}
-                              </p>
-                              
-                              {/* Show patient contact info when request is accepted */}
-                              {request.status === 'accepted' && request.patientPhone && (
-                                <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
-                                  <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Patient Contact Information:</h4>
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
-                                    <a href={`tel:${request.patientPhone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
-                                      {request.patientPhone}
-                                    </a>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            // Business request display
-                            <div className="mt-2">
-                              <p className={`text-xs font-medium`} style={{color: '#0F9297'}}>
-                                Business: {request.business?.businessName || 'Business'}
-                              </p>
-                              
-                              {/* Show business contact info when request is accepted */}
-                              {request.status === 'accepted' && request.business?.phone && (
-                                <div className={`mt-2 p-3 ${isDarkMode ? 'bg-blue-900/10 border-blue-800' : 'bg-blue-50 border-blue-200'} border rounded-lg`}>
-                                  <h4 className={`font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-700'} text-xs mb-2`}>Business Contact Information:</h4>
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <Phone className="h-3 w-3" style={{color: '#0F9297'}} />
-                                    <a href={`tel:${request.business.phone}`} className={`hover:underline text-xs`} style={{color: '#0F9297'}}>
-                                      {request.business.phone}
-                                    </a>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-4 text-sm">
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                              isDarkMode 
-                                ? 'text-gray-400 bg-gray-700/50' 
-                                : 'text-gray-600 bg-gray-100'
-                            }`}>
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium">{formatDuration(request.estimatedDuration)}min</span>
-                            </div>
-                          </div>
-                          {request.status === 'completed' && (
-                            <div className={`${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-100'} px-3 py-2 rounded-lg flex flex-col items-end`}>
-                              <span className={`font-semibold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'} mb-1`}>{formatCurrency(calculateDoctorTakeHome(calculateDoctorEarnings(request)))}</span>
-                              <div className="flex items-center space-x-1 bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-md">
-                                COMPLETED
-                              </div>
-                            </div>
-                          )}
-                          {(request.status === 'accepted' || request.status === 'in_progress') && (
-                            <button
-                              onClick={() => handleCompleteRequest(request.id)}
-                              disabled={actionLoading === request.id}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2 font-medium shadow-sm hover:shadow"
-                            >
-                              {actionLoading === request.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  <span>Processing...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Check className="h-4 w-4" />
-                                  <span>Mark Complete</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    ))}
-                    
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-200 bg-gray-50'}`}>
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} order-2 sm:order-1`}>
-                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} requests
-                          </div>
-                          <div className="flex items-center space-x-2 order-1 sm:order-2">
-                            <button
-                              onClick={() => handlePageChange(currentPage - 1)}
-                              disabled={!hasPrevPage}
-                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                !hasPrevPage
-                                  ? isDarkMode 
-                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
-                                    : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
-                                  : isDarkMode 
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
-                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
-                              } disabled:opacity-50`}
-                            >
-                              Previous
-                            </button>
-                            
-                            {/* Page Numbers - Mobile optimized with simplified display */}
-                            <div className="flex items-center space-x-1">
-                              {/* Simple mobile pagination - show only current page info and basic controls */}
-                              <div className="hidden sm:flex space-x-1 overflow-x-auto max-w-sm scrollbar-hide">
-                                {(() => {
-                                  const maxVisiblePages = 3; // Reduced further for better mobile fit
-                                  let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                                  let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-                                  
-                                  // Adjust start page if we're near the end
-                                  if (endPage - startPage + 1 < maxVisiblePages) {
-                                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-                                  }
-                                  
-                                  const pages = [];
-                                  
-                                  // Add first page if not in visible range
-                                  if (startPage > 1) {
-                                    pages.push(
-                                      <button
-                                        key={1}
-                                        onClick={() => handlePageChange(1)}
-                                        className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
-                                          currentPage === 1
-                                            ? 'bg-blue-600 text-white'
-                                            : isDarkMode 
-                                              ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
-                                              : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        1
-                                      </button>
-                                    );
-                                    
-                                    if (startPage > 2) {
-                                      pages.push(
-                                        <span key="ellipsis1" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                          ...
-                                        </span>
-                                      );
-                                    }
-                                  }
-                                  
-                                  // Add visible page range
-                                  for (let i = startPage; i <= endPage; i++) {
-                                    if (i !== 1 && i !== totalPages) {
-                                      pages.push(
-                                        <button
-                                          key={i}
-                                          onClick={() => handlePageChange(i)}
-                                          className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
-                                            currentPage === i
-                                              ? 'bg-blue-600 text-white'
-                                              : isDarkMode 
-                                                ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
-                                                : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
-                                          }`}
-                                        >
-                                          {i}
-                                        </button>
-                                      );
-                                    }
-                                  }
-                                  
-                                  // Add last page if not in visible range
-                                  if (endPage < totalPages) {
-                                    if (endPage < totalPages - 1) {
-                                      pages.push(
-                                        <span key="ellipsis2" className={`px-1 py-1 text-sm flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                          ...
-                                        </span>
-                                      );
-                                    }
-                                    
-                                    pages.push(
-                                      <button
-                                        key={totalPages}
-                                        onClick={() => handlePageChange(totalPages)}
-                                        className={`px-2 py-1 text-sm font-medium rounded transition-colors flex-shrink-0 ${
-                                          currentPage === totalPages
-                                            ? 'bg-blue-600 text-white'
-                                            : isDarkMode 
-                                              ? 'text-gray-400 bg-gray-800 border border-gray-600 hover:bg-gray-700'
-                                              : 'text-gray-600 bg-white border border-gray-300 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        {totalPages}
-                                      </button>
-                                    );
-                                  }
-                                  
-                                  return pages;
-                                })()}
-                              </div>
-                              
-                              {/* Mobile-only simple page indicator */}
-                              <div className={`sm:hidden px-3 py-1 text-sm rounded border ${
-                                isDarkMode 
-                                  ? 'bg-gray-800 border-gray-600 text-gray-300' 
-                                  : 'bg-gray-100 border-gray-300 text-gray-600'
-                              }`}>
-                                {currentPage} / {totalPages}
-                              </div>
-                            </div>
-                            
-                            <button
-                              onClick={() => handlePageChange(currentPage + 1)}
-                              disabled={!hasNextPage}
-                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                !hasNextPage
-                                  ? isDarkMode 
-                                    ? 'border-gray-700 text-gray-500 cursor-not-allowed bg-gray-800 border' 
-                                    : 'border-gray-200 text-gray-400 cursor-not-allowed bg-white border'
-                                  : isDarkMode 
-                                    ? 'border-gray-600 text-gray-300 hover:bg-gray-700 bg-gray-800 border' 
-                                    : 'border-gray-300 text-gray-600 hover:bg-gray-50 bg-white border'
-                              } disabled:opacity-50`}
-                            >
-                              Next
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="p-8 text-center">
-                    <div className={`${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'} rounded-lg p-6`}>
-                      <Stethoscope className={`h-12 w-12 mx-auto ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mb-4`} />
-                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {(dateFromFilter || dateToFilter) 
-                          ? 'No requests found for the selected date range' 
-                          : requestFilter === 'completed' 
-                            ? 'No completed requests yet' 
-                            : 'No service requests yet'
-                        }
-                      </p>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                        {(dateFromFilter || dateToFilter) 
-                          ? 'Try adjusting your date filters to see more results.' 
-                          : requestFilter === 'completed' 
-                            ? 'Completed service requests will appear here.' 
-                            : 'Service requests you accept will appear here.'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Subscription Management Modal */}
