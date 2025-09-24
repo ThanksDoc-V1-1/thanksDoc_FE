@@ -6867,10 +6867,7 @@ export default function AdminDashboard() {
                                 </button>
                               </div>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} font-medium`}>
-                                Max: {slotData.maxBookings} booking{slotData.maxBookings !== 1 ? 's' : ''}
-                              </span>
+                            <div className="flex items-center justify-end text-sm">
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                 slotData.isActive 
                                   ? 'bg-gradient-to-r from-emerald-400 to-green-500 text-white shadow-md' 
