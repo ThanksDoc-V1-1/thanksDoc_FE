@@ -8,7 +8,7 @@ import DateDropdowns from './DateSliders';
 // Document types will be loaded dynamically from the backend
 // This replaces the hardcoded COMPLIANCE_DOCUMENTS array
 
-export default function ComplianceDocuments({ doctorId }) {
+export default function ComplianceDocuments({ doctorId, autoExpandAll = false }) {
   const { isDarkMode } = useTheme();
   const [documents, setDocuments] = useState({});
   const [documentTypes, setDocumentTypes] = useState([]); // Dynamic document types from API
@@ -79,6 +79,17 @@ export default function ComplianceDocuments({ doctorId }) {
     loadDocuments();
     loadReferences(); // Load professional references
   }, [doctorId]);
+
+  // Auto-expand all documents when autoExpandAll is true
+  useEffect(() => {
+    if (autoExpandAll && documentTypes.length > 0) {
+      const allExpanded = {};
+      documentTypes.forEach(docType => {
+        allExpanded[docType.id] = true;
+      });
+      setExpandedDocuments(allExpanded);
+    }
+  }, [autoExpandAll, documentTypes]);
 
   const loadDocuments = async () => {
     if (!doctorId) return;

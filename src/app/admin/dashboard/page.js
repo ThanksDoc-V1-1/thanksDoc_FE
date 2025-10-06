@@ -8,6 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import TransactionHistory from '../../../components/TransactionHistory';
 import AdminNotificationCenter from '../../../components/AdminNotificationCenter';
+import ComplianceDocuments from '../../../components/ComplianceDocuments';
 
 // Helper function to format date as YYYY-MM-DD in local timezone
 const formatDateLocal = (date) => {
@@ -9546,6 +9547,27 @@ export default function AdminDashboard() {
                     </>
                   )}
                 </div>
+              </div>
+
+              {/* Admin/Compliance Upload Section */}
+              <div className="mt-6">
+                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4 mb-4`}>
+                  <div className="flex items-start space-x-3">
+                    <Shield className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-0.5`} />
+                    <div className="flex-1">
+                      <h3 className={`text-sm font-semibold ${isDarkMode ? 'text-blue-300' : 'text-blue-900'} mb-2`}>
+                        Admin Document Management
+                      </h3>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-blue-700'} mb-3`}>
+                        As an administrator, you can upload and manage compliance documents on behalf of this doctor. 
+                        Documents uploaded here will be associated with Dr. {selectedDoctor.firstName} {selectedDoctor.lastName}'s account.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compliance Documents Component */}
+                <ComplianceDocuments doctorId={selectedDoctor.id} autoExpandAll={true} />
               </div>
 
               <div className="flex justify-end pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
