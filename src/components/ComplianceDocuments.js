@@ -1283,17 +1283,25 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
                             />
                             <label
                               htmlFor={`file-upload-${docConfig.id}`}
-                              className={`flex items-center justify-center px-3 py-2 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
+                              className={`flex items-center justify-center px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
                                 uploadingDoc === docConfig.id
                                   ? 'opacity-50 cursor-not-allowed'
                                   : isDarkMode
-                                    ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50 hover:bg-gray-700/50'
-                                    : 'border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50'
+                                    ? 'border-blue-500 hover:border-blue-400 bg-blue-900/30 hover:bg-blue-800/40 text-blue-300 hover:text-blue-200'
+                                    : 'border-blue-400 hover:border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700'
                               }`}
                             >
                               <div className="flex items-center space-x-2">
-                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                <Upload className={`h-5 w-5 ${
+                                  uploadingDoc === docConfig.id 
+                                    ? isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                    : isDarkMode ? 'text-blue-400' : 'text-blue-500'
+                                }`} />
+                                <span className={`text-sm font-medium ${
+                                  uploadingDoc === docConfig.id
+                                    ? isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                                    : ''
+                                }`}>
                                   Choose file or drag & drop
                                 </span>
                               </div>
