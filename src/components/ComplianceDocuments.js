@@ -20,6 +20,11 @@ export default function ComplianceDocuments({ doctorId }) {
   const [uploadSuccess, setUploadSuccess] = useState({}); // Track upload success states
   const [updateMode, setUpdateMode] = useState({}); // Per-document update mode to reveal editor when updating
   
+  // Document viewing state
+  const [viewingDocument, setViewingDocument] = useState(null); // Store document being viewed
+  const [documentUrl, setDocumentUrl] = useState(null); // Store signed URL for viewing
+  const [loadingUrl, setLoadingUrl] = useState(false); // Loading state for URL generation
+  
   // Professional References state
   const [references, setReferences] = useState({}); // Store references by doctor ID
   const [pendingReferences, setPendingReferences] = useState({}); // Store unsaved references
@@ -341,6 +346,47 @@ export default function ComplianceDocuments({ doctorId }) {
       console.error('Error removing file:', error);
       alert('Error removing file. Please try again.');
     }
+  };
+
+  // View document
+  const handleViewDocument = async (documentId) => {
+    const doc = documents[documentId];
+    if (!doc || !doc.id) {
+      alert('Document not found');
+      return;
+    }
+
+    setLoadingUrl(true);
+    setViewingDocument(doc);
+
+    try {
+      console.log('🔍 Fetching download URL for document:', doc.id);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/${doc.id}/download`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.downloadUrl) {
+          console.log('✅ Got signed URL:', result.data.downloadUrl);
+          setDocumentUrl(result.data.downloadUrl);
+        } else {
+          throw new Error('Failed to get document URL');
+        }
+      } else {
+        throw new Error('Failed to fetch document URL');
+      }
+    } catch (error) {
+      console.error('Error fetching document URL:', error);
+      alert('Failed to load document. Please try again.');
+      setViewingDocument(null);
+    } finally {
+      setLoadingUrl(false);
+    }
+  };
+
+  // Close document viewer
+  const closeDocumentViewer = () => {
+    setViewingDocument(null);
+    setDocumentUrl(null);
   };
 
   // Professional References functions
@@ -1158,20 +1204,34 @@ export default function ComplianceDocuments({ doctorId }) {
                                           </p>
                                         </div>
                                       </div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (confirm('Are you sure you want to remove this document? This action cannot be undone.')) {
-                                            removeFile(docConfig.id, file.id);
-                                          }
-                                        }}
-                                        className={`p-1 rounded transition-colors ${
-                                          isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
-                                        }`}
-                                        title="Remove file"
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </button>
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleViewDocument(docConfig.id);
+                                          }}
+                                          className={`p-1 rounded transition-colors ${
+                                            isDarkMode ? 'hover:bg-blue-900/30 text-blue-400' : 'hover:bg-blue-100 text-blue-600'
+                                          }`}
+                                          title="View document"
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Are you sure you want to remove this document? This action cannot be undone.')) {
+                                              removeFile(docConfig.id, file.id);
+                                            }
+                                          }}
+                                          className={`p-1 rounded transition-colors ${
+                                            isDarkMode ? 'hover:bg-red-900/30 text-red-400' : 'hover:bg-red-100 text-red-600'
+                                          }`}
+                                          title="Remove file"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -1337,6 +1397,131 @@ export default function ComplianceDocuments({ doctorId }) {
                 <span className="text-red-500">*</span> Required documents for compliance
               </p>
               <p>Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB per file)</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Document Viewer Modal */}
+      {viewingDocument && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75"
+          onClick={closeDocumentViewer}
+        >
+          <div 
+            className={`relative w-full max-w-6xl h-[90vh] rounded-lg shadow-2xl ${
+              isDarkMode ? 'bg-gray-900' : 'bg-white'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className={`flex items-center justify-between p-4 border-b ${
+              isDarkMode ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <FileText className={`h-5 w-5 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                <div>
+                  <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    {viewingDocument.documentName || 'Document Viewer'}
+                  </h3>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {viewingDocument.originalFileName}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeDocumentViewer}
+                className={`p-2 rounded-lg transition-colors ${
+                  isDarkMode 
+                    ? 'hover:bg-gray-800 text-gray-400 hover:text-white' 
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
+                title="Close viewer"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="h-[calc(100%-5rem)] overflow-hidden">
+              {loadingUrl ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Loading document...
+                    </p>
+                  </div>
+                </div>
+              ) : documentUrl ? (
+                <>
+                  {/* Check file type and render accordingly */}
+                  {viewingDocument.fileType?.includes('pdf') || viewingDocument.originalFileName?.toLowerCase().endsWith('.pdf') ? (
+                    <iframe
+                      src={documentUrl}
+                      className="w-full h-full border-0"
+                      title="Document Viewer"
+                    />
+                  ) : viewingDocument.fileType?.includes('image') || 
+                       /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(viewingDocument.originalFileName) ? (
+                    <div className="flex items-center justify-center h-full p-4 overflow-auto">
+                      <img
+                        src={documentUrl}
+                        alt={viewingDocument.originalFileName}
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full p-8">
+                      <FileText className={`h-16 w-16 mb-4 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                      <p className={`text-lg font-medium mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        Preview not available
+                      </p>
+                      <p className={`text-sm mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        This file type cannot be previewed in the browser.
+                      </p>
+                      <a
+                        href={documentUrl}
+                        download={viewingDocument.originalFileName}
+                        className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Download className="h-4 w-4" />
+                        <span>Download Document</span>
+                      </a>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <AlertTriangle className={`h-12 w-12 mx-auto mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-500'}`} />
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Failed to load document
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className={`flex items-center justify-between p-4 border-t ${
+              isDarkMode ? 'border-gray-700' : 'border-gray-200'
+            }`}>
+              <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Uploaded: {viewingDocument.uploadedAt ? new Date(viewingDocument.uploadedAt).toLocaleString() : 'N/A'}
+              </div>
+              {documentUrl && (
+                <a
+                  href={documentUrl}
+                  download={viewingDocument.originalFileName}
+                  className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-600 hover:bg-blue-700 text-white flex items-center space-x-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download</span>
+                </a>
+              )}
             </div>
           </div>
         </div>
