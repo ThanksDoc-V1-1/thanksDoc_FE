@@ -199,6 +199,13 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
       return;
     }
 
+    // Validate that issue date is set
+    const existingDoc = documents[documentId];
+    if (!existingDoc || !existingDoc.issueDate) {
+      alert('Please select an issue date before uploading the document');
+      return;
+    }
+
     console.log('🚀 Starting document upload for:', documentId);
     setUploadingDoc(documentId);
     
@@ -209,7 +216,6 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
       formData.append('doctorId', doctorId);
 
       // Add dates if available
-      const existingDoc = documents[documentId];
       if (existingDoc?.issueDate) {
         formData.append('issueDate', existingDoc.issueDate);
       }

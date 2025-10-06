@@ -9,11 +9,11 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
   // Parse the date value or set defaults
   const parseDate = (dateString) => {
     if (!dateString) {
-      const today = new Date();
+      // Don't auto-fill - leave all empty to prompt user
       return {
-        year: today.getFullYear(),
-        month: today.getMonth() + 1, // JavaScript months are 0-indexed
-        day: today.getDate()
+        year: '', // Empty year
+        month: '', // Empty month
+        day: '' // Empty day
       };
     }
     const date = new Date(dateString);
@@ -54,21 +54,27 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
 
   // Handle date component changes
   const handleDateChange = (component, newValue) => {
-    let newDateComponents = { ...dateComponents, [component]: parseInt(newValue) };
+    // Handle empty value
+    const parsedValue = newValue === '' ? '' : parseInt(newValue);
+    let newDateComponents = { ...dateComponents, [component]: parsedValue };
     
     // Adjust day if it's invalid for the new month/year
     if (component === 'month' || component === 'year') {
-      const maxDays = getDaysInMonth(newDateComponents.year, newDateComponents.month);
-      if (newDateComponents.day > maxDays) {
-        newDateComponents.day = maxDays;
+      if (newDateComponents.month && newDateComponents.year) {
+        const maxDays = getDaysInMonth(newDateComponents.year, newDateComponents.month);
+        if (newDateComponents.day > maxDays) {
+          newDateComponents.day = maxDays;
+        }
       }
     }
     
     setDateComponents(newDateComponents);
     
-    // Create date string and call onChange
-    const dateString = `${newDateComponents.year}-${String(newDateComponents.month).padStart(2, '0')}-${String(newDateComponents.day).padStart(2, '0')}`;
-    onChange(dateString);
+    // Only create date string and call onChange if all fields are filled
+    if (newDateComponents.day && newDateComponents.month && newDateComponents.year) {
+      const dateString = `${newDateComponents.year}-${String(newDateComponents.month).padStart(2, '0')}-${String(newDateComponents.day).padStart(2, '0')}`;
+      onChange(dateString);
+    }
   };
 
   return (
@@ -111,6 +117,7 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
+              <option value="">Select Day</option>
               {dayRange.map((day) => (
                 <option key={day} value={day}>
                   {day}
@@ -138,6 +145,7 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
+              <option value="">Select Month</option>
               {monthNames.map((month, index) => (
                 <option key={index + 1} value={index + 1}>
                   {month}
@@ -165,6 +173,7 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
                   : 'bg-white border-gray-300 text-gray-900'
               } focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
+              <option value="">Select Year</option>
               {yearRange.map((year) => (
                 <option key={year} value={year}>
                   {year}
@@ -179,7 +188,7 @@ const DateDropdowns = ({ value, onChange, label, disabled = false, autoCalculate
           isDarkMode ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-600'
         }`}>
           <span className="text-sm">
-            Selected: {monthNames[dateComponents.month - 1]} {dateComponents.day}, {dateComponents.year}
+            Selected: {dateComponents.month && dateComponents.day ? `${monthNames[dateComponents.month - 1]} ${dateComponents.day}, ${dateComponents.year}` : `, , ${dateComponents.year}`}
           </span>
         </div>
       </div>
