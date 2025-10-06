@@ -80,10 +80,13 @@ export default function ComplianceDocuments({ doctorId }) {
     
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}`);
+      // Add cache-busting timestamp to ensure fresh data is fetched
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}?t=${timestamp}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
+          console.log('📄 Loaded documents from API:', result.data.documents);
           // Convert array to object keyed by documentType for easier access
           const docsByType = {};
           result.data.documents.forEach(doc => {
@@ -97,6 +100,7 @@ export default function ComplianceDocuments({ doctorId }) {
               }]
             };
           });
+          console.log('📦 Setting documents state:', docsByType);
           setDocuments(docsByType);
         }
       }
@@ -179,6 +183,7 @@ export default function ComplianceDocuments({ doctorId }) {
       return;
     }
 
+    console.log('🚀 Starting document upload for:', documentId);
     setUploadingDoc(documentId);
     
     try {
@@ -193,6 +198,7 @@ export default function ComplianceDocuments({ doctorId }) {
         formData.append('issueDate', existingDoc.issueDate);
       }
 
+      console.log('📤 Uploading to API...');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/upload`, {
         method: 'POST',
         body: formData
@@ -200,6 +206,7 @@ export default function ComplianceDocuments({ doctorId }) {
 
       if (response.ok) {
         const result = await response.json();
+        console.log('✅ Upload response:', result);
         if (result.success) {
           // Show success state
           setUploadSuccess(prev => ({
@@ -214,14 +221,6 @@ export default function ComplianceDocuments({ doctorId }) {
             return newPending;
           });
 
-          // Hide success message after 3 seconds
-          setTimeout(() => {
-            setUploadSuccess(prev => ({
-              ...prev,
-              [documentId]: false
-            }));
-          }, 3000);
-
           // Refresh documents to show the uploaded file
           await loadDocuments();
 
@@ -230,6 +229,14 @@ export default function ComplianceDocuments({ doctorId }) {
             ...prev,
             [documentId]: false
           }));
+
+          // Hide success message after 3 seconds
+          setTimeout(() => {
+            setUploadSuccess(prev => ({
+              ...prev,
+              [documentId]: false
+            }));
+          }, 3000);
         } else {
           throw new Error(result.message || 'Upload failed');
         }
@@ -1131,13 +1138,13 @@ export default function ComplianceDocuments({ doctorId }) {
                           {doc && doc.files?.length > 0 && !updateMode[docConfig.id] ? (
                             <>
                               {/* Uploaded Files */}
-                              <div className="mb-4">
+                              <div className="mb-4" key={`uploaded-files-${docConfig.id}-${doc.id}`}>
                                 <h5 className={`text-xs font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                                   Uploaded Files ({doc.files.length})
                                 </h5>
                                 <div className="space-y-2">
                                   {doc.files.map((file) => (
-                                    <div key={file.id} className={`flex items-center justify-between p-3 rounded border ${
+                                    <div key={`file-${file.id}-${file.uploadDate}`} className={`flex items-center justify-between p-3 rounded border ${
                                       isDarkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-200 bg-white'
                                     }`}>
                                       <div className="flex items-center space-x-3 flex-1 min-w-0">
