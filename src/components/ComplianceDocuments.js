@@ -1409,13 +1409,13 @@ export default function ComplianceDocuments({ doctorId }) {
           onClick={closeDocumentViewer}
         >
           <div 
-            className={`relative w-full max-w-6xl h-[90vh] rounded-lg shadow-2xl ${
+            className={`relative w-full max-w-6xl h-[90vh] flex flex-col rounded-lg shadow-2xl ${
               isDarkMode ? 'bg-gray-900' : 'bg-white'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className={`flex items-center justify-between p-4 border-b ${
+            <div className={`flex items-center justify-between p-4 border-b flex-shrink-0 ${
               isDarkMode ? 'border-gray-700' : 'border-gray-200'
             }`}>
               <div className="flex items-center space-x-3">
@@ -1443,7 +1443,7 @@ export default function ComplianceDocuments({ doctorId }) {
             </div>
 
             {/* Modal Content */}
-            <div className="h-[calc(100%-5rem)] overflow-hidden">
+            <div className="flex-1 overflow-hidden min-h-0">
               {loadingUrl ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -1505,7 +1505,7 @@ export default function ComplianceDocuments({ doctorId }) {
             </div>
 
             {/* Modal Footer */}
-            <div className={`flex items-center justify-between p-4 border-t ${
+            <div className={`flex items-center justify-between p-4 border-t flex-shrink-0 ${
               isDarkMode ? 'border-gray-700' : 'border-gray-200'
             }`}>
               <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
