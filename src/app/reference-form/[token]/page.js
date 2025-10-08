@@ -24,6 +24,11 @@ export default function ReferenceFormPage() {
     refereeWorkPlace: '',
     workDuration: '',
     refereeEmail: '',
+    // Clinical Competency Assessment fields
+    clinicalKnowledge: '',
+    clinicalDecisionMaking: '',
+    diagnosis: '',
+    treatment: '',
     // Additional clinical competencies
     prescribing: '',
     medicalRecordKeeping: '',
@@ -140,6 +145,7 @@ export default function ReferenceFormPage() {
       'clinicianName', 'clinicianPosition', 'clinicianEmail',
       'refereeName', 'refereePosition', 'refereeWorkPlace',
       'workDuration', 'refereeEmail',
+      'clinicalKnowledge', 'clinicalDecisionMaking', 'diagnosis', 'treatment',
       'prescribing', 'medicalRecordKeeping', 'recognisingLimitations',
       'keepingKnowledgeUpToDate', 'reviewingPerformance', 'teachingStudents',
       'supervisingColleagues', 'commitmentToCare', 'communicationWithPatients',
@@ -428,11 +434,107 @@ export default function ReferenceFormPage() {
                 </div>
               </div>
 
-              {/* Clinical Skills Assessment */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+              {/* Clinical Competency Assessment */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <div className="bg-purple-100 rounded-full p-2 mr-3">
                     <span className="text-purple-600 font-bold text-sm">3</span>
+                  </div>
+                  Clinical Competency Assessment
+                </h2>
+                <div className="space-y-6">
+
+                  {/* Clinical Knowledge */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Clinical Knowledge</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="clinicalKnowledge"
+                            value={option}
+                            checked={formData.clinicalKnowledge === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-purple-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clinical Decision Making */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Clinical Decision Making</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="clinicalDecisionMaking"
+                            value={option}
+                            checked={formData.clinicalDecisionMaking === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-purple-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Diagnosis */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Diagnosis</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="diagnosis"
+                            value={option}
+                            checked={formData.diagnosis === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-purple-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Treatment */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-center font-medium text-gray-800 mb-4">Treatment</h3>
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {clinicalSkillOptions.map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="treatment"
+                            value={option}
+                            checked={formData.treatment === option}
+                            onChange={handleInputChange}
+                            className="mr-2 text-purple-600"
+                            required
+                          />
+                          <span className="text-sm text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clinical Skills Assessment */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <div className="bg-blue-100 rounded-full p-2 mr-3">
+                    <span className="text-blue-600 font-bold text-sm">4</span>
                   </div>
                   Clinical Skills Assessment
                 </h2>
