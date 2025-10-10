@@ -9463,7 +9463,7 @@ export default function AdminDashboard() {
                                       )}
                                     </div>
                                   )}
-                                  {document.verifiedBy && (
+                                  {document.verifiedBy && document.verificationStatus === 'verified' && (
                                     <div>Verified by: {document.verifiedBy}</div>
                                   )}
                                   {config.autoExpiry && (
@@ -9746,7 +9746,7 @@ export default function AdminDashboard() {
                         {getDocumentStatus(selectedDocument.status, selectedDocument.verificationStatus).text}
                       </span>
                     </div>
-                    {selectedDocument.verifiedBy && (
+                    {selectedDocument.verifiedBy && selectedDocument.verificationStatus === 'verified' && (
                       <div className="flex justify-between">
                         <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Verified By:</span>
                         <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedDocument.verifiedBy}</span>
@@ -10152,7 +10152,7 @@ export default function AdminDashboard() {
                                       )}
                                     </div>
                                   )}
-                                  {document.verifiedBy && (
+                                  {document.verifiedBy && document.verificationStatus === 'verified' && (
                                     <div>Verified by: {document.verifiedBy}</div>
                                   )}
                                   {config.autoExpiry && (
