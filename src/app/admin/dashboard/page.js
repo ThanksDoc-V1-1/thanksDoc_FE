@@ -3735,6 +3735,18 @@ export default function AdminDashboard() {
       return { variant: 'danger', text: 'Missing', color: 'bg-red-100 text-red-800 border-red-200' };
     }
     
+    if (status === 'rejected') {
+      return { variant: 'danger', text: 'Rejected', color: 'bg-red-100 text-red-800 border-red-200' };
+    }
+    
+    if (status === 'verified') {
+      return { variant: 'success', text: 'Verified', color: 'bg-green-100 text-green-800 border-green-200' };
+    }
+    
+    if (status === 'expired') {
+      return { variant: 'danger', text: 'Expired', color: 'bg-red-100 text-red-800 border-red-200' };
+    }
+    
     if (status === 'uploaded') {
       switch (verificationStatus) {
         case 'verified':
@@ -3763,6 +3775,13 @@ export default function AdminDashboard() {
       let status = uploadedDoc ? uploadedDoc.status : 'missing';
       let expiryStatus = null;
       let daysUntilExpiry = null;
+      
+      // Override status based on verification status for better user experience
+      if (uploadedDoc && uploadedDoc.verificationStatus === 'rejected') {
+        status = 'rejected';
+      } else if (uploadedDoc && uploadedDoc.verificationStatus === 'verified') {
+        status = 'verified';
+      }
       
       // Calculate expiry status for documents with auto-expiry enabled
       if (uploadedDoc && docType.autoExpiry && uploadedDoc.expiryDate) {
@@ -3814,6 +3833,13 @@ export default function AdminDashboard() {
       let expiryStatus = null;
       let daysUntilExpiry = null;
       
+      // Override status based on verification status for better user experience
+      if (uploadedDoc && uploadedDoc.verificationStatus === 'rejected') {
+        status = 'rejected';
+      } else if (uploadedDoc && uploadedDoc.verificationStatus === 'verified') {
+        status = 'verified';
+      }
+      
       // Use existing expiry status from API if available, but recalculate the days
       if (uploadedDoc && uploadedDoc.expiryDate) {
         const today = new Date();
@@ -3831,7 +3857,7 @@ export default function AdminDashboard() {
         
         if (daysUntilExpiry < 0) {
           expiryStatus = 'expired';
-          status = 'expired';
+          status = 'expired'; // Override status if document is expired
         } else if (daysUntilExpiry <= (docType.expiryWarningDays || 30)) {
           expiryStatus = 'expiring';
         } else {
@@ -9298,12 +9324,13 @@ export default function AdminDashboard() {
                   {!loadingDocuments && Array.isArray(complianceDocuments) && (
                     <>
                       {/* Documents Summary */}
-                      <div className="grid grid-cols-5 gap-4 mb-6">
+                      <div className="grid grid-cols-6 gap-4 mb-6">
                         {(() => {
                           try {
                             const allDocs = getAllDocumentsWithStatus();
-                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
-                            const verifiedCount = allDocs.filter(doc => doc.verificationStatus === 'verified').length;
+                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded').length;
+                            const verifiedCount = allDocs.filter(doc => doc.status === 'verified').length;
+                            const rejectedCount = allDocs.filter(doc => doc.status === 'rejected').length;
                             const pendingCount = allDocs.filter(doc => doc.verificationStatus === 'pending' && doc.status === 'uploaded').length;
                             const missingCount = allDocs.filter(doc => doc.status === 'missing').length;
                             const expiredCount = allDocs.filter(doc => doc.expiryStatus === 'expired' || doc.status === 'expired').length;
@@ -9312,16 +9339,22 @@ export default function AdminDashboard() {
                             return (
                               <>
                                 <div className="text-center">
-                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
                                     {uploadedCount}
                                   </div>
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Uploaded</div>
                                 </div>
                                 <div className="text-center">
-                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                                     {verifiedCount}
                                   </div>
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verified</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                    {rejectedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Rejected</div>
                                 </div>
                                 <div className="text-center">
                                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
@@ -9376,7 +9409,10 @@ export default function AdminDashboard() {
                                 displayStatus = 'expiring';
                                 statusText = `Expires in ${daysUntilExpiry} days`;
                                 statusColor = isDarkMode ? 'bg-orange-900/30 text-orange-400 border-orange-800' : 'bg-orange-50 text-orange-700 border-orange-200';
-                              } else if (verificationStatus === 'verified') {
+                              } else if (status === 'rejected' || verificationStatus === 'rejected') {
+                                statusText = 'Rejected';
+                                statusColor = isDarkMode ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-700 border-red-200';
+                              } else if (status === 'verified' || verificationStatus === 'verified') {
                                 statusText = 'Verified';
                                 statusColor = isDarkMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-700 border-green-200';
                               } else if (verificationStatus === 'pending' && status === 'uploaded') {
@@ -9977,12 +10013,13 @@ export default function AdminDashboard() {
                   {!loadingBusinessComplianceDocuments && Array.isArray(businessComplianceDocuments) && (
                     <>
                       {/* Documents Summary */}
-                      <div className="grid grid-cols-5 gap-4 mb-6">
+                      <div className="grid grid-cols-6 gap-4 mb-6">
                         {(() => {
                           try {
                             const allDocs = getAllBusinessDocumentsWithStatus();
-                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded' || doc.status === 'verified').length;
-                            const verifiedCount = allDocs.filter(doc => doc.verificationStatus === 'verified').length;
+                            const uploadedCount = allDocs.filter(doc => doc.status === 'uploaded').length;
+                            const verifiedCount = allDocs.filter(doc => doc.status === 'verified').length;
+                            const rejectedCount = allDocs.filter(doc => doc.status === 'rejected').length;
                             const pendingCount = allDocs.filter(doc => doc.verificationStatus === 'pending' && doc.status === 'uploaded').length;
                             const missingCount = allDocs.filter(doc => doc.status === 'missing').length;
                             const expiredCount = allDocs.filter(doc => doc.expiryStatus === 'expired' || doc.status === 'expired').length;
@@ -9991,16 +10028,22 @@ export default function AdminDashboard() {
                             return (
                               <>
                                 <div className="text-center">
-                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
                                     {uploadedCount}
                                   </div>
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Uploaded</div>
                                 </div>
                                 <div className="text-center">
-                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                                     {verifiedCount}
                                   </div>
                                   <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Verified</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className={`text-2xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                                    {rejectedCount}
+                                  </div>
+                                  <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Rejected</div>
                                 </div>
                                 <div className="text-center">
                                   <div className={`text-2xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>
@@ -10055,7 +10098,10 @@ export default function AdminDashboard() {
                                 displayStatus = 'expiring';
                                 statusText = `Expires in ${daysUntilExpiry} days`;
                                 statusColor = isDarkMode ? 'bg-orange-900/30 text-orange-400 border-orange-800' : 'bg-orange-50 text-orange-700 border-orange-200';
-                              } else if (verificationStatus === 'verified') {
+                              } else if (status === 'rejected' || verificationStatus === 'rejected') {
+                                statusText = 'Rejected';
+                                statusColor = isDarkMode ? 'bg-red-900/30 text-red-400 border-red-800' : 'bg-red-50 text-red-700 border-red-200';
+                              } else if (status === 'verified' || verificationStatus === 'verified') {
                                 statusText = 'Verified';
                                 statusColor = isDarkMode ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-green-50 text-green-700 border-green-200';
                               } else if (verificationStatus === 'pending' && status === 'uploaded') {
