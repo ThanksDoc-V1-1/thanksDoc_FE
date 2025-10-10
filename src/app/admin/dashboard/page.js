@@ -3503,7 +3503,9 @@ export default function AdminDashboard() {
     try {
       ('🔍 Loading compliance documents for doctor ID:', doctorId);
       setLoadingDocuments(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}`);
+      // Add cache-busting timestamp to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compliance-documents/doctor/${doctorId}?t=${timestamp}`);
       ('📡 API Response status:', response.status);
       
       if (response.ok) {
@@ -3701,7 +3703,9 @@ export default function AdminDashboard() {
   const loadBusinessComplianceDocuments = async (businessId) => {
     try {
       setLoadingBusinessComplianceDocuments(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}`);
+      // Add cache-busting timestamp to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/business-compliance-documents/business/${businessId}?t=${timestamp}`);
       
       if (response.ok) {
         const result = await response.json();
@@ -9268,12 +9272,27 @@ export default function AdminDashboard() {
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Compliance Documents
                     </h3>
-                    {loadingDocuments && (
-                      <div className="flex items-center">
-                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {loadingDocuments && (
+                        <div className="flex items-center">
+                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                        </div>
+                      )}
+                      {!loadingDocuments && (
+                        <button
+                          onClick={() => loadComplianceDocuments(selectedDoctor.id)}
+                          className={`p-2 rounded-md transition-colors ${
+                            isDarkMode 
+                              ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                          title="Refresh compliance documents"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {!loadingDocuments && Array.isArray(complianceDocuments) && (
@@ -9932,12 +9951,27 @@ export default function AdminDashboard() {
                     <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       Business Compliance Documents
                     </h3>
-                    {loadingBusinessComplianceDocuments && (
-                      <div className="flex items-center">
-                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {loadingBusinessComplianceDocuments && (
+                        <div className="flex items-center">
+                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</span>
+                        </div>
+                      )}
+                      {!loadingBusinessComplianceDocuments && (
+                        <button
+                          onClick={() => loadBusinessComplianceDocuments(selectedBusiness.id)}
+                          className={`p-2 rounded-md transition-colors ${
+                            isDarkMode 
+                              ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                          title="Refresh business compliance documents"
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {!loadingBusinessComplianceDocuments && Array.isArray(businessComplianceDocuments) && (
