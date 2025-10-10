@@ -783,26 +783,34 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
     let missing = 0;
     let expiring = 0;
     let expired = 0;
+    let rejected = 0; // Add rejected count
 
     documentTypes.forEach(docConfig => {
+      const doc = documents[docConfig.id];
       const status = getDocumentStatus(docConfig.id);
-      switch (status) {
-        case 'uploaded':
-          uploaded++;
-          break;
-        case 'missing':
-          missing++;
-          break;
-        case 'expiring':
-          expiring++;
-          break;
-        case 'expired':
-          expired++;
-          break;
+      
+      // Check if document is rejected/invalid
+      if (doc && doc.verificationStatus === 'rejected') {
+        rejected++;
+      } else {
+        switch (status) {
+          case 'uploaded':
+            uploaded++;
+            break;
+          case 'missing':
+            missing++;
+            break;
+          case 'expiring':
+            expiring++;
+            break;
+          case 'expired':
+            expired++;
+            break;
+        }
       }
     });
 
-    return { uploaded, missing, expiring, expired, total: documentTypes.length };
+    return { uploaded, missing, expiring, expired, rejected, total: documentTypes.length };
   };
 
   // Format date for display
@@ -858,7 +866,7 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
             <h4 className={`text-sm font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
               Compliance Overview
             </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {(() => {
                 const stats = getComplianceStats();
                 return (
@@ -869,6 +877,14 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
                       </div>
                       <div className={`text-xs ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>
                         Uploaded
+                      </div>
+                    </div>
+                    <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'}`}>
+                      <div className={`text-lg font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                        {stats.rejected}
+                      </div>
+                      <div className={`text-xs ${isDarkMode ? 'text-red-300' : 'text-red-700'}`}>
+                        Rejected
                       </div>
                     </div>
                     <div className={`text-center p-2 rounded ${isDarkMode ? 'bg-red-900/20' : 'bg-red-50'}`}>
