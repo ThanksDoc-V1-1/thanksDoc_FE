@@ -1191,7 +1191,7 @@ export default function ComplianceDocuments({ doctorId, autoExpandAll = false })
                                       : 'bg-green-600 hover:bg-green-700 text-white'
                                 }`}
                               >
-                                {uploadingDoc === docConfig.id ? 'Saving...' : 'Save References'}
+                                {uploadingDoc === docConfig.id ? 'Saving...' : 'Send Reference'}
                               </button>
                             )}
                           </div>
