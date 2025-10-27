@@ -67,6 +67,9 @@ export default function AdminDashboard() {
   const [dataLoading, setDataLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusedDoctorId, setFocusedDoctorId] = useState(null);
+  // Doctor and business filters
+  const [doctorStatusFilter, setDoctorStatusFilter] = useState('all'); // 'all', 'verified', 'pending'
+  const [businessStatusFilter, setBusinessStatusFilter] = useState('all'); // 'all', 'verified', 'pending'
   // Mobile sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   // Collapsible (desktop) sidebar state
@@ -2230,6 +2233,16 @@ export default function AdminDashboard() {
     setServiceRequestsCurrentPage(1);
   }, [requestStatusFilter]);
 
+  // Reset pagination when doctor status filter changes
+  useEffect(() => {
+    setDoctorsCurrentPage(1);
+  }, [doctorStatusFilter]);
+
+  // Reset pagination when business status filter changes
+  useEffect(() => {
+    setBusinessesCurrentPage(1);
+  }, [businessStatusFilter]);
+
   // Don't render anything if not authenticated
   if (loading) {
     return (
@@ -2764,16 +2777,21 @@ export default function AdminDashboard() {
   };
 
   // Filter functions for search functionality only
-  // Filter functions for search
+  // Filter functions for search and status
   const filteredDoctors = doctors.filter(doctor => {
-    if (!searchTerm) return true;
-    
     // Handle both direct properties and nested attributes structure
     const firstName = doctor.firstName || doctor.attributes?.firstName || '';
     const lastName = doctor.lastName || doctor.attributes?.lastName || '';
     const email = doctor.email || doctor.attributes?.email || '';
     const licenceNumber = doctor.licenseNumber || doctor.licenceNumber || doctor.attributes?.licenseNumber || doctor.attributes?.licenceNumber || '';
+    const isVerified = doctor.isVerified || doctor.attributes?.isVerified;
     
+    // Apply status filter
+    if (doctorStatusFilter === 'verified' && !isVerified) return false;
+    if (doctorStatusFilter === 'pending' && isVerified) return false;
+    
+    // Apply search filter
+    if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return `${firstName} ${lastName}`.toLowerCase().includes(search) ||
            email.toLowerCase().includes(search) ||
@@ -2781,15 +2799,20 @@ export default function AdminDashboard() {
   });
 
   const filteredBusinesses = businesses.filter(business => {
-    if (!searchTerm) return true;
-    
     // Handle both direct properties and nested attributes structure
     const businessName = business.businessName || business.name || business.attributes?.businessName || business.attributes?.name || '';
     const businessType = business.businessType || business.attributes?.businessType || '';
     const email = business.email || business.attributes?.email || '';
     const businessLicence = business.businessLicence || business.attributes?.businessLicence || '';
     const contactPersonName = business.contactPersonName || business.attributes?.contactPersonName || '';
+    const isVerified = business.isVerified || business.attributes?.isVerified;
     
+    // Apply status filter
+    if (businessStatusFilter === 'verified' && !isVerified) return false;
+    if (businessStatusFilter === 'pending' && isVerified) return false;
+    
+    // Apply search filter
+    if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return businessName.toLowerCase().includes(search) ||
            businessType.toLowerCase().includes(search) ||
@@ -4708,16 +4731,61 @@ export default function AdminDashboard() {
                   <Plus className="h-4 w-4 mr-2" />
                   Register New Doctor
                 </button>
-                <span className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold ${isDarkMode ? 'bg-emerald-600 text-emerald-100' : 'bg-emerald-600 text-white'}`}>
+                <button
+                  onClick={() => setDoctorStatusFilter(doctorStatusFilter === 'verified' ? 'all' : 'verified')}
+                  className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold transition-all cursor-pointer ${
+                    doctorStatusFilter === 'verified'
+                      ? 'bg-emerald-700 text-white ring-2 ring-emerald-400'
+                      : isDarkMode ? 'bg-emerald-600 text-emerald-100 hover:bg-emerald-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  }`}
+                  title="Click to filter verified doctors"
+                >
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedDoctors}</span> Verified
-                </span>
-                <span className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold ${isDarkMode ? 'bg-amber-600 text-amber-100' : 'bg-amber-600 text-white'}`}>
+                </button>
+                <button
+                  onClick={() => setDoctorStatusFilter(doctorStatusFilter === 'pending' ? 'all' : 'pending')}
+                  className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold transition-all cursor-pointer ${
+                    doctorStatusFilter === 'pending'
+                      ? 'bg-amber-700 text-white ring-2 ring-amber-400'
+                      : isDarkMode ? 'bg-amber-600 text-amber-100 hover:bg-amber-700' : 'bg-amber-600 text-white hover:bg-amber-700'
+                  }`}
+                  title="Click to filter pending doctors"
+                >
                   <Clock className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.totalDoctors - stats.verifiedDoctors}</span> Pending
-                </span>
+                </button>
               </div>
             </div>
+            
+            {/* Active Filter Indicator for Doctors */}
+            {doctorStatusFilter !== 'all' && (
+              <div className={`px-6 py-3 border-b flex items-center justify-between ${isDarkMode ? 'bg-gray-800/30 border-gray-800' : 'bg-blue-50 border-blue-200'}`}>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Active Filter:
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    doctorStatusFilter === 'verified'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-600 text-white'
+                  }`}>
+                    {doctorStatusFilter === 'verified' ? 'Verified Doctors' : 'Pending Doctors'}
+                  </span>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    ({filteredDoctors.length} {filteredDoctors.length === 1 ? 'doctor' : 'doctors'})
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDoctorStatusFilter('all')}
+                  className={`text-sm px-3 py-1 rounded-lg transition-colors ${
+                    isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-white'
+                  }`}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            )}
             
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -4955,16 +5023,61 @@ export default function AdminDashboard() {
                   <Plus className="h-4 w-4 mr-2" />
                   Register New Business
                 </button>
-                <span className={`${isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'} px-3 py-1 rounded-full flex items-center`}>
+                <button
+                  onClick={() => setBusinessStatusFilter(businessStatusFilter === 'verified' ? 'all' : 'verified')}
+                  className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold transition-all cursor-pointer ${
+                    businessStatusFilter === 'verified'
+                      ? 'bg-green-700 text-white ring-2 ring-green-400'
+                      : isDarkMode ? 'bg-green-900/30 text-green-400 hover:bg-green-800/50' : 'bg-green-100 text-green-700 hover:bg-green-200'
+                  }`}
+                  title="Click to filter verified businesses"
+                >
                   <Check className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.verifiedBusinesses}</span> Verified
-                </span>
-                <span className={`${isDarkMode ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-700'} px-3 py-1 rounded-full flex items-center`}>
+                </button>
+                <button
+                  onClick={() => setBusinessStatusFilter(businessStatusFilter === 'pending' ? 'all' : 'pending')}
+                  className={`px-3 py-1.5 rounded-full flex items-center shadow-sm font-bold transition-all cursor-pointer ${
+                    businessStatusFilter === 'pending'
+                      ? 'bg-yellow-700 text-white ring-2 ring-yellow-400'
+                      : isDarkMode ? 'bg-yellow-900/30 text-yellow-400 hover:bg-yellow-800/50' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  }`}
+                  title="Click to filter pending businesses"
+                >
                   <Clock className="h-3.5 w-3.5 mr-1 stroke-2" />
                   <span className="font-medium">{stats.totalBusinesses - stats.verifiedBusinesses}</span> Pending
-                </span>
+                </button>
               </div>
             </div>
+            
+            {/* Active Filter Indicator for Businesses */}
+            {businessStatusFilter !== 'all' && (
+              <div className={`px-6 py-3 border-b flex items-center justify-between ${isDarkMode ? 'bg-gray-800/30 border-gray-800' : 'bg-purple-50 border-purple-200'}`}>
+                <div className="flex items-center space-x-2">
+                  <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Active Filter:
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    businessStatusFilter === 'verified'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-yellow-600 text-white'
+                  }`}>
+                    {businessStatusFilter === 'verified' ? 'Verified Businesses' : 'Pending Businesses'}
+                  </span>
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    ({filteredBusinesses.length} {filteredBusinesses.length === 1 ? 'business' : 'businesses'})
+                  </span>
+                </div>
+                <button
+                  onClick={() => setBusinessStatusFilter('all')}
+                  className={`text-sm px-3 py-1 rounded-lg transition-colors ${
+                    isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-white'
+                  }`}
+                >
+                  Clear Filter
+                </button>
+              </div>
+            )}
             
             <div className="overflow-x-auto">
               <table className="w-full">
