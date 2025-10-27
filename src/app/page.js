@@ -94,8 +94,8 @@ function HomeContent() {
           <p className={`text-xl mb-8 ${
             heroIsDark ? 'text-gray-200' : 'text-gray-600'
           }`}>
-            Connecting businesses with verified doctors instantly. 
-            Request medical consultations within 6 mile radius with just a few clicks.
+            Connect your business with verified doctors instantly. 
+            Request doctors' appointments for your patients with just a few clicks.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 lg:justify-start justify-center mb-8">
