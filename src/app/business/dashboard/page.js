@@ -197,6 +197,11 @@ export default function BusinessDashboard() {
   
   const [isOnlineService, setIsOnlineService] = useState(false);
   
+  // Calendar and availability states for online services
+  const [availabilityData, setAvailabilityData] = useState({});
+  const [selectedDate, setSelectedDate] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+  
   // Business profile editing states
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
