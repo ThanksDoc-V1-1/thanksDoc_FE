@@ -139,54 +139,27 @@ function SubscriptionCheckoutForm({
         onPaymentSuccess();
         
       } else {
-        // Using new card - existing flow
+        // Using new card - create payment method first, then subscription
         const card = elements.getElement(CardElement);
 
-        // 1. Create payment intent for subscription
-        console.log('Creating subscription payment intent for doctor:', doctorData.id);
-        const paymentIntentResponse = await fetch('/api/doctor-subscriptions/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        // 1. Create payment method from card
+        console.log('Creating payment method for doctor:', doctorData.id);
+        const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+          type: 'card',
+          card: card,
+          billing_details: {
+            name: `Dr. ${doctorData.firstName} ${doctorData.lastName}`,
+            email: doctorData.email,
           },
-          body: JSON.stringify({
-            doctorId: doctorData.id,
-            amount: subscriptionAmount,
-            savePaymentMethod: saveCard,
-          }),
         });
 
-        const paymentIntentData = await paymentIntentResponse.json();
-
-        if (!paymentIntentResponse.ok) {
-          throw new Error(paymentIntentData.error || 'Failed to create payment intent');
+        if (pmError) {
+          throw new Error(pmError.message);
         }
 
-        console.log('Payment intent created:', paymentIntentData);
+        console.log('Payment method created:', paymentMethod.id);
 
-        // 2. Confirm payment with card details
-        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-          paymentIntentData.clientSecret,
-          {
-            payment_method: {
-              card: card,
-              billing_details: {
-                name: `Dr. ${doctorData.firstName} ${doctorData.lastName}`,
-                email: doctorData.email,
-              },
-            },
-            setup_future_usage: saveCard ? 'off_session' : undefined,
-          }
-        );
-
-        if (confirmError) {
-          throw new Error(confirmError.message);
-        }
-
-        console.log('Payment confirmed:', paymentIntent);
-
-        // 3. Create subscription record after successful payment
+        // 2. Create subscription with the payment method
         const subscriptionResponse = await fetch('/api/doctor-subscriptions/create', {
           method: 'POST',
           headers: {
@@ -195,22 +168,56 @@ function SubscriptionCheckoutForm({
           },
           body: JSON.stringify({
             doctorId: doctorData.id,
-            paymentIntentId: paymentIntent.id,
-            paymentMethodId: paymentIntent.payment_method,
+            paymentMethodId: paymentMethod.id,
             amount: subscriptionAmount,
             savePaymentMethod: saveCard,
+            useSavedPaymentMethod: false,
           }),
         });
 
         const subscriptionData = await subscriptionResponse.json();
 
         if (!subscriptionResponse.ok) {
-          throw new Error(subscriptionData.error || 'Failed to create subscription');
+          const errorMessage = subscriptionData.error?.message || subscriptionData.message || subscriptionData.error || 'Failed to create subscription';
+          throw new Error(errorMessage);
         }
 
-        console.log('Subscription created:', subscriptionData);
+        console.log('Subscription response:', subscriptionData);
 
-        // Success!
+        // 3. Handle 3D Secure if required
+        if (subscriptionData.requiresConfirmation && subscriptionData.clientSecret) {
+          console.log('Subscription requires 3D Secure confirmation');
+          
+          const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+            subscriptionData.clientSecret
+          );
+
+          if (confirmError) {
+            throw new Error(confirmError.message);
+          }
+
+          console.log('3D Secure confirmation successful:', paymentIntent);
+          
+          // Update subscription status to active after successful payment
+          const updateResponse = await fetch('/api/doctor-subscriptions/confirm-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({
+              subscriptionId: subscriptionData.data.id,
+              stripeSubscriptionId: subscriptionData.subscriptionId,
+              paymentIntentId: paymentIntent.id,
+            }),
+          });
+
+          if (!updateResponse.ok) {
+            console.warn('Failed to update subscription status, but payment was successful');
+          }
+        }
+
+        console.log('Subscription created successfully');
         onPaymentSuccess();
       }
       
